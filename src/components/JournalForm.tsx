@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { useHikingJournals, type HikingJournal } from "@/hooks/useHikingJournals";
 import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
@@ -36,6 +36,7 @@ const visibilityOptions = [
 ];
 
 export function JournalForm({ editJournal, onClose, onSaved }: JournalFormProps) {
+  const { mountains } = useMountains();
   const { user } = useAuth();
   const { createJournal, updateJournal, uploadPhoto } = useHikingJournals();
   const { friends } = useFriends();

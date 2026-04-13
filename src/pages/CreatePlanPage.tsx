@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { getMockWeather } from "@/data/mockWeather";
 import { useHikingPlans } from "@/hooks/useHikingPlans";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,6 +25,7 @@ const conditionIcons: Record<string, any> = {
 };
 
 const CreatePlanPage = () => {
+  const { mountains } = useMountains();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { createPlan } = useHikingPlans();

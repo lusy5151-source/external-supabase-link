@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
-import { mountains, regions } from "@/data/mountains";
+import { regions } from "@/data/mountains";
 import type { Mountain } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { useStore } from "@/context/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Search, CheckCircle2, Circle, ChevronRight, ChevronDown, ArrowUpDown, Mountain as MountainIcon, Star, Smile, MapPin, Flame, User, Clock } from "lucide-react";
@@ -18,6 +19,7 @@ type SortKey = "name" | "height" | "popularity";
 type ViewMode = "all" | "baekdu" | "region" | "oreum" | "full";
 
 const MountainList = () => {
+  const { mountains: dbMountains } = useMountains();
   const { isCompleted, toggleComplete, completedCount } = useStore();
   const { user } = useAuth();
   const { userMountainsAsMountains, userMountains } = useUserMountains();
@@ -38,11 +40,11 @@ const MountainList = () => {
       if (row.status === "pending" && user && row.created_by === user.id) return true;
       return false;
     });
-    return [...mountains, ...visibleUserMountains];
-  }, [userMountainsAsMountains, userMountains, user]);
+    return [...dbMountains, ...visibleUserMountains];
+  }, [dbMountains, userMountainsAsMountains, userMountains, user]);
 
-  const totalBaekdu = mountains.filter((m) => m.is_baekdu).length;
-  const completedBaekdu = mountains.filter((m) => m.is_baekdu && isCompleted(m.id)).length;
+  const totalBaekdu = dbMountains.filter((m) => m.is_baekdu).length;
+  const completedBaekdu = dbMountains.filter((m) => m.is_baekdu && isCompleted(m.id)).length;
 
   const filterAndSort = (list: any[]) => {
     let filtered = list.filter((m: any) => {
@@ -63,8 +65,8 @@ const MountainList = () => {
   };
 
   const allFiltered = useMemo(() => filterAndSort(allMountains), [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, allMountains, showUserOnly]);
-  const baekduFiltered = useMemo(() => filterAndSort(mountains.filter((m) => m.is_baekdu)), [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly]);
-  const oreumFiltered = useMemo(() => filterAndSort(mountains.filter((m) => m.region === "제주" && !m.is_baekdu)), [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly]);
+  const baekduFiltered = useMemo(() => filterAndSort(dbMountains.filter((m) => m.is_baekdu)), [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly, dbMountains]);
+  const oreumFiltered = useMemo(() => filterAndSort(dbMountains.filter((m) => m.region === "제주" && !m.is_baekdu)), [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly, dbMountains]);
 
   const allRegions = [...regions, "기타"] as const;
   const regionGroups = useMemo(() => {

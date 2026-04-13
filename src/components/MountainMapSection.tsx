@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
+import type { Mountain } from "@/data/mountains";
 import { useStore } from "@/context/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSharedCompletions, type SharedCompletion } from "@/hooks/useSharedCompletions";
@@ -14,7 +15,7 @@ import { LocateFixed, X, MapPin, Users, User, Calendar } from "lucide-react";
 type MapFilter = "all" | "completed" | "not_completed" | "shared";
 
 interface InfoCardData {
-  mountain: (typeof mountains)[0];
+  mountain: Mountain;
   completed: boolean;
   shared: boolean;
   sharedCompletion?: SharedCompletion;
@@ -22,6 +23,7 @@ interface InfoCardData {
 }
 
 const MountainMapSection = () => {
+  const { mountains } = useMountains();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);

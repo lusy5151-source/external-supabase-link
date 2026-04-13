@@ -1,4 +1,4 @@
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { StackedAvatars } from "./StackedAvatars";
 import { Users, Mountain, Calendar, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ interface SharedCompletionCardProps {
 }
 
 export function SharedCompletionCard({ completion, onTap }: SharedCompletionCardProps) {
+  const { mountains } = useMountains();
   const mt = mountains.find((m) => m.id === completion.mountain_id);
   const profiles = (completion.participants || [])
     .map((p) => p.profile)

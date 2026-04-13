@@ -8,12 +8,13 @@ import { JournalCard } from "@/components/JournalCard";
 import { SharedCompletionCard } from "@/components/SharedCompletionCard";
 import { StackedAvatars } from "@/components/StackedAvatars";
 import { demoJournals, demoActivityFeed, type DemoJournal } from "@/data/demoFeed";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { Mountain, Compass, Users, Newspaper, ChevronRight, Heart, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const FeedPage = () => {
+  const { mountains } = useMountains();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { fetchFeed } = useHikingJournals();
@@ -62,6 +63,7 @@ const FeedPage = () => {
 };
 
 function DemoFeedView() {
+  const { mountains } = useMountains();
   return (
     <div className="space-y-5 pb-24 max-w-lg mx-auto">
       <h1 className="text-xl font-bold text-foreground">피드</h1>
@@ -73,6 +75,7 @@ function DemoFeedView() {
 }
 
 function ActivityCard({ item }: { item: ActivityFeedItem }) {
+  const { mountains } = useMountains();
   const mt = item.mountain_id ? mountains.find((m) => m.id === item.mountain_id) : null;
   const profiles = item.participant_profiles || [];
   return (

@@ -1,6 +1,6 @@
 import { useWeather, useForecast } from "@/hooks/useWeather";
 import { getOutfitRecommendations } from "@/data/mockWeather";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { Sun, Cloud, CloudRain, CloudSnow, Wind, Droplets, Thermometer, CloudSun, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -14,6 +14,7 @@ const conditionIcons: Record<string, any> = {
 };
 
 export function WeatherCard({ mountainId }: { mountainId: number }) {
+  const { mountains } = useMountains();
   const mountain = mountains.find((m) => m.id === mountainId);
   const lat = mountain?.lat ?? 37.5;
   const lng = mountain?.lng ?? 127.0;

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingPlans } from "@/hooks/useHikingPlans";
 import { useHikingGroups } from "@/hooks/useHikingGroups";
@@ -39,6 +39,7 @@ function dataURLtoFile(dataUrl: string, filename: string): File {
 }
 
 export default function SummitClaimPage() {
+  const { mountains } = useMountains();
   const { user } = useAuth();
   const { toast } = useToast();
   const { plans } = useHikingPlans();

@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { getMockWeather } from "@/data/mockWeather";
 import { useHikingPlans, type PlanParticipant, type HikingPlan, type PlanEditHistory } from "@/hooks/useHikingPlans";
 import { useAuth } from "@/contexts/AuthContext";
@@ -41,6 +41,7 @@ const fieldLabels: Record<string, string> = {
 };
 
 const PlanDetailPage = () => {
+  const { mountains } = useMountains();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();

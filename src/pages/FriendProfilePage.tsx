@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingJournals, type HikingJournal } from "@/hooks/useHikingJournals";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { badges } from "@/data/badges";
 import { JournalCard, JournalGridCard } from "@/components/JournalCard";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 
 const HIKING_STYLES = [
   { id: "solo", label: "솔로 등산", emoji: "🧍" },
+  
   { id: "trekking", label: "트레킹", emoji: "🥾" },
   { id: "photography", label: "사진촬영", emoji: "📸" },
   { id: "summit", label: "정상 도전", emoji: "⛰️" },
@@ -35,6 +36,7 @@ interface Profile {
 }
 
 const FriendProfilePage = () => {
+  const { mountains } = useMountains();
   const { userId } = useParams<{ userId: string }>();
   const { user } = useAuth();
   const { fetchUserJournals } = useHikingJournals();

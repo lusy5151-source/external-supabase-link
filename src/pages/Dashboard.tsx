@@ -1,5 +1,6 @@
 import { useStore } from "@/context/StoreContext";
-import { mountains, baekduMountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
+import { baekduMountains } from "@/data/mountains";
 import { demoJournals, demoSummitClaims, demoKingOfDay, demoActivityFeed, demoProgress, type DemoJournal } from "@/data/demoFeed";
 import { badges } from "@/data/badges";
 import { useWeather } from "@/hooks/useWeather";
@@ -41,6 +42,7 @@ const conditionIcons: Record<string, any> = {
 const GOAL_KEY = "wandeng-user-goal";
 
 const Dashboard = () => {
+  const { mountains } = useMountains();
   const { records, completedCount, isCompleted } = useStore();
   const { items: gearItems } = useGearStore();
   const sharedCompletions = useSharedCompletionCounts();
@@ -84,10 +86,11 @@ const Dashboard = () => {
   }, [plans, isDemo]);
 
   const upcomingMountain = upcomingPlan ? mountains.find((m) => m.id === upcomingPlan.mountain_id) : null;
+  const defaultMountain = mountains[0] || { id: 1, lat: 37.6584, lng: 126.978 };
   const { weather } = useWeather(
-    upcomingMountain?.id || mountains[0].id,
-    upcomingMountain?.lat || mountains[0].lat,
-    upcomingMountain?.lng || mountains[0].lng
+    upcomingMountain?.id || defaultMountain.id,
+    upcomingMountain?.lat || defaultMountain.lat,
+    upcomingMountain?.lng || defaultMountain.lng
   );
 
   const dDay = useMemo(() => {
@@ -628,6 +631,7 @@ function EmptyState({ icon: Icon, message, linkTo, linkLabel }: { icon: any; mes
 }
 
 function CommunityFeedPreview({ journals }: { journals: DemoJournal[] }) {
+  const { mountains } = useMountains();
   return (
     <div className="space-y-3">
       {journals.map((j) => {

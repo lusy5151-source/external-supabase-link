@@ -6,7 +6,7 @@ import { useHikingPlans } from "@/hooks/useHikingPlans";
 import { useFriends } from "@/hooks/useFriends";
 import { SharedCompletionCard } from "@/components/SharedCompletionCard";
 import { StackedAvatars } from "@/components/StackedAvatars";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import MountainMascot from "@/components/MountainMascot";
 
 const SharedCompletionPage = () => {
+  const { mountains } = useMountains();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();

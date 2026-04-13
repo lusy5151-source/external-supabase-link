@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingJournals, type HikingJournal, type JournalComment } from "@/hooks/useHikingJournals";
 import { useFriends } from "@/hooks/useFriends";
@@ -28,6 +28,7 @@ interface JournalCardProps {
 }
 
 export function JournalCard({ journal, showAuthor = true, onRefresh }: JournalCardProps) {
+  const { mountains } = useMountains();
   const { user } = useAuth();
   const { toggleLike, fetchComments, addComment, deleteComment } = useHikingJournals();
   const mountain = mountains.find((m) => m.id === journal.mountain_id);
@@ -361,6 +362,7 @@ export function JournalCard({ journal, showAuthor = true, onRefresh }: JournalCa
 
 // Compact card for profile grid
 export function JournalGridCard({ journal, onClick }: { journal: HikingJournal; onClick?: () => void }) {
+  const { mountains } = useMountains();
   const allMts = (journal.mountain_ids?.length ? journal.mountain_ids : [journal.mountain_id])
     .map((id) => mountains.find((m) => m.id === id))
     .filter(Boolean) as typeof mountains;

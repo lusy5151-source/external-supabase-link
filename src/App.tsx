@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { StoreProvider } from "@/context/StoreContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { OnboardingProvider } from "@/contexts/OnboardingContext";
+import { MountainsProvider } from "@/contexts/MountainsContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Layout from "@/components/Layout";
 import SplashScreen from "@/components/SplashScreen";
@@ -131,6 +132,7 @@ const App = () => {
         <TooltipProvider>
           <AuthProvider>
             <OnboardingProvider>
+            <MountainsProvider>
             <StoreProvider>
               <Toaster />
               <Sonner />
@@ -144,6 +146,7 @@ const App = () => {
                 </Layout>
               </BrowserRouter>
             </StoreProvider>
+            </MountainsProvider>
             </OnboardingProvider>
           </AuthProvider>
         </TooltipProvider>

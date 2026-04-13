@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { demoJournals, type DemoJournal } from "@/data/demoFeed";
 import { useHikingJournals, type HikingJournal } from "@/hooks/useHikingJournals";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,6 +19,7 @@ import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const Records = () => {
+  const { mountains } = useMountains();
   const { user } = useAuth();
   const { fetchMyJournals, fetchFeed, deleteJournal } = useHikingJournals();
   const { toast } = useToast();
@@ -148,6 +149,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
 }
 
 function DemoRecordsView() {
+  const { mountains } = useMountains();
   return (
     <div className="space-y-5 pb-24 max-w-lg mx-auto">
       <div className="flex items-center justify-between">

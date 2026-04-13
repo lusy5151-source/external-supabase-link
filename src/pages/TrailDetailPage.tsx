@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import MountainMascot from "@/components/MountainMascot";
 import {
   ArrowLeft, Route, Clock, MapPin, Ruler, TrendingUp, Star, Car, Bus,
@@ -67,6 +67,7 @@ function getDifficultyStyle(difficulty: string) {
 }
 
 export default function TrailDetailPage() {
+  const { mountains } = useMountains();
   const { trailId } = useParams<{ trailId: string }>();
   const [trail, setTrail] = useState<TrailDetail | null>(null);
   const [loading, setLoading] = useState(true);

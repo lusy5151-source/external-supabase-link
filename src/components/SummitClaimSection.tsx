@@ -2,7 +2,7 @@ import { useState, useRef, useMemo } from "react";
 import { useSummits, type Summit, type SummitClaim } from "@/hooks/useSummits";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingGroups } from "@/hooks/useHikingGroups";
-import { mountains as mountainsData } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +41,7 @@ interface Props {
 }
 
 export function SummitClaimSection({ mountainId, mountainName }: Props) {
+  const { mountains: mountainsData } = useMountains();
   const { user } = useAuth();
   const { summits, claims, loading, getSummitOwner, getMountainLeader, claimSummit } = useSummits(mountainId);
   const { myGroups } = useHikingGroups();

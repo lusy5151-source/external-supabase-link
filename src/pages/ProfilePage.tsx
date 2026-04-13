@@ -9,7 +9,8 @@ import { useHikingJournals, type HikingJournal } from "@/hooks/useHikingJournals
 import { useFriends } from "@/hooks/useFriends";
 import { usePrivacySettings } from "@/hooks/usePrivacySettings";
 import { badges, BadgeCategory } from "@/data/badges";
-import { mountains, regions } from "@/data/mountains";
+import { regions } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { JournalCard, JournalGridCard } from "@/components/JournalCard";
 import { Link } from "react-router-dom";
 import {
@@ -26,6 +27,7 @@ import { Separator } from "@/components/ui/separator";
 
 const HIKING_STYLES = [
   { id: "solo", label: "솔로 등산", emoji: "🧍" },
+  
   { id: "trekking", label: "트레킹", emoji: "🥾" },
   { id: "photography", label: "사진촬영", emoji: "📸" },
   { id: "summit", label: "정상 도전", emoji: "⛰️" },
@@ -33,6 +35,7 @@ const HIKING_STYLES = [
 ];
 
 const ProfilePage = () => {
+  const { mountains } = useMountains();
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const { records, completedCount, totalCompletions } = useStore();
