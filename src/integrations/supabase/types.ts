@@ -1,0 +1,1316 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.4"
+  }
+  public: {
+    Tables: {
+      achievements: {
+        Row: {
+          achieved_at: string | null
+          achievement_name: string | null
+          achievement_type: string | null
+          description: string | null
+          id: number
+          user_id: string | null
+        }
+        Insert: {
+          achieved_at?: string | null
+          achievement_name?: string | null
+          achievement_type?: string | null
+          description?: string | null
+          id?: never
+          user_id?: string | null
+        }
+        Update: {
+          achieved_at?: string | null
+          achievement_name?: string | null
+          achievement_type?: string | null
+          description?: string | null
+          id?: never
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "achievements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activity_feed: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string | null
+          mountain_id: number | null
+          participant_ids: string[] | null
+          plan_id: string | null
+          shared_completion: boolean | null
+          type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          mountain_id?: number | null
+          participant_ids?: string[] | null
+          plan_id?: string | null
+          shared_completion?: boolean | null
+          type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          mountain_id?: number | null
+          participant_ids?: string[] | null
+          plan_id?: string | null
+          shared_completion?: boolean | null
+          type?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      activity_feed_participants: {
+        Row: {
+          activity_id: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          activity_id?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          activity_id?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_feed_participants_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activity_feed"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_feed_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      announcements: {
+        Row: {
+          category: string
+          content: string | null
+          created_at: string | null
+          date: string | null
+          id: string
+          source: string | null
+          summary: string | null
+          title: string
+        }
+        Insert: {
+          category: string
+          content?: string | null
+          created_at?: string | null
+          date?: string | null
+          id?: string
+          source?: string | null
+          summary?: string | null
+          title: string
+        }
+        Update: {
+          category?: string
+          content?: string | null
+          created_at?: string | null
+          date?: string | null
+          id?: string
+          source?: string | null
+          summary?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      badges: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
+      challenges: {
+        Row: {
+          badge_id: string | null
+          category: string | null
+          created_at: string | null
+          description: string | null
+          end_date: string | null
+          goal_type: string | null
+          goal_value: number | null
+          id: string
+          level: string | null
+          start_date: string | null
+          title: string
+          type: string | null
+        }
+        Insert: {
+          badge_id?: string | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          goal_type?: string | null
+          goal_value?: number | null
+          id?: string
+          level?: string | null
+          start_date?: string | null
+          title: string
+          type?: string | null
+        }
+        Update: {
+          badge_id?: string | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          goal_type?: string | null
+          goal_value?: number | null
+          id?: string
+          level?: string | null
+          start_date?: string | null
+          title?: string
+          type?: string | null
+        }
+        Relationships: []
+      }
+      climbs: {
+        Row: {
+          climbed_at: string | null
+          created_at: string | null
+          id: number
+          mountain_id: number | null
+          note: string | null
+          photo_url: string | null
+          user_id: string | null
+        }
+        Insert: {
+          climbed_at?: string | null
+          created_at?: string | null
+          id?: never
+          mountain_id?: number | null
+          note?: string | null
+          photo_url?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          climbed_at?: string | null
+          created_at?: string | null
+          id?: never
+          mountain_id?: number | null
+          note?: string | null
+          photo_url?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "climbs_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "climbs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      friendships: {
+        Row: {
+          addressee_id: string
+          created_at: string | null
+          id: string
+          requester_id: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          addressee_id: string
+          created_at?: string | null
+          id?: string
+          requester_id: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          addressee_id?: string
+          created_at?: string | null
+          id?: string
+          requester_id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      group_members: {
+        Row: {
+          group_id: string
+          id: string
+          join_at: string | null
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          join_at?: string | null
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          join_at?: string | null
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      hiking_group: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          creator_id: string
+          description: string | null
+          id: string
+          is_public: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          creator_id: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          creator_id?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_group_creator"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      hiking_journals: {
+        Row: {
+          course_name: string | null
+          course_notes: string | null
+          course_starting_point: string | null
+          created_at: string | null
+          difficulty: string | null
+          duration: number | null
+          hiked_at: string | null
+          id: string
+          mountain_id: number | null
+          notes: string | null
+          photos: string[] | null
+          tagged_friends: string[] | null
+          updated_at: string | null
+          user_id: string | null
+          visibility: string | null
+          weather: string | null
+        }
+        Insert: {
+          course_name?: string | null
+          course_notes?: string | null
+          course_starting_point?: string | null
+          created_at?: string | null
+          difficulty?: string | null
+          duration?: number | null
+          hiked_at?: string | null
+          id?: string
+          mountain_id?: number | null
+          notes?: string | null
+          photos?: string[] | null
+          tagged_friends?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+          visibility?: string | null
+          weather?: string | null
+        }
+        Update: {
+          course_name?: string | null
+          course_notes?: string | null
+          course_starting_point?: string | null
+          created_at?: string | null
+          difficulty?: string | null
+          duration?: number | null
+          hiked_at?: string | null
+          id?: string
+          mountain_id?: number | null
+          notes?: string | null
+          photos?: string[] | null
+          tagged_friends?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+          visibility?: string | null
+          weather?: string | null
+        }
+        Relationships: []
+      }
+      hiking_plans: {
+        Row: {
+          created_at: string | null
+          creator_id: string
+          group_id: string | null
+          id: string
+          invite_code: string | null
+          is_public: boolean | null
+          meeting_location: string | null
+          mountain_id: number | null
+          notes: string | null
+          planned_date: string | null
+          start_time: string | null
+          status: string | null
+          trail_name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id: string
+          group_id?: string | null
+          id?: string
+          invite_code?: string | null
+          is_public?: boolean | null
+          meeting_location?: string | null
+          mountain_id?: number | null
+          notes?: string | null
+          planned_date?: string | null
+          start_time?: string | null
+          status?: string | null
+          trail_name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string
+          group_id?: string | null
+          id?: string
+          invite_code?: string | null
+          is_public?: boolean | null
+          meeting_location?: string | null
+          mountain_id?: number | null
+          notes?: string | null
+          planned_date?: string | null
+          start_time?: string | null
+          status?: string | null
+          trail_name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_plan_creator"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_plan_group"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "hiking_group"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_comments: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          journal_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          journal_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          journal_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_comment_journal"
+            columns: ["journal_id"]
+            isOneToOne: false
+            referencedRelation: "hiking_journals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_comment_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      journal_likes: {
+        Row: {
+          created_at: string | null
+          id: string
+          journal_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          journal_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          journal_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mountains: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          difficulty: string | null
+          height: number | null
+          id: number
+          is_bac100: boolean | null
+          is_oreum: boolean | null
+          lat: number | null
+          lng: number | null
+          name: string | null
+          name_ko: string | null
+          popularity: number | null
+          region: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          height?: number | null
+          id: number
+          is_bac100?: boolean | null
+          is_oreum?: boolean | null
+          lat?: number | null
+          lng?: number | null
+          name?: string | null
+          name_ko?: string | null
+          popularity?: number | null
+          region?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          height?: number | null
+          id?: number
+          is_bac100?: boolean | null
+          is_oreum?: boolean | null
+          lat?: number | null
+          lng?: number | null
+          name?: string | null
+          name_ko?: string | null
+          popularity?: number | null
+          region?: string | null
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string | null
+          related_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          related_id?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          related_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      photos: {
+        Row: {
+          caption: string | null
+          climb_id: number | null
+          created_at: string | null
+          file_path: string | null
+          id: number
+          mountain_id: number | null
+          user_id: string | null
+        }
+        Insert: {
+          caption?: string | null
+          climb_id?: number | null
+          created_at?: string | null
+          file_path?: string | null
+          id?: never
+          mountain_id?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          caption?: string | null
+          climb_id?: number | null
+          created_at?: string | null
+          file_path?: string | null
+          id?: never
+          mountain_id?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photos_climb_id_fkey"
+            columns: ["climb_id"]
+            isOneToOne: false
+            referencedRelation: "climbs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "photos_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "photos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_edit_history: {
+        Row: {
+          created_at: string | null
+          field_name: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          plan_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          field_name: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          plan_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          field_name?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          plan_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_plan_edit_plan"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "hiking_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_plan_edit_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      plan_notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string | null
+          plan_id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          plan_id: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          plan_id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_plan_notification_plan"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "hiking_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_plan_notification_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      plan_participants: {
+        Row: {
+          id: string
+          invited_at: string | null
+          invited_by: string | null
+          plan_id: string
+          responded_at: string | null
+          rsvp_status: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          plan_id: string
+          responded_at?: string | null
+          rsvp_status?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          plan_id?: string
+          responded_at?: string | null
+          rsvp_status?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_participant_inviter"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_participant_plan"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "hiking_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_participant_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      privacy_settings: {
+        Row: {
+          allow_friend_request: boolean | null
+          created_at: string | null
+          id: string
+          journal_visibility: string | null
+          profile_visibility: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          allow_friend_request?: boolean | null
+          created_at?: string | null
+          id?: string
+          journal_visibility?: string | null
+          profile_visibility?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          allow_friend_request?: boolean | null
+          created_at?: string | null
+          id?: string
+          journal_visibility?: string | null
+          profile_visibility?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_privacy_user"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          email: string | null
+          hiking_styles: string[] | null
+          id: string
+          is_active: boolean | null
+          location: string | null
+          nickname: string | null
+          provider: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          email?: string | null
+          hiking_styles?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          location?: string | null
+          nickname?: string | null
+          provider?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          email?: string | null
+          hiking_styles?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          location?: string | null
+          nickname?: string | null
+          provider?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          created_at: string | null
+          id: string
+          reason: string | null
+          reporter_id: string | null
+          target_id: string | null
+          target_type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+          reporter_id?: string | null
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+          reporter_id?: string | null
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Relationships: []
+      }
+      shared_completion: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          created_by: string
+          group_id: string | null
+          id: string
+          mountain_id: number | null
+          plan_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          created_by: string
+          group_id?: string | null
+          id?: string
+          mountain_id?: number | null
+          plan_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string
+          group_id?: string | null
+          id?: string
+          mountain_id?: number | null
+          plan_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_shared_completion_group"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "hiking_group"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_shared_completion_plan"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "hiking_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_shared_completion_user"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      shared_completion_participants: {
+        Row: {
+          id: string
+          shared_completion_id: string
+          user_id: string
+          verified: boolean | null
+          verified_at: string | null
+        }
+        Insert: {
+          id?: string
+          shared_completion_id: string
+          user_id: string
+          verified?: boolean | null
+          verified_at?: string | null
+        }
+        Update: {
+          id?: string
+          shared_completion_id?: string
+          user_id?: string
+          verified?: boolean | null
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_shared_completion"
+            columns: ["shared_completion_id"]
+            isOneToOne: false
+            referencedRelation: "shared_completion"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_shared_completion_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      trails: {
+        Row: {
+          course_type: string | null
+          created_at: string | null
+          description: string | null
+          difficulty: string | null
+          distance_km: number | null
+          duration_minutes: number | null
+          elevation_gain_m: number | null
+          id: string
+          is_popular: boolean | null
+          mountain_id: number
+          name: string
+          starting_point: string | null
+        }
+        Insert: {
+          course_type?: string | null
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          distance_km?: number | null
+          duration_minutes?: number | null
+          elevation_gain_m?: number | null
+          id?: string
+          is_popular?: boolean | null
+          mountain_id: number
+          name: string
+          starting_point?: string | null
+        }
+        Update: {
+          course_type?: string | null
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          distance_km?: number | null
+          duration_minutes?: number | null
+          elevation_gain_m?: number | null
+          id?: string
+          is_popular?: boolean | null
+          mountain_id?: number
+          name?: string
+          starting_point?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_trail_mountain"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_achievements: {
+        Row: {
+          badge_id: string
+          earned_at: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          badge_id: string
+          earned_at?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          badge_id?: string
+          earned_at?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_challenges: {
+        Row: {
+          challenge_id: string
+          completed: boolean | null
+          completed_at: string | null
+          id: string
+          joined_at: string | null
+          progress: number | null
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          completed?: boolean | null
+          completed_at?: string | null
+          id?: string
+          joined_at?: string | null
+          progress?: number | null
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          completed?: boolean | null
+          completed_at?: string | null
+          id?: string
+          joined_at?: string | null
+          progress?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_user_challenge_challenge"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_challenge_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          nickname: string | null
+          profile_image: string | null
+          provider: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id: string
+          is_active?: boolean | null
+          nickname?: string | null
+          profile_image?: string | null
+          provider?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          nickname?: string | null
+          profile_image?: string | null
+          provider?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
