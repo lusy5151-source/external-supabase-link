@@ -40,7 +40,7 @@ const MountainList = () => {
       if (row.status === "pending" && user && row.created_by === user.id) return true;
       return false;
     });
-    return [...mountains, ...visibleUserMountains];
+    return [...dbMountains, ...visibleUserMountains];
   }, [userMountainsAsMountains, userMountains, user]);
 
   const totalBaekdu = mountains.filter((m) => m.is_baekdu).length;
