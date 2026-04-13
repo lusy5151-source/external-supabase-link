@@ -19,6 +19,7 @@ type SortKey = "name" | "height" | "popularity";
 type ViewMode = "all" | "baekdu" | "region" | "oreum" | "full";
 
 const MountainList = () => {
+  const { mountains: dbMountains } = useMountains();
   const { isCompleted, toggleComplete, completedCount } = useStore();
   const { user } = useAuth();
   const { userMountainsAsMountains, userMountains } = useUserMountains();
