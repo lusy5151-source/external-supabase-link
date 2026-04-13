@@ -279,7 +279,7 @@ export default function SummitClaimPage() {
 
       const { data: urlData } = supabase.storage.from("summit-photos").getPublicUrl(filePath);
 
-      const { error: insertError } = await supabase
+      const { error: insertError } = await (supabase as any)
         .from("summit_claims")
         .insert({
           user_id: user.id,

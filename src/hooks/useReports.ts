@@ -22,7 +22,7 @@ export const useReports = () => {
     }) => {
       if (!user) throw new Error("로그인이 필요합니다.");
 
-      const { error } = await supabase.from("reports").insert({
+      const { error } = await (supabase as any).from("reports").insert({
         reporter_id: user.id,
         target_type: targetType,
         target_id: targetId,

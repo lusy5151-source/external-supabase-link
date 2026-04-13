@@ -101,7 +101,7 @@ const PlanDetailPage = () => {
   useEffect(() => {
     if (!user || !id) return;
     const checkAccess = async () => {
-      const { data } = await supabase.rpc("can_access_plan_chat", {
+      const { data } = await (supabase as any).rpc("can_access_plan_chat", {
         _user_id: user.id,
         _plan_id: id,
       });
@@ -185,7 +185,7 @@ const PlanDetailPage = () => {
     if (!plan || !id || !user) return;
     setCompleting(true);
 
-    const { data: acceptedApps } = await supabase
+    const { data: acceptedApps } = await (supabase as any)
       .from("plan_applications")
       .select("user_id")
       .eq("plan_id", id)
@@ -197,7 +197,7 @@ const PlanDetailPage = () => {
       ...(acceptedApps as any[] || []).map((a) => a.user_id),
     ]);
 
-    const { data: completion, error } = await supabase
+    const { data: completion, error } = await (supabase as any)
       .from("shared_completions")
       .insert({
         mountain_id: plan.mountain_id,

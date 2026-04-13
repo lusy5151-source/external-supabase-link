@@ -32,11 +32,11 @@ export function usePioneerBadges(userId?: string) {
         if (isNaN(mountainId)) continue;
 
         // Try to get mountain name from user_mountains
-        const { data: mtn } = await supabase
+        const { data: mtn } = await (supabase as any)
           .from("user_mountains")
           .select("name_ko")
           .eq("mountain_id", mountainId)
-          .maybeSingle() as any;
+          .maybeSingle();
 
         results.push({
           mountainId,

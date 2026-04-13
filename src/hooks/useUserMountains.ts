@@ -47,7 +47,7 @@ export function toMountain(row: UserMountainRow): Mountain & { isUserCreated: tr
     lat: row.lat || 0,
     lng: row.lng || 0,
     is_baekdu: false,
-    popularity: 1,
+    popularity: 1 as any,
     isUserCreated: true,
     createdBy: row.created_by,
     dbId: row.id,
@@ -63,7 +63,7 @@ export function useUserMountains() {
     queryKey: ["user-mountains", user?.id],
     queryFn: async () => {
       // Fetch all visible mountains (RLS handles visibility: active + own pending + admin)
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("user_mountains")
         .select("*")
         .order("created_at", { ascending: false });
@@ -75,7 +75,7 @@ export function useUserMountains() {
   const createMountain = useMutation({
     mutationFn: async (input: CreateMountainInput) => {
       if (!user) throw new Error("로그인이 필요합니다");
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("user_mountains")
         .insert({
           name_ko: input.name_ko,
