@@ -8,15 +8,21 @@ export function useSharedCompletionCounts(): SharedCompletionData[] {
   const [data, setData] = useState<SharedCompletionData[]>([]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setData([]);
+      return;
+    }
 
-    (async () => {
+    let cancelled = false;
+
+    const fetchData = async () => {
       try {
         const { data: myParts } = await supabase
           .from("shared_completion_participants")
           .select("shared_completion_id")
           .eq("user_id", user.id);
 
+        if (cancelled) return;
         if (!myParts || myParts.length === 0) { setData([]); return; }
 
         const scIds = myParts.map((p: any) => p.shared_completion_id);
@@ -26,6 +32,7 @@ export function useSharedCompletionCounts(): SharedCompletionData[] {
           .select("shared_completion_id")
           .in("shared_completion_id", scIds);
 
+        if (cancelled) return;
         if (!allParts) { setData([]); return; }
 
         const countMap = new Map<string, number>();
@@ -38,9 +45,13 @@ export function useSharedCompletionCounts(): SharedCompletionData[] {
           participant_count: count,
         })));
       } catch (e) {
-        console.error("Failed to fetch shared completion counts:", e);
+        if (!cancelled) console.error("Failed to fetch shared completion counts:", e);
       }
-    })();
+    };
+
+    fetchData();
+
+    return () => { cancelled = true; };
   }, [user]);
 
   return data;
