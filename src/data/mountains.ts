@@ -1,3 +1,8 @@
+export const regions = ["서울·경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"] as const;
+export type Region = (typeof regions)[number];
+
+export const baekduMountains: Mountain[] = [];
+
 export interface TrailInfo {
   name: string;
   distance: string;
