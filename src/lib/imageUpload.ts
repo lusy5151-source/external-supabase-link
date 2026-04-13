@@ -1,31 +1,83 @@
-export const IMAGE_ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif";
+import imageCompression from "browser-image-compression";
+import { toast } from "@/hooks/use-toast";
 
-type CompressTarget = "profile" | "general";
+const MAX_FILE_SIZE_MB = 50;
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"];
 
-const MAX_SIZES: Record<CompressTarget, { width: number; quality: number }> = {
-  profile: { width: 400, quality: 0.8 },
-  general: { width: 1200, quality: 0.75 },
+export type ImageUploadPreset = "general" | "profile" | "summit";
+
+const PRESET_OPTIONS: Record<ImageUploadPreset, { maxWidthOrHeight: number; quality: number }> = {
+  general: { maxWidthOrHeight: 1920, quality: 0.8 },
+  profile: { maxWidthOrHeight: 400, quality: 0.85 },
+  summit: { maxWidthOrHeight: 1920, quality: 0.85 },
 };
 
-export async function compressImage(file: File, target: CompressTarget = "general"): Promise<File | null> {
-  try {
-    let processFile = file;
-    if (file.type === "image/heic" || file.type === "image/heif" || file.name.toLowerCase().endsWith(".heic")) {
-      const heic2any = (await import("heic2any")).default;
-      const blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 }) as Blob;
-      processFile = new File([blob], file.name.replace(/\.heic$/i, ".jpg"), { type: "image/jpeg" });
+function getFileExtension(name: string): string {
+  return name.slice(name.lastIndexOf(".")).toLowerCase();
+}
+
+function isAllowedFile(file: File): boolean {
+  const ext = getFileExtension(file.name);
+  return ALLOWED_EXTENSIONS.includes(ext) || ALLOWED_TYPES.includes(file.type);
+}
+
+function isHeicFile(file: File): boolean {
+  const ext = getFileExtension(file.name);
+  return ext === ".heic" || ext === ".heif" || file.type === "image/heic" || file.type === "image/heif";
+}
+
+async function convertHeicToJpeg(file: File): Promise<File> {
+  const heic2any = (await import("heic2any")).default;
+  const blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.92 });
+  const resultBlob = Array.isArray(blob) ? blob[0] : blob;
+  return new File([resultBlob], file.name.replace(/\.(heic|heif)$/i, ".jpg"), { type: "image/jpeg" });
+}
+
+export async function compressImage(file: File, preset: ImageUploadPreset = "general"): Promise<File | null> {
+  if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+    toast({ title: "파일 크기 초과", description: `최대 ${MAX_FILE_SIZE_MB}MB까지 업로드할 수 있습니다.`, variant: "destructive" });
+    return null;
+  }
+  if (!isAllowedFile(file)) {
+    toast({ title: "지원하지 않는 형식", description: "JPG, PNG, WEBP, HEIC 형식만 업로드할 수 있습니다.", variant: "destructive" });
+    return null;
+  }
+
+  let processedFile = file;
+  if (isHeicFile(file)) {
+    try {
+      processedFile = await convertHeicToJpeg(file);
+    } catch (error) {
+      console.error("HEIC conversion failed:", error);
+      toast({ title: "HEIC 변환 실패", description: "JPG 또는 PNG로 변환 후 업로드해주세요.", variant: "destructive" });
+      return null;
     }
-    const { default: imageCompression } = await import("browser-image-compression");
-    const { width, quality } = MAX_SIZES[target];
-    const compressed = await imageCompression(processFile, {
-      maxWidthOrHeight: width,
-      initialQuality: quality,
+  }
+
+  const options = PRESET_OPTIONS[preset];
+  try {
+    const compressed = await imageCompression(processedFile, {
+      maxWidthOrHeight: options.maxWidthOrHeight,
+      initialQuality: options.quality,
       useWebWorker: true,
       fileType: "image/jpeg",
     });
-    return new File([compressed], processFile.name, { type: "image/jpeg" });
-  } catch (err) {
-    console.error("Image compression failed:", err);
-    return null;
+    return compressed;
+  } catch (error) {
+    console.error("Image compression failed:", error);
+    return processedFile;
   }
 }
+
+export async function compressImageToDataUrl(file: File, preset: ImageUploadPreset = "general"): Promise<string | null> {
+  const compressed = await compressImage(file, preset);
+  if (!compressed) return null;
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target?.result as string);
+    reader.readAsDataURL(compressed);
+  });
+}
+
+export const IMAGE_ACCEPT = ".jpg,.jpeg,.png,.webp,.heic,.heif";
