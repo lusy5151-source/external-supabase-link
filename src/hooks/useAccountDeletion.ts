@@ -12,7 +12,7 @@ export const useAccountDeletion = () => {
     queryKey: ["account-deletion", user?.id],
     queryFn: async () => {
       if (!user) return null;
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("account_deletion_requests")
         .select("*")
         .eq("user_id", user.id)
@@ -27,7 +27,7 @@ export const useAccountDeletion = () => {
   const requestDeletion = useMutation({
     mutationFn: async (reason?: string) => {
       if (!user) throw new Error("로그인이 필요합니다.");
-      const { error } = await supabase.from("account_deletion_requests").insert({
+      const { error } = await (supabase as any).from("account_deletion_requests").insert({
         user_id: user.id,
         reason,
       });
@@ -48,7 +48,7 @@ export const useAccountDeletion = () => {
   const cancelDeletion = useMutation({
     mutationFn: async () => {
       if (!user || !pendingRequest) throw new Error("취소할 요청이 없습니다.");
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("account_deletion_requests")
         .update({ status: "cancelled" })
         .eq("id", pendingRequest.id)

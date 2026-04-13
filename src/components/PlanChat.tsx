@@ -8,6 +8,8 @@ import { Send } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 
+const db = supabase as any;
+
 interface Message {
   id: string;
   plan_id: string;
@@ -35,17 +37,16 @@ export default function PlanChat({ planId }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const fetchMessages = useCallback(async () => {
-    const { data } = await supabase
+    const { data } = await db
       .from("plan_messages")
       .select("*")
       .eq("plan_id", planId)
       .order("created_at", { ascending: true })
       .limit(200);
 
-    const msgs = (data as any[] || []) as Message[];
+    const msgs = (data || []) as Message[];
     setMessages(msgs);
 
-    // Fetch profiles for all message senders
     const userIds = [...new Set(msgs.map((m) => m.user_id))];
     if (userIds.length > 0) {
       const { data: profileData } = await supabase
@@ -53,16 +54,13 @@ export default function PlanChat({ planId }: Props) {
         .select("user_id, nickname, avatar_url")
         .in("user_id", userIds);
       const pMap = new Map<string, Profile>();
-      (profileData as any[] || []).forEach((p) => pMap.set(p.user_id, p));
+      ((profileData as any[]) || []).forEach((p) => pMap.set(p.user_id, p));
       setProfiles(pMap);
     }
   }, [planId]);
 
-  useEffect(() => {
-    fetchMessages();
-  }, [fetchMessages]);
+  useEffect(() => { fetchMessages(); }, [fetchMessages]);
 
-  // Realtime subscription
   useEffect(() => {
     const channel = supabase
       .channel(`plan-chat-${planId}`)
@@ -72,8 +70,6 @@ export default function PlanChat({ planId }: Props) {
         async (payload) => {
           const newMsg = payload.new as Message;
           setMessages((prev) => [...prev, newMsg]);
-
-          // Fetch profile if not cached
           if (!profiles.has(newMsg.user_id)) {
             const { data } = await supabase
               .from("profiles")
@@ -87,11 +83,9 @@ export default function PlanChat({ planId }: Props) {
         }
       )
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, [planId]);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -101,11 +95,11 @@ export default function PlanChat({ planId }: Props) {
   const handleSend = async () => {
     if (!user || !input.trim()) return;
     setSending(true);
-    await supabase.from("plan_messages").insert({
+    await db.from("plan_messages").insert({
       plan_id: planId,
       user_id: user.id,
       message: input.trim(),
-    } as any);
+    });
     setInput("");
     setSending(false);
   };
@@ -123,68 +117,39 @@ export default function PlanChat({ planId }: Props) {
 
   return (
     <div className="flex flex-col h-[400px]">
-      {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-3 p-3">
         {messages.length === 0 && (
-          <p className="text-xs text-muted-foreground text-center py-8">
-            아직 메시지가 없습니다. 첫 메시지를 보내보세요!
-          </p>
+          <p className="text-xs text-muted-foreground text-center py-8">아직 메시지가 없습니다.</p>
         )}
         {messages.map((msg) => {
           const isMe = msg.user_id === user?.id;
           const profile = profiles.get(msg.user_id);
           return (
-            <div
-              key={msg.id}
-              className={`flex gap-2 ${isMe ? "flex-row-reverse" : "flex-row"}`}
-            >
+            <div key={msg.id} className={`flex gap-2 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
               {!isMe && (
                 <Avatar className="h-7 w-7 shrink-0 mt-1">
                   <AvatarImage src={profile?.avatar_url || ""} />
-                  <AvatarFallback className="text-[9px]">
-                    {profile?.nickname?.[0] || "?"}
-                  </AvatarFallback>
+                  <AvatarFallback className="text-[9px]">{profile?.nickname?.[0] || "?"}</AvatarFallback>
                 </Avatar>
               )}
               <div className={`max-w-[70%] ${isMe ? "items-end" : "items-start"} flex flex-col`}>
                 {!isMe && (
-                  <span className="text-[10px] text-muted-foreground mb-0.5 px-1">
-                    {profile?.nickname || "사용자"}
-                  </span>
+                  <span className="text-[10px] text-muted-foreground mb-0.5 px-1">{profile?.nickname || "사용자"}</span>
                 )}
-                <div
-                  className={`rounded-2xl px-3 py-2 text-sm break-words ${
-                    isMe
-                      ? "bg-[#C7D66D] text-[#2F403A]"
-                      : "bg-card border border-border text-foreground"
-                  }`}
-                >
+                <div className={`rounded-2xl px-3 py-2 text-sm break-words ${
+                  isMe ? "bg-primary text-primary-foreground" : "bg-card border border-border text-foreground"
+                }`}>
                   {msg.message}
                 </div>
-                <span className="text-[9px] text-muted-foreground mt-0.5 px-1">
-                  {formatTime(msg.created_at)}
-                </span>
+                <span className="text-[9px] text-muted-foreground mt-0.5 px-1">{formatTime(msg.created_at)}</span>
               </div>
             </div>
           );
         })}
       </div>
-
-      {/* Input */}
       <div className="border-t border-border p-3 flex gap-2">
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="메시지를 입력하세요..."
-          className="rounded-full"
-        />
-        <Button
-          onClick={handleSend}
-          disabled={sending || !input.trim()}
-          size="icon"
-          className="rounded-full shrink-0 bg-[#C7D66D] hover:bg-[#b5c45d] text-[#2F403A]"
-        >
+        <Input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder="메시지를 입력하세요..." className="rounded-full" />
+        <Button onClick={handleSend} disabled={sending || !input.trim()} size="icon" className="rounded-full shrink-0">
           <Send className="h-4 w-4" />
         </Button>
       </div>
