@@ -63,6 +63,7 @@ const FeedPage = () => {
 };
 
 function DemoFeedView() {
+  const { mountains } = useMountains();
   return (
     <div className="space-y-5 pb-24 max-w-lg mx-auto">
       <h1 className="text-xl font-bold text-foreground">피드</h1>
@@ -74,6 +75,7 @@ function DemoFeedView() {
 }
 
 function ActivityCard({ item }: { item: ActivityFeedItem }) {
+  const { mountains } = useMountains();
   const mt = item.mountain_id ? mountains.find((m) => m.id === item.mountain_id) : null;
   const profiles = item.participant_profiles || [];
   return (

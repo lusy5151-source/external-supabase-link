@@ -149,6 +149,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
 }
 
 function DemoRecordsView() {
+  const { mountains } = useMountains();
   return (
     <div className="space-y-5 pb-24 max-w-lg mx-auto">
       <div className="flex items-center justify-between">

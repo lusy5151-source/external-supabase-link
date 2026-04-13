@@ -29,7 +29,6 @@ import { cn } from "@/lib/utils";
 
 // Convert dataURL to File
 function dataURLtoFile(dataUrl: string, filename: string): File {
-  const { mountains } = useMountains();
   const arr = dataUrl.split(",");
   const mime = arr[0].match(/:(.*?);/)?.[1] || "image/jpeg";
   const bstr = atob(arr[1]);
@@ -40,6 +39,7 @@ function dataURLtoFile(dataUrl: string, filename: string): File {
 }
 
 export default function SummitClaimPage() {
+  const { mountains } = useMountains();
   const { user } = useAuth();
   const { toast } = useToast();
   const { plans } = useHikingPlans();
