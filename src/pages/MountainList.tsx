@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
-import { mountains, regions } from "@/data/mountains";
+import { regions } from "@/data/mountains";
 import type { Mountain } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { useStore } from "@/context/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Search, CheckCircle2, Circle, ChevronRight, ChevronDown, ArrowUpDown, Mountain as MountainIcon, Star, Smile, MapPin, Flame, User, Clock } from "lucide-react";
