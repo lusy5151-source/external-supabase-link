@@ -1,0 +1,2 @@
+// Lovable integrations
+export {};
