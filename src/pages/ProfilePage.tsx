@@ -27,7 +27,7 @@ import { Separator } from "@/components/ui/separator";
 
 const HIKING_STYLES = [
   { id: "solo", label: "솔로 등산", emoji: "🧍" },
-  const { mountains } = useMountains();
+  
   { id: "trekking", label: "트레킹", emoji: "🥾" },
   { id: "photography", label: "사진촬영", emoji: "📸" },
   { id: "summit", label: "정상 도전", emoji: "⛰️" },
