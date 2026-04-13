@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/contexts/AuthContext";
 import { Mountain, Mail, Lock, Eye, EyeOff, ArrowRight, User, RefreshCw } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 const friendlyError = (msg: string) => {
@@ -180,6 +180,13 @@ const AuthPage = () => {
         <div className="flex items-center gap-3"><div className="h-px flex-1 bg-border" /><span className="text-xs text-muted-foreground">또는</span><div className="h-px flex-1 bg-border" /></div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
+          {isLogin && (
+            <div className="text-right">
+              <Link to="/forgot-password" className="text-xs text-muted-foreground hover:text-primary hover:underline">
+                비밀번호를 잊으셨나요?
+              </Link>
+            </div>
+          )}
           {!isLogin && (
             <div>
               <div className="relative">
