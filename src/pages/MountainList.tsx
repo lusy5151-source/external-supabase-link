@@ -43,8 +43,8 @@ const MountainList = () => {
     return [...dbMountains, ...visibleUserMountains];
   }, [userMountainsAsMountains, userMountains, user]);
 
-  const totalBaekdu = mountains.filter((m) => m.is_baekdu).length;
-  const completedBaekdu = mountains.filter((m) => m.is_baekdu && isCompleted(m.id)).length;
+  const totalBaekdu = dbMountains.filter((m) => m.is_baekdu).length;
+  const completedBaekdu = dbMountains.filter((m) => m.is_baekdu && isCompleted(m.id)).length;
 
   const filterAndSort = (list: any[]) => {
     let filtered = list.filter((m: any) => {
