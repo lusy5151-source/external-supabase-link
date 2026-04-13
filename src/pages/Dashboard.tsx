@@ -86,10 +86,11 @@ const Dashboard = () => {
   }, [plans, isDemo]);
 
   const upcomingMountain = upcomingPlan ? mountains.find((m) => m.id === upcomingPlan.mountain_id) : null;
+  const defaultMountain = mountains[0] || { id: 1, lat: 37.6584, lng: 126.978 };
   const { weather } = useWeather(
-    upcomingMountain?.id || mountains[0].id,
-    upcomingMountain?.lat || mountains[0].lat,
-    upcomingMountain?.lng || mountains[0].lng
+    upcomingMountain?.id || defaultMountain.id,
+    upcomingMountain?.lat || defaultMountain.lat,
+    upcomingMountain?.lng || defaultMountain.lng
   );
 
   const dDay = useMemo(() => {
