@@ -65,8 +65,8 @@ const MountainList = () => {
   };
 
   const allFiltered = useMemo(() => filterAndSort(allMountains), [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, allMountains, showUserOnly]);
-  const baekduFiltered = useMemo(() => filterAndSort(mountains.filter((m) => m.is_baekdu)), [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly]);
-  const oreumFiltered = useMemo(() => filterAndSort(mountains.filter((m) => m.region === "제주" && !m.is_baekdu)), [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly]);
+  const baekduFiltered = useMemo(() => filterAndSort(dbMountains.filter((m) => m.is_baekdu)), [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly, dbMountains]);
+  const oreumFiltered = useMemo(() => filterAndSort(dbMountains.filter((m) => m.region === "제주" && !m.is_baekdu)), [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly, dbMountains]);
 
   const allRegions = [...regions, "기타"] as const;
   const regionGroups = useMemo(() => {
