@@ -35,6 +35,7 @@ const HIKING_STYLES = [
 ];
 
 const ProfilePage = () => {
+  const { mountains } = useMountains();
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const { records, completedCount, totalCompletions } = useStore();

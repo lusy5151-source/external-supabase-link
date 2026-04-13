@@ -36,6 +36,7 @@ interface Profile {
 }
 
 const FriendProfilePage = () => {
+  const { mountains } = useMountains();
   const { userId } = useParams<{ userId: string }>();
   const { user } = useAuth();
   const { fetchUserJournals } = useHikingJournals();
