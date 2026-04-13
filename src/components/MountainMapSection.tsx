@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useMountains } from "@/contexts/MountainsContext";
+import type { Mountain } from "@/data/mountains";
 import { useStore } from "@/context/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSharedCompletions, type SharedCompletion } from "@/hooks/useSharedCompletions";
