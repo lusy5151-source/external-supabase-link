@@ -51,7 +51,7 @@ export function useHikingJournals() {
   const createJournal = async (journal: any) => {
     if (!user) return { error: { message: "Not authenticated" } };
     const { data, error } = await supabase.from("hiking_journals").insert({ ...journal, user_id: user.id } as any).select().single();
-    return { data: data as HikingJournal | null, error };
+    return { data: data as unknown as HikingJournal | null, error };
   };
 
   const updateJournal = async (id: string, updates: Partial<HikingJournal>) => {
