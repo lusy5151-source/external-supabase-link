@@ -12,6 +12,7 @@ const MapView = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const navigate = useNavigate();
+  const { mountains } = useMountains();
   const { isCompleted, completedCount } = useStore();
   const { user } = useAuth();
   const { fetchSharedCompletions } = useSharedCompletions();

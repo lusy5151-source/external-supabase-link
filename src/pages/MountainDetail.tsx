@@ -54,6 +54,7 @@ async function resizeImage(file: File): Promise<string> {
 
 const MountainDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const { mountains } = useMountains();
   const { userMountains } = useUserMountains();
 
   // Try static mountains first, then user-created
