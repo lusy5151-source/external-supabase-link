@@ -51,6 +51,8 @@ const SummitClaimPage = lazy(() => import("@/pages/SummitClaimPage"));
 const PrivacyPolicyPage = lazy(() => import("@/pages/PrivacyPolicyPage"));
 const DeleteAccountPage = lazy(() => import("@/pages/DeleteAccountPage"));
 const TermsOfServicePage = lazy(() => import("@/pages/TermsOfServicePage"));
+const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -117,6 +119,8 @@ const AppRoutes = () => {
       <Route path="/privacy-policy" element={<LazyPage><PrivacyPolicyPage /></LazyPage>} />
       <Route path="/terms-of-service" element={<LazyPage><TermsOfServicePage /></LazyPage>} />
       <Route path="/delete-account" element={<LazyPage><DeleteAccountPage /></LazyPage>} />
+      <Route path="/forgot-password" element={<LazyPage><ForgotPasswordPage /></LazyPage>} />
+      <Route path="/reset-password" element={<LazyPage><ResetPasswordPage /></LazyPage>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
