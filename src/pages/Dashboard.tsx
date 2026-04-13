@@ -1,4 +1,5 @@
 import { useStore } from "@/context/StoreContext";
+import PasswordSetupBanner from "@/components/PasswordSetupBanner";
 import { useMountains } from "@/contexts/MountainsContext";
 import { baekduMountains } from "@/data/mountains";
 import { demoJournals, demoSummitClaims, demoKingOfDay, demoActivityFeed, demoProgress, type DemoJournal } from "@/data/demoFeed";
@@ -183,6 +184,9 @@ const Dashboard = () => {
   return (
     <ErrorBoundary fallbackMessage="대시보드를 불러오는 중 문제가 발생했습니다">
       <div className="-mx-4 -mt-6 pb-24">
+        <div className="px-4 pt-4">
+          <PasswordSetupBanner />
+        </div>
         {!isDemo && <AchievementModal badge={newlyEarned} onDismiss={dismissNewBadge} />}
         {/* OnboardingTutorial is now in Layout */}
 
