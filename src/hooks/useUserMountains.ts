@@ -47,7 +47,7 @@ export function toMountain(row: UserMountainRow): Mountain & { isUserCreated: tr
     lat: row.lat || 0,
     lng: row.lng || 0,
     is_baekdu: false,
-    popularity: 1 as any,
+    trails: [],
     isUserCreated: true,
     createdBy: row.created_by,
     dbId: row.id,
