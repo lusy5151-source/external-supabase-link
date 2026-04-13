@@ -41,7 +41,7 @@ const MountainList = () => {
       return false;
     });
     return [...dbMountains, ...visibleUserMountains];
-  }, [userMountainsAsMountains, userMountains, user]);
+  }, [dbMountains, userMountainsAsMountains, userMountains, user]);
 
   const totalBaekdu = dbMountains.filter((m) => m.is_baekdu).length;
   const completedBaekdu = dbMountains.filter((m) => m.is_baekdu && isCompleted(m.id)).length;
