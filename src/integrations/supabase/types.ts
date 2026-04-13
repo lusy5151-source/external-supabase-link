@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_deletion_requests: {
+        Row: {
+          created_at: string | null
+          id: string
+          processed_at: string | null
+          reason: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          processed_at?: string | null
+          reason?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          processed_at?: string | null
+          reason?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       achievements: {
         Row: {
           achieved_at: string | null
@@ -287,6 +314,36 @@ export type Database = {
           created_at?: string | null
           id?: string
           requester_id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      group_invitations: {
+        Row: {
+          created_at: string | null
+          group_id: string
+          id: string
+          invitee_id: string
+          inviter_id: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          group_id: string
+          id?: string
+          invitee_id: string
+          inviter_id: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          group_id?: string
+          id?: string
+          invitee_id?: string
+          inviter_id?: string
           status?: string | null
           updated_at?: string | null
         }
@@ -678,6 +735,36 @@ export type Database = {
           },
         ]
       }
+      plan_applications: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string | null
+          plan_id: string
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          plan_id: string
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          plan_id?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       plan_edit_history: {
         Row: {
           created_at: string | null
@@ -722,6 +809,30 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      plan_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          plan_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          plan_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          plan_id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       plan_notifications: {
         Row: {
@@ -1024,6 +1135,80 @@ export type Database = {
           },
         ]
       }
+      summit_claims: {
+        Row: {
+          claimed_at: string
+          group_id: string | null
+          id: string
+          latitude: number
+          longitude: number
+          mountain_id: number
+          photo_url: string | null
+          summit_id: string
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          group_id?: string | null
+          id?: string
+          latitude: number
+          longitude: number
+          mountain_id: number
+          photo_url?: string | null
+          summit_id: string
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string
+          group_id?: string | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          mountain_id?: number
+          photo_url?: string | null
+          summit_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "summit_claims_summit_id_fkey"
+            columns: ["summit_id"]
+            isOneToOne: false
+            referencedRelation: "summits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      summits: {
+        Row: {
+          created_at: string | null
+          elevation: number
+          id: string
+          latitude: number
+          longitude: number
+          mountain_id: number
+          summit_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          elevation?: number
+          id?: string
+          latitude: number
+          longitude: number
+          mountain_id: number
+          summit_name: string
+        }
+        Update: {
+          created_at?: string | null
+          elevation?: number
+          id?: string
+          latitude?: number
+          longitude?: number
+          mountain_id?: number
+          summit_name?: string
+        }
+        Relationships: []
+      }
       trails: {
         Row: {
           course_type: string | null
@@ -1098,6 +1283,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string | null
+          id: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string | null
+          id?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
       user_challenges: {
         Row: {
           challenge_id: string
@@ -1142,6 +1348,42 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      user_mountains: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          mountain_id: number
+          note: string | null
+          photo_url: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          mountain_id: number
+          note?: string | null
+          photo_url?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          mountain_id?: number
+          note?: string | null
+          photo_url?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       users: {
         Row: {
