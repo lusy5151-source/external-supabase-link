@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,6 +22,7 @@ interface Props {
 }
 
 export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
+  const { mountains } = useMountains();
   const { user } = useAuth();
   const { toast } = useToast();
   const [plans, setPlans] = useState<HikingPlan[]>([]);

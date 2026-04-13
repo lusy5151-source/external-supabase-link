@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { getMockWeather } from "@/data/mockWeather";
 import { useHikingPlans, type PlanParticipant, type HikingPlan, type PlanEditHistory } from "@/hooks/useHikingPlans";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,6 +24,7 @@ import PlanChat from "@/components/PlanChat";
 import PlanApplicationManager from "@/components/PlanApplicationManager";
 
 const conditionIcons: Record<string, any> = {
+  const { mountains } = useMountains();
   "맑음": Sun, "구름": CloudSun, "흐림": Cloud, "비": CloudRain, "눈": CloudSnow,
 };
 

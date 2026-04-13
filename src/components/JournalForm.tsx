@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { useHikingJournals, type HikingJournal } from "@/hooks/useHikingJournals";
 import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
@@ -31,6 +31,7 @@ const weatherOptions = ["☀️ 맑음", "⛅ 구름", "☁️ 흐림", "🌧️
 const difficultyOptions = ["쉬움", "보통", "어려움", "매우 어려움"];
 const visibilityOptions = [
   { value: "public", label: "전체 공개", icon: Globe },
+  const { mountains } = useMountains();
   { value: "friends", label: "친구 공개", icon: Users },
   { value: "private", label: "나만 보기", icon: Lock },
 ];

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingJournals, type HikingJournal, type JournalComment } from "@/hooks/useHikingJournals";
 import { useFriends } from "@/hooks/useFriends";
@@ -16,6 +16,7 @@ import { ko } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
 const visibilityConfig = {
+  const { mountains } = useMountains();
   public: { icon: Globe, label: "전체 공개", color: "text-primary" },
   friends: { icon: Users, label: "친구 공개", color: "text-amber-500" },
   private: { icon: Lock, label: "나만 보기", color: "text-muted-foreground" },

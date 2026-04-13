@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingPlans } from "@/hooks/useHikingPlans";
 import { useHikingGroups } from "@/hooks/useHikingGroups";
@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 
 // Convert dataURL to File
 function dataURLtoFile(dataUrl: string, filename: string): File {
+  const { mountains } = useMountains();
   const arr = dataUrl.split(",");
   const mime = arr[0].match(/:(.*?);/)?.[1] || "image/jpeg";
   const bstr = atob(arr[1]);

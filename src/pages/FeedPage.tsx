@@ -8,12 +8,13 @@ import { JournalCard } from "@/components/JournalCard";
 import { SharedCompletionCard } from "@/components/SharedCompletionCard";
 import { StackedAvatars } from "@/components/StackedAvatars";
 import { demoJournals, demoActivityFeed, type DemoJournal } from "@/data/demoFeed";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { Mountain, Compass, Users, Newspaper, ChevronRight, Heart, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const FeedPage = () => {
+  const { mountains } = useMountains();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { fetchFeed } = useHikingJournals();

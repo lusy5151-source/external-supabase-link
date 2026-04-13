@@ -1,11 +1,12 @@
 import { useWeather, useForecast } from "@/hooks/useWeather";
 import { getOutfitRecommendations } from "@/data/mockWeather";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { Sun, Cloud, CloudRain, CloudSnow, Wind, Droplets, Thermometer, CloudSun, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 
 const conditionIcons: Record<string, any> = {
+  const { mountains } = useMountains();
   "맑음": Sun,
   "구름": CloudSun,
   "흐림": Cloud,

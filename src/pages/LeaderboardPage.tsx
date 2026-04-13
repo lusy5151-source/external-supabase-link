@@ -2,7 +2,7 @@ import { useLeaderboard } from "@/hooks/useSummits";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOnboarding } from "@/contexts/OnboardingContext";
 import { demoLeaderboard, demoGroups } from "@/data/demoFeed";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +10,7 @@ import { Crown, Flag, Users, Mountain, Loader2, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const LeaderboardPage = () => {
+  const { mountains } = useMountains();
   const { user } = useAuth();
   const { topClaimers, mountainLeaders, clubRankings, loading } = useLeaderboard();
   const { isOnboarding } = useOnboarding();

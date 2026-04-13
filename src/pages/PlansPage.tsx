@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useOnboarding } from "@/contexts/OnboardingContext";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { useHikingPlans } from "@/hooks/useHikingPlans";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { ko } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 
 const PlansPage = () => {
+  const { mountains } = useMountains();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { plans, loading, notifications, markNotificationRead, joinByCode } = useHikingPlans();

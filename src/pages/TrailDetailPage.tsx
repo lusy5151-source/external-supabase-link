@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import MountainMascot from "@/components/MountainMascot";
 import {
   ArrowLeft, Route, Clock, MapPin, Ruler, TrendingUp, Star, Car, Bus,
@@ -51,6 +51,7 @@ interface TrailDetail {
 }
 
 function formatDuration(minutes: number): string {
+  const { mountains } = useMountains();
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   if (h === 0) return `${m}분`;

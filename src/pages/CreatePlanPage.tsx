@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { getMockWeather } from "@/data/mockWeather";
 import { useHikingPlans } from "@/hooks/useHikingPlans";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
 const conditionIcons: Record<string, any> = {
+  const { mountains } = useMountains();
   "맑음": Sun, "구름": CloudSun, "흐림": Cloud, "비": CloudRain, "눈": CloudSnow,
 };
 

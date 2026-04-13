@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -16,6 +16,7 @@ interface Props {
 }
 
 export default function DuplicateReportModal({ reportedMountainId, open, onOpenChange }: Props) {
+  const { mountains } = useMountains();
   const { user } = useAuth();
   const { userMountainsAsMountains } = useUserMountains();
   const [search, setSearch] = useState("");

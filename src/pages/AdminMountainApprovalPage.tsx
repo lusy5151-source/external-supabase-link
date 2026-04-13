@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { Check, X, AlertTriangle, Loader2, Mountain, Clock, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Navigate, Link } from "react-router-dom";
@@ -33,6 +33,7 @@ interface DuplicateReport {
 }
 
 const AdminMountainApprovalPage = () => {
+  const { mountains } = useMountains();
   const { user } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const [tab, setTab] = useState<"pending" | "active" | "rejected">("pending");
