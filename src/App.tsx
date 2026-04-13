@@ -132,6 +132,7 @@ const App = () => {
         <TooltipProvider>
           <AuthProvider>
             <OnboardingProvider>
+            <MountainsProvider>
             <StoreProvider>
               <Toaster />
               <Sonner />
@@ -145,6 +146,7 @@ const App = () => {
                 </Layout>
               </BrowserRouter>
             </StoreProvider>
+            </MountainsProvider>
             </OnboardingProvider>
           </AuthProvider>
         </TooltipProvider>
