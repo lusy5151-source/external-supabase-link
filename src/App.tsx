@@ -1,27 +1,155 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Index from "./pages/Index.tsx";
-import NotFound from "./pages/NotFound.tsx";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { StoreProvider } from "@/context/StoreContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { OnboardingProvider } from "@/contexts/OnboardingContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import Layout from "@/components/Layout";
+import SplashScreen from "@/components/SplashScreen";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import MagazinePopup from "@/components/MagazinePopup";
+import NotFound from "./pages/NotFound";
+import { useState, useCallback, lazy, Suspense } from "react";
+import PageSkeleton from "@/components/PageSkeleton";
+import DashboardSkeleton from "@/components/DashboardSkeleton";
+import { useProfileSync } from "@/hooks/useProfileSync";
 
-const queryClient = new QueryClient();
+// Eagerly loaded (auth only)
+import AuthPage from "@/pages/AuthPage";
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+// Lazy loaded pages
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const MountainList = lazy(() => import("@/pages/MountainList"));
+const MountainDetail = lazy(() => import("@/pages/MountainDetail"));
+const TrailDetailPage = lazy(() => import("@/pages/TrailDetailPage"));
+const MapView = lazy(() => import("@/pages/MapView"));
+const Records = lazy(() => import("@/pages/Records"));
+const GearPage = lazy(() => import("@/pages/GearPage"));
+const SocialPage = lazy(() => import("@/pages/SocialPage"));
+const AchievementsPage = lazy(() => import("@/pages/AchievementsPage"));
+const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
+const PlansPage = lazy(() => import("@/pages/PlansPage"));
+const CreatePlanPage = lazy(() => import("@/pages/CreatePlanPage"));
+const PlanDetailPage = lazy(() => import("@/pages/PlanDetailPage"));
+const FeedPage = lazy(() => import("@/pages/FeedPage"));
+const FriendProfilePage = lazy(() => import("@/pages/FriendProfilePage"));
+const ChallengePage = lazy(() => import("@/pages/ChallengePage"));
+const SharedCompletionPage = lazy(() => import("@/pages/SharedCompletionPage"));
+const GroupDetailPage = lazy(() => import("@/pages/GroupDetailPage"));
+const KakaoCallback = lazy(() => import("@/pages/KakaoCallback"));
+const AdminAnnouncementsPage = lazy(() => import("@/pages/AdminAnnouncementsPage"));
+const LeaderboardPage = lazy(() => import("@/pages/LeaderboardPage"));
+const MagazinePage = lazy(() => import("@/pages/MagazinePage"));
+const AdminMagazinePage = lazy(() => import("@/pages/AdminMagazinePage"));
+const AdminReportsPage = lazy(() => import("@/pages/AdminReportsPage"));
+const AdminMountainApprovalPage = lazy(() => import("@/pages/AdminMountainApprovalPage"));
+const SummitClaimPage = lazy(() => import("@/pages/SummitClaimPage"));
+const PrivacyPolicyPage = lazy(() => import("@/pages/PrivacyPolicyPage"));
+const DeleteAccountPage = lazy(() => import("@/pages/DeleteAccountPage"));
+const TermsOfServicePage = lazy(() => import("@/pages/TermsOfServicePage"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 10 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+    },
+    mutations: {
+      retry: 0,
+    },
+  },
+});
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return <LoadingSpinner message="인증 확인 중..." />;
+  if (!user) return <Navigate to="/auth" replace />;
+  return <>{children}</>;
+}
+
+const LazyPage = ({ children, fallback }: { children: React.ReactNode; fallback?: React.ReactNode }) => (
+  <Suspense fallback={fallback || <PageSkeleton />}>
+    {children}
+  </Suspense>
 );
+
+const AppRoutes = () => {
+  const { user, loading } = useAuth();
+  useProfileSync();
+
+  return (
+    <Routes>
+      <Route path="/auth" element={user && !loading ? <Navigate to="/" replace /> : <AuthPage />} />
+      <Route path="/kakao/callback" element={<LazyPage><KakaoCallback /></LazyPage>} />
+      <Route path="/" element={<LazyPage fallback={<DashboardSkeleton />}><Dashboard /></LazyPage>} />
+      <Route path="/mountains" element={<LazyPage><MountainList /></LazyPage>} />
+      <Route path="/mountains/:id" element={<LazyPage><MountainDetail /></LazyPage>} />
+      <Route path="/trails/:trailId" element={<LazyPage><TrailDetailPage /></LazyPage>} />
+      <Route path="/map" element={<LazyPage><MapView /></LazyPage>} />
+      <Route path="/records" element={<LazyPage><Records /></LazyPage>} />
+      <Route path="/gear" element={<LazyPage><GearPage /></LazyPage>} />
+      <Route path="/social" element={<LazyPage><SocialPage /></LazyPage>} />
+      <Route path="/plans" element={<LazyPage><PlansPage /></LazyPage>} />
+      <Route path="/plans/create" element={<ProtectedRoute><LazyPage><CreatePlanPage /></LazyPage></ProtectedRoute>} />
+      <Route path="/plans/:id" element={<ProtectedRoute><LazyPage><PlanDetailPage /></LazyPage></ProtectedRoute>} />
+      <Route path="/challenges" element={<ProtectedRoute><LazyPage><ChallengePage /></LazyPage></ProtectedRoute>} />
+      <Route path="/achievements" element={<LazyPage><AchievementsPage /></LazyPage>} />
+      <Route path="/feed" element={<LazyPage><FeedPage /></LazyPage>} />
+      <Route path="/shared-completions" element={<ProtectedRoute><LazyPage><SharedCompletionPage /></LazyPage></ProtectedRoute>} />
+      <Route path="/groups" element={<Navigate to="/social" replace />} />
+      <Route path="/groups/:id" element={<ProtectedRoute><LazyPage><GroupDetailPage /></LazyPage></ProtectedRoute>} />
+      <Route path="/profile/:userId" element={<ProtectedRoute><LazyPage><FriendProfilePage /></LazyPage></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute><LazyPage><ProfilePage /></LazyPage></ProtectedRoute>} />
+      <Route path="/admin/announcements" element={<ProtectedRoute><LazyPage><AdminAnnouncementsPage /></LazyPage></ProtectedRoute>} />
+      <Route path="/leaderboard" element={<LazyPage><LeaderboardPage /></LazyPage>} />
+      <Route path="/magazine" element={<LazyPage><MagazinePage /></LazyPage>} />
+      <Route path="/summit-claim" element={<ProtectedRoute><LazyPage><SummitClaimPage /></LazyPage></ProtectedRoute>} />
+      <Route path="/admin/magazine" element={<ProtectedRoute><LazyPage><AdminMagazinePage /></LazyPage></ProtectedRoute>} />
+      <Route path="/admin/reports" element={<ProtectedRoute><LazyPage><AdminReportsPage /></LazyPage></ProtectedRoute>} />
+      <Route path="/admin/mountains" element={<ProtectedRoute><LazyPage><AdminMountainApprovalPage /></LazyPage></ProtectedRoute>} />
+      <Route path="/privacy" element={<LazyPage><PrivacyPolicyPage /></LazyPage>} />
+      <Route path="/privacy-policy" element={<LazyPage><PrivacyPolicyPage /></LazyPage>} />
+      <Route path="/terms-of-service" element={<LazyPage><TermsOfServicePage /></LazyPage>} />
+      <Route path="/delete-account" element={<LazyPage><DeleteAccountPage /></LazyPage>} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
+const App = () => {
+  const [showSplash, setShowSplash] = useState(true);
+  const handleSplashFinish = useCallback(() => setShowSplash(false), []);
+
+  return (
+    <ErrorBoundary fallbackMessage="데이터를 불러오는 중 오류가 발생했습니다.">
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AuthProvider>
+            <OnboardingProvider>
+            <StoreProvider>
+              <Toaster />
+              <Sonner />
+              {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
+              {!showSplash && <MagazinePopup />}
+              <BrowserRouter>
+                <Layout>
+                  <ErrorBoundary fallbackMessage="데이터를 불러오는 중 오류가 발생했습니다.">
+                    <AppRoutes />
+                  </ErrorBoundary>
+                </Layout>
+              </BrowserRouter>
+            </StoreProvider>
+            </OnboardingProvider>
+          </AuthProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
+  );
+};
 
 export default App;
