@@ -42,6 +42,7 @@ const conditionIcons: Record<string, any> = {
 const GOAL_KEY = "wandeng-user-goal";
 
 const Dashboard = () => {
+  const { mountains } = useMountains();
   const { records, completedCount, isCompleted } = useStore();
   const { items: gearItems } = useGearStore();
   const sharedCompletions = useSharedCompletionCounts();
