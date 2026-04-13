@@ -99,7 +99,7 @@ const GroupDetailPage = () => {
     }
 
     // Fetch club summit claims
-    const { data: claimsData } = await supabase
+    const { data: claimsData } = await (supabase as any)
       .from("summit_claims")
       .select("id, user_id, mountain_id, summit_id, photo_url, claimed_at")
       .eq("group_id", id)
@@ -124,7 +124,7 @@ const GroupDetailPage = () => {
       const summitIds = [...new Set(recent.map((c: any) => c.summit_id))];
       const [{ data: profiles }, { data: summits }] = await Promise.all([
         supabase.from("profiles").select("user_id, nickname, avatar_url").in("user_id", userIds),
-        supabase.from("summits").select("id, summit_name").in("id", summitIds),
+        (supabase as any).from("summits").select("id, summit_name").in("id", summitIds),
       ]);
       const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
       const summitMap = new Map((summits || []).map((s: any) => [s.id, s.summit_name]));
@@ -243,7 +243,7 @@ const GroupDetailPage = () => {
       return;
     }
     const { data: urlData } = supabase.storage.from("club-logos").getPublicUrl(path);
-    await supabase.from("hiking_groups").update({ avatar_url: urlData.publicUrl } as any).eq("id", id);
+    await (supabase as any).from("hiking_groups").update({ avatar_url: urlData.publicUrl }).eq("id", id);
     setUploadingLogo(false);
     toast({ title: "로고가 업데이트되었습니다!" });
     loadData();

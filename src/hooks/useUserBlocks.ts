@@ -3,6 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
+interface UserBlock {
+  id: string;
+  blocker_id: string;
+  blocked_id: string;
+  created_at: string;
+}
+
 export const useUserBlocks = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -10,14 +17,14 @@ export const useUserBlocks = () => {
 
   const { data: blockedUsers = [], isLoading } = useQuery({
     queryKey: ["user-blocks", user?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<UserBlock[]> => {
       if (!user) return [];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("user_blocks")
         .select("*")
         .eq("blocker_id", user.id);
       if (error) throw error;
-      return data;
+      return (data || []) as UserBlock[];
     },
     enabled: !!user,
   });
@@ -29,7 +36,7 @@ export const useUserBlocks = () => {
   const blockUser = useMutation({
     mutationFn: async (blockedId: string) => {
       if (!user) throw new Error("로그인이 필요합니다.");
-      const { error } = await supabase.from("user_blocks").insert({
+      const { error } = await (supabase as any).from("user_blocks").insert({
         blocker_id: user.id,
         blocked_id: blockedId,
       });
@@ -47,7 +54,7 @@ export const useUserBlocks = () => {
   const unblockUser = useMutation({
     mutationFn: async (blockedId: string) => {
       if (!user) throw new Error("로그인이 필요합니다.");
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("user_blocks")
         .delete()
         .eq("blocker_id", user.id)

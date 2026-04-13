@@ -279,7 +279,7 @@ export function useHikingJournals() {
       }
     }
 
-    return { data: data as HikingJournal | null, error };
+    return { data: data as unknown as HikingJournal | null, error };
   };
 
   const updateJournal = async (id: string, updates: Partial<HikingJournal>) => {

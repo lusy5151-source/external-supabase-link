@@ -28,11 +28,13 @@ export interface GroupInvitation {
   group_id: string;
   user_id: string;
   invited_by: string | null;
-  type: string; // 'invite' | 'request'
-  status: string; // 'pending' | 'accepted' | 'rejected'
+  type: string;
+  status: string;
   created_at: string;
   profile?: { nickname: string | null; avatar_url: string | null };
 }
+
+const db = supabase as any;
 
 export function useHikingGroups() {
   const { user } = useAuth();
@@ -50,8 +52,8 @@ export function useHikingGroups() {
       setLoading(false);
       return;
     }
-    const groupIds = (memberships as any[]).map((m) => m.group_id);
-    const { data: groups } = await supabase
+    const groupIds = memberships.map((m) => m.group_id);
+    const { data: groups } = await db
       .from("hiking_groups")
       .select("*")
       .in("id", groupIds)
@@ -67,7 +69,7 @@ export function useHikingGroups() {
     });
 
     setMyGroups(
-      ((groups as any[]) || []).map((g) => ({ ...g, member_count: countMap.get(g.id) || 0 }))
+      ((groups as any[]) || []).map((g: any) => ({ ...g, member_count: countMap.get(g.id) || 0 }))
     );
     setLoading(false);
   }, [user]);
@@ -75,7 +77,7 @@ export function useHikingGroups() {
   useEffect(() => { fetchMyGroups(); }, [fetchMyGroups]);
 
   const fetchPublicGroups = async (): Promise<HikingGroup[]> => {
-    const { data } = await supabase
+    const { data } = await db
       .from("hiking_groups")
       .select("*")
       .eq("is_public", true)
@@ -85,7 +87,7 @@ export function useHikingGroups() {
   };
 
   const fetchGroupById = async (groupId: string): Promise<HikingGroup | null> => {
-    const { data } = await supabase
+    const { data } = await db
       .from("hiking_groups")
       .select("*")
       .eq("id", groupId)
@@ -95,16 +97,11 @@ export function useHikingGroups() {
 
   const createGroup = async (params: { name: string; description?: string; is_public?: boolean }) => {
     if (!user) return { error: { message: "Not authenticated" } };
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("hiking_groups")
-      .insert({ ...params, creator_id: user.id } as any)
+      .insert({ ...params, creator_id: user.id })
       .select()
       .single();
-    if (error) {
-      console.error("Failed to create group:", error);
-      const { toast } = await import("sonner");
-      toast.error("저장에 실패했습니다. 다시 시도해주세요.");
-    }
     if (!error && data) {
       await supabase.from("group_members").insert({
         group_id: (data as any).id,
@@ -118,7 +115,7 @@ export function useHikingGroups() {
 
   const deleteGroup = async (groupId: string) => {
     if (!user) return { error: { message: "Not authenticated" } };
-    const { error } = await supabase
+    const { error } = await db
       .from("hiking_groups")
       .delete()
       .eq("id", groupId);
@@ -128,9 +125,9 @@ export function useHikingGroups() {
 
   const updateGroup = async (groupId: string, params: { name?: string; description?: string; is_public?: boolean }) => {
     if (!user) return { error: { message: "Not authenticated" } };
-    const { error } = await supabase
+    const { error } = await db
       .from("hiking_groups")
-      .update(params as any)
+      .update(params)
       .eq("id", groupId);
     if (!error) fetchMyGroups();
     return { error };
@@ -180,26 +177,25 @@ export function useHikingGroups() {
     return (members as any[]).map((m) => ({ ...m, profile: profileMap.get(m.user_id) || null }));
   };
 
-  // Invitations / Join requests
   const sendInvite = async (groupId: string, userId: string) => {
     if (!user) return { error: { message: "Not authenticated" } };
-    const { error } = await supabase
-      .from("group_invitations" as any)
+    const { error } = await db
+      .from("group_invitations")
       .insert({ group_id: groupId, user_id: userId, invited_by: user.id, type: "invite", status: "pending" });
     return { error };
   };
 
   const requestJoin = async (groupId: string) => {
     if (!user) return { error: { message: "Not authenticated" } };
-    const { error } = await supabase
-      .from("group_invitations" as any)
+    const { error } = await db
+      .from("group_invitations")
       .insert({ group_id: groupId, user_id: user.id, type: "request", status: "pending" });
     return { error };
   };
 
   const fetchInvitations = async (groupId: string): Promise<GroupInvitation[]> => {
-    const { data } = await supabase
-      .from("group_invitations" as any)
+    const { data } = await db
+      .from("group_invitations")
       .select("*")
       .eq("group_id", groupId)
       .eq("status", "pending");
@@ -215,8 +211,8 @@ export function useHikingGroups() {
 
   const fetchMyInvitations = async (): Promise<GroupInvitation[]> => {
     if (!user) return [];
-    const { data } = await supabase
-      .from("group_invitations" as any)
+    const { data } = await db
+      .from("group_invitations")
       .select("*")
       .eq("user_id", user.id)
       .eq("type", "invite")
@@ -226,9 +222,9 @@ export function useHikingGroups() {
 
   const respondToInvitation = async (invitationId: string, accept: boolean, groupId?: string) => {
     const status = accept ? "accepted" : "rejected";
-    const { error } = await supabase
-      .from("group_invitations" as any)
-      .update({ status } as any)
+    const { error } = await db
+      .from("group_invitations")
+      .update({ status })
       .eq("id", invitationId);
     if (!error && accept && groupId && user) {
       await supabase.from("group_members").insert({
@@ -242,9 +238,9 @@ export function useHikingGroups() {
   };
 
   const acceptJoinRequest = async (invitationId: string, groupId: string, userId: string) => {
-    const { error } = await supabase
-      .from("group_invitations" as any)
-      .update({ status: "accepted" } as any)
+    const { error } = await db
+      .from("group_invitations")
+      .update({ status: "accepted" })
       .eq("id", invitationId);
     if (!error) {
       await supabase.from("group_members").insert({
@@ -257,9 +253,9 @@ export function useHikingGroups() {
   };
 
   const rejectJoinRequest = async (invitationId: string) => {
-    const { error } = await supabase
-      .from("group_invitations" as any)
-      .update({ status: "rejected" } as any)
+    const { error } = await db
+      .from("group_invitations")
+      .update({ status: "rejected" })
       .eq("id", invitationId);
     return { error };
   };
@@ -275,25 +271,9 @@ export function useHikingGroups() {
   };
 
   return {
-    myGroups,
-    loading,
-    fetchMyGroups,
-    fetchPublicGroups,
-    fetchGroupById,
-    createGroup,
-    updateGroup,
-    deleteGroup,
-    joinGroup,
-    leaveGroup,
-    removeMember,
-    fetchGroupMembers,
-    sendInvite,
-    requestJoin,
-    fetchInvitations,
-    fetchMyInvitations,
-    respondToInvitation,
-    acceptJoinRequest,
-    rejectJoinRequest,
-    searchUsers,
+    myGroups, loading, fetchMyGroups, fetchPublicGroups, fetchGroupById,
+    createGroup, updateGroup, deleteGroup, joinGroup, leaveGroup, removeMember,
+    fetchGroupMembers, sendInvite, requestJoin, fetchInvitations, fetchMyInvitations,
+    respondToInvitation, acceptJoinRequest, rejectJoinRequest, searchUsers,
   };
 }

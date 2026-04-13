@@ -33,7 +33,7 @@ export function useLiveSummitFeed() {
 
     const [{ data: profiles }, { data: summits }] = await Promise.all([
       supabase.from("profiles").select("user_id, nickname, avatar_url").in("user_id", userIds),
-      supabase.from("summits").select("id, summit_name").in("id", summitIds),
+      (supabase as any).from("summits").select("id, summit_name").in("id", summitIds),
     ]);
 
     const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
@@ -49,7 +49,7 @@ export function useLiveSummitFeed() {
 
   const fetchRecent = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from("summit_claims")
       .select("id, user_id, mountain_id, summit_id, photo_url, claimed_at")
       .order("claimed_at", { ascending: false })
@@ -64,7 +64,7 @@ export function useLiveSummitFeed() {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from("summit_claims")
       .select("user_id")
       .gte("claimed_at", todayStart.toISOString());

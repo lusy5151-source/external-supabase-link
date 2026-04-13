@@ -92,7 +92,7 @@ const AdminReportsPage = () => {
 
   const updateStatus = async (id: string, status: string) => {
     setUpdatingId(id);
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("reports")
       .update({ status })
       .eq("id", id);

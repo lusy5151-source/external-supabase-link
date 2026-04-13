@@ -46,10 +46,10 @@ const AdminMountainApprovalPage = () => {
   const fetchData = async () => {
     setLoading(true);
     // Fetch all user mountains
-    const { data: mtns } = await supabase
+    const { data: mtns } = await (supabase as any)
       .from("user_mountains")
       .select("*")
-      .order("created_at", { ascending: false }) as any;
+      .order("created_at", { ascending: false });
 
     const mountainList = (mtns || []) as UserMountainAdmin[];
     setAllMountains(mountainList);
@@ -113,9 +113,9 @@ const AdminMountainApprovalPage = () => {
     duplicateReports.find((r) => r.reported_mountain_id === mountainId);
 
   const handleApprove = async (mountain: UserMountainAdmin) => {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("user_mountains")
-      .update({ status: "active" } as any)
+      .update({ status: "active" })
       .eq("id", mountain.id);
 
     if (error) {
@@ -143,9 +143,9 @@ const AdminMountainApprovalPage = () => {
 
   const handleReject = async () => {
     if (!rejectModal) return;
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("user_mountains")
-      .update({ status: "rejected", reject_reason: rejectReason || null } as any)
+      .update({ status: "rejected", reject_reason: rejectReason || null })
       .eq("id", rejectModal.mountainId);
 
     if (error) {

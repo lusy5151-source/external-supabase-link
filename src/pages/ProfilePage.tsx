@@ -715,7 +715,7 @@ const ProfilePage = () => {
               onClick={async () => {
                 setDeletingAccount(true);
                 try {
-                  const { error } = await supabase.rpc('delete_user_account' as any);
+                  const { error } = await (supabase as any).rpc('delete_user_account');
                   if (error) throw error;
                   await signOut();
                 } catch (err: any) {

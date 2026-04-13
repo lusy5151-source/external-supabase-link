@@ -76,7 +76,7 @@ const FriendProfilePage = () => {
       setJournals(data);
 
       // Fetch summit claims
-      const { data: claimsData } = await supabase
+      const { data: claimsData } = await (supabase as any)
         .from("summit_claims")
         .select("id, mountain_id, summit_id, photo_url, claimed_at")
         .eq("user_id", userId)
@@ -87,7 +87,7 @@ const FriendProfilePage = () => {
       // Enrich recent claims with summit names
       if (claimsData && (claimsData as any[]).length > 0) {
         const summitIds = [...new Set((claimsData as any[]).map((c: any) => c.summit_id))];
-        const { data: summitsData } = await supabase
+        const { data: summitsData } = await (supabase as any)
           .from("summits")
           .select("id, summit_name")
           .in("id", summitIds);
@@ -99,7 +99,7 @@ const FriendProfilePage = () => {
       }
 
       // Check mountain leader titles
-      const { data: allClaims } = await supabase
+      const { data: allClaims } = await (supabase as any)
         .from("summit_claims")
         .select("user_id, mountain_id")
         .order("claimed_at", { ascending: true });
