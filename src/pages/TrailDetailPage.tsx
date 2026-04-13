@@ -68,6 +68,7 @@ function getDifficultyStyle(difficulty: string) {
 }
 
 export default function TrailDetailPage() {
+  const { mountains } = useMountains();
   const { trailId } = useParams<{ trailId: string }>();
   const [trail, setTrail] = useState<TrailDetail | null>(null);
   const [loading, setLoading] = useState(true);
