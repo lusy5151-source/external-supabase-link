@@ -24,7 +24,6 @@ import PlanChat from "@/components/PlanChat";
 import PlanApplicationManager from "@/components/PlanApplicationManager";
 
 const conditionIcons: Record<string, any> = {
-  const { mountains } = useMountains();
   "맑음": Sun, "구름": CloudSun, "흐림": Cloud, "비": CloudRain, "눈": CloudSnow,
 };
 
@@ -42,6 +41,7 @@ const fieldLabels: Record<string, string> = {
 };
 
 const PlanDetailPage = () => {
+  const { mountains } = useMountains();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();

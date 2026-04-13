@@ -10,7 +10,6 @@ import { useToast } from "@/hooks/use-toast";
 const db = supabase as any;
 
 interface Application {
-  const { mountains } = useMountains();
   id: string;
   plan_id: string;
   user_id: string;
@@ -26,6 +25,7 @@ interface Props {
 }
 
 export default function PlanApplicationManager({ planId, mountainId, isCreator }: Props) {
+  const { mountains } = useMountains();
   const { toast } = useToast();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);

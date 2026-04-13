@@ -17,7 +17,6 @@ import { useNavigate } from "react-router-dom";
 const db = supabase as any;
 
 interface PublicPlan {
-  const { mountains } = useMountains();
   id: string;
   mountain_id: number;
   planned_date: string;
@@ -37,6 +36,7 @@ interface CreatorProfile {
 }
 
 export default function PublicPlansList() {
+  const { mountains } = useMountains();
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();

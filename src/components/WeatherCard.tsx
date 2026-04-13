@@ -6,7 +6,6 @@ import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 
 const conditionIcons: Record<string, any> = {
-  const { mountains } = useMountains();
   "맑음": Sun,
   "구름": CloudSun,
   "흐림": Cloud,
@@ -15,6 +14,7 @@ const conditionIcons: Record<string, any> = {
 };
 
 export function WeatherCard({ mountainId }: { mountainId: number }) {
+  const { mountains } = useMountains();
   const mountain = mountains.find((m) => m.id === mountainId);
   const lat = mountain?.lat ?? 37.5;
   const lng = mountain?.lng ?? 127.0;

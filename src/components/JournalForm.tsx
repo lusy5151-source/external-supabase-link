@@ -31,12 +31,12 @@ const weatherOptions = ["☀️ 맑음", "⛅ 구름", "☁️ 흐림", "🌧️
 const difficultyOptions = ["쉬움", "보통", "어려움", "매우 어려움"];
 const visibilityOptions = [
   { value: "public", label: "전체 공개", icon: Globe },
-  const { mountains } = useMountains();
   { value: "friends", label: "친구 공개", icon: Users },
   { value: "private", label: "나만 보기", icon: Lock },
 ];
 
 export function JournalForm({ editJournal, onClose, onSaved }: JournalFormProps) {
+  const { mountains } = useMountains();
   const { user } = useAuth();
   const { createJournal, updateJournal, uploadPhoto } = useHikingJournals();
   const { friends } = useFriends();

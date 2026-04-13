@@ -21,11 +21,11 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
 const conditionIcons: Record<string, any> = {
-  const { mountains } = useMountains();
   "맑음": Sun, "구름": CloudSun, "흐림": Cloud, "비": CloudRain, "눈": CloudSnow,
 };
 
 const CreatePlanPage = () => {
+  const { mountains } = useMountains();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { createPlan } = useHikingPlans();
