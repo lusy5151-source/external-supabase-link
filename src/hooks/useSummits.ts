@@ -29,18 +29,18 @@ export function useSummits(mountainId?: number) {
 
   const fetchSummits = useCallback(async () => {
     if (!mountainId) return;
-    const { data } = await supabase.from("summits").select("*").eq("mountain_id", mountainId);
+    const { data } = await (supabase as any).from("summits").select("*").eq("mountain_id", mountainId);
     setSummits((data as any[]) || []);
   }, [mountainId]);
 
   const fetchClaims = useCallback(async () => {
     if (!mountainId) return;
-    const { data: claimsData } = await supabase.from("summit_claims").select("*").eq("mountain_id", mountainId).order("claimed_at", { ascending: false });
+    const { data: claimsData } = await (supabase as any).from("summit_claims").select("*").eq("mountain_id", mountainId).order("claimed_at", { ascending: false });
     if (!claimsData || (claimsData as any[]).length === 0) { setClaims([]); setLoading(false); return; }
-    const userIds = [...new Set((claimsData as any[]).map((c) => c.user_id))];
+    const userIds = [...new Set((claimsData as any[]).map((c: any) => c.user_id))];
     const { data: profiles } = await supabase.from("profiles").select("user_id, nickname, avatar_url").in("user_id", userIds);
     const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
-    setClaims((claimsData as any[]).map((c) => ({ ...c, profile: profileMap.get(c.user_id) || null })));
+    setClaims((claimsData as any[]).map((c: any) => ({ ...c, profile: profileMap.get(c.user_id) || null })));
     setLoading(false);
   }, [mountainId]);
 
@@ -56,7 +56,7 @@ export function useSummits(mountainId?: number) {
     if (!user) return { success: false, error: "로그인이 필요합니다" };
     let actualSummitId = summitId;
     if (summitId.startsWith("fallback-") && fallbackSummitData) {
-      const { data: inserted, error: insertErr } = await supabase.from("summits").insert(fallbackSummitData as any).select("id").single();
+      const { data: inserted, error: insertErr } = await (supabase as any).from("summits").insert(fallbackSummitData as any).select("id").single();
       if (insertErr || !inserted) return { success: false, error: "정상 정보 생성에 실패했습니다" };
       actualSummitId = (inserted as any).id;
       await fetchSummits();
@@ -68,7 +68,7 @@ export function useSummits(mountainId?: number) {
     const { error: uploadError } = await supabase.storage.from("summit-photos").upload(filePath, photoFile);
     if (uploadError) return { success: false, error: "사진 업로드에 실패했습니다" };
     const { data: urlData } = supabase.storage.from("summit-photos").getPublicUrl(filePath);
-    const { error: insertError } = await supabase.from("summit_claims").insert({ user_id: user.id, mountain_id: summit.mountain_id, summit_id: actualSummitId, group_id: groupId || null, latitude: userLat, longitude: userLng, photo_url: urlData.publicUrl } as any);
+    const { error: insertError } = await (supabase as any).from("summit_claims").insert({ user_id: user.id, mountain_id: summit.mountain_id, summit_id: actualSummitId, group_id: groupId || null, latitude: userLat, longitude: userLng, photo_url: urlData.publicUrl } as any);
     if (insertError) return { success: false, error: "저장에 실패했습니다" };
     toast({ title: "🎉 정상 정복 인증 완료!" });
     await fetchClaims();
@@ -85,11 +85,11 @@ export function useLeaderboard() {
   const [clubRankings, setClubRankings] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetch = async () => {
-      const { data: allClaims } = await supabase.from("summit_claims").select("user_id, mountain_id, group_id").order("claimed_at", { ascending: true });
+    const fetchData = async () => {
+      const { data: allClaims } = await (supabase as any).from("summit_claims").select("user_id, mountain_id, group_id").order("claimed_at", { ascending: true });
       if (!allClaims || (allClaims as any[]).length === 0) { setLoading(false); return; }
       const userCounts = new Map<string, number>();
-      (allClaims as any[]).forEach((c) => userCounts.set(c.user_id, (userCounts.get(c.user_id) || 0) + 1));
+      (allClaims as any[]).forEach((c: any) => userCounts.set(c.user_id, (userCounts.get(c.user_id) || 0) + 1));
       const topUsers = [...userCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 20);
       const userIds = topUsers.map(([id]) => id);
       const { data: profiles } = await supabase.from("profiles").select("user_id, nickname, avatar_url").in("user_id", userIds);
@@ -99,7 +99,7 @@ export function useLeaderboard() {
       })));
       setLoading(false);
     };
-    fetch();
+    fetchData();
   }, []);
 
   return { topClaimers, mountainLeaders, clubRankings, loading };

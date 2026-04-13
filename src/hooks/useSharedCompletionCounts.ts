@@ -1,3 +1,5 @@
-export function useSharedCompletionCounts() {
-  return { counts: new Map(), loading: true };
+import type { SharedCompletionData } from "@/hooks/useAchievementStore";
+
+export function useSharedCompletionCounts(): SharedCompletionData[] {
+  return [];
 }
