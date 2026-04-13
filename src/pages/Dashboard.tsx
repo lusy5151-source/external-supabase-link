@@ -1,5 +1,6 @@
 import { useStore } from "@/context/StoreContext";
-import { mountains, baekduMountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
+import { baekduMountains } from "@/data/mountains";
 import { demoJournals, demoSummitClaims, demoKingOfDay, demoActivityFeed, demoProgress, type DemoJournal } from "@/data/demoFeed";
 import { badges } from "@/data/badges";
 import { useWeather } from "@/hooks/useWeather";

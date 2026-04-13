@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import type { Mountain } from "@/data/mountains";
 import { useUserMountains, toMountain } from "@/hooks/useUserMountains";
 import { usePioneerBadges } from "@/hooks/usePioneerBadges";
