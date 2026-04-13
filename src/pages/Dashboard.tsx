@@ -630,6 +630,7 @@ function EmptyState({ icon: Icon, message, linkTo, linkLabel }: { icon: any; mes
 }
 
 function CommunityFeedPreview({ journals }: { journals: DemoJournal[] }) {
+  const { mountains } = useMountains();
   return (
     <div className="space-y-3">
       {journals.map((j) => {
