@@ -52,7 +52,21 @@ Deno.serve(async (req) => {
       
       if (!res.ok) continue;
 
-      const data = JSON.parse(text);
+      // VWorld API sometimes returns malformed JSON with unescaped quotes in error messages
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        // Try fixing common VWorld JSON issues (unescaped quotes in error text)
+        const fixed = text.replace(/=\\"([^"]*?)\\"/g, '=\\"$1\\"')
+          .replace(/="([^"]*?)"/g, (match, p1) => `=\\"${p1}\\"`);
+        try {
+          data = JSON.parse(fixed);
+        } catch {
+          // If still can't parse, skip this attempt
+          continue;
+        }
+      }
       const resp = data?.response;
 
       if (resp?.status === "OK" && resp?.result?.featureCollection?.features) {
