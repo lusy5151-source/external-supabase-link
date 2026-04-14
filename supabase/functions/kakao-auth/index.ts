@@ -1,5 +1,9 @@
-import { corsHeaders } from '@supabase/supabase-js/cors'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 const KAKAO_REST_API_KEY = "c8b31eed7d32a5ad3a13a56f3b8e3995";
 
