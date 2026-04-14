@@ -210,6 +210,9 @@ const MountainDetail = () => {
       {/* Trail info */}
       <TrailInfoSection mountainId={mountain.id} fallbackTrails={mountain.trails} />
 
+      {/* Trail GPS Map */}
+      <TrailMap mountainName={mountain.nameKo} lat={mountain.lat} lng={mountain.lng} />
+
       {/* Weather & outfit */}
       <WeatherCard mountainId={mountain.id} />
 
