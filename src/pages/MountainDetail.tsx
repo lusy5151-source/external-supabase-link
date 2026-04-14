@@ -141,25 +141,21 @@ const MountainDetail = () => {
           <InfoItem icon={TrendingUp} label="난이도" value={mountain.difficulty} />
         </div>
 
-        <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{mountain.description}</p>
+        {/* 산 소개 */}
+        <div className="mt-5">
+          <p className="text-xs font-semibold text-muted-foreground mb-1.5">📖 산 소개</p>
+          <p className="text-sm leading-relaxed text-foreground">
+            {mountain.overview || mountain.description}
+          </p>
+        </div>
 
-        {/* Overview */}
-        {mountain.overview && (
-          <div className="mt-4 rounded-xl bg-secondary/50 p-4">
-            <p className="text-xs font-medium text-muted-foreground mb-1.5">📖 개요</p>
-            <p className="text-sm leading-relaxed text-foreground">{mountain.overview}</p>
-          </div>
-        )}
-
-        {/* Location Info */}
+        {/* 위치 정보 */}
         {(mountain.address || mountain.province) && (
-          <div className="mt-4 flex items-start gap-2 rounded-xl bg-secondary/50 p-4">
-            <MapPin className="mt-0.5 h-4 w-4 text-primary shrink-0" />
-            <div className="text-sm space-y-0.5">
-              <p className="text-xs font-medium text-muted-foreground">위치 정보</p>
-              {mountain.province && <p className="text-foreground">{mountain.province}</p>}
-              {mountain.address && <p className="text-muted-foreground">{mountain.address}</p>}
-            </div>
+          <div className="mt-4 flex items-center gap-2 rounded-xl bg-secondary/50 px-4 py-3">
+            <MapPin className="h-4 w-4 text-primary shrink-0" />
+            <p className="text-sm text-foreground">
+              📍 {[mountain.province, mountain.address].filter(Boolean).join(" | ")}
+            </p>
           </div>
         )}
 
