@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapPin, Route, Loader2, AlertCircle } from "lucide-react";
+import { Route, Loader2, AlertCircle, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface TrailFeature {
@@ -28,13 +28,12 @@ export function TrailMap({ mountainName, lat, lng }: TrailMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [trailCount, setTrailCount] = useState(0);
+  const [noData, setNoData] = useState(false);
 
   useEffect(() => {
     if (!mapRef.current) return;
 
-    // Clean up previous map
     if (mapInstanceRef.current) {
       mapInstanceRef.current.remove();
       mapInstanceRef.current = null;
@@ -65,7 +64,6 @@ export function TrailMap({ mountainName, lat, lng }: TrailMapProps) {
 
     mapInstanceRef.current = map;
 
-    // Fetch trail data
     fetchTrails(mountainName, map);
 
     return () => {
@@ -76,8 +74,8 @@ export function TrailMap({ mountainName, lat, lng }: TrailMapProps) {
 
   const fetchTrails = async (name: string, map: L.Map) => {
     setLoading(true);
-    setError(null);
     setTrailCount(0);
+    setNoData(false);
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke("get-trails", {
@@ -85,7 +83,7 @@ export function TrailMap({ mountainName, lat, lng }: TrailMapProps) {
       });
 
       if (fnError || !data) {
-        setError("등산로 GPS 데이터를 찾을 수 없습니다");
+        setNoData(true);
         setLoading(false);
         return;
       }
@@ -93,7 +91,7 @@ export function TrailMap({ mountainName, lat, lng }: TrailMapProps) {
       const features: TrailFeature[] = data.features || [];
 
       if (features.length === 0) {
-        setError("등산로 GPS 데이터를 찾을 수 없습니다");
+        setNoData(true);
         setLoading(false);
         return;
       }
@@ -104,7 +102,6 @@ export function TrailMap({ mountainName, lat, lng }: TrailMapProps) {
       features.forEach((feature, idx) => {
         const color = TRAIL_COLORS[idx % TRAIL_COLORS.length];
         const coords = extractCoordinates(feature.geometry);
-
         if (coords.length === 0) return;
 
         coords.forEach((lineCoords) => {
@@ -114,14 +111,8 @@ export function TrailMap({ mountainName, lat, lng }: TrailMapProps) {
             return ll;
           });
 
-          // Trail line
-          L.polyline(latLngs, {
-            color,
-            weight: 4,
-            opacity: 0.8,
-          }).addTo(map);
+          L.polyline(latLngs, { color, weight: 4, opacity: 0.8 }).addTo(map);
 
-          // Start/end markers
           if (latLngs.length > 0) {
             const startIcon = L.divIcon({
               className: "trail-marker",
@@ -133,7 +124,6 @@ export function TrailMap({ mountainName, lat, lng }: TrailMapProps) {
           }
         });
 
-        // Tooltip with trail name
         const trailName = feature.properties?.pmntn_nm || feature.properties?.mntn_nm || `루트 ${idx + 1}`;
         const distance = feature.properties?.pmntn_lt;
         let tooltipText = `${trailName}`;
@@ -150,14 +140,12 @@ export function TrailMap({ mountainName, lat, lng }: TrailMapProps) {
         }
       });
 
-      // Fit bounds
       if (allBounds.length > 0) {
-        const bounds = L.latLngBounds(allBounds);
-        map.fitBounds(bounds, { padding: [30, 30] });
+        map.fitBounds(L.latLngBounds(allBounds), { padding: [30, 30] });
       }
     } catch (e) {
-      console.error("VWorld trail fetch error:", e);
-      setError("등산로 데이터를 불러오는 중 오류가 발생했습니다");
+      console.error("Trail fetch error:", e);
+      setNoData(true);
     } finally {
       setLoading(false);
     }
@@ -171,17 +159,17 @@ export function TrailMap({ mountainName, lat, lng }: TrailMapProps) {
           <div>
             <h2 className="text-base font-bold text-foreground">등산로 지도</h2>
             <p className="text-xs text-muted-foreground">
-              {loading ? "로딩 중..." : trailCount > 0 ? `${trailCount}개 등산로` : "데이터 없음"}
+              {loading ? "로딩 중..." : trailCount > 0 ? `${trailCount}개 등산로` : `${mountainName} 위치`}
             </p>
           </div>
         </div>
         {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
       </div>
 
-      {error && (
-        <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
-          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-          {error}
+      {noData && !loading && (
+        <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+          <Info className="h-3.5 w-3.5 shrink-0" />
+          GPS 등산로 데이터는 wandeung.com에서 이용 가능합니다
         </div>
       )}
 
