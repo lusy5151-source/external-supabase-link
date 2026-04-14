@@ -16,26 +16,29 @@ export type Database = {
     Tables: {
       account_deletion_requests: {
         Row: {
-          created_at: string | null
+          completed_at: string | null
           id: string
-          processed_at: string | null
           reason: string | null
+          requested_at: string | null
+          scheduled_deletion_at: string | null
           status: string | null
           user_id: string
         }
         Insert: {
-          created_at?: string | null
+          completed_at?: string | null
           id?: string
-          processed_at?: string | null
           reason?: string | null
+          requested_at?: string | null
+          scheduled_deletion_at?: string | null
           status?: string | null
           user_id: string
         }
         Update: {
-          created_at?: string | null
+          completed_at?: string | null
           id?: string
-          processed_at?: string | null
           reason?: string | null
+          requested_at?: string | null
+          scheduled_deletion_at?: string | null
           status?: string | null
           user_id?: string
         }
@@ -147,34 +150,49 @@ export type Database = {
       }
       announcements: {
         Row: {
+          alert_type: string | null
           category: string
-          content: string | null
           created_at: string | null
           date: string | null
+          description: string | null
+          full_description: string | null
           id: string
+          is_active: boolean | null
+          mountain_name: string | null
+          severity: string | null
           source: string | null
-          summary: string | null
           title: string
+          updated_at: string | null
         }
         Insert: {
+          alert_type?: string | null
           category: string
-          content?: string | null
           created_at?: string | null
           date?: string | null
+          description?: string | null
+          full_description?: string | null
           id?: string
+          is_active?: boolean | null
+          mountain_name?: string | null
+          severity?: string | null
           source?: string | null
-          summary?: string | null
           title: string
+          updated_at?: string | null
         }
         Update: {
+          alert_type?: string | null
           category?: string
-          content?: string | null
           created_at?: string | null
           date?: string | null
+          description?: string | null
+          full_description?: string | null
           id?: string
+          is_active?: boolean | null
+          mountain_name?: string | null
+          severity?: string | null
           source?: string | null
-          summary?: string | null
           title?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -292,6 +310,138 @@ export type Database = {
           },
         ]
       }
+      club_messages: {
+        Row: {
+          club_id: string
+          created_at: string | null
+          id: string
+          image_url: string | null
+          message: string | null
+          reply_to_id: string | null
+          user_id: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          message?: string | null
+          reply_to_id?: string | null
+          user_id: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          message?: string | null
+          reply_to_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "club_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      email_send_log: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          message_id: string | null
+          metadata: Json | null
+          recipient_email: string | null
+          status: string | null
+          template_name: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          message_id?: string | null
+          metadata?: Json | null
+          recipient_email?: string | null
+          status?: string | null
+          template_name?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          message_id?: string | null
+          metadata?: Json | null
+          recipient_email?: string | null
+          status?: string | null
+          template_name?: string | null
+        }
+        Relationships: []
+      }
+      email_send_state: {
+        Row: {
+          auth_email_ttl_minutes: number | null
+          batch_size: number | null
+          id: number
+          retry_after_until: string | null
+          send_delay_ms: number | null
+          transactional_email_ttl_minutes: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          auth_email_ttl_minutes?: number | null
+          batch_size?: number | null
+          id: number
+          retry_after_until?: string | null
+          send_delay_ms?: number | null
+          transactional_email_ttl_minutes?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          auth_email_ttl_minutes?: number | null
+          batch_size?: number | null
+          id?: number
+          retry_after_until?: string | null
+          send_delay_ms?: number | null
+          transactional_email_ttl_minutes?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      email_unsubscribe_tokens: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          token: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          token?: string
+          used_at?: string | null
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           addressee_id: string
@@ -353,21 +503,21 @@ export type Database = {
         Row: {
           group_id: string
           id: string
-          join_at: string | null
+          joined_at: string | null
           role: string | null
           user_id: string
         }
         Insert: {
           group_id: string
           id?: string
-          join_at?: string | null
+          joined_at?: string | null
           role?: string | null
           user_id: string
         }
         Update: {
           group_id?: string
           id?: string
-          join_at?: string | null
+          joined_at?: string | null
           role?: string | null
           user_id?: string
         }
@@ -421,7 +571,7 @@ export type Database = {
           course_starting_point: string | null
           created_at: string | null
           difficulty: string | null
-          duration: number | null
+          duration: string | null
           hiked_at: string | null
           id: string
           mountain_id: number | null
@@ -439,7 +589,7 @@ export type Database = {
           course_starting_point?: string | null
           created_at?: string | null
           difficulty?: string | null
-          duration?: number | null
+          duration?: string | null
           hiked_at?: string | null
           id?: string
           mountain_id?: number | null
@@ -457,7 +607,7 @@ export type Database = {
           course_starting_point?: string | null
           created_at?: string | null
           difficulty?: string | null
-          duration?: number | null
+          duration?: string | null
           hiked_at?: string | null
           id?: string
           mountain_id?: number | null
@@ -479,6 +629,7 @@ export type Database = {
           id: string
           invite_code: string | null
           is_public: boolean | null
+          max_participants: number | null
           meeting_location: string | null
           mountain_id: number | null
           notes: string | null
@@ -495,6 +646,7 @@ export type Database = {
           id?: string
           invite_code?: string | null
           is_public?: boolean | null
+          max_participants?: number | null
           meeting_location?: string | null
           mountain_id?: number | null
           notes?: string | null
@@ -511,6 +663,7 @@ export type Database = {
           id?: string
           invite_code?: string | null
           is_public?: boolean | null
+          max_participants?: number | null
           meeting_location?: string | null
           mountain_id?: number | null
           notes?: string | null
@@ -596,6 +749,247 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      magazine_likes: {
+        Row: {
+          created_at: string | null
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "magazine_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      magazine_posts: {
+        Row: {
+          category: string | null
+          cover_image_url: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          is_featured: boolean | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_featured?: boolean | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_featured?: boolean | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "magazine_posts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      magazine_saves: {
+        Row: {
+          created_at: string | null
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "magazine_saves_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "magazine_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "magazine_saves_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      magazine_slides: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_url: string
+          post_id: string
+          slide_order: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_url: string
+          post_id: string
+          slide_order?: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          post_id?: string
+          slide_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "magazine_slides_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "magazine_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_reactions: {
+        Row: {
+          created_at: string | null
+          emoji: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          emoji: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          emoji?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "club_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_reactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      message_reads: {
+        Row: {
+          club_id: string
+          id: string
+          last_read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          club_id: string
+          id?: string
+          last_read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          club_id?: string
+          id?: string
+          last_read_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      mountain_duplicate_reports: {
+        Row: {
+          created_at: string | null
+          existing_mountain_id: string
+          id: string
+          reported_by: string
+          reported_mountain_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          existing_mountain_id: string
+          id?: string
+          reported_by: string
+          reported_mountain_id: string
+        }
+        Update: {
+          created_at?: string | null
+          existing_mountain_id?: string
+          id?: string
+          reported_by?: string
+          reported_mountain_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mountain_duplicate_reports_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       mountains: {
         Row: {
@@ -739,28 +1133,22 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
-          message: string | null
           plan_id: string
           status: string | null
-          updated_at: string | null
           user_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
-          message?: string | null
           plan_id: string
           status?: string | null
-          updated_at?: string | null
           user_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
-          message?: string | null
           plan_id?: string
           status?: string | null
-          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -812,23 +1200,23 @@ export type Database = {
       }
       plan_messages: {
         Row: {
-          content: string
           created_at: string | null
           id: string
+          message: string
           plan_id: string
           user_id: string
         }
         Insert: {
-          content: string
           created_at?: string | null
           id?: string
+          message: string
           plan_id: string
           user_id: string
         }
         Update: {
-          content?: string
           created_at?: string | null
           id?: string
+          message?: string
           plan_id?: string
           user_id?: string
         }
@@ -936,7 +1324,7 @@ export type Database = {
       }
       privacy_settings: {
         Row: {
-          allow_friend_request: boolean | null
+          allow_friend_requests: boolean | null
           created_at: string | null
           id: string
           journal_visibility: string | null
@@ -945,7 +1333,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          allow_friend_request?: boolean | null
+          allow_friend_requests?: boolean | null
           created_at?: string | null
           id?: string
           journal_visibility?: string | null
@@ -954,7 +1342,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          allow_friend_request?: boolean | null
+          allow_friend_requests?: boolean | null
           created_at?: string | null
           id?: string
           journal_visibility?: string | null
@@ -1020,25 +1408,31 @@ export type Database = {
       reports: {
         Row: {
           created_at: string | null
+          description: string | null
           id: string
           reason: string | null
           reporter_id: string | null
+          status: string | null
           target_id: string | null
           target_type: string | null
         }
         Insert: {
           created_at?: string | null
+          description?: string | null
           id?: string
           reason?: string | null
           reporter_id?: string | null
+          status?: string | null
           target_id?: string | null
           target_type?: string | null
         }
         Update: {
           created_at?: string | null
+          description?: string | null
           id?: string
           reason?: string | null
           reporter_id?: string | null
+          status?: string | null
           target_id?: string | null
           target_type?: string | null
         }
@@ -1138,34 +1532,40 @@ export type Database = {
       summit_claims: {
         Row: {
           claimed_at: string
+          created_at: string | null
           group_id: string | null
           id: string
           latitude: number
           longitude: number
           mountain_id: number
           photo_url: string | null
+          record_id: string | null
           summit_id: string
           user_id: string
         }
         Insert: {
           claimed_at?: string
+          created_at?: string | null
           group_id?: string | null
           id?: string
           latitude: number
           longitude: number
           mountain_id: number
           photo_url?: string | null
+          record_id?: string | null
           summit_id: string
           user_id: string
         }
         Update: {
           claimed_at?: string
+          created_at?: string | null
           group_id?: string | null
           id?: string
           latitude?: number
           longitude?: number
           mountain_id?: number
           photo_url?: string | null
+          record_id?: string | null
           summit_id?: string
           user_id?: string
         }
@@ -1206,6 +1606,30 @@ export type Database = {
           longitude?: number
           mountain_id?: number
           summit_name?: string
+        }
+        Relationships: []
+      }
+      suppressed_emails: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          metadata: Json | null
+          reason: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          metadata?: Json | null
+          reason?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          metadata?: Json | null
+          reason?: string | null
         }
         Relationships: []
       }
@@ -1351,39 +1775,92 @@ export type Database = {
       }
       user_mountains: {
         Row: {
-          completed: boolean | null
-          completed_at: string | null
           created_at: string | null
+          created_by: string | null
+          description: string | null
+          difficulty: string | null
+          height: number | null
           id: string
+          image_url: string | null
+          is_user_created: boolean | null
+          lat: number | null
+          lng: number | null
           mountain_id: number
-          note: string | null
-          photo_url: string | null
+          name: string | null
+          name_ko: string | null
+          region: string | null
+          reject_reason: string | null
+          status: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
-          completed?: boolean | null
-          completed_at?: string | null
           created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          difficulty?: string | null
+          height?: number | null
           id?: string
+          image_url?: string | null
+          is_user_created?: boolean | null
+          lat?: number | null
+          lng?: number | null
           mountain_id: number
-          note?: string | null
-          photo_url?: string | null
+          name?: string | null
+          name_ko?: string | null
+          region?: string | null
+          reject_reason?: string | null
+          status?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
-          completed?: boolean | null
-          completed_at?: string | null
           created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          difficulty?: string | null
+          height?: number | null
           id?: string
+          image_url?: string | null
+          is_user_created?: boolean | null
+          lat?: number | null
+          lng?: number | null
           mountain_id?: number
-          note?: string | null
-          photo_url?: string | null
+          name?: string | null
+          name_ko?: string | null
+          region?: string | null
+          reject_reason?: string | null
+          status?: string | null
           updated_at?: string | null
           user_id?: string
         }
         Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       users: {
         Row: {
