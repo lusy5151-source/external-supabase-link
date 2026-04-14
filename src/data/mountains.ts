@@ -22,6 +22,9 @@ export interface Mountain {
   description: string;
   is_baekdu: boolean;
   trails: TrailInfo[];
+  overview?: string;
+  address?: string;
+  province?: string;
 }
 
 export const mountains: Mountain[] = [
