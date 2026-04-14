@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { MapPin, Route, Loader2, AlertCircle } from "lucide-react";
-
-const VWORLD_API_KEY = "F41DD5DC-6774-33EA-8E02-68505ADAF394";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TrailFeature {
   type: string;
