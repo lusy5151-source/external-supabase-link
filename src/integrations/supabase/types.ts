@@ -442,6 +442,42 @@ export type Database = {
         }
         Relationships: []
       }
+      forestry_sync_log: {
+        Row: {
+          completed_at: string | null
+          error_message: string | null
+          forestry_code: string | null
+          id: string
+          mountain_id: number | null
+          records_fetched: number | null
+          started_at: string | null
+          status: string
+          sync_type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          error_message?: string | null
+          forestry_code?: string | null
+          id?: string
+          mountain_id?: number | null
+          records_fetched?: number | null
+          started_at?: string | null
+          status?: string
+          sync_type: string
+        }
+        Update: {
+          completed_at?: string | null
+          error_message?: string | null
+          forestry_code?: string | null
+          id?: string
+          mountain_id?: number | null
+          records_fetched?: number | null
+          started_at?: string | null
+          status?: string
+          sync_type?: string
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           addressee_id: string
@@ -991,51 +1027,128 @@ export type Database = {
           },
         ]
       }
-      mountains: {
+      mountain_facilities: {
         Row: {
           created_at: string | null
           description: string | null
+          facility_type: string
+          id: string
+          is_active: boolean | null
+          latitude: number | null
+          longitude: number | null
+          mountain_id: number
+          name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          facility_type: string
+          id?: string
+          is_active?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          mountain_id: number
+          name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          facility_type?: string
+          id?: string
+          is_active?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          mountain_id?: number
+          name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mountain_facilities_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mountains: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          description: string | null
+          designated_date: string | null
           difficulty: string | null
+          feature: string | null
+          forestry_code: string | null
+          forestry_synced_at: string | null
           height: number | null
+          homepage_url: string | null
           id: number
+          image_url: string | null
           is_bac100: boolean | null
           is_oreum: boolean | null
           lat: number | null
           lng: number | null
           name: string | null
           name_ko: string | null
+          overview: string | null
           popularity: number | null
+          province: string | null
           region: string | null
+          total_area_ha: number | null
         }
         Insert: {
+          address?: string | null
           created_at?: string | null
           description?: string | null
+          designated_date?: string | null
           difficulty?: string | null
+          feature?: string | null
+          forestry_code?: string | null
+          forestry_synced_at?: string | null
           height?: number | null
+          homepage_url?: string | null
           id: number
+          image_url?: string | null
           is_bac100?: boolean | null
           is_oreum?: boolean | null
           lat?: number | null
           lng?: number | null
           name?: string | null
           name_ko?: string | null
+          overview?: string | null
           popularity?: number | null
+          province?: string | null
           region?: string | null
+          total_area_ha?: number | null
         }
         Update: {
+          address?: string | null
           created_at?: string | null
           description?: string | null
+          designated_date?: string | null
           difficulty?: string | null
+          feature?: string | null
+          forestry_code?: string | null
+          forestry_synced_at?: string | null
           height?: number | null
+          homepage_url?: string | null
           id?: number
+          image_url?: string | null
           is_bac100?: boolean | null
           is_oreum?: boolean | null
           lat?: number | null
           lng?: number | null
           name?: string | null
           name_ko?: string | null
+          overview?: string | null
           popularity?: number | null
+          province?: string | null
           region?: string | null
+          total_area_ha?: number | null
         }
         Relationships: []
       }
@@ -1632,6 +1745,104 @@ export type Database = {
           reason?: string | null
         }
         Relationships: []
+      }
+      trail_closures: {
+        Row: {
+          closure_type: string | null
+          created_at: string | null
+          end_date: string | null
+          forestry_code: string | null
+          id: string
+          is_active: boolean | null
+          mountain_id: number | null
+          reason: string | null
+          source: string | null
+          start_date: string | null
+          trail_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          closure_type?: string | null
+          created_at?: string | null
+          end_date?: string | null
+          forestry_code?: string | null
+          id?: string
+          is_active?: boolean | null
+          mountain_id?: number | null
+          reason?: string | null
+          source?: string | null
+          start_date?: string | null
+          trail_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          closure_type?: string | null
+          created_at?: string | null
+          end_date?: string | null
+          forestry_code?: string | null
+          id?: string
+          is_active?: boolean | null
+          mountain_id?: number | null
+          reason?: string | null
+          source?: string | null
+          start_date?: string | null
+          trail_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trail_closures_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trail_closures_trail_id_fkey"
+            columns: ["trail_id"]
+            isOneToOne: false
+            referencedRelation: "trails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trail_coordinates: {
+        Row: {
+          created_at: string | null
+          elevation_m: number | null
+          id: string
+          latitude: number
+          longitude: number
+          sequence_no: number
+          trail_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          elevation_m?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          sequence_no: number
+          trail_id: string
+        }
+        Update: {
+          created_at?: string | null
+          elevation_m?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          sequence_no?: number
+          trail_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trail_coordinates_trail_id_fkey"
+            columns: ["trail_id"]
+            isOneToOne: false
+            referencedRelation: "trails"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       trails: {
         Row: {
