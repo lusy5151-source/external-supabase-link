@@ -80,35 +80,17 @@ export function TrailMap({ mountainName, lat, lng }: TrailMapProps) {
     setTrailCount(0);
 
     try {
-      // Try exact match first, then like match
-      const searchName = name.replace(/산$/, "").trim();
-      const attempts = [name, searchName];
-      let features: TrailFeature[] = [];
+      const { data, error: fnError } = await supabase.functions.invoke("get-trails", {
+        body: { mountainName: name },
+      });
 
-      for (const attempt of attempts) {
-        if (features.length > 0) break;
-
-        const params = new URLSearchParams({
-          service: "data",
-          request: "GetFeature",
-          data: "LT_L_FRSTCLIMB",
-          key: VWORLD_API_KEY,
-          domain: "https://wandeung.com",
-          format: "json",
-          crs: "EPSG:4326",
-          attrFilter: `mntn_nm:like:${attempt}`,
-        });
-
-        const res = await fetch(`https://api.vworld.kr/req/data?${params.toString()}`);
-        if (!res.ok) continue;
-
-        const data = await res.json();
-        const resp = data?.response;
-
-        if (resp?.status === "OK" && resp?.result?.featureCollection?.features) {
-          features = resp.result.featureCollection.features;
-        }
+      if (fnError || !data) {
+        setError("등산로 GPS 데이터를 찾을 수 없습니다");
+        setLoading(false);
+        return;
       }
+
+      const features: TrailFeature[] = data.features || [];
 
       if (features.length === 0) {
         setError("등산로 GPS 데이터를 찾을 수 없습니다");
