@@ -5,14 +5,14 @@ export interface Trail {
   id: string;
   mountain_id: number;
   name: string;
-  distance_km: number;
-  difficulty: string;
-  duration_minutes: number;
-  starting_point: string;
+  distance_km: number | null;
+  difficulty: string | null;
+  duration_minutes: number | null;
+  starting_point: string | null;
   elevation_gain_m: number | null;
   description: string | null;
-  is_popular: boolean;
-  course_type: string;
+  is_popular: boolean | null;
+  course_type: string | null;
 }
 
 export function useTrails(mountainId: number) {
@@ -28,7 +28,7 @@ export function useTrails(mountainId: number) {
       setError(null);
       try {
         const { data, error: dbError } = await supabase
-          .from("trails" as any)
+          .from("trails")
           .select("*")
           .eq("mountain_id", mountainId)
           .order("is_popular", { ascending: false });
@@ -40,7 +40,7 @@ export function useTrails(mountainId: number) {
         }
 
         if (!cancelled) {
-          setTrails((data as any[] || []) as Trail[]);
+          setTrails((data || []) as Trail[]);
         }
       } catch {
         if (!cancelled) {
