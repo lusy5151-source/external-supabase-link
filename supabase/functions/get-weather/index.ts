@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
   try {
     const { lat, lon, type } = await req.json();
 
-    if (!lat || !lon) {
+    if (lat == null || lon == null) {
       return new Response(
         JSON.stringify({ error: "lat and lon are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
