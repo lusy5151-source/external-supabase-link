@@ -174,8 +174,8 @@ const Dashboard = () => {
   };
 
   const CondIcon = conditionIcons[weather.condition] || Cloud;
-  const todayIndex = new Date().getDate() % mountains.length;
-  const todayMountain = mountains[todayIndex];
+  const todayIndex = mountains.length > 0 ? new Date().getDate() % mountains.length : 0;
+  const todayMountain = mountains.length > 0 ? mountains[todayIndex] : null;
 
   // Demo or real summit claims
   const displayClaims = isDemo ? demoSummitClaims : liveClaims;
@@ -464,6 +464,7 @@ const Dashboard = () => {
           </section>
 
           {/* ── Today's Mountain ── */}
+          {todayMountain && (
           <section>
             <SectionHeader title="오늘의 산" />
             <Link to={`/mountains/${todayMountain.id}`} className="block rounded-3xl bg-card border border-border p-5 shadow-sm">
@@ -484,6 +485,7 @@ const Dashboard = () => {
               </div>
             </Link>
           </section>
+          )}
 
           {/* ── Shared Completion Link ── */}
           <section>
