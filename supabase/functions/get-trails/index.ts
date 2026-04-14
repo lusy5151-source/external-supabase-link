@@ -37,7 +37,12 @@ Deno.serve(async (req) => {
         attrFilter: `mntn_nm:like:${name}`,
       });
 
-      const res = await fetch(`https://api.vworld.kr/req/data?${params.toString()}`);
+      const res = await fetch(`https://api.vworld.kr/req/data?${params.toString()}`, {
+        headers: {
+          "Referer": "https://wandeung.com",
+          "Origin": "https://wandeung.com",
+        },
+      });
       if (!res.ok) continue;
 
       const data = await res.json();
