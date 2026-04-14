@@ -38,23 +38,38 @@ Deno.serve(async (req) => {
       });
 
       const fetchUrl = `https://api.vworld.kr/req/data?${params.toString()}`;
-      console.log("Fetching:", fetchUrl);
 
-      const res = await fetch(fetchUrl, {
-        headers: {
-          "Referer": "https://wandeung.com",
-          "Origin": "https://wandeung.com",
-        },
-      });
-      
-      const text = await res.text();
-      console.log("Response:", res.status, text.substring(0, 500));
-      
-      if (!res.ok) continue;
+      let text: string;
+      try {
+        const res = await fetch(fetchUrl, {
+          headers: {
+            "Referer": "https://wandeung.com",
+            "Origin": "https://wandeung.com",
+          },
+        });
+        text = await res.text();
+        if (!res.ok) continue;
+      } catch {
+        // VWorld API may reject connections from overseas IPs
+        console.log("VWorld connection failed for:", name);
+        continue;
+      }
 
-      const data = JSON.parse(text);
+      // VWorld sometimes returns malformed JSON with unescaped quotes in error text
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        try {
+          // Fix unescaped quotes like: 단일검색="Y"
+          const fixed = text.replace(/="([^"{}[\]:,]*?)"/g, '=\\"$1\\"');
+          data = JSON.parse(fixed);
+        } catch {
+          continue;
+        }
+      }
+
       const resp = data?.response;
-
       if (resp?.status === "OK" && resp?.result?.featureCollection?.features) {
         features = resp.result.featureCollection.features;
       }
@@ -64,9 +79,9 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    // Always return 200 with empty features so frontend handles gracefully
+    return new Response(JSON.stringify({ features: [], error: error.message }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
