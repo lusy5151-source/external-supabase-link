@@ -17,6 +17,7 @@ import type { WeatherCondition, CompletionRecord } from "@/hooks/useMountainStor
 import { WeatherCard } from "@/components/WeatherCard";
 import { TrailInfoSection } from "@/components/TrailInfo";
 import { NearbyPlaces } from "@/components/NearbyPlaces";
+import { TrailMap } from "@/components/TrailMap";
 import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingJournals } from "@/hooks/useHikingJournals";
@@ -208,6 +209,9 @@ const MountainDetail = () => {
 
       {/* Trail info */}
       <TrailInfoSection mountainId={mountain.id} fallbackTrails={mountain.trails} />
+
+      {/* Trail GPS Map */}
+      <TrailMap mountainName={mountain.nameKo} lat={mountain.lat} lng={mountain.lng} />
 
       {/* Weather & outfit */}
       <WeatherCard mountainId={mountain.id} />

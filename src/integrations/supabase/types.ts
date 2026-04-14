@@ -1851,13 +1851,19 @@ export type Database = {
           description: string | null
           difficulty: string | null
           distance_km: number | null
+          distance_m: number | null
+          down_minutes: number | null
           duration_minutes: number | null
           elevation_gain_m: number | null
+          geometry: Json | null
           id: string
           is_popular: boolean | null
           mountain_id: number
           name: string
           starting_point: string | null
+          up_minutes_vw: number | null
+          vworld_id: string | null
+          vworld_synced_at: string | null
         }
         Insert: {
           course_type?: string | null
@@ -1865,13 +1871,19 @@ export type Database = {
           description?: string | null
           difficulty?: string | null
           distance_km?: number | null
+          distance_m?: number | null
+          down_minutes?: number | null
           duration_minutes?: number | null
           elevation_gain_m?: number | null
+          geometry?: Json | null
           id?: string
           is_popular?: boolean | null
           mountain_id: number
           name: string
           starting_point?: string | null
+          up_minutes_vw?: number | null
+          vworld_id?: string | null
+          vworld_synced_at?: string | null
         }
         Update: {
           course_type?: string | null
@@ -1879,13 +1891,19 @@ export type Database = {
           description?: string | null
           difficulty?: string | null
           distance_km?: number | null
+          distance_m?: number | null
+          down_minutes?: number | null
           duration_minutes?: number | null
           elevation_gain_m?: number | null
+          geometry?: Json | null
           id?: string
           is_popular?: boolean | null
           mountain_id?: number
           name?: string
           starting_point?: string | null
+          up_minutes_vw?: number | null
+          vworld_id?: string | null
+          vworld_synced_at?: string | null
         }
         Relationships: [
           {
