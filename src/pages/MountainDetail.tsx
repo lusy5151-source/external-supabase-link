@@ -143,6 +143,26 @@ const MountainDetail = () => {
 
         <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{mountain.description}</p>
 
+        {/* Overview */}
+        {mountain.overview && (
+          <div className="mt-4 rounded-xl bg-secondary/50 p-4">
+            <p className="text-xs font-medium text-muted-foreground mb-1.5">📖 개요</p>
+            <p className="text-sm leading-relaxed text-foreground">{mountain.overview}</p>
+          </div>
+        )}
+
+        {/* Location Info */}
+        {(mountain.address || mountain.province) && (
+          <div className="mt-4 flex items-start gap-2 rounded-xl bg-secondary/50 p-4">
+            <MapPin className="mt-0.5 h-4 w-4 text-primary shrink-0" />
+            <div className="text-sm space-y-0.5">
+              <p className="text-xs font-medium text-muted-foreground">위치 정보</p>
+              {mountain.province && <p className="text-foreground">{mountain.province}</p>}
+              {mountain.address && <p className="text-muted-foreground">{mountain.address}</p>}
+            </div>
+          </div>
+        )}
+
         {isUserCreated && creatorName && (
           <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
             <User className="h-3.5 w-3.5" />

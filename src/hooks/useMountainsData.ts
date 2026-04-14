@@ -30,6 +30,9 @@ export function useMountainsData() {
         description: row.description || "",
         is_baekdu: row.is_bac100 || false,
         popularity: row.popularity || 0,
+        overview: row.overview || "",
+        address: row.address || "",
+        province: row.province || "",
         trails: [],
       }));
     },
