@@ -26,26 +26,23 @@ Deno.serve(async (req) => {
     for (const name of searchNames) {
       if (features.length > 0) break;
 
-      const params = new URLSearchParams({
-        service: "data",
-        request: "GetFeature",
-        data: "LT_L_FRSTCLIMB",
-        key: VWORLD_API_KEY,
-        domain: "https://wandeung.com",
-        format: "json",
-        crs: "EPSG:4326",
-        attrFilter: `mntn_nm:like:${name}`,
-      });
+      const url = `https://api.vworld.kr/req/data?service=data&request=GetFeature&data=LT_L_FRSTCLIMB&key=${VWORLD_API_KEY}&domain=https://wandeung.com&format=json&crs=EPSG:4326&attrFilter=mntn_nm:like:${encodeURIComponent(name)}`;
 
-      const res = await fetch(`https://api.vworld.kr/req/data?${params.toString()}`, {
+      console.log("Fetching VWorld:", url);
+
+      const res = await fetch(url, {
         headers: {
           "Referer": "https://wandeung.com",
           "Origin": "https://wandeung.com",
         },
       });
+      
+      const text = await res.text();
+      console.log("VWorld response status:", res.status, "body length:", text.length, "preview:", text.substring(0, 300));
+      
       if (!res.ok) continue;
 
-      const data = await res.json();
+      const data = JSON.parse(text);
       const resp = data?.response;
 
       if (resp?.status === "OK" && resp?.result?.featureCollection?.features) {
