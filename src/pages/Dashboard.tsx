@@ -79,12 +79,8 @@ const Dashboard = () => {
 
   const upcomingPlan = useMemo(() => {
     if (isDemo) return null;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return plans
-      .filter((p) => new Date(p.planned_date) >= today && p.status !== "cancelled")
-      .sort((a, b) => new Date(a.planned_date).getTime() - new Date(b.planned_date).getTime())[0] || null;
-  }, [plans, isDemo]);
+    return myUpcomingPlans[0] || null;
+  }, [myUpcomingPlans, isDemo]);
 
   const upcomingMountain = upcomingPlan ? mountains.find((m) => m.id === upcomingPlan.mountain_id) : null;
   const defaultMountain = mountains[0] || { id: 1, lat: 37.6584, lng: 126.978 };
