@@ -403,6 +403,7 @@ export function useHikingPlans() {
     acceptInvitation,
     declineInvitation,
     markNotificationRead,
+    deleteNotification,
     joinByCode,
     refetch: fetchPlans,
   };
