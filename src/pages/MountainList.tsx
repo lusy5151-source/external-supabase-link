@@ -190,7 +190,7 @@ const MountainCard = React.memo(function MountainCard({ m, isCompleted: complete
         <div className="min-w-0 space-y-0.5">
           <div className="flex items-center gap-1.5">
             <p className="font-medium truncate text-foreground">{m.nameKo}</p>
-            {m.is_baekdu && (<Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-emerald-300 text-emerald-600 dark:border-emerald-700 dark:text-emerald-400">백대</Badge>)}
+            {m.is_baekdu && (<Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-emerald-300 text-emerald-600 dark:border-emerald-700 dark:text-emerald-400">{m.bac100_label || "백대명산"}</Badge>)}
             {isUserCreated && m.status === "pending" && (<Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 gap-0.5 border-amber-300 text-amber-600"><Clock className="h-2.5 w-2.5" />승인 대기</Badge>)}
             {isUserCreated && m.status !== "pending" && (<Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 gap-0.5"><User className="h-2.5 w-2.5" />커스텀</Badge>)}
           </div>

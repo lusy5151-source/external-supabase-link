@@ -29,6 +29,7 @@ export function useMountainsData() {
         difficulty: row.difficulty || "보통",
         description: row.description || "",
         is_baekdu: row.is_bac100 || false,
+        bac100_label: row.bac100_label || undefined,
         popularity: row.popularity || 0,
         overview: row.overview || "",
         address: row.address || "",

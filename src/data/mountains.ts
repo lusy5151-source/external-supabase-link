@@ -21,6 +21,7 @@ export interface Mountain {
   difficulty: string;
   description: string;
   is_baekdu: boolean;
+  bac100_label?: string;
   trails: TrailInfo[];
   overview?: string;
   address?: string;

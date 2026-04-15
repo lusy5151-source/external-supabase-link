@@ -1077,6 +1077,7 @@ export type Database = {
       mountains: {
         Row: {
           address: string | null
+          bac100_label: string | null
           created_at: string | null
           description: string | null
           designated_date: string | null
@@ -1102,6 +1103,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          bac100_label?: string | null
           created_at?: string | null
           description?: string | null
           designated_date?: string | null
@@ -1127,6 +1129,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          bac100_label?: string | null
           created_at?: string | null
           description?: string | null
           designated_date?: string | null

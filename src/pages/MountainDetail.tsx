@@ -110,7 +110,14 @@ const MountainDetail = () => {
       <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{mountain.nameKo}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-foreground">{mountain.nameKo}</h1>
+              {mountain.is_baekdu && (
+                <span className="inline-flex items-center rounded-full border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
+                  🏔️ {mountain.bac100_label || "산림청 100대 명산"}
+                </span>
+              )}
+            </div>
             <p className="mt-0.5 text-sm text-muted-foreground">{mountain.name}</p>
           </div>
           <div className="flex items-center gap-2">
