@@ -58,6 +58,7 @@ export interface PlanEditHistory {
 export function useHikingPlans() {
   const { user } = useAuth();
   const [plans, setPlans] = useState<HikingPlan[]>([]);
+  const [myUpcomingPlans, setMyUpcomingPlans] = useState<HikingPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<PlanNotification[]>([]);
 
@@ -69,6 +70,42 @@ export function useHikingPlans() {
       .order("planned_date", { ascending: true });
     setPlans((data as HikingPlan[]) || []);
     setLoading(false);
+  }, [user]);
+
+  const fetchMyUpcomingPlans = useCallback(async () => {
+    if (!user) return;
+    const today = new Date().toISOString().split("T")[0];
+    // Get plan IDs the user participates in
+    const { data: participations } = await supabase
+      .from("plan_participants")
+      .select("plan_id")
+      .eq("user_id", user.id);
+    const participatedPlanIds = (participations || []).map((p: any) => p.plan_id);
+    // Also include plans the user created
+    const { data: createdPlans } = await supabase
+      .from("hiking_plans")
+      .select("*")
+      .eq("creator_id", user.id)
+      .gte("planned_date", today)
+      .neq("status", "cancelled")
+      .order("planned_date", { ascending: true });
+    
+    let participatedPlans: HikingPlan[] = [];
+    if (participatedPlanIds.length > 0) {
+      const { data } = await supabase
+        .from("hiking_plans")
+        .select("*")
+        .in("id", participatedPlanIds)
+        .gte("planned_date", today)
+        .neq("status", "cancelled")
+        .order("planned_date", { ascending: true });
+      participatedPlans = (data as HikingPlan[]) || [];
+    }
+    // Merge and deduplicate
+    const allPlans = [...(createdPlans as HikingPlan[] || []), ...participatedPlans];
+    const uniquePlans = Array.from(new Map(allPlans.map(p => [p.id, p])).values())
+      .sort((a, b) => new Date(a.planned_date).getTime() - new Date(b.planned_date).getTime());
+    setMyUpcomingPlans(uniquePlans);
   }, [user]);
 
   const fetchNotifications = useCallback(async () => {
@@ -84,8 +121,9 @@ export function useHikingPlans() {
 
   useEffect(() => {
     fetchPlans();
+    fetchMyUpcomingPlans();
     fetchNotifications();
-  }, [fetchPlans, fetchNotifications]);
+  }, [fetchPlans, fetchMyUpcomingPlans, fetchNotifications]);
 
   const createPlan = async (plan: {
     mountain_id: number;
@@ -389,6 +427,7 @@ export function useHikingPlans() {
 
   return {
     plans,
+    myUpcomingPlans,
     loading,
     notifications,
     createPlan,
