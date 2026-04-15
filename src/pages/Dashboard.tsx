@@ -51,7 +51,7 @@ const Dashboard = () => {
     useAchievementStore(records, gearItems, sharedCompletions);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { plans } = useHikingPlans();
+  const { plans, myUpcomingPlans } = useHikingPlans();
   const { fetchFeed } = useHikingJournals();
   const { fetchAllChallenges, fetchUserChallenges } = useChallenges();
   const { fetchSharedCompletions } = useSharedCompletions();
