@@ -427,6 +427,7 @@ export function useHikingPlans() {
 
   return {
     plans,
+    myUpcomingPlans,
     loading,
     notifications,
     createPlan,
