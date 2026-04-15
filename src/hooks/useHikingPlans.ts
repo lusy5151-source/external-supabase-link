@@ -77,8 +77,8 @@ export function useHikingPlans() {
       .from("plan_notifications")
       .select("*")
       .eq("user_id", user.id)
-      .eq("is_read", false)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(50);
     setNotifications((data as PlanNotification[]) || []);
   }, [user]);
 
@@ -359,7 +359,17 @@ export function useHikingPlans() {
       .from("plan_notifications")
       .update({ is_read: true } as any)
       .eq("id", notificationId);
-    fetchNotifications();
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
+    );
+  };
+
+  const deleteNotification = async (notificationId: string) => {
+    await supabase
+      .from("plan_notifications")
+      .delete()
+      .eq("id", notificationId);
+    setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
   };
 
   const joinByCode = async (code: string) => {
@@ -393,6 +403,7 @@ export function useHikingPlans() {
     acceptInvitation,
     declineInvitation,
     markNotificationRead,
+    deleteNotification,
     joinByCode,
     refetch: fetchPlans,
   };

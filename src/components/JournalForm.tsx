@@ -7,13 +7,6 @@ import { usePrivacySettings } from "@/hooks/usePrivacySettings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import {
   Mountain, Camera, X, Clock, Route, Globe, Users, Lock, Loader2, Plus,
@@ -262,14 +255,23 @@ export function JournalForm({ editJournal, onClose, onSaved }: JournalFormProps)
             </div>
             <div>
               <label className="text-xs font-medium text-foreground mb-1.5 block">난이도</label>
-              <Select value={difficulty} onValueChange={setDifficulty}>
-                <SelectTrigger><SelectValue placeholder="선택" /></SelectTrigger>
-                <SelectContent>
-                  {difficultyOptions.map((d) => (
-                    <SelectItem key={d} value={d}>{d}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex flex-wrap gap-1.5">
+                {difficultyOptions.map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setDifficulty(difficulty === d ? "" : d)}
+                    className={cn(
+                      "rounded-lg border px-2.5 py-1.5 text-xs transition-colors",
+                      difficulty === d
+                        ? "border-primary bg-primary/10 text-primary font-semibold"
+                        : "border-border bg-background text-muted-foreground hover:bg-secondary/50"
+                    )}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

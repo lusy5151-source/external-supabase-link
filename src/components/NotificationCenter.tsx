@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useHikingPlans, type PlanNotification } from "@/hooks/useHikingPlans";
-import { Bell, Calendar, UserCheck, UserX, AlertTriangle, Cloud, ChevronRight, X } from "lucide-react";
+import { Bell, Calendar, UserCheck, UserX, AlertTriangle, Cloud, ChevronRight, X, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
 
 const typeConfig: Record<string, { icon: any; color: string }> = {
   invitation: { icon: Calendar, color: "text-primary" },
@@ -15,10 +16,13 @@ const typeConfig: Record<string, { icon: any; color: string }> = {
 };
 
 const NotificationCenter = () => {
-  const { notifications, markNotificationRead } = useHikingPlans();
+  const { notifications, markNotificationRead, deleteNotification } = useHikingPlans();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -29,9 +33,15 @@ const NotificationCenter = () => {
   }, []);
 
   const handleClick = (n: PlanNotification) => {
-    markNotificationRead(n.id);
+    if (!n.is_read) markNotificationRead(n.id);
     setOpen(false);
     navigate(`/plans/${n.plan_id}`);
+  };
+
+  const handleDelete = (e: React.MouseEvent, n: PlanNotification) => {
+    e.stopPropagation();
+    deleteNotification(n.id);
+    toast({ title: "알림이 삭제되었습니다" });
   };
 
   return (
@@ -41,9 +51,9 @@ const NotificationCenter = () => {
         className="relative rounded-lg p-1.5 text-muted-foreground transition-colors hover:text-primary"
       >
         <Bell className="h-4 w-4" />
-        {notifications.length > 0 && (
+        {unreadCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
-            {notifications.length > 9 ? "9+" : notifications.length}
+            {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
@@ -67,23 +77,47 @@ const NotificationCenter = () => {
               {notifications.map((n) => {
                 const config = typeConfig[n.type] || typeConfig.invitation;
                 const Icon = config.icon;
+                const isUnread = !n.is_read;
                 return (
-                  <button
+                  <div
                     key={n.id}
-                    onClick={() => handleClick(n)}
-                    className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-secondary/50 transition-colors border-b border-border/50 last:border-0"
+                    className={cn(
+                      "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors border-b border-border/50 last:border-0 group relative",
+                      isUnread
+                        ? "bg-primary/5 hover:bg-primary/10"
+                        : "hover:bg-secondary/50"
+                    )}
                   >
-                    <div className={cn("mt-0.5 shrink-0", config.color)}>
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground leading-snug">{n.message}</p>
-                      <p className="text-[10px] text-muted-foreground mt-1">
-                        {format(new Date(n.created_at), "M월 d일 HH:mm", { locale: ko })}
-                      </p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 mt-1" />
-                  </button>
+                    <button
+                      onClick={() => handleClick(n)}
+                      className="flex items-start gap-3 flex-1 min-w-0 text-left"
+                    >
+                      <div className={cn("mt-0.5 shrink-0", config.color)}>
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={cn(
+                          "text-sm leading-snug",
+                          isUnread ? "font-semibold text-foreground" : "text-muted-foreground"
+                        )}>
+                          {n.message}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          {format(new Date(n.created_at), "M월 d일 HH:mm", { locale: ko })}
+                        </p>
+                      </div>
+                      {isUnread && (
+                        <span className="mt-2 h-2 w-2 rounded-full bg-primary shrink-0" />
+                      )}
+                    </button>
+                    <button
+                      onClick={(e) => handleDelete(e, n)}
+                      className="shrink-0 mt-1 p-1 rounded-md text-muted-foreground/40 opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 transition-all"
+                      title="삭제"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 );
               })}
             </div>
