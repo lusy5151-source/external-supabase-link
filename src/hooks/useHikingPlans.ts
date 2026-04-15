@@ -121,8 +121,9 @@ export function useHikingPlans() {
 
   useEffect(() => {
     fetchPlans();
+    fetchMyUpcomingPlans();
     fetchNotifications();
-  }, [fetchPlans, fetchNotifications]);
+  }, [fetchPlans, fetchMyUpcomingPlans, fetchNotifications]);
 
   const createPlan = async (plan: {
     mountain_id: number;
