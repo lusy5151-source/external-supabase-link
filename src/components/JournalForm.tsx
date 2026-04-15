@@ -7,13 +7,6 @@ import { usePrivacySettings } from "@/hooks/usePrivacySettings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import {
   Mountain, Camera, X, Clock, Route, Globe, Users, Lock, Loader2, Plus,
