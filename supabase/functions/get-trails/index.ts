@@ -34,6 +34,7 @@ Deno.serve(async (req) => {
         domain: "https://wandeung.com",
         format: "json",
         crs: "EPSG:4326",
+        size: "100",
         attrFilter: `mntn_nm:like:${name}`,
       });
 
