@@ -50,10 +50,12 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 interface AiVerification {
-  status: "idle" | "verifying" | "approved" | "rejected" | "error";
+  status: "idle" | "verifying" | "approved" | "rejected" | "error" | "blocked" | "cooldown";
   confidence: number;
   reason: string;
   detected_elements: string[];
+  remaining?: number;
+  waitSeconds?: number;
 }
 
 interface Props {
