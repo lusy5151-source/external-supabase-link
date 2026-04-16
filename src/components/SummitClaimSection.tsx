@@ -154,17 +154,16 @@ export function SummitClaimSection({ mountainId, mountainName }: Props) {
     );
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const { compressImageToDataUrl } = await import("@/lib/imageUpload");
+      const dataUrl = await compressImageToDataUrl(file, "summit");
+      if (!dataUrl) return;
       setPhotoFile(file);
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const dataUrl = ev.target?.result as string;
-        setPhotoPreview(dataUrl);
-        verifyPhotoWithAI(dataUrl);
-      };
-      reader.readAsDataURL(file);
+      setAiVerification({ status: "idle", confidence: 0, reason: "", detected_elements: [] });
+      setPhotoPreview(dataUrl);
+      verifyPhotoWithAI(dataUrl);
     }
   };
 
