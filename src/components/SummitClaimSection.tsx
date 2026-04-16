@@ -445,7 +445,6 @@ export function SummitClaimSection({ mountainId, mountainName }: Props) {
                 </div>
               )}
             </div>
-            </div>
 
             {/* Step 1: GPS */}
             <div className="space-y-2">
