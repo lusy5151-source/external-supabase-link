@@ -161,7 +161,7 @@ export function SummitClaimSection({ mountainId, mountainName }: Props) {
       const dataUrl = await compressImageToDataUrl(file, "summit");
       if (!dataUrl) return;
       setPhotoFile(file);
-      setAiVerification({ status: "idle", confidence: 0, reason: "", elements: [] });
+      setAiVerification({ status: "idle", confidence: 0, reason: "", detected_elements: [] });
       setPhotoPreview(dataUrl);
       verifyPhotoWithAI(dataUrl);
     }
