@@ -117,12 +117,39 @@ export function SummitClaimSection({ mountainId, mountainName }: Props) {
           summitName: selectedSummit?.summit_name || "",
         },
       });
-      if (error) throw error;
+
+      // Handle 429 responses (daily limit / cooldown)
+      if (error) {
+        // Try to parse the error context for structured responses
+        try {
+          const errBody = typeof error === 'object' && error.context ? await error.context.json?.() : null;
+          if (errBody?.blocked) {
+            setAiVerification({ status: "blocked", confidence: 0, reason: errBody.error, detected_elements: [], remaining: 0 });
+            return;
+          }
+          if (errBody?.cooldown) {
+            setAiVerification({ status: "cooldown", confidence: 0, reason: errBody.error, detected_elements: [], waitSeconds: errBody.wait_seconds, remaining: errBody.remaining });
+            return;
+          }
+        } catch {}
+        throw error;
+      }
+
+      if (data?.blocked) {
+        setAiVerification({ status: "blocked", confidence: 0, reason: data.error, detected_elements: [], remaining: 0 });
+        return;
+      }
+      if (data?.cooldown) {
+        setAiVerification({ status: "cooldown", confidence: 0, reason: data.error, detected_elements: [], waitSeconds: data.wait_seconds, remaining: data.remaining });
+        return;
+      }
+
       setAiVerification({
         status: data.approved ? "approved" : "rejected",
         confidence: data.confidence || 0,
         reason: data.reason || "",
         detected_elements: data.detected_elements || [],
+        remaining: data.remaining,
       });
     } catch (err) {
       console.error("AI verification error:", err);
@@ -408,7 +435,15 @@ export function SummitClaimSection({ mountainId, mountainName }: Props) {
                 <li>정상 50m 이내 GPS 위치 확인</li>
                 <li>정상 사진 업로드 필수</li>
                 <li>같은 정상 12시간 쿨다운</li>
+                <li>AI 인증: 하루 최대 2회, 60초 간격</li>
               </ul>
+              {aiVerification.remaining !== undefined && (
+                <div className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-primary">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  오늘 남은 AI 인증 횟수: {aiVerification.remaining}회
+                </div>
+              )}
+            </div>
             </div>
 
             {/* Step 1: GPS */}
