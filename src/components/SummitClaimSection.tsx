@@ -3,6 +3,7 @@ import { useSummits, type Summit, type SummitClaim } from "@/hooks/useSummits";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingGroups } from "@/hooks/useHikingGroups";
 import { useMountains } from "@/contexts/MountainsContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -31,9 +32,19 @@ import {
   Users,
   Clock,
   Shield,
+  ShieldCheck,
+  ShieldX,
+  AlertTriangle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+
+interface AiVerification {
+  status: "idle" | "verifying" | "approved" | "rejected" | "error";
+  confidence: number;
+  reason: string;
+  detected_elements: string[];
+}
 
 interface Props {
   mountainId: number;
@@ -77,8 +88,34 @@ export function SummitClaimSection({ mountainId, mountainName }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [expandedSummit, setExpandedSummit] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [aiVerification, setAiVerification] = useState<AiVerification>({
+    status: "idle", confidence: 0, reason: "", detected_elements: [],
+  });
 
   const leader = getMountainLeader();
+
+  const verifyPhotoWithAI = async (imageDataUrl: string) => {
+    setAiVerification({ status: "verifying", confidence: 0, reason: "", detected_elements: [] });
+    try {
+      const { data, error } = await supabase.functions.invoke("verify-summit-photo", {
+        body: {
+          imageBase64: imageDataUrl,
+          mountainName: mountainName || "",
+          summitName: selectedSummit?.summit_name || "",
+        },
+      });
+      if (error) throw error;
+      setAiVerification({
+        status: data.approved ? "approved" : "rejected",
+        confidence: data.confidence || 0,
+        reason: data.reason || "",
+        detected_elements: data.detected_elements || [],
+      });
+    } catch (err) {
+      console.error("AI verification error:", err);
+      setAiVerification({ status: "error", confidence: 0, reason: "AI 검증을 수행할 수 없습니다", detected_elements: [] });
+    }
+  };
 
   const handleStartClaim = (summit: Summit) => {
     setSelectedSummit(summit);
@@ -87,6 +124,7 @@ export function SummitClaimSection({ mountainId, mountainName }: Props) {
     setGpsStatus("idle");
     setUserLocation(null);
     setSelectedGroupId("");
+    setAiVerification({ status: "idle", confidence: 0, reason: "", detected_elements: [] });
     setShowClaimDialog(true);
   };
 
@@ -110,7 +148,11 @@ export function SummitClaimSection({ mountainId, mountainName }: Props) {
     if (file) {
       setPhotoFile(file);
       const reader = new FileReader();
-      reader.onload = (ev) => setPhotoPreview(ev.target?.result as string);
+      reader.onload = (ev) => {
+        const dataUrl = ev.target?.result as string;
+        setPhotoPreview(dataUrl);
+        verifyPhotoWithAI(dataUrl);
+      };
       reader.readAsDataURL(file);
     }
   };
@@ -411,6 +453,52 @@ export function SummitClaimSection({ mountainId, mountainName }: Props) {
                 </Button>
               )}
             </div>
+
+            {/* AI Verification Result */}
+            {aiVerification.status === "verifying" && (
+              <div className="rounded-xl border border-border bg-muted/50 p-3 flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                <span className="text-xs text-muted-foreground">AI가 정상석을 분석하고 있습니다...</span>
+              </div>
+            )}
+            {aiVerification.status === "approved" && (
+              <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-primary" />
+                  <span className="text-xs font-medium text-primary">AI 인증 통과</span>
+                  <Badge variant="secondary" className="text-[10px] ml-auto">
+                    신뢰도 {aiVerification.confidence}%
+                  </Badge>
+                </div>
+                <p className="text-[11px] text-muted-foreground">{aiVerification.reason}</p>
+                {aiVerification.detected_elements.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {aiVerification.detected_elements.map((el, i) => (
+                      <Badge key={i} variant="outline" className="text-[9px]">{el}</Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {aiVerification.status === "rejected" && (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <ShieldX className="h-4 w-4 text-destructive" />
+                  <span className="text-xs font-medium text-destructive">AI 인증 미통과</span>
+                  <Badge variant="secondary" className="text-[10px] ml-auto">
+                    신뢰도 {aiVerification.confidence}%
+                  </Badge>
+                </div>
+                <p className="text-[11px] text-muted-foreground">{aiVerification.reason}</p>
+                <p className="text-[10px] text-muted-foreground">* AI 판별과 무관하게 인증 제출은 가능합니다</p>
+              </div>
+            )}
+            {aiVerification.status === "error" && (
+              <div className="rounded-xl border border-border bg-muted/30 p-3 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                <span className="text-[11px] text-muted-foreground">AI 검증을 건너뜁니다. 인증은 계속 가능합니다.</span>
+              </div>
+            )}
 
             {/* Step 3: Optional club */}
             {myGroups.length > 0 && (
