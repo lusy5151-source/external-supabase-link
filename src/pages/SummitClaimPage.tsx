@@ -61,10 +61,12 @@ export default function SummitClaimPage() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [aiVerification, setAiVerification] = useState<{
-    status: "idle" | "verifying" | "approved" | "rejected" | "error";
+    status: "idle" | "verifying" | "approved" | "rejected" | "error" | "blocked" | "cooldown";
     confidence: number;
     reason: string;
     elements: string[];
+    remaining?: number;
+    waitSeconds?: number;
   }>({ status: "idle", confidence: 0, reason: "", elements: [] });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -182,13 +184,36 @@ export default function SummitClaimPage() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        try {
+          const errBody = typeof error === 'object' && error.context ? await error.context.json?.() : null;
+          if (errBody?.blocked) {
+            setAiVerification({ status: "blocked", confidence: 0, reason: errBody.error, elements: [], remaining: 0 });
+            return;
+          }
+          if (errBody?.cooldown) {
+            setAiVerification({ status: "cooldown", confidence: 0, reason: errBody.error, elements: [], waitSeconds: errBody.wait_seconds, remaining: errBody.remaining });
+            return;
+          }
+        } catch {}
+        throw error;
+      }
+
+      if (data?.blocked) {
+        setAiVerification({ status: "blocked", confidence: 0, reason: data.error, elements: [], remaining: 0 });
+        return;
+      }
+      if (data?.cooldown) {
+        setAiVerification({ status: "cooldown", confidence: 0, reason: data.error, elements: [], waitSeconds: data.wait_seconds, remaining: data.remaining });
+        return;
+      }
 
       setAiVerification({
         status: data.approved ? "approved" : "rejected",
         confidence: data.confidence || 0,
         reason: data.reason || "",
         elements: data.detected_elements || [],
+        remaining: data.remaining,
       });
     } catch (err) {
       console.error("AI verification error:", err);
