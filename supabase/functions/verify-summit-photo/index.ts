@@ -96,8 +96,9 @@ serve(async (req) => {
     const rawText =
       geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-    // Extract JSON from response (handle markdown code blocks)
-    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    // Extract JSON from response (handle markdown code blocks like ```json ... ```)
+    const cleanedText = rawText.replace(/```(?:json)?\s*/gi, "").replace(/```/g, "").trim();
+    const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       console.error("Failed to parse Gemini response:", rawText);
       return new Response(
