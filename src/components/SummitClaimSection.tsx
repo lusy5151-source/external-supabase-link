@@ -3,6 +3,7 @@ import { useSummits, type Summit, type SummitClaim } from "@/hooks/useSummits";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingGroups } from "@/hooks/useHikingGroups";
 import { useMountains } from "@/contexts/MountainsContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -31,9 +32,19 @@ import {
   Users,
   Clock,
   Shield,
+  ShieldCheck,
+  ShieldX,
+  AlertTriangle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+
+interface AiVerification {
+  status: "idle" | "verifying" | "approved" | "rejected" | "error";
+  confidence: number;
+  reason: string;
+  detected_elements: string[];
+}
 
 interface Props {
   mountainId: number;
