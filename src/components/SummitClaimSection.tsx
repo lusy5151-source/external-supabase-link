@@ -148,7 +148,11 @@ export function SummitClaimSection({ mountainId, mountainName }: Props) {
     if (file) {
       setPhotoFile(file);
       const reader = new FileReader();
-      reader.onload = (ev) => setPhotoPreview(ev.target?.result as string);
+      reader.onload = (ev) => {
+        const dataUrl = ev.target?.result as string;
+        setPhotoPreview(dataUrl);
+        verifyPhotoWithAI(dataUrl);
+      };
       reader.readAsDataURL(file);
     }
   };
