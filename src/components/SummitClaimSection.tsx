@@ -157,13 +157,18 @@ export function SummitClaimSection({ mountainId, mountainName }: Props) {
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const { compressImageToDataUrl } = await import("@/lib/imageUpload");
+      const { compressImageToDataUrl, resizeImageForAI } = await import("@/lib/imageUpload");
       const dataUrl = await compressImageToDataUrl(file, "summit");
       if (!dataUrl) return;
       setPhotoFile(file);
       setAiVerification({ status: "idle", confidence: 0, reason: "", detected_elements: [] });
       setPhotoPreview(dataUrl);
-      verifyPhotoWithAI(dataUrl);
+      try {
+        const aiDataUrl = await resizeImageForAI(file);
+        verifyPhotoWithAI(aiDataUrl);
+      } catch {
+        verifyPhotoWithAI(dataUrl);
+      }
     }
   };
 

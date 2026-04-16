@@ -80,4 +80,32 @@ export async function compressImageToDataUrl(file: File, preset: ImageUploadPres
   });
 }
 
+export function resizeImageForAI(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement("canvas");
+    const img = new Image();
+    img.onload = () => {
+      const maxSize = 800;
+      let width = img.width;
+      let height = img.height;
+      if (width > height && width > maxSize) {
+        height = (height * maxSize) / width;
+        width = maxSize;
+      } else if (height > maxSize) {
+        width = (width * maxSize) / height;
+        height = maxSize;
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { reject(new Error("Canvas context unavailable")); return; }
+      ctx.drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(img.src);
+      resolve(canvas.toDataURL("image/jpeg", 0.7));
+    };
+    img.onerror = () => { URL.revokeObjectURL(img.src); reject(new Error("Image load failed")); };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 export const IMAGE_ACCEPT = ".jpg,.jpeg,.png,.webp,.heic,.heif";
