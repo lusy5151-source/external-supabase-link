@@ -15,6 +15,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -91,6 +101,7 @@ export function SummitClaimSection({ mountainId, mountainName }: Props) {
   const [aiVerification, setAiVerification] = useState<AiVerification>({
     status: "idle", confidence: 0, reason: "", detected_elements: [],
   });
+  const [showRejectWarning, setShowRejectWarning] = useState(false);
 
   const leader = getMountainLeader();
 
@@ -524,7 +535,13 @@ export function SummitClaimSection({ mountainId, mountainName }: Props) {
             <Button
               className="w-full rounded-xl gap-2"
               disabled={!userLocation || !photoFile || claiming}
-              onClick={handleSubmitClaim}
+              onClick={() => {
+                if (aiVerification.status === "rejected") {
+                  setShowRejectWarning(true);
+                } else {
+                  handleSubmitClaim();
+                }
+              }}
             >
               {claiming ? (
                 <><Loader2 className="h-4 w-4 animate-spin" /> 인증 중...</>
@@ -532,6 +549,38 @@ export function SummitClaimSection({ mountainId, mountainName }: Props) {
                 <><Flag className="h-4 w-4" /> 정상 정복 인증하기</>
               )}
             </Button>
+
+            <AlertDialog open={showRejectWarning} onOpenChange={setShowRejectWarning}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center gap-2">
+                    <ShieldX className="h-5 w-5 text-destructive" />
+                    AI 인증 경고
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="space-y-2 text-left">
+                    <p>AI가 이 사진에서 정상석을 인식하지 못했습니다.</p>
+                    {aiVerification.reason && (
+                      <p className="text-xs bg-destructive/10 rounded-lg p-2 border border-destructive/20">
+                        사유: {aiVerification.reason}
+                      </p>
+                    )}
+                    <p>그래도 인증을 제출하시겠습니까?</p>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>취소</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      setShowRejectWarning(false);
+                      handleSubmitClaim();
+                    }}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    그래도 제출
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
             {/* Cooldown note */}
             <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground justify-center">
