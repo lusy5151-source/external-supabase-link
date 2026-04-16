@@ -148,6 +148,33 @@ export type Database = {
           },
         ]
       }
+      ai_verification_attempts: {
+        Row: {
+          created_at: string
+          fail_reason: string | null
+          id: string
+          photo_url: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          fail_reason?: string | null
+          id?: string
+          photo_url?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          fail_reason?: string | null
+          id?: string
+          photo_url?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           alert_type: string | null

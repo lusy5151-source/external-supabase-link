@@ -61,10 +61,12 @@ export default function SummitClaimPage() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [aiVerification, setAiVerification] = useState<{
-    status: "idle" | "verifying" | "approved" | "rejected" | "error";
+    status: "idle" | "verifying" | "approved" | "rejected" | "error" | "blocked" | "cooldown";
     confidence: number;
     reason: string;
     elements: string[];
+    remaining?: number;
+    waitSeconds?: number;
   }>({ status: "idle", confidence: 0, reason: "", elements: [] });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -182,13 +184,36 @@ export default function SummitClaimPage() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        try {
+          const errBody = typeof error === 'object' && error.context ? await error.context.json?.() : null;
+          if (errBody?.blocked) {
+            setAiVerification({ status: "blocked", confidence: 0, reason: errBody.error, elements: [], remaining: 0 });
+            return;
+          }
+          if (errBody?.cooldown) {
+            setAiVerification({ status: "cooldown", confidence: 0, reason: errBody.error, elements: [], waitSeconds: errBody.wait_seconds, remaining: errBody.remaining });
+            return;
+          }
+        } catch {}
+        throw error;
+      }
+
+      if (data?.blocked) {
+        setAiVerification({ status: "blocked", confidence: 0, reason: data.error, elements: [], remaining: 0 });
+        return;
+      }
+      if (data?.cooldown) {
+        setAiVerification({ status: "cooldown", confidence: 0, reason: data.error, elements: [], waitSeconds: data.wait_seconds, remaining: data.remaining });
+        return;
+      }
 
       setAiVerification({
         status: data.approved ? "approved" : "rejected",
         confidence: data.confidence || 0,
         reason: data.reason || "",
         elements: data.detected_elements || [],
+        remaining: data.remaining,
       });
     } catch (err) {
       console.error("AI verification error:", err);
@@ -588,8 +613,15 @@ export default function SummitClaimPage() {
               <li>정상 사진 업로드 필수</li>
               <li>GPS는 선택사항 (보조 인증)</li>
               <li>같은 정상 12시간 쿨다운</li>
+              <li>AI 인증: 하루 최대 2회, 60초 간격</li>
               <li>오프라인에서도 저장 가능</li>
             </ul>
+            {aiVerification.remaining !== undefined && (
+              <div className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-primary">
+                <Sparkles className="h-3.5 w-3.5" />
+                오늘 남은 AI 인증 횟수: {aiVerification.remaining}회
+              </div>
+            )}
           </div>
 
           {/* GPS (optional) */}
@@ -733,6 +765,25 @@ export default function SummitClaimPage() {
                 {aiVerification.status === "error" && (
                   <div className="rounded-xl bg-muted/50 p-3 flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-[11px] text-muted-foreground">{aiVerification.reason}</p>
+                  </div>
+                )}
+                {aiVerification.status === "blocked" && (
+                  <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <ShieldX className="h-4 w-4 text-destructive" />
+                      <p className="text-xs font-medium text-destructive">일일 AI 인증 횟수 초과</p>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">{aiVerification.reason}</p>
+                    <p className="text-[10px] text-muted-foreground">* AI 검증 없이도 인증 제출은 가능합니다</p>
+                  </div>
+                )}
+                {aiVerification.status === "cooldown" && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-900/10 dark:border-amber-800/30 p-3 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <p className="text-xs font-medium text-amber-700 dark:text-amber-400">잠시 후 다시 시도해주세요</p>
+                    </div>
                     <p className="text-[11px] text-muted-foreground">{aiVerification.reason}</p>
                   </div>
                 )}
