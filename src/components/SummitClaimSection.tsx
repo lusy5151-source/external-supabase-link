@@ -88,8 +88,34 @@ export function SummitClaimSection({ mountainId, mountainName }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [expandedSummit, setExpandedSummit] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [aiVerification, setAiVerification] = useState<AiVerification>({
+    status: "idle", confidence: 0, reason: "", detected_elements: [],
+  });
 
   const leader = getMountainLeader();
+
+  const verifyPhotoWithAI = async (imageDataUrl: string) => {
+    setAiVerification({ status: "verifying", confidence: 0, reason: "", detected_elements: [] });
+    try {
+      const { data, error } = await supabase.functions.invoke("verify-summit-photo", {
+        body: {
+          imageBase64: imageDataUrl,
+          mountainName: mountainName || "",
+          summitName: selectedSummit?.summit_name || "",
+        },
+      });
+      if (error) throw error;
+      setAiVerification({
+        status: data.approved ? "approved" : "rejected",
+        confidence: data.confidence || 0,
+        reason: data.reason || "",
+        detected_elements: data.detected_elements || [],
+      });
+    } catch (err) {
+      console.error("AI verification error:", err);
+      setAiVerification({ status: "error", confidence: 0, reason: "AI 검증을 수행할 수 없습니다", detected_elements: [] });
+    }
+  };
 
   const handleStartClaim = (summit: Summit) => {
     setSelectedSummit(summit);
@@ -98,6 +124,7 @@ export function SummitClaimSection({ mountainId, mountainName }: Props) {
     setGpsStatus("idle");
     setUserLocation(null);
     setSelectedGroupId("");
+    setAiVerification({ status: "idle", confidence: 0, reason: "", detected_elements: [] });
     setShowClaimDialog(true);
   };
 
