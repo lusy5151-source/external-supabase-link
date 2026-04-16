@@ -553,6 +553,25 @@ export function SummitClaimSection({ mountainId, mountainName }: Props) {
                 <span className="text-[11px] text-muted-foreground">AI 검증을 건너뜁니다. 인증은 계속 가능합니다.</span>
               </div>
             )}
+            {aiVerification.status === "blocked" && (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 space-y-1">
+                <div className="flex items-center gap-2">
+                  <ShieldX className="h-4 w-4 text-destructive" />
+                  <span className="text-xs font-medium text-destructive">일일 AI 인증 횟수 초과</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground">{aiVerification.reason}</p>
+                <p className="text-[10px] text-muted-foreground">* AI 검증 없이도 인증 제출은 가능합니다</p>
+              </div>
+            )}
+            {aiVerification.status === "cooldown" && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-900/10 dark:border-amber-800/30 p-3 space-y-1">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <span className="text-xs font-medium text-amber-700 dark:text-amber-400">잠시 후 다시 시도해주세요</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground">{aiVerification.reason}</p>
+              </div>
+            )}
 
             {/* Step 3: Optional club */}
             {myGroups.length > 0 && (
