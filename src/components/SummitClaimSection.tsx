@@ -184,7 +184,9 @@ export function SummitClaimSection({ mountainId, mountainName }: Props) {
         latitude: selectedSummit.latitude,
         longitude: selectedSummit.longitude,
         elevation: selectedSummit.elevation,
-      } : undefined
+      } : undefined,
+      aiVerification.status === "approved" ? true : aiVerification.status === "rejected" ? false : null,
+      aiVerification.confidence || null
     );
     setClaiming(false);
     if (result.success) {
