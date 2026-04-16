@@ -1647,6 +1647,8 @@ export type Database = {
       }
       summit_claims: {
         Row: {
+          ai_confidence: number | null
+          ai_verified: boolean | null
           claimed_at: string
           created_at: string | null
           group_id: string | null
@@ -1660,6 +1662,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_confidence?: number | null
+          ai_verified?: boolean | null
           claimed_at?: string
           created_at?: string | null
           group_id?: string | null
@@ -1673,6 +1677,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_confidence?: number | null
+          ai_verified?: boolean | null
           claimed_at?: string
           created_at?: string | null
           group_id?: string | null
