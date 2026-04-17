@@ -20,8 +20,11 @@ export interface Mountain {
   lng: number;
   difficulty: string;
   description: string;
+  /** @deprecated use is_bac100 instead */
   is_baekdu: boolean;
+  is_bac100?: boolean;
   bac100_label?: string;
+  popularity?: number;
   trails: TrailInfo[];
   overview?: string;
   address?: string;
