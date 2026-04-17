@@ -39,8 +39,8 @@ export function useBac100Mountains() {
           bac100_rank: row.bac_rank ?? m.bac100_rank ?? null,
           image_url: m.image_url ?? "",
           feature: m.feature ?? "",
-          stamp_location: row.stamp_location ?? "",
-        } as Mountain;
+          trails: [],
+        } as unknown as Mountain;
       });
     },
     staleTime: 1000 * 60 * 30,
