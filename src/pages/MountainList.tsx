@@ -16,7 +16,7 @@ import RegisterMountainModal from "@/components/RegisterMountainModal";
 const MountainMapSection = lazy(() => import("@/components/MountainMapSection"));
 
 type SortKey = "name" | "height" | "popularity";
-type ViewMode = "all" | "baekdu" | "region" | "oreum" | "full";
+type ViewMode = "all" | "forestry100" | "bac100" | "region" | "oreum" | "full";
 
 const MountainList = () => {
   const { mountains: dbMountains } = useMountains();
@@ -65,7 +65,16 @@ const MountainList = () => {
   };
 
   const allFiltered = useMemo(() => filterAndSort(allMountains), [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, allMountains, showUserOnly]);
-  const baekduFiltered = useMemo(() => filterAndSort(dbMountains.filter((m) => m.is_baekdu)), [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly, dbMountains]);
+  // 산림청 100대 명산: bac100_label 에 "산림청" 포함
+  const forestry100Filtered = useMemo(
+    () => filterAndSort(dbMountains.filter((m) => m.bac100_label?.includes("산림청"))),
+    [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly, dbMountains]
+  );
+  // BAC 100대 명산: is_bac100 = true (산림청 라벨이 아닌 경우)
+  const bac100Filtered = useMemo(
+    () => filterAndSort(dbMountains.filter((m) => (m.is_bac100 ?? m.is_baekdu) && !m.bac100_label?.includes("산림청"))),
+    [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly, dbMountains]
+  );
   const oreumFiltered = useMemo(() => filterAndSort(dbMountains.filter((m) => m.region === "제주" && !m.is_baekdu)), [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly, dbMountains]);
 
   const allRegions = [...regions, "기타"] as const;
@@ -84,13 +93,15 @@ const MountainList = () => {
 
   const viewModes: { key: ViewMode; label: string; icon: any }[] = [
     { key: "all", label: "전체", icon: MountainIcon },
-    { key: "baekdu", label: "백대명산", icon: Star },
+    { key: "forestry100", label: "산림청 100대", icon: Star },
+    { key: "bac100", label: "BAC 백대명산", icon: Star },
     { key: "region", label: "지역별", icon: MapPin },
     { key: "oreum", label: "제주 오름", icon: Flame },
   ];
 
   const getCurrentList = () => {
-    if (viewMode === "baekdu") return baekduFiltered;
+    if (viewMode === "forestry100") return forestry100Filtered;
+    if (viewMode === "bac100") return bac100Filtered;
     if (viewMode === "oreum") return oreumFiltered;
     return allFiltered;
   };
