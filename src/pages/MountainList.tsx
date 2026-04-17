@@ -11,6 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import React, { lazy, Suspense } from "react";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useUserMountains } from "@/hooks/useUserMountains";
+import { useBac100Mountains } from "@/hooks/useBac100Mountains";
 import RegisterMountainModal from "@/components/RegisterMountainModal";
 
 const MountainMapSection = lazy(() => import("@/components/MountainMapSection"));
