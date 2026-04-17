@@ -2,10 +2,12 @@ import { useEffect, useState, useMemo } from "react";
 import { useChallenges, Challenge, UserChallenge, getTierForLevel, TIER_COLORS, BadgeTier } from "@/hooks/useChallenges";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Trophy, Target, CheckCircle2, Lock, ChevronRight, TrendingUp, MapPin, CalendarCheck, CloudRain, Clock, Mountain, Leaf, Swords } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import ChallengeCompletionModal from "@/components/ChallengeCompletionModal";
+import MountainChallengeList from "@/components/MountainChallengeList";
 
 const CATEGORIES = [
   { id: "distance", title: "거리 챌린지", description: "총 등산 거리를 정복하세요", icon: TrendingUp, color: "coral" },
