@@ -24,6 +24,7 @@ const MountainList = () => {
   const { isCompleted, toggleComplete, completedCount } = useStore();
   const { user } = useAuth();
   const { userMountainsAsMountains, userMountains } = useUserMountains();
+  const { data: bac100List = [] } = useBac100Mountains();
   const [search, setSearch] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState<string>("전체");
   const [showCompleted, setShowCompleted] = useState<"all" | "done" | "todo">("all");
