@@ -96,31 +96,58 @@ const ChallengePage = () => {
   return (
     <div className="space-y-5 pb-24">
       <ChallengeCompletionModal challenge={completedChallenge} onDismiss={() => setCompletedChallenge(null)} />
-      <div className="rounded-3xl bg-gradient-to-br from-primary/10 to-emerald-100/50 dark:from-primary/5 dark:to-emerald-900/20 p-6 text-center border border-border">
-        <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-primary/15"><Trophy className="h-8 w-8 text-primary" /></div>
-        <h1 className="text-xl font-bold text-foreground">챌린지</h1>
-        <p className="text-sm text-muted-foreground mt-1">{totalCompleted} / {totalChallenges} 달성</p>
-        <div className="mt-4 mx-auto max-w-xs"><div className="h-3 w-full rounded-full bg-secondary overflow-hidden"><div className="h-full rounded-full bg-primary transition-all duration-700 ease-out" style={{ width: `${overallPct}%` }} /></div><p className="mt-1.5 text-xs text-muted-foreground">{overallPct}%</p></div>
-      </div>
-      {loading ? <div className="space-y-4">{[1, 2, 3].map((i) => <div key={i} className="h-32 rounded-3xl bg-muted animate-pulse" />)}</div> : (
-        <div className="space-y-4">
-          {categorized.map((cat) => {
-            const Icon = cat.icon;
-            const style = cat.style;
-            const hasJoined = cat.levels.some((l) => l.userChallenge);
-            return (
-              <div key={cat.id} className={`rounded-3xl border border-border bg-gradient-to-br ${style.bg} p-5 shadow-sm`}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3"><div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${style.iconBg}`}><Icon className={`h-5 w-5 ${style.iconColor}`} /></div><div><h2 className="font-bold text-sm text-foreground">{cat.title}</h2><p className="text-[11px] text-muted-foreground">{cat.description}</p></div></div>
-                  {cat.completedCount > 0 && <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary">{cat.completedCount}/{cat.levels.length}</span>}
-                </div>
-                <div className="space-y-2.5">{cat.levels.map((item) => <LevelCard key={item.challenge.id} item={item} categoryStyle={style} />)}</div>
-                {!hasJoined && <Button className="w-full mt-4 rounded-2xl gap-2" onClick={() => handleJoinCategory(cat.id)} disabled={joining === cat.id}><Target className="h-4 w-4" />{joining === cat.id ? "참여 중..." : "챌린지 시작하기"}</Button>}
-              </div>
-            );
-          })}
-        </div>
-      )}
+
+      <Tabs defaultValue="forestry" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="forestry">산림청 100</TabsTrigger>
+          <TabsTrigger value="bac">BAC 100</TabsTrigger>
+          <TabsTrigger value="general">일반</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="forestry" className="mt-5">
+          <MountainChallengeList
+            type="forestry_100"
+            title="산림청 100대 명산"
+            subtitle="산림청 선정 100대 명산을 모두 완등해보세요"
+          />
+        </TabsContent>
+
+        <TabsContent value="bac" className="mt-5">
+          <MountainChallengeList
+            type="bac_100"
+            title="BAC 100대 명산"
+            subtitle="블랙야크 알파인 클럽 100대 명산 도전"
+          />
+        </TabsContent>
+
+        <TabsContent value="general" className="mt-5 space-y-5">
+          <div className="rounded-3xl bg-gradient-to-br from-primary/10 to-emerald-100/50 dark:from-primary/5 dark:to-emerald-900/20 p-6 text-center border border-border">
+            <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-primary/15"><Trophy className="h-8 w-8 text-primary" /></div>
+            <h1 className="text-xl font-bold text-foreground">챌린지</h1>
+            <p className="text-sm text-muted-foreground mt-1">{totalCompleted} / {totalChallenges} 달성</p>
+            <div className="mt-4 mx-auto max-w-xs"><div className="h-3 w-full rounded-full bg-secondary overflow-hidden"><div className="h-full rounded-full bg-primary transition-all duration-700 ease-out" style={{ width: `${overallPct}%` }} /></div><p className="mt-1.5 text-xs text-muted-foreground">{overallPct}%</p></div>
+          </div>
+          {loading ? <div className="space-y-4">{[1, 2, 3].map((i) => <div key={i} className="h-32 rounded-3xl bg-muted animate-pulse" />)}</div> : (
+            <div className="space-y-4">
+              {categorized.map((cat) => {
+                const Icon = cat.icon;
+                const style = cat.style;
+                const hasJoined = cat.levels.some((l) => l.userChallenge);
+                return (
+                  <div key={cat.id} className={`rounded-3xl border border-border bg-gradient-to-br ${style.bg} p-5 shadow-sm`}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3"><div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${style.iconBg}`}><Icon className={`h-5 w-5 ${style.iconColor}`} /></div><div><h2 className="font-bold text-sm text-foreground">{cat.title}</h2><p className="text-[11px] text-muted-foreground">{cat.description}</p></div></div>
+                      {cat.completedCount > 0 && <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary">{cat.completedCount}/{cat.levels.length}</span>}
+                    </div>
+                    <div className="space-y-2.5">{cat.levels.map((item) => <LevelCard key={item.challenge.id} item={item} categoryStyle={style} />)}</div>
+                    {!hasJoined && <Button className="w-full mt-4 rounded-2xl gap-2" onClick={() => handleJoinCategory(cat.id)} disabled={joining === cat.id}><Target className="h-4 w-4" />{joining === cat.id ? "참여 중..." : "챌린지 시작하기"}</Button>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
