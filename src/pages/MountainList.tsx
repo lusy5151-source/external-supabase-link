@@ -11,6 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import React, { lazy, Suspense } from "react";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useUserMountains } from "@/hooks/useUserMountains";
+import { useBac100Mountains } from "@/hooks/useBac100Mountains";
 import RegisterMountainModal from "@/components/RegisterMountainModal";
 
 const MountainMapSection = lazy(() => import("@/components/MountainMapSection"));
@@ -23,6 +24,7 @@ const MountainList = () => {
   const { isCompleted, toggleComplete, completedCount } = useStore();
   const { user } = useAuth();
   const { userMountainsAsMountains, userMountains } = useUserMountains();
+  const { data: bac100List = [] } = useBac100Mountains();
   const [search, setSearch] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState<string>("전체");
   const [showCompleted, setShowCompleted] = useState<"all" | "done" | "todo">("all");
@@ -70,10 +72,10 @@ const MountainList = () => {
     () => filterAndSort(dbMountains.filter((m) => m.bac100_label?.includes("산림청"))),
     [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly, dbMountains]
   );
-  // BAC 100대 명산: is_bac100 = true (산림청 라벨이 아닌 경우)
+  // BAC 100대 명산: bac100_mountains 테이블 기준 (mountains와 JOIN)
   const bac100Filtered = useMemo(
-    () => filterAndSort(dbMountains.filter((m) => (m.is_bac100 ?? m.is_baekdu) && !m.bac100_label?.includes("산림청"))),
-    [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly, dbMountains]
+    () => filterAndSort(bac100List),
+    [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly, bac100List]
   );
   const oreumFiltered = useMemo(() => filterAndSort(dbMountains.filter((m) => m.region === "제주" && !m.is_baekdu)), [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly, dbMountains]);
 
