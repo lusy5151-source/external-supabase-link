@@ -223,6 +223,56 @@ export type Database = {
         }
         Relationships: []
       }
+      bac100_mountains: {
+        Row: {
+          address: string | null
+          bac_rank: number | null
+          created_at: string
+          height: number | null
+          id: number
+          is_active: boolean
+          mountain_id: number | null
+          name_ko: string
+          region: string | null
+          stamp_location: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          bac_rank?: number | null
+          created_at?: string
+          height?: number | null
+          id?: number
+          is_active?: boolean
+          mountain_id?: number | null
+          name_ko: string
+          region?: string | null
+          stamp_location?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          bac_rank?: number | null
+          created_at?: string
+          height?: number | null
+          id?: number
+          is_active?: boolean
+          mountain_id?: number | null
+          name_ko?: string
+          region?: string | null
+          stamp_location?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bac100_mountains_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       badges: {
         Row: {
           created_at: string | null
@@ -1105,6 +1155,7 @@ export type Database = {
         Row: {
           address: string | null
           bac100_label: string | null
+          bac100_rank: number | null
           created_at: string | null
           description: string | null
           designated_date: string | null
@@ -1131,6 +1182,7 @@ export type Database = {
         Insert: {
           address?: string | null
           bac100_label?: string | null
+          bac100_rank?: number | null
           created_at?: string | null
           description?: string | null
           designated_date?: string | null
@@ -1157,6 +1209,7 @@ export type Database = {
         Update: {
           address?: string | null
           bac100_label?: string | null
+          bac100_rank?: number | null
           created_at?: string | null
           description?: string | null
           designated_date?: string | null
@@ -2038,6 +2091,80 @@ export type Database = {
           },
         ]
       }
+      user_mountain_challenges: {
+        Row: {
+          bac100_id: number | null
+          challenge_type: Database["public"]["Enums"]["challenge_list_type"]
+          completed_at: string | null
+          created_at: string
+          id: string
+          is_completed: boolean
+          mountain_id: number | null
+          note: string | null
+          photo_url: string | null
+          summit_claim_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bac100_id?: number | null
+          challenge_type: Database["public"]["Enums"]["challenge_list_type"]
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          mountain_id?: number | null
+          note?: string | null
+          photo_url?: string | null
+          summit_claim_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bac100_id?: number | null
+          challenge_type?: Database["public"]["Enums"]["challenge_list_type"]
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          mountain_id?: number | null
+          note?: string | null
+          photo_url?: string | null
+          summit_claim_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_mountain_challenges_bac100_id_fkey"
+            columns: ["bac100_id"]
+            isOneToOne: false
+            referencedRelation: "bac100_mountains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_mountain_challenges_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_mountain_challenges_summit_claim_id_fkey"
+            columns: ["summit_claim_id"]
+            isOneToOne: false
+            referencedRelation: "summit_claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_mountain_challenges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       user_mountains: {
         Row: {
           created_at: string | null
@@ -2162,13 +2289,34 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_challenge_summary: {
+        Row: {
+          challenge_type:
+            | Database["public"]["Enums"]["challenge_list_type"]
+            | null
+          completed_count: number | null
+          first_completed_at: string | null
+          last_completed_at: string | null
+          total_attempted: number | null
+          total_count: number | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_mountain_challenges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      challenge_list_type: "forestry_100" | "bac_100"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2295,6 +2443,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      challenge_list_type: ["forestry_100", "bac_100"],
+    },
   },
 } as const
