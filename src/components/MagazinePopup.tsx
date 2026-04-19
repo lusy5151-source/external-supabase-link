@@ -3,17 +3,22 @@ import { useMagazine, MagazinePost, MagazineSlide } from "@/hooks/useMagazine";
 import MagazineSlideViewer from "@/components/MagazineSlideViewer";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useOnboarding } from "@/contexts/OnboardingContext";
 
 const POPUP_KEY = "magazine-popup-dismissed";
 
 const MagazinePopup = () => {
   const { fetchFeaturedPost, fetchSlides } = useMagazine();
+  const { isOnboarding } = useOnboarding();
   const [post, setPost] = useState<MagazinePost | null>(null);
   const [firstSlide, setFirstSlide] = useState<MagazineSlide | null>(null);
   const [showPopup, setShowPopup] = useState(false);
   const [showViewer, setShowViewer] = useState(false);
 
   useEffect(() => {
+    // Wait until the onboarding tutorial is finished before showing the popup
+    if (isOnboarding) return;
+
     // Check if dismissed today
     const dismissed = localStorage.getItem(POPUP_KEY);
     if (dismissed) {
@@ -29,7 +34,7 @@ const MagazinePopup = () => {
       if (slides.length > 0) setFirstSlide(slides[0]);
       setShowPopup(true);
     });
-  }, []);
+  }, [isOnboarding]);
 
   const handleDismiss = () => {
     localStorage.setItem(POPUP_KEY, new Date().toISOString());
