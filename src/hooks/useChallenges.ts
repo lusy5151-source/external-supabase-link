@@ -20,13 +20,26 @@ export function useChallenges() {
 
   const fetchAllChallenges = useCallback(async (): Promise<Challenge[]> => {
     const { data } = await supabase.from("challenges").select("*, badges(name, image_url, description)").order("category").order("level");
-    return (data || []).map((c: any) => ({ ...c, badge: c.badges || null }));
+    return (data || []).map((c: any) => ({
+      ...c,
+      level: typeof c.level === "string" ? parseInt(c.level, 10) || 1 : c.level ?? 1,
+      badge: c.badges || null,
+    }));
   }, []);
 
   const fetchUserChallenges = useCallback(async (): Promise<UserChallenge[]> => {
     if (!user) return [];
     const { data } = await supabase.from("user_challenges").select("*, challenges(*, badges(name, image_url, description))").eq("user_id", user.id);
-    return (data || []).map((uc: any) => ({ ...uc, challenge: uc.challenges ? { ...uc.challenges, badge: uc.challenges.badges || null } : null }));
+    return (data || []).map((uc: any) => ({
+      ...uc,
+      challenge: uc.challenges
+        ? {
+            ...uc.challenges,
+            level: typeof uc.challenges.level === "string" ? parseInt(uc.challenges.level, 10) || 1 : uc.challenges.level ?? 1,
+            badge: uc.challenges.badges || null,
+          }
+        : null,
+    }));
   }, [user]);
 
   const joinCategoryLevel1 = useCallback(async (category: string, allChallenges: Challenge[]) => {
