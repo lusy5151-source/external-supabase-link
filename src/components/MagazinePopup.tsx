@@ -50,6 +50,7 @@ const MagazinePopup = () => {
     return <MagazineSlideViewer post={post} onClose={() => setShowViewer(false)} />;
   }
 
+  if (isOnboarding) return null;
   if (!showPopup || !post) return null;
 
   const imageUrl = firstSlide?.image_url || post.cover_image_url;
