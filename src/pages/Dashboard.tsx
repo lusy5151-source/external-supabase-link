@@ -42,6 +42,7 @@ const conditionIcons: Record<string, any> = {
 };
 
 const GOAL_KEY = "wandeng-user-goal";
+const HUNDRED_TYPE_KEY = "wandeng-hundred-type"; // "forestry_100" | "bac_100"
 
 const Dashboard = () => {
   const { mountains } = useMountains();
