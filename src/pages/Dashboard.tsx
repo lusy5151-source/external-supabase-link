@@ -12,6 +12,7 @@ import { useSharedCompletionCounts } from "@/hooks/useSharedCompletionCounts";
 import { useHikingPlans } from "@/hooks/useHikingPlans";
 import { useHikingJournals, HikingJournal } from "@/hooks/useHikingJournals";
 import { useChallenges, Challenge, UserChallenge } from "@/hooks/useChallenges";
+import { useChallengeMountains, useUserMountainChallenges, type ChallengeListType } from "@/hooks/useMountainChallenges";
 import { useSharedCompletions, type SharedCompletion } from "@/hooks/useSharedCompletions";
 import { useLiveSummitFeed } from "@/hooks/useLiveSummitFeed";
 import { SharedCompletionCard } from "@/components/SharedCompletionCard";
