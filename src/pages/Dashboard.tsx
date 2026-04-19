@@ -12,6 +12,7 @@ import { useSharedCompletionCounts } from "@/hooks/useSharedCompletionCounts";
 import { useHikingPlans } from "@/hooks/useHikingPlans";
 import { useHikingJournals, HikingJournal } from "@/hooks/useHikingJournals";
 import { useChallenges, Challenge, UserChallenge } from "@/hooks/useChallenges";
+import { useChallengeMountains, useUserMountainChallenges, type ChallengeListType } from "@/hooks/useMountainChallenges";
 import { useSharedCompletions, type SharedCompletion } from "@/hooks/useSharedCompletions";
 import { useLiveSummitFeed } from "@/hooks/useLiveSummitFeed";
 import { SharedCompletionCard } from "@/components/SharedCompletionCard";
@@ -41,6 +42,7 @@ const conditionIcons: Record<string, any> = {
 };
 
 const GOAL_KEY = "wandeng-user-goal";
+const HUNDRED_TYPE_KEY = "wandeng-hundred-type"; // "forestry_100" | "bac_100"
 
 const Dashboard = () => {
   const { mountains } = useMountains();
@@ -64,9 +66,26 @@ const Dashboard = () => {
     return saved ? parseInt(saved) : 100;
   });
   const [showGoalEdit, setShowGoalEdit] = useState(false);
+  const [hundredType, setHundredType] = useState<ChallengeListType | null>(() => {
+    const saved = localStorage.getItem(HUNDRED_TYPE_KEY);
+    return saved === "forestry_100" || saved === "bac_100" ? saved : null;
+  });
+  const [showHundredPicker, setShowHundredPicker] = useState(false);
 
   const { isOnboarding } = useOnboarding();
   const isDemo = !user || isOnboarding;
+
+  // Hundred-mountain progress (forestry_100 / bac_100)
+  const activeHundredType: ChallengeListType = hundredType ?? "forestry_100";
+  const { data: hundredList = [] } = useChallengeMountains(activeHundredType);
+  const { data: userHundredRows = [] } = useUserMountainChallenges(activeHundredType);
+  const hundredTotal = hundredList.length || 100;
+  const hundredCompleted = useMemo(
+    () => userHundredRows.filter((r) => r.is_completed).length,
+    [userHundredRows]
+  );
+  const hundredPercent = Math.min(Math.round((hundredCompleted / hundredTotal) * 100), 100);
+  const hundredLabel = activeHundredType === "forestry_100" ? "산림청 100대 명산" : "BAC 100대 명산";
 
   const baekduCount = baekduMountains.length;
   const baekduCompleted = isDemo ? demoProgress.baekduCompleted : baekduMountains.filter((m) => isCompleted(m.id)).length;
@@ -76,6 +95,12 @@ const Dashboard = () => {
   const displayChallengeProgress = isDemo ? demoProgress.challengeProgress : 0;
   const displayEarnedCount = isDemo ? demoProgress.earnedBadges : earnedCount;
   const displayTotalBadges = isDemo ? demoProgress.totalBadges : totalBadges;
+
+  const handleHundredTypeSelect = (t: ChallengeListType) => {
+    setHundredType(t);
+    localStorage.setItem(HUNDRED_TYPE_KEY, t);
+    setShowHundredPicker(false);
+  };
 
   const upcomingPlan = useMemo(() => {
     if (isDemo) return null;
@@ -380,49 +405,88 @@ const Dashboard = () => {
 
           {/* ── Progress Rings Section ── */}
           <section className="grid grid-cols-2 gap-4">
-            <Link to={isDemo ? "/mountains" : "/mountains"} data-onboarding="progress-ring" className="block rounded-3xl bg-card p-5 shadow-sm border border-border hover:border-primary/30 transition-colors">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold text-muted-foreground">100대 명산 진행률</p>
+            <div data-onboarding="progress-ring" className="block rounded-3xl bg-card p-5 shadow-sm border border-border">
+              <div className="flex items-center justify-between mb-3 gap-2">
+                <p className="text-xs font-semibold text-muted-foreground truncate">
+                  {!isDemo && hundredType ? hundredLabel + " 진행률" : "100대 명산 진행률"}
+                </p>
                 {!isDemo && (
-                  <button onClick={(e) => { e.preventDefault(); setShowGoalEdit(!showGoalEdit); }} className="text-muted-foreground hover:text-primary">
+                  <button
+                    onClick={() => setShowHundredPicker((v) => !v)}
+                    className="text-muted-foreground hover:text-primary shrink-0"
+                    aria-label="기준 변경"
+                  >
                     <Settings2 className="h-3.5 w-3.5" />
                   </button>
                 )}
               </div>
-              {!isDemo && showGoalEdit && (
+
+              {!isDemo && showHundredPicker && (
                 <div className="mb-3 flex items-center gap-1.5 flex-wrap">
-                  {[30, 50, 100].map((v) => (
-                    <button
-                      key={v}
-                      onClick={() => handleGoalSave(v)}
-                      className={`rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors ${userGoal === v ? "bg-coral text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
-                    >
-                      {v}
-                    </button>
-                  ))}
+                  <button
+                    onClick={() => handleHundredTypeSelect("forestry_100")}
+                    className={`rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors ${hundredType === "forestry_100" ? "bg-coral text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
+                  >
+                    산림청
+                  </button>
+                  <button
+                    onClick={() => handleHundredTypeSelect("bac_100")}
+                    className={`rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors ${hundredType === "bac_100" ? "bg-coral text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
+                  >
+                    BAC
+                  </button>
                 </div>
               )}
-              <div className="flex flex-col items-center">
-                <div className="relative h-28 w-28">
-                  <svg className="h-28 w-28 -rotate-90" viewBox="0 0 112 112">
-                    <circle cx="56" cy="56" r="48" fill="none" stroke="hsl(var(--coral-light))" strokeWidth="8" />
-                    <circle
-                      cx="56" cy="56" r="48" fill="none"
-                      stroke="hsl(var(--coral))" strokeWidth="8"
-                      strokeLinecap="round"
-                      strokeDasharray={`${2 * Math.PI * 48}`}
-                      strokeDashoffset={`${2 * Math.PI * 48 * (1 - goalPercent / 100)}`}
-                      className="transition-all duration-700 ease-out"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold text-foreground">{goalPercent}%</span>
+
+              {!isDemo && !hundredType ? (
+                <div className="flex flex-col items-center text-center py-2">
+                  <Mountain className="h-8 w-8 text-muted-foreground/30 mb-2" />
+                  <p className="text-[11px] text-muted-foreground mb-3 leading-snug">
+                    어떤 100대 명산을<br />추적할까요?
+                  </p>
+                  <div className="flex flex-col gap-1.5 w-full">
+                    <button
+                      onClick={() => handleHundredTypeSelect("forestry_100")}
+                      className="rounded-full bg-coral px-3 py-1.5 text-[10px] font-semibold text-primary-foreground hover:bg-coral/90 transition-colors"
+                    >
+                      산림청 100대
+                    </button>
+                    <button
+                      onClick={() => handleHundredTypeSelect("bac_100")}
+                      className="rounded-full bg-secondary px-3 py-1.5 text-[10px] font-semibold text-secondary-foreground hover:bg-secondary/80 transition-colors"
+                    >
+                      BAC 100대
+                    </button>
                   </div>
                 </div>
-                <p className="mt-2 text-sm font-bold text-foreground">{displayCompletedCount}<span className="text-xs font-normal text-muted-foreground"> / {displayGoal}</span></p>
-                <p className="text-[10px] text-muted-foreground">백대명산 {baekduCompleted}/{baekduCount}</p>
-              </div>
-            </Link>
+              ) : (
+                <Link to={isDemo ? "/mountains" : "/challenges"} className="flex flex-col items-center">
+                  <div className="relative h-28 w-28">
+                    <svg className="h-28 w-28 -rotate-90" viewBox="0 0 112 112">
+                      <circle cx="56" cy="56" r="48" fill="none" stroke="hsl(var(--coral-light))" strokeWidth="8" />
+                      <circle
+                        cx="56" cy="56" r="48" fill="none"
+                        stroke="hsl(var(--coral))" strokeWidth="8"
+                        strokeLinecap="round"
+                        strokeDasharray={`${2 * Math.PI * 48}`}
+                        strokeDashoffset={`${2 * Math.PI * 48 * (1 - (isDemo ? goalPercent : hundredPercent) / 100)}`}
+                        className="transition-all duration-700 ease-out"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-2xl font-bold text-foreground">{isDemo ? goalPercent : hundredPercent}%</span>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-sm font-bold text-foreground">
+                    {isDemo ? displayCompletedCount : hundredCompleted}
+                    <span className="text-xs font-normal text-muted-foreground"> / {isDemo ? displayGoal : hundredTotal}</span>
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {isDemo ? `백대명산 ${baekduCompleted}/${baekduCount}` : hundredLabel}
+                  </p>
+                </Link>
+              )}
+            </div>
 
             <div className="rounded-3xl bg-card p-5 shadow-sm border border-border">
               <p className="text-xs font-semibold text-muted-foreground mb-3">정상 점령 챌린지</p>

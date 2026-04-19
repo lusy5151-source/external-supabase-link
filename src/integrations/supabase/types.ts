@@ -1235,6 +1235,62 @@ export type Database = {
         }
         Relationships: []
       }
+      national_parks: {
+        Row: {
+          area_km2: number | null
+          created_at: string
+          designated_year: number | null
+          headquarters: string | null
+          id: number
+          lat: number | null
+          lng: number | null
+          mountain_id: number | null
+          name_ko: string
+          overview: string | null
+          tel: string | null
+          website: string | null
+          wms_synced_at: string | null
+        }
+        Insert: {
+          area_km2?: number | null
+          created_at?: string
+          designated_year?: number | null
+          headquarters?: string | null
+          id?: number
+          lat?: number | null
+          lng?: number | null
+          mountain_id?: number | null
+          name_ko: string
+          overview?: string | null
+          tel?: string | null
+          website?: string | null
+          wms_synced_at?: string | null
+        }
+        Update: {
+          area_km2?: number | null
+          created_at?: string
+          designated_year?: number | null
+          headquarters?: string | null
+          id?: number
+          lat?: number | null
+          lng?: number | null
+          mountain_id?: number | null
+          name_ko?: string
+          overview?: string | null
+          tel?: string | null
+          website?: string | null
+          wms_synced_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "national_parks_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string | null
@@ -1270,6 +1326,229 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      np_facilities: {
+        Row: {
+          capacity: number | null
+          facility_name: string | null
+          facility_type: string
+          id: string
+          lat: number | null
+          lng: number | null
+          memo: string | null
+          national_park_id: number | null
+          open_season: string | null
+          reservation_url: string | null
+          synced_at: string
+          tel: string | null
+          trail_code: string | null
+          wms_feature_id: string | null
+        }
+        Insert: {
+          capacity?: number | null
+          facility_name?: string | null
+          facility_type: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          memo?: string | null
+          national_park_id?: number | null
+          open_season?: string | null
+          reservation_url?: string | null
+          synced_at?: string
+          tel?: string | null
+          trail_code?: string | null
+          wms_feature_id?: string | null
+        }
+        Update: {
+          capacity?: number | null
+          facility_name?: string | null
+          facility_type?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          memo?: string | null
+          national_park_id?: number | null
+          open_season?: string | null
+          reservation_url?: string | null
+          synced_at?: string
+          tel?: string | null
+          trail_code?: string | null
+          wms_feature_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "np_facilities_national_park_id_fkey"
+            columns: ["national_park_id"]
+            isOneToOne: false
+            referencedRelation: "national_parks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      np_safety_zones: {
+        Row: {
+          danger_grade: number | null
+          danger_type: string | null
+          description: string | null
+          geometry: Json | null
+          id: string
+          lat: number | null
+          lng: number | null
+          national_park_id: number | null
+          synced_at: string
+          wms_feature_id: string | null
+          zone_name: string | null
+        }
+        Insert: {
+          danger_grade?: number | null
+          danger_type?: string | null
+          description?: string | null
+          geometry?: Json | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          national_park_id?: number | null
+          synced_at?: string
+          wms_feature_id?: string | null
+          zone_name?: string | null
+        }
+        Update: {
+          danger_grade?: number | null
+          danger_type?: string | null
+          description?: string | null
+          geometry?: Json | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          national_park_id?: number | null
+          synced_at?: string
+          wms_feature_id?: string | null
+          zone_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "np_safety_zones_national_park_id_fkey"
+            columns: ["national_park_id"]
+            isOneToOne: false
+            referencedRelation: "national_parks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      np_trail_restrictions: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          id: string
+          is_active: boolean
+          national_park_id: number | null
+          np_trail_id: string | null
+          reason: string | null
+          restriction_type: string
+          start_date: string | null
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          national_park_id?: number | null
+          np_trail_id?: string | null
+          reason?: string | null
+          restriction_type: string
+          start_date?: string | null
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          national_park_id?: number | null
+          np_trail_id?: string | null
+          reason?: string | null
+          restriction_type?: string
+          start_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "np_trail_restrictions_national_park_id_fkey"
+            columns: ["national_park_id"]
+            isOneToOne: false
+            referencedRelation: "national_parks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "np_trail_restrictions_np_trail_id_fkey"
+            columns: ["np_trail_id"]
+            isOneToOne: false
+            referencedRelation: "np_trails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      np_trails: {
+        Row: {
+          difficulty: string | null
+          distance_m: number | null
+          duration_min: number | null
+          geometry: Json | null
+          id: string
+          is_restricted: boolean | null
+          mountain_id: number | null
+          national_park_id: number | null
+          synced_at: string
+          trail_code: string | null
+          trail_name: string | null
+          trail_type: string | null
+          wms_feature_id: string | null
+        }
+        Insert: {
+          difficulty?: string | null
+          distance_m?: number | null
+          duration_min?: number | null
+          geometry?: Json | null
+          id?: string
+          is_restricted?: boolean | null
+          mountain_id?: number | null
+          national_park_id?: number | null
+          synced_at?: string
+          trail_code?: string | null
+          trail_name?: string | null
+          trail_type?: string | null
+          wms_feature_id?: string | null
+        }
+        Update: {
+          difficulty?: string | null
+          distance_m?: number | null
+          duration_min?: number | null
+          geometry?: Json | null
+          id?: string
+          is_restricted?: boolean | null
+          mountain_id?: number | null
+          national_park_id?: number | null
+          synced_at?: string
+          trail_code?: string | null
+          trail_name?: string | null
+          trail_type?: string | null
+          wms_feature_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "np_trails_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "np_trails_national_park_id_fkey"
+            columns: ["national_park_id"]
+            isOneToOne: false
+            referencedRelation: "national_parks"
+            referencedColumns: ["id"]
           },
         ]
       }
