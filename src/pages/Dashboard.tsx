@@ -75,6 +75,18 @@ const Dashboard = () => {
   const { isOnboarding } = useOnboarding();
   const isDemo = !user || isOnboarding;
 
+  // Hundred-mountain progress (forestry_100 / bac_100)
+  const activeHundredType: ChallengeListType = hundredType ?? "forestry_100";
+  const { data: hundredList = [] } = useChallengeMountains(activeHundredType);
+  const { data: userHundredRows = [] } = useUserMountainChallenges(activeHundredType);
+  const hundredTotal = hundredList.length || 100;
+  const hundredCompleted = useMemo(
+    () => userHundredRows.filter((r) => r.is_completed).length,
+    [userHundredRows]
+  );
+  const hundredPercent = Math.min(Math.round((hundredCompleted / hundredTotal) * 100), 100);
+  const hundredLabel = activeHundredType === "forestry_100" ? "산림청 100대 명산" : "BAC 100대 명산";
+
   const baekduCount = baekduMountains.length;
   const baekduCompleted = isDemo ? demoProgress.baekduCompleted : baekduMountains.filter((m) => isCompleted(m.id)).length;
   const displayCompletedCount = isDemo ? demoProgress.completedCount : completedCount;
@@ -83,6 +95,12 @@ const Dashboard = () => {
   const displayChallengeProgress = isDemo ? demoProgress.challengeProgress : 0;
   const displayEarnedCount = isDemo ? demoProgress.earnedBadges : earnedCount;
   const displayTotalBadges = isDemo ? demoProgress.totalBadges : totalBadges;
+
+  const handleHundredTypeSelect = (t: ChallengeListType) => {
+    setHundredType(t);
+    localStorage.setItem(HUNDRED_TYPE_KEY, t);
+    setShowHundredPicker(false);
+  };
 
   const upcomingPlan = useMemo(() => {
     if (isDemo) return null;
