@@ -19,6 +19,7 @@ import { TrailInfoSection } from "@/components/TrailInfo";
 import { NearbyPlaces } from "@/components/NearbyPlaces";
 import { TrailMap } from "@/components/TrailMap";
 import { ParkRestrictions } from "@/components/ParkRestrictions";
+import { MountainFacilities } from "@/components/MountainFacilities";
 import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingJournals } from "@/hooks/useHikingJournals";
@@ -217,6 +218,9 @@ const MountainDetail = () => {
 
       {/* Park trail restrictions (국립공원만 표시) */}
       <ParkRestrictions mountainId={mountain.id} />
+
+      {/* Mountain facilities (탐방안내소/대피소/주차장 등) */}
+      <MountainFacilities mountainId={mountain.id} />
 
       {/* Trail info */}
       <TrailInfoSection mountainId={mountain.id} fallbackTrails={mountain.trails} />

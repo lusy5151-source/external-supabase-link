@@ -35,6 +35,8 @@ export function useMountainsData() {
         overview: row.overview || "",
         address: row.address || "",
         province: row.province || "",
+        is_national_park: row.is_national_park || false,
+        national_park_name: row.national_park_name || undefined,
         trails: [],
       }));
     },
