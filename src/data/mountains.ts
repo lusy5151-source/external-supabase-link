@@ -29,6 +29,8 @@ export interface Mountain {
   overview?: string;
   address?: string;
   province?: string;
+  is_national_park?: boolean;
+  national_park_name?: string;
 }
 
 export const mountains: Mountain[] = [
