@@ -8,7 +8,7 @@ import type { Mountain } from "@/data/mountains";
  */
 export function useMountainsData() {
   return useQuery<Mountain[]>({
-    queryKey: ["mountains-all"],
+    queryKey: ["mountains-all", "v2-np"],
     queryFn: async () => {
       // Supabase default limit is 1000, our table has ~120 rows so no pagination needed
       const { data, error } = await supabase
