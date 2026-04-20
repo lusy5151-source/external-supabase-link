@@ -34,7 +34,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import ChallengeCompletionModal from "@/components/ChallengeCompletionModal";
+import ChallengeCompletionModal, { CompletionInfo } from "@/components/ChallengeCompletionModal";
 
 // Category visual meta
 const CATEGORY_META: Record<string, { icon: any; color: string; bg: string; label: string }> = {
@@ -82,8 +82,8 @@ const ChallengePage = () => {
   const [loading, setLoading] = useState(true);
   const [joiningGroup, setJoiningGroup] = useState<string | null>(null);
   const [confirmGroup, setConfirmGroup] = useState<string | null>(null);
-  const [completedChallenge, setCompletedChallenge] = useState<Challenge | null>(null);
-  const [prevCompletedIds, setPrevCompletedIds] = useState<Set<string>>(new Set());
+  const [completion, setCompletion] = useState<CompletionInfo | null>(null);
+  const [prevCompletedIds, setPrevCompletedIds] = useState<Set<string> | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -92,14 +92,29 @@ const ChallengePage = () => {
     const [all, mine] = await Promise.all([fetchAllChallenges(), fetchUserChallenges()]);
     setAllChallenges(all);
     const newCompletedIds = new Set(mine.filter((uc) => uc.completed).map((uc) => uc.challenge_id));
-    if (prevCompletedIds.size > 0) {
+    if (prevCompletedIds !== null) {
+      // Detect newly-completed challenges since last load
       for (const id of newCompletedIds) {
         if (!prevCompletedIds.has(id)) {
           const ch = all.find((c) => c.id === id);
-          if (ch) {
-            setCompletedChallenge(ch);
-            break;
-          }
+          if (!ch) continue;
+          const key = ch.category_group ?? ch.category ?? "other";
+          const ladder = all
+            .filter((x) => (x.category_group ?? x.category) === key)
+            .sort((a, b) => a.level - b.level);
+          const next = ladder.find((x) => x.level === ch.level + 1);
+          const isFinal = !next;
+          setCompletion({
+            categoryLabel: getCategoryMeta(key).label,
+            completedLevel: ch.level,
+            completedTitle: ch.title,
+            nextLevel: next?.level ?? null,
+            nextTitle: next?.title ?? null,
+            nextGoalValue: next?.goal_value ?? null,
+            isFinalLevel: isFinal,
+            badge: ch.badge ?? null,
+          });
+          break; // show one at a time
         }
       }
     }
@@ -226,7 +241,7 @@ const ChallengePage = () => {
 
   return (
     <div className="space-y-6 pb-24">
-      <ChallengeCompletionModal challenge={completedChallenge} onDismiss={() => setCompletedChallenge(null)} />
+      <ChallengeCompletionModal completion={completion} onDismiss={() => setCompletion(null)} />
 
       {/* Hero */}
       <div className="rounded-3xl bg-gradient-to-br from-primary/10 to-emerald-100/50 dark:from-primary/5 dark:to-emerald-900/20 p-6 text-center border border-border">
