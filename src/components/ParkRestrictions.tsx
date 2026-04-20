@@ -1,78 +1,82 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { AlertTriangle, CheckCircle2, Loader2, ShieldAlert } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
-interface Restriction {
-  section: string;
-  content: string;
-  startDate: string;
-  endDate: string;
-  status: string;
-  parkName: string;
+interface TrailRestriction {
+  trail_name: string;
+  reason: string;
+  start_date: string;
+  end_date: string;
+  restriction_type: string;
+}
+
+interface TrailRestrictionsResponse {
+  is_national_park: boolean;
+  park_name?: string;
+  has_restrictions: boolean;
+  restrictions: TrailRestriction[];
+  api_result_code: string;
 }
 
 interface Props {
   mountainId: number;
 }
 
-function formatYmd(ymd: string): string {
-  const digits = (ymd || "").replace(/[^0-9]/g, "");
-  if (digits.length !== 8) return ymd || "";
-  return `${digits.slice(0, 4)}.${digits.slice(4, 6)}.${digits.slice(6, 8)}`;
+function formatDate(d: string): string {
+  if (!d) return "";
+  const digits = d.replace(/[^0-9]/g, "");
+  if (digits.length === 8) {
+    return `${digits.slice(0, 4)}.${digits.slice(4, 6)}.${digits.slice(6, 8)}`;
+  }
+  return d;
 }
 
 export function ParkRestrictions({ mountainId }: Props) {
+  const [isPark, setIsPark] = useState<boolean | null>(null);
   const [parkName, setParkName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [restrictions, setRestrictions] = useState<Restriction[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<TrailRestrictionsResponse | null>(null);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      setError(null);
+      setHasError(false);
 
-      // 1. 이 산이 국립공원인지 확인
+      // 1. 국립공원 여부 확인
       const { data: park } = await supabase
         .from("national_parks")
-        .select("name_ko")
+        .select("id, name_ko")
         .eq("mountain_id", mountainId)
         .maybeSingle();
 
       if (cancelled) return;
 
       if (!park) {
-        setParkName(null);
+        setIsPark(false);
         setLoading(false);
         return;
       }
 
+      setIsPark(true);
       setParkName(park.name_ko);
 
-      // 2. 엣지 함수 호출
-      const { data, error: fnError } = await supabase.functions.invoke(
-        "get-park-restrictions",
-        { body: null, method: "GET" as any }
-      ).catch(() => ({ data: null, error: null }));
-
-      // supabase.functions.invoke는 GET 쿼리스트링 지원이 제한적이므로 직접 fetch
+      // 2. Edge Function 호출
       try {
-        const url = `https://ylcjlzlchinijvyojdbc.supabase.co/functions/v1/get-park-restrictions?parkName=${encodeURIComponent(park.name_ko)}`;
-        const res = await fetch(url, {
-          headers: {
-            apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsY2psemxjaGluaWp2eW9qZGJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMDM0NjEsImV4cCI6MjA4ODY3OTQ2MX0.rPK3w7Yb85MaKACLC0wbthM_YGmE_QoWa62B89Iwfr4",
-          },
-        });
-        const json = await res.json();
+        const { data: result, error } = await supabase.functions.invoke(
+          "get-trail-restrictions",
+          { body: { mountain_id: mountainId } }
+        );
         if (cancelled) return;
 
-        if (json.error && (!json.restrictions || json.restrictions.length === 0)) {
-          setError(json.error);
+        if (error || !result) {
+          setHasError(true);
+        } else {
+          setData(result as TrailRestrictionsResponse);
         }
-        setRestrictions(json.restrictions || []);
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message || "통제 정보를 불러올 수 없습니다");
+      } catch {
+        if (!cancelled) setHasError(true);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -83,71 +87,73 @@ export function ParkRestrictions({ mountainId }: Props) {
     };
   }, [mountainId]);
 
-  // 국립공원이 아니면 섹션 숨김
-  if (!loading && !parkName) return null;
+  // 국립공원이 아니면 숨김
+  if (isPark === false) return null;
 
-  return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-3">
-      <div className="flex items-center gap-2">
-        <div className="h-7 w-1 rounded-full bg-primary" />
-        <ShieldAlert className="h-4 w-4 text-primary" />
-        <h2 className="text-base font-semibold text-foreground">탐방로 통제 정보</h2>
-        {parkName && (
-          <span className="text-xs text-muted-foreground">· {parkName}</span>
-        )}
-      </div>
-
-      {loading ? (
+  // 로딩 중: 스피너
+  if (loading) {
+    return (
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
-          통제 정보를 확인하는 중...
+          탐방로 통제 정보를 확인하는 중...
         </div>
-      ) : restrictions.length > 0 ? (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-3 py-2">
-            <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0" />
-            <p className="text-sm font-semibold text-red-700 dark:text-red-400">
-              현재 {restrictions.length}개 구간이 통제 중입니다
-            </p>
-          </div>
-          <ul className="space-y-2">
-            {restrictions.map((r, i) => (
-              <li
-                key={i}
-                className="rounded-lg border border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-900/10 p-3 space-y-1"
-              >
-                {r.section && (
-                  <p className="text-sm font-semibold text-red-700 dark:text-red-400">
-                    🚫 {r.section}
-                  </p>
+      </div>
+    );
+  }
+
+  // 오류 또는 API 결과코드 비정상 → 전체 숨김
+  if (hasError || !data || data.api_result_code !== "00") return null;
+
+  // 통제 있음
+  if (data.has_restrictions) {
+    return (
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-3">
+        <h2 className="text-base font-semibold text-red-600">🚫 탐방로 통제 현황</h2>
+        {data.park_name && (
+          <p className="text-xs text-muted-foreground">{data.park_name} 기준</p>
+        )}
+        <ul className="space-y-2">
+          {data.restrictions.map((r, i) => (
+            <li
+              key={i}
+              className="bg-red-50 border border-red-200 rounded-lg p-3 space-y-1"
+            >
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-red-900">{r.trail_name}</span>
+                {r.restriction_type && (
+                  <span className="inline-flex items-center rounded-full bg-red-100 text-red-700 text-[10px] font-medium px-2 py-0.5">
+                    {r.restriction_type}
+                  </span>
                 )}
-                {r.content && (
-                  <p className="text-xs text-foreground leading-relaxed">{r.content}</p>
-                )}
-                {(r.startDate || r.endDate) && (
-                  <p className="text-[11px] text-muted-foreground">
-                    📅 {formatYmd(r.startDate)} ~ {formatYmd(r.endDate)}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : error ? (
-        <div className="flex items-start gap-2 rounded-lg bg-secondary/50 px-3 py-2">
-          <AlertTriangle className="mt-0.5 h-4 w-4 text-muted-foreground shrink-0" />
-          <p className="text-xs text-muted-foreground">
-            통제 정보를 일시적으로 불러올 수 없습니다.
+              </div>
+              {r.reason && (
+                <p className="text-xs text-red-800 leading-relaxed">{r.reason}</p>
+              )}
+              {(r.start_date || r.end_date) && (
+                <p className="text-[11px] text-red-700/80">
+                  📅 {formatDate(r.start_date)} ~ {formatDate(r.end_date)}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
+  // 통제 없음
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-2">
+      <h2 className="text-base font-semibold text-foreground">탐방로 통제 현황</h2>
+      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+        <p className="text-green-700 font-medium text-sm">✅ 현재 통제 구간 없음</p>
+        {(data.park_name || parkName) && (
+          <p className="text-xs text-green-700/70 mt-0.5">
+            {data.park_name || parkName} 기준
           </p>
-        </div>
-      ) : (
-        <div className="flex items-center gap-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-3 py-2">
-          <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0" />
-          <p className="text-sm font-medium text-green-700 dark:text-green-400">
-            현재 통제 구간 없음 ✅
-          </p>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
