@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-export interface Challenge { id: string; title: string; description: string | null; type: string; goal_type: string; goal_value: number; start_date: string | null; end_date: string | null; badge_id: string | null; level: number; category: string; badge?: { name: string; image_url: string | null; description: string | null }; }
+export interface Challenge { id: string; title: string; description: string | null; type: string; goal_type: string; goal_value: number; start_date: string | null; end_date: string | null; badge_id: string | null; level: number; category: string; category_group?: string | null; badge?: { name: string; image_url: string | null; description: string | null }; }
 export interface UserChallenge { id: string; user_id: string; challenge_id: string; progress: number; completed: boolean; completed_at: string | null; joined_at: string; challenge?: Challenge; }
 const TIER_ORDER = ["bronze", "silver", "gold", "platinum"] as const;
 export type BadgeTier = (typeof TIER_ORDER)[number];
@@ -80,31 +80,130 @@ export function useChallenges() {
 
   const joinCategoryLevel1 = useCallback(async (category: string, allChallenges: Challenge[]) => {
     if (!user) return;
-    const lv1 = allChallenges.find((c) => c.category === category && c.level === 1);
+    const lv1 = allChallenges.find((c) => (c.category_group ?? c.category) === category && c.level === 1);
     if (!lv1) return;
     const { data: existing } = await supabase.from("user_challenges").select("id").eq("user_id", user.id).eq("challenge_id", lv1.id).maybeSingle();
     if (!existing) await supabase.from("user_challenges").insert({ user_id: user.id, challenge_id: lv1.id } as any);
   }, [user]);
 
+  /**
+   * Compute progress for a given goal_type using the user's hiking journals.
+   * Returns -1 when goal type is not auto-trackable here (skip update).
+   */
+  const computeProgress = (goalType: string, journals: any[]): number => {
+    switch (goalType) {
+      case "mountain":
+        return new Set(journals.map((j: any) => j.mountain_id).filter(Boolean)).size;
+      case "count":
+      case "monthly_count": {
+        const now = new Date();
+        return journals.filter((j: any) => {
+          const d = new Date(j.hiked_at);
+          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        }).length;
+      }
+      default:
+        return -1;
+    }
+  };
+
+  /**
+   * Recalculate progress AND auto level-up.
+   * For every category_group the user has joined, find the lowest incomplete level
+   * and update its progress. If progress >= goal, mark complete and auto-insert next level.
+   */
   const recalculateProgress = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
       const { data: journals } = await supabase.from("hiking_journals").select("*").eq("user_id", user.id);
-      if (!journals) return;
-      const { data: userChallenges } = await supabase.from("user_challenges").select("*, challenges(*)").eq("user_id", user.id).eq("completed", false);
-      if (!userChallenges || userChallenges.length === 0) return;
-      const { mountains } = await import("@/data/mountains");
-      for (const uc of userChallenges as any[]) {
-        const ch = uc.challenges; if (!ch) continue;
-        let progress = 0;
-        switch (ch.goal_type) {
-          case "mountain": progress = new Set(journals.map((j: any) => j.mountain_id)).size; break;
-          case "count": { const now = new Date(); progress = journals.filter((j: any) => { const d = new Date(j.hiked_at); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).length; break; }
-          default: continue;
+      const allJournals = journals || [];
+
+      // Get all of this user's user_challenges + their challenges
+      const { data: ucRows } = await supabase
+        .from("user_challenges")
+        .select("id, challenge_id, progress, completed")
+        .eq("user_id", user.id);
+      if (!ucRows || ucRows.length === 0) return;
+
+      const challengeIds = Array.from(new Set(ucRows.map((r: any) => r.challenge_id)));
+      const { data: chRows } = await supabase
+        .from("challenges")
+        .select("id, category, category_group, level, goal_type, goal_value")
+        .in("id", challengeIds);
+      const chMap = new Map<string, any>();
+      (chRows || []).forEach((c: any) => chMap.set(c.id, {
+        ...c,
+        level: typeof c.level === "string" ? parseInt(c.level, 10) || 1 : c.level ?? 1,
+      }));
+
+      // Group joined challenges by category_group
+      const groupsJoined = new Map<string, any[]>();
+      for (const uc of ucRows as any[]) {
+        const ch = chMap.get(uc.challenge_id);
+        if (!ch) continue;
+        const key = ch.category_group ?? ch.category ?? "other";
+        if (!groupsJoined.has(key)) groupsJoined.set(key, []);
+        groupsJoined.get(key)!.push({ uc, ch });
+      }
+
+      // For each group, walk levels in order — update progress, complete, then insert next level
+      for (const [groupKey, items] of groupsJoined.entries()) {
+        // Fetch all challenge levels for this group (full ladder)
+        const { data: ladder } = await supabase
+          .from("challenges")
+          .select("id, level, goal_type, goal_value, category, category_group")
+          .or(`category_group.eq.${groupKey},category.eq.${groupKey}`)
+          .order("level", { ascending: true });
+        const ladderRows = (ladder || []).map((c: any) => ({
+          ...c,
+          level: typeof c.level === "string" ? parseInt(c.level, 10) || 1 : c.level ?? 1,
+        })).sort((a: any, b: any) => a.level - b.level);
+
+        // Process in order until we hit a non-completable level
+        for (const rung of ladderRows) {
+          const joinedItem = items.find((it) => it.ch.id === rung.id);
+          if (!joinedItem) continue; // user hasn't reached this rung
+
+          if (joinedItem.uc.completed) continue;
+
+          const newProgress = computeProgress(rung.goal_type, allJournals);
+          if (newProgress < 0) continue;
+
+          const completed = newProgress >= (rung.goal_value || 1);
+          await supabase
+            .from("user_challenges")
+            .update({
+              progress: newProgress,
+              completed,
+              completed_at: completed ? new Date().toISOString() : null,
+            } as any)
+            .eq("id", joinedItem.uc.id);
+
+          if (completed) {
+            // Auto-insert next level if exists
+            const nextRung = ladderRows.find((r: any) => r.level === rung.level + 1);
+            if (nextRung) {
+              const { data: existsNext } = await supabase
+                .from("user_challenges")
+                .select("id")
+                .eq("user_id", user.id)
+                .eq("challenge_id", nextRung.id)
+                .maybeSingle();
+              if (!existsNext) {
+                await supabase.from("user_challenges").insert({
+                  user_id: user.id,
+                  challenge_id: nextRung.id,
+                } as any);
+                // Add it to items so following loop iterations can update it too
+                items.push({
+                  uc: { id: "pending", challenge_id: nextRung.id, progress: 0, completed: false },
+                  ch: nextRung,
+                });
+              }
+            }
+          }
         }
-        const completed = progress >= ch.goal_value;
-        await supabase.from("user_challenges").update({ progress, completed, completed_at: completed ? new Date().toISOString() : null } as any).eq("id", uc.id);
       }
     } finally { setLoading(false); }
   }, [user]);
