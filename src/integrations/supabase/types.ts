@@ -301,6 +301,7 @@ export type Database = {
         Row: {
           badge_id: string | null
           category: string | null
+          category_group: string | null
           created_at: string | null
           description: string | null
           end_date: string | null
@@ -315,6 +316,7 @@ export type Database = {
         Insert: {
           badge_id?: string | null
           category?: string | null
+          category_group?: string | null
           created_at?: string | null
           description?: string | null
           end_date?: string | null
@@ -329,6 +331,7 @@ export type Database = {
         Update: {
           badge_id?: string | null
           category?: string | null
+          category_group?: string | null
           created_at?: string | null
           description?: string | null
           end_date?: string | null
@@ -2336,6 +2339,9 @@ export type Database = {
           challenge_id: string
           completed: boolean | null
           completed_at: string | null
+          current_level: number | null
+          current_level_completed: boolean | null
+          current_level_progress: number | null
           id: string
           joined_at: string | null
           progress: number | null
@@ -2345,6 +2351,9 @@ export type Database = {
           challenge_id: string
           completed?: boolean | null
           completed_at?: string | null
+          current_level?: number | null
+          current_level_completed?: boolean | null
+          current_level_progress?: number | null
           id?: string
           joined_at?: string | null
           progress?: number | null
@@ -2354,6 +2363,9 @@ export type Database = {
           challenge_id?: string
           completed?: boolean | null
           completed_at?: string | null
+          current_level?: number | null
+          current_level_completed?: boolean | null
+          current_level_progress?: number | null
           id?: string
           joined_at?: string | null
           progress?: number | null

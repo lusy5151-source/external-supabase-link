@@ -19,10 +19,21 @@ import {
   Trees,
   Sparkles,
   Users,
+  ChevronRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import ChallengeCompletionModal from "@/components/ChallengeCompletionModal";
 
 // Category visual meta
@@ -47,8 +58,8 @@ const CATEGORY_META: Record<string, { icon: any; color: string; bg: string; labe
 const getCategoryMeta = (cat?: string) =>
   CATEGORY_META[cat ?? ""] ?? { icon: Trophy, label: cat ?? "기타", color: "text-primary", bg: "bg-primary/15" };
 
-// Tab order requested by user
-const CATEGORY_ORDER: string[] = [
+// Group order
+const GROUP_ORDER: string[] = [
   "summit_count",
   "bac100",
   "national_park",
@@ -60,6 +71,8 @@ const CATEGORY_ORDER: string[] = [
   "social",
 ];
 
+const groupKey = (c: Challenge) => c.category_group ?? c.category ?? "other";
+
 const ChallengePage = () => {
   const { user } = useAuth();
   const { fetchAllChallenges, fetchUserChallenges, recalculateProgress } = useChallenges();
@@ -67,13 +80,15 @@ const ChallengePage = () => {
   const [allChallenges, setAllChallenges] = useState<Challenge[]>([]);
   const [userChallenges, setUserChallenges] = useState<UserChallenge[]>([]);
   const [loading, setLoading] = useState(true);
-  const [joining, setJoining] = useState<string | null>(null);
+  const [joiningGroup, setJoiningGroup] = useState<string | null>(null);
+  const [confirmGroup, setConfirmGroup] = useState<string | null>(null);
   const [completedChallenge, setCompletedChallenge] = useState<Challenge | null>(null);
   const [prevCompletedIds, setPrevCompletedIds] = useState<Set<string>>(new Set());
-  const [activeCategory, setActiveCategory] = useState<string>("summit_count");
 
   const load = async () => {
     setLoading(true);
+    // Always recalc first so auto-level-up has a chance to insert next levels
+    await recalculateProgress();
     const [all, mine] = await Promise.all([fetchAllChallenges(), fetchUserChallenges()]);
     setAllChallenges(all);
     const newCompletedIds = new Set(mine.filter((uc) => uc.completed).map((uc) => uc.challenge_id));
@@ -95,19 +110,14 @@ const ChallengePage = () => {
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const ucMap = useMemo(() => {
-    const m = new Map<string, UserChallenge>();
-    userChallenges.forEach((uc) => m.set(uc.challenge_id, uc));
-    return m;
-  }, [userChallenges]);
-
-  // Group challenges by category, sorted by level inside
-  const grouped = useMemo(() => {
+  // Group ladder by group key (sorted by level ascending)
+  const ladders = useMemo(() => {
     const map = new Map<string, Challenge[]>();
     for (const c of allChallenges) {
-      const key = c.category ?? "other";
+      const key = groupKey(c);
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(c);
     }
@@ -115,51 +125,91 @@ const ChallengePage = () => {
     return map;
   }, [allChallenges]);
 
-  // Available tabs in fixed order, only those that have challenges
-  const availableTabs = useMemo(() => {
-    const tabs = CATEGORY_ORDER.filter((c) => grouped.has(c));
-    // append any unknown categories at the end
-    for (const k of grouped.keys()) {
-      if (!tabs.includes(k)) tabs.push(k);
-    }
-    return tabs;
-  }, [grouped]);
+  const ucByChallenge = useMemo(() => {
+    const m = new Map<string, UserChallenge>();
+    userChallenges.forEach((uc) => m.set(uc.challenge_id, uc));
+    return m;
+  }, [userChallenges]);
 
-  // Ensure activeCategory is valid once data loads
-  useEffect(() => {
-    if (availableTabs.length > 0 && !availableTabs.includes(activeCategory)) {
-      setActiveCategory(availableTabs[0]);
-    }
-  }, [availableTabs, activeCategory]);
+  // For each group: figure out current rung (highest joined level)
+  // and whether user has joined this group at all
+  type GroupState = {
+    key: string;
+    ladder: Challenge[];
+    joined: boolean;
+    currentRung: Challenge | null; // active (incomplete) level OR last completed if all done
+    currentUc: UserChallenge | null;
+    allComplete: boolean;
+    completedCount: number;
+  };
 
-  const visibleChallenges = grouped.get(activeCategory) ?? [];
+  const groupStates = useMemo<GroupState[]>(() => {
+    const orderedKeys = [
+      ...GROUP_ORDER.filter((g) => ladders.has(g)),
+      ...Array.from(ladders.keys()).filter((k) => !GROUP_ORDER.includes(k)),
+    ];
+    return orderedKeys.map((key) => {
+      const ladder = ladders.get(key) ?? [];
+      const joinedRungs = ladder.filter((ch) => ucByChallenge.has(ch.id));
+      const joined = joinedRungs.length > 0;
+      const completedCount = joinedRungs.filter((ch) => ucByChallenge.get(ch.id)?.completed).length;
+      // current rung = lowest level that is joined and NOT completed
+      let currentRung: Challenge | null =
+        joinedRungs.find((ch) => !ucByChallenge.get(ch.id)?.completed) ?? null;
+      // if everything joined is completed but ladder still has more levels, use next level
+      if (!currentRung && joined) {
+        const lastJoined = joinedRungs[joinedRungs.length - 1];
+        const nextInLadder = ladder.find((c) => c.level === lastJoined.level + 1);
+        currentRung = nextInLadder ?? lastJoined;
+      }
+      const allComplete =
+        joined && completedCount === ladder.length && ladder.length > 0;
+      return {
+        key,
+        ladder,
+        joined,
+        currentRung,
+        currentUc: currentRung ? ucByChallenge.get(currentRung.id) ?? null : null,
+        allComplete,
+        completedCount,
+      };
+    });
+  }, [ladders, ucByChallenge]);
 
-  const joinedCount = userChallenges.length;
-  const completedCount = userChallenges.filter((uc) => uc.completed).length;
+  const joinedGroups = groupStates.filter((g) => g.joined);
+  const availableGroups = groupStates.filter((g) => !g.joined);
 
-  const handleJoin = async (challenge: Challenge) => {
+  const totalCompleted = userChallenges.filter((uc) => uc.completed).length;
+
+  const handleJoinGroup = async (key: string) => {
     if (!user) return;
-    setJoining(challenge.id);
+    const ladder = ladders.get(key);
+    if (!ladder || ladder.length === 0) return;
+    const lv1 = ladder.find((c) => c.level === 1) ?? ladder[0];
+    setJoiningGroup(key);
     try {
       const { data: existing } = await (supabase as any)
         .from("user_challenges")
         .select("id")
         .eq("user_id", user.id)
-        .eq("challenge_id", challenge.id)
+        .eq("challenge_id", lv1.id)
         .maybeSingle();
       if (!existing) {
         const { error } = await (supabase as any)
           .from("user_challenges")
-          .insert({ user_id: user.id, challenge_id: challenge.id });
+          .insert({ user_id: user.id, challenge_id: lv1.id });
         if (error) throw error;
       }
-      await recalculateProgress();
       await load();
-      toast({ title: "챌린지 참여 완료!", description: `${challenge.title}에 참여했어요.` });
+      toast({
+        title: "챌린지 참여 완료!",
+        description: `${getCategoryMeta(key).label} LV1부터 시작합니다.`,
+      });
     } catch (e: any) {
       toast({ title: "참여 실패", description: e.message ?? "다시 시도해주세요.", variant: "destructive" });
     } finally {
-      setJoining(null);
+      setJoiningGroup(null);
+      setConfirmGroup(null);
     }
   };
 
@@ -175,7 +225,7 @@ const ChallengePage = () => {
     );
 
   return (
-    <div className="space-y-5 pb-24">
+    <div className="space-y-6 pb-24">
       <ChallengeCompletionModal challenge={completedChallenge} onDismiss={() => setCompletedChallenge(null)} />
 
       {/* Hero */}
@@ -183,161 +233,182 @@ const ChallengePage = () => {
         <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-primary/15">
           <Trophy className="h-8 w-8 text-primary" />
         </div>
-        <h1 className="text-xl font-bold text-foreground">정상 점령 챌린지</h1>
-        <p className="text-sm text-muted-foreground mt-1">카테고리별 챌린지에 참여하고 진행률을 확인하세요</p>
+        <h1 className="text-xl font-bold text-foreground">레벨업 챌린지</h1>
+        <p className="text-sm text-muted-foreground mt-1">카테고리별로 1번 참여하고 레벨업 하세요</p>
         <div className="mt-4 flex justify-center gap-6 text-sm">
           <div>
-            <span className="font-bold text-foreground">{joinedCount}</span>
+            <span className="font-bold text-foreground">{joinedGroups.length}</span>
             <span className="text-muted-foreground"> 참여중</span>
           </div>
           <div>
-            <span className="font-bold text-primary">{completedCount}</span>
-            <span className="text-muted-foreground"> 달성</span>
+            <span className="font-bold text-primary">{totalCompleted}</span>
+            <span className="text-muted-foreground"> 레벨 달성</span>
           </div>
           <div>
-            <span className="font-bold text-foreground">{allChallenges.length}</span>
-            <span className="text-muted-foreground"> 전체</span>
+            <span className="font-bold text-foreground">{groupStates.length}</span>
+            <span className="text-muted-foreground"> 카테고리</span>
           </div>
         </div>
       </div>
 
-      {/* Category tabs - horizontal scroll */}
-      {!loading && availableTabs.length > 0 && (
-        <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
-          <div className="flex gap-2 pb-1 min-w-max">
-            {availableTabs.map((cat) => {
-              const meta = getCategoryMeta(cat);
-              const Icon = meta.icon;
-              const list = grouped.get(cat) ?? [];
-              const doneInCat = list.filter((c) => ucMap.get(c.id)?.completed).length;
-              const isActive = activeCategory === cat;
-              return (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`flex items-center gap-2 rounded-2xl px-3.5 py-2 text-sm font-semibold transition whitespace-nowrap border ${
-                    isActive
-                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                      : "bg-card text-foreground border-border hover:border-primary/40"
-                  }`}
-                >
-                  <Icon className={`h-4 w-4 ${isActive ? "" : meta.color}`} />
-                  <span>{meta.label}</span>
-                  <span
-                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
-                      isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-secondary text-muted-foreground"
-                    }`}
-                  >
-                    {doneInCat}/{list.length}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Active category section */}
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="h-28 rounded-2xl bg-muted animate-pulse" />
           ))}
         </div>
-      ) : visibleChallenges.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground text-sm">표시할 챌린지가 없습니다.</div>
       ) : (
-        <div className="space-y-3">
-          {(() => {
-            const meta = getCategoryMeta(activeCategory);
-            const SectionIcon = meta.icon;
-            return (
-              <div className="flex items-center gap-2 px-1">
-                <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${meta.bg}`}>
-                  <SectionIcon className={`h-4 w-4 ${meta.color}`} />
-                </div>
-                <h2 className="text-base font-bold text-foreground">{meta.label}</h2>
-                <span className="text-xs text-muted-foreground">· {visibleChallenges.length}개 챌린지</span>
+        <>
+          {/* Joined section */}
+          <section className="space-y-3">
+            <div className="flex items-center gap-2 px-1">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/15">
+                <TrendingUp className="h-4 w-4 text-primary" />
               </div>
-            );
-          })()}
+              <h2 className="text-base font-bold text-foreground">참여 중인 챌린지</h2>
+              <span className="text-xs text-muted-foreground">· {joinedGroups.length}개</span>
+            </div>
 
-          {visibleChallenges.map((ch) => {
-            const uc = ucMap.get(ch.id);
-            const tier = getTierForLevel(ch.level);
-            const tierColor = TIER_COLORS[tier];
-            const meta = getCategoryMeta(ch.category);
-            const Icon = meta.icon;
-            const goal = ch.goal_value || 1;
-            const progress = uc?.progress ?? 0;
-            const pct = uc ? Math.min(Math.round((progress / goal) * 100), 100) : 0;
-            const completed = !!uc?.completed;
+            {joinedGroups.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                아직 참여 중인 챌린지가 없습니다.
+                <br />
+                아래에서 카테고리를 선택해 시작해보세요.
+              </div>
+            ) : (
+              joinedGroups.map((g) => {
+                const meta = getCategoryMeta(g.key);
+                const Icon = meta.icon;
+                const ch = g.currentRung!;
+                const tier = getTierForLevel(ch.level);
+                const tierColor = TIER_COLORS[tier];
+                const goal = ch.goal_value || 1;
+                const progress = g.currentUc?.progress ?? 0;
+                const pct = g.allComplete
+                  ? 100
+                  : Math.min(Math.round((progress / goal) * 100), 100);
 
-            return (
-              <div
-                key={ch.id}
-                className={`rounded-2xl border bg-card p-4 shadow-sm transition ${
-                  completed ? "border-primary/40 bg-primary/5" : "border-border"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${meta.bg}`}>
-                    <Icon className={`h-5 w-5 ${meta.color}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${tierColor.bg} ${tierColor.text}`}>
-                        LV{ch.level}
-                      </span>
-                      <h3 className="font-semibold text-sm text-foreground truncate">{ch.title}</h3>
-                      {completed && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary">
-                          <CheckCircle2 className="h-3 w-3" /> 달성
-                        </span>
-                      )}
-                    </div>
-                    {ch.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{ch.description}</p>}
-
-                    {uc ? (
-                      <div className="mt-2.5 space-y-1.5">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-muted-foreground">{completed ? "완료" : "진행중"}</span>
-                          <span className={`font-semibold ${completed ? "text-primary" : tierColor.text}`}>
-                            {Math.min(progress, goal)} / {goal} ({pct}%)
+                return (
+                  <div
+                    key={g.key}
+                    className={`rounded-2xl border bg-card p-4 shadow-sm ${
+                      g.allComplete ? "border-primary/40 bg-primary/5" : "border-border"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${meta.bg}`}>
+                        <Icon className={`h-5 w-5 ${meta.color}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-bold text-sm text-foreground">{meta.label}</h3>
+                          {g.allComplete ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary">
+                              <CheckCircle2 className="h-3 w-3" /> 완료
+                            </span>
+                          ) : (
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${tierColor.bg} ${tierColor.text}`}>
+                              LV{ch.level}
+                            </span>
+                          )}
+                          <span className="text-[10px] text-muted-foreground ml-auto">
+                            {g.completedCount}/{g.ladder.length} 단계
                           </span>
                         </div>
-                        <div className="h-2 w-full rounded-full bg-secondary overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-700 ${
-                              completed ? "bg-primary" : "bg-primary/80"
-                            }`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                        {completed && uc.completed_at && (
-                          <p className="text-[10px] text-muted-foreground">
-                            {new Date(uc.completed_at).toLocaleDateString("ko-KR")} 달성
+
+                        <p className="text-xs text-foreground mt-1.5 font-medium truncate">
+                          {ch.title}
+                        </p>
+                        {!g.allComplete && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            {Math.min(progress, goal)}개 달성 중 → {goal}개 목표
                           </p>
                         )}
+
+                        <div className="mt-2.5 space-y-1.5">
+                          <div className="h-2 w-full rounded-full bg-secondary overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-700 ${
+                                g.allComplete ? "bg-primary" : "bg-primary/80"
+                              }`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-[10px] text-muted-foreground">
+                            <span>{g.allComplete ? "최고 레벨 달성!" : "진행률"}</span>
+                            <span className="font-semibold text-foreground">{pct}%</span>
+                          </div>
+                        </div>
                       </div>
-                    ) : (
-                      <Button
-                        size="sm"
-                        className="mt-3 rounded-xl gap-1.5 h-8"
-                        onClick={() => handleJoin(ch)}
-                        disabled={joining === ch.id}
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        {joining === ch.id ? "참여 중..." : "참여하기"}
-                      </Button>
-                    )}
+                    </div>
                   </div>
+                );
+              })
+            )}
+          </section>
+
+          {/* Available section */}
+          {availableGroups.length > 0 && (
+            <section className="space-y-3">
+              <div className="flex items-center gap-2 px-1">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-muted">
+                  <Plus className="h-4 w-4 text-muted-foreground" />
                 </div>
+                <h2 className="text-base font-bold text-foreground">참여하기</h2>
+                <span className="text-xs text-muted-foreground">· {availableGroups.length}개 카테고리</span>
               </div>
-            );
-          })}
-        </div>
+
+              <div className="grid grid-cols-1 gap-2.5">
+                {availableGroups.map((g) => {
+                  const meta = getCategoryMeta(g.key);
+                  const Icon = meta.icon;
+                  const lv1 = g.ladder.find((c) => c.level === 1) ?? g.ladder[0];
+                  return (
+                    <button
+                      key={g.key}
+                      onClick={() => setConfirmGroup(g.key)}
+                      className="group flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 text-left shadow-sm transition hover:border-primary/40 active:scale-[0.99]"
+                    >
+                      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${meta.bg}`}>
+                        <Icon className={`h-5 w-5 ${meta.color}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-foreground">{meta.label}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          총 {g.ladder.length}단계 · 시작: {lv1?.title ?? "LV1"}
+                        </p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 group-hover:text-primary transition" />
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+        </>
       )}
+
+      <AlertDialog open={!!confirmGroup} onOpenChange={(o) => !o && setConfirmGroup(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmGroup ? getCategoryMeta(confirmGroup).label : ""} 챌린지 시작
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              LV1부터 시작합니다. 한 단계를 달성할 때마다 자동으로 다음 레벨로 올라갑니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => confirmGroup && handleJoinGroup(confirmGroup)}
+              disabled={!!joiningGroup}
+            >
+              {joiningGroup ? "참여 중..." : "참여하기"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
