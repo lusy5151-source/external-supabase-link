@@ -2584,6 +2584,127 @@ export type Database = {
         }
         Relationships: []
       }
+      walking_path_courses: {
+        Row: {
+          course_name: string | null
+          course_number: string
+          created_at: string | null
+          description: string | null
+          difficulty: string | null
+          distance_km: number | null
+          duration_minutes: number | null
+          end_point: string | null
+          id: string
+          start_point: string | null
+          walking_path_id: string | null
+        }
+        Insert: {
+          course_name?: string | null
+          course_number: string
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          distance_km?: number | null
+          duration_minutes?: number | null
+          end_point?: string | null
+          id?: string
+          start_point?: string | null
+          walking_path_id?: string | null
+        }
+        Update: {
+          course_name?: string | null
+          course_number?: string
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          distance_km?: number | null
+          duration_minutes?: number | null
+          end_point?: string | null
+          id?: string
+          start_point?: string | null
+          walking_path_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "walking_path_courses_walking_path_id_fkey"
+            columns: ["walking_path_id"]
+            isOneToOne: false
+            referencedRelation: "walking_paths"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      walking_paths: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          difficulty: string | null
+          duration_hours: number | null
+          end_point: string | null
+          highlights: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          mountain_id: number | null
+          name: string
+          path_type: string
+          province: string | null
+          region: string | null
+          start_point: string | null
+          total_courses: number | null
+          total_distance_km: number | null
+          website_url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          duration_hours?: number | null
+          end_point?: string | null
+          highlights?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          mountain_id?: number | null
+          name: string
+          path_type: string
+          province?: string | null
+          region?: string | null
+          start_point?: string | null
+          total_courses?: number | null
+          total_distance_km?: number | null
+          website_url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          duration_hours?: number | null
+          end_point?: string | null
+          highlights?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          mountain_id?: number | null
+          name?: string
+          path_type?: string
+          province?: string | null
+          region?: string | null
+          start_point?: string | null
+          total_courses?: number | null
+          total_distance_km?: number | null
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "walking_paths_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       user_challenge_summary: {
