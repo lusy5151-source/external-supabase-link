@@ -26,6 +26,7 @@ const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const MountainList = lazy(() => import("@/pages/MountainList"));
 const MountainDetail = lazy(() => import("@/pages/MountainDetail"));
 const TrailDetailPage = lazy(() => import("@/pages/TrailDetailPage"));
+const WalkingPathDetail = lazy(() => import("@/pages/WalkingPathDetail"));
 const MapView = lazy(() => import("@/pages/MapView"));
 const Records = lazy(() => import("@/pages/Records"));
 const GearPage = lazy(() => import("@/pages/GearPage"));
@@ -94,6 +95,7 @@ const AppRoutes = () => {
       <Route path="/mountains" element={<LazyPage><MountainList /></LazyPage>} />
       <Route path="/mountains/:id" element={<LazyPage><MountainDetail /></LazyPage>} />
       <Route path="/trails/:trailId" element={<LazyPage><TrailDetailPage /></LazyPage>} />
+      <Route path="/walking-paths/:id" element={<LazyPage><WalkingPathDetail /></LazyPage>} />
       <Route path="/map" element={<LazyPage><MapView /></LazyPage>} />
       <Route path="/records" element={<LazyPage><Records /></LazyPage>} />
       <Route path="/gear" element={<LazyPage><GearPage /></LazyPage>} />

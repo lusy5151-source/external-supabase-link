@@ -20,6 +20,7 @@ import { NearbyPlaces } from "@/components/NearbyPlaces";
 import { TrailMap } from "@/components/TrailMap";
 import { ParkRestrictions } from "@/components/ParkRestrictions";
 import { MountainFacilities } from "@/components/MountainFacilities";
+import WalkingPathsSection from "@/components/WalkingPathsSection";
 import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingJournals } from "@/hooks/useHikingJournals";
@@ -233,6 +234,9 @@ const MountainDetail = () => {
 
       {/* Nearby places */}
       <NearbyPlaces lat={mountain.lat} lng={mountain.lng} mountainName={mountain.nameKo} />
+
+      {/* Connected walking paths */}
+      <WalkingPathsSection mountainId={mountain.id} />
 
       {/* Hiking Journal */}
       {completed && record && (
