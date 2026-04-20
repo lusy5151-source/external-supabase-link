@@ -170,7 +170,9 @@ const MountainList = () => {
         </button>
       </div>
 
-      {viewMode === "region" ? (
+      {viewMode === "walking" ? (
+        <WalkingPathsList paths={walkingPaths.filter((p) => !search.trim() || p.name.includes(search))} />
+      ) : viewMode === "region" ? (
         <div className="space-y-2">
           {regionGroups.map(({ region, mountains: rMountains }) => (
             <Collapsible key={region} open={openRegions.has(region)} onOpenChange={() => toggleRegion(region)}>
