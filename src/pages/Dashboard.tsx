@@ -580,7 +580,11 @@ const Dashboard = () => {
                 {recentJournals.map((j) => {
                   const mt = mountains.find((m) => m.id === j.mountain_id);
                   return (
-                    <div key={j.id} className="rounded-2xl bg-card border border-border p-4 shadow-sm">
+                    <Link
+                      key={j.id}
+                      to={`/journals/${j.id}`}
+                      className="block rounded-2xl bg-card border border-border p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/30 active:scale-[0.99]"
+                    >
                       <div className="flex gap-3">
                         {j.photos && j.photos.length > 0 ? (
                           <img src={j.photos[0]} alt="" className="h-16 w-16 rounded-xl object-cover shrink-0" loading="lazy" />
@@ -604,7 +608,7 @@ const Dashboard = () => {
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   );
                 })}
               </div>
