@@ -36,6 +36,7 @@ const PlansPage = lazy(() => import("@/pages/PlansPage"));
 const CreatePlanPage = lazy(() => import("@/pages/CreatePlanPage"));
 const PlanDetailPage = lazy(() => import("@/pages/PlanDetailPage"));
 const FeedPage = lazy(() => import("@/pages/FeedPage"));
+const JournalDetailPage = lazy(() => import("@/pages/JournalDetailPage"));
 const FriendProfilePage = lazy(() => import("@/pages/FriendProfilePage"));
 const ChallengePage = lazy(() => import("@/pages/ChallengePage"));
 const SharedCompletionPage = lazy(() => import("@/pages/SharedCompletionPage"));
@@ -103,6 +104,7 @@ const AppRoutes = () => {
       <Route path="/challenges" element={<ProtectedRoute><LazyPage><ChallengePage /></LazyPage></ProtectedRoute>} />
       <Route path="/achievements" element={<LazyPage><AchievementsPage /></LazyPage>} />
       <Route path="/feed" element={<LazyPage><FeedPage /></LazyPage>} />
+      <Route path="/journals/:id" element={<LazyPage><JournalDetailPage /></LazyPage>} />
       <Route path="/shared-completions" element={<ProtectedRoute><LazyPage><SharedCompletionPage /></LazyPage></ProtectedRoute>} />
       <Route path="/groups" element={<Navigate to="/social" replace />} />
       <Route path="/groups/:id" element={<ProtectedRoute><LazyPage><GroupDetailPage /></LazyPage></ProtectedRoute>} />

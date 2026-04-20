@@ -11,6 +11,7 @@ import {
   Globe, Users, Lock, ChevronDown, Send, Trash2, X,
 } from "lucide-react";
 import { ContentMenu } from "@/components/ContentMenu";
+import PhotoLightbox from "@/components/PhotoLightbox";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -53,6 +54,7 @@ export function JournalCard({ journal, showAuthor = true, onRefresh }: JournalCa
   const [taggedProfiles, setTaggedProfiles] = useState<Map<string, { nickname: string | null; avatar_url: string | null }>>(new Map());
   const [showLikers, setShowLikers] = useState(false);
   const [likers, setLikers] = useState<{ user_id: string; nickname: string | null; avatar_url: string | null }[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const vis = visibilityConfig[journal.visibility] || visibilityConfig.public;
   const VisIcon = vis.icon;
@@ -140,17 +142,29 @@ export function JournalCard({ journal, showAuthor = true, onRefresh }: JournalCa
       {photos.length > 0 && (
         <div className={cn("grid gap-0.5", photos.length === 1 ? "" : photos.length === 2 ? "grid-cols-2" : "grid-cols-3")}>
           {photos.slice(0, 3).map((src, i) => (
-            <div key={i} className="aspect-square relative overflow-hidden">
-              <img src={src} alt="" className="h-full w-full object-cover" />
+            <button
+              type="button"
+              key={i}
+              onClick={() => setLightboxIndex(i)}
+              className="aspect-square relative overflow-hidden focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-label={`사진 ${i + 1} 크게 보기`}
+            >
+              <img src={src} alt="" className="h-full w-full object-cover transition-transform hover:scale-105" />
               {i === 2 && photos.length > 3 && (
                 <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center">
                   <span className="text-sm font-bold text-white">+{photos.length - 3}</span>
                 </div>
               )}
-            </div>
+            </button>
           ))}
         </div>
       )}
+      <PhotoLightbox
+        photos={photos}
+        initialIndex={lightboxIndex ?? 0}
+        open={lightboxIndex !== null}
+        onClose={() => setLightboxIndex(null)}
+      />
 
       {/* Content */}
       <div className="p-4 space-y-2.5">
