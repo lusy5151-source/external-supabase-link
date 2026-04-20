@@ -4,7 +4,7 @@ import type { Mountain } from "@/data/mountains";
 import { useMountains } from "@/contexts/MountainsContext";
 import { useStore } from "@/context/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { Search, CheckCircle2, Circle, ChevronRight, ChevronDown, ArrowUpDown, Mountain as MountainIcon, Star, Smile, MapPin, Flame, User, Clock } from "lucide-react";
+import { Search, CheckCircle2, Circle, ChevronRight, ChevronDown, ArrowUpDown, Mountain as MountainIcon, Star, Smile, MapPin, Flame, User, Clock, Trees } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -17,7 +17,7 @@ import RegisterMountainModal from "@/components/RegisterMountainModal";
 const MountainMapSection = lazy(() => import("@/components/MountainMapSection"));
 
 type SortKey = "name" | "height" | "popularity";
-type ViewMode = "all" | "forestry100" | "bac100" | "region" | "oreum" | "full";
+type ViewMode = "all" | "national" | "forestry100" | "bac100" | "region" | "oreum" | "full";
 
 const MountainList = () => {
   const { mountains: dbMountains } = useMountains();
@@ -78,6 +78,10 @@ const MountainList = () => {
     [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly, bac100List]
   );
   const oreumFiltered = useMemo(() => filterAndSort(dbMountains.filter((m) => m.region === "제주" && !m.is_baekdu)), [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly, dbMountains]);
+  const nationalFiltered = useMemo(
+    () => filterAndSort(dbMountains.filter((m) => m.is_national_park)),
+    [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly, dbMountains]
+  );
 
   const allRegions = [...regions, "기타"] as const;
   const regionGroups = useMemo(() => {
@@ -95,13 +99,15 @@ const MountainList = () => {
 
   const viewModes: { key: ViewMode; label: string; icon: any }[] = [
     { key: "all", label: "전체", icon: MountainIcon },
+    { key: "national", label: "국립공원", icon: Trees },
+    { key: "bac100", label: "백대명산", icon: Star },
     { key: "forestry100", label: "산림청 100대", icon: Star },
-    { key: "bac100", label: "BAC 백대명산", icon: Star },
     { key: "region", label: "지역별", icon: MapPin },
     { key: "oreum", label: "제주 오름", icon: Flame },
   ];
 
   const getCurrentList = () => {
+    if (viewMode === "national") return nationalFiltered;
     if (viewMode === "forestry100") return forestry100Filtered;
     if (viewMode === "bac100") return bac100Filtered;
     if (viewMode === "oreum") return oreumFiltered;
@@ -201,10 +207,11 @@ const MountainCard = React.memo(function MountainCard({ m, isCompleted: complete
       </button>
       <Link to={`/mountains/${m.id}`} className="flex flex-1 items-center justify-between min-w-0">
         <div className="min-w-0 space-y-0.5">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <p className="font-medium truncate text-foreground">{m.nameKo}</p>
             {(m.is_bac100 ?? m.is_baekdu) && (<Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-blue-300 text-blue-600 dark:border-blue-700 dark:text-blue-400">BAC 100대 명산</Badge>)}
             {m.bac100_label?.includes("산림청") && (<Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-emerald-300 text-emerald-600 dark:border-emerald-700 dark:text-emerald-400">산림청 100대 명산</Badge>)}
+            {m.is_national_park && (<Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-green-400 text-green-700 dark:border-green-700 dark:text-green-400">🌲 {m.national_park_name || "국립공원"}</Badge>)}
             {isUserCreated && m.status === "pending" && (<Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 gap-0.5 border-amber-300 text-amber-600"><Clock className="h-2.5 w-2.5" />승인 대기</Badge>)}
             {isUserCreated && m.status !== "pending" && (<Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 gap-0.5"><User className="h-2.5 w-2.5" />커스텀</Badge>)}
           </div>
