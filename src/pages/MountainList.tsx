@@ -4,7 +4,7 @@ import type { Mountain } from "@/data/mountains";
 import { useMountains } from "@/contexts/MountainsContext";
 import { useStore } from "@/context/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { Search, CheckCircle2, Circle, ChevronRight, ChevronDown, ArrowUpDown, Mountain as MountainIcon, Star, Smile, MapPin, Flame, User, Clock, Trees } from "lucide-react";
+import { Search, CheckCircle2, Circle, ChevronRight, ChevronDown, ArrowUpDown, Mountain as MountainIcon, Star, Smile, MapPin, Flame, User, Clock, Trees, Footprints, Route } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -12,12 +12,13 @@ import React, { lazy, Suspense } from "react";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useUserMountains } from "@/hooks/useUserMountains";
 import { useBac100Mountains } from "@/hooks/useBac100Mountains";
+import { useAllWalkingPaths, pathTypeLabel } from "@/hooks/useWalkingPaths";
 import RegisterMountainModal from "@/components/RegisterMountainModal";
 
 const MountainMapSection = lazy(() => import("@/components/MountainMapSection"));
 
 type SortKey = "name" | "height" | "popularity";
-type ViewMode = "all" | "national" | "forestry100" | "bac100" | "region" | "oreum" | "full";
+type ViewMode = "all" | "national" | "forestry100" | "bac100" | "region" | "oreum" | "walking" | "full";
 
 const MountainList = () => {
   const { mountains: dbMountains } = useMountains();
@@ -25,6 +26,7 @@ const MountainList = () => {
   const { user } = useAuth();
   const { userMountainsAsMountains, userMountains } = useUserMountains();
   const { data: bac100List = [] } = useBac100Mountains();
+  const { data: walkingPaths = [] } = useAllWalkingPaths();
   const [search, setSearch] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState<string>("전체");
   const [showCompleted, setShowCompleted] = useState<"all" | "done" | "todo">("all");
@@ -104,6 +106,7 @@ const MountainList = () => {
     { key: "forestry100", label: "산림청 100대", icon: Star },
     { key: "region", label: "지역별", icon: MapPin },
     { key: "oreum", label: "제주 오름", icon: Flame },
+    { key: "walking", label: "둘레길", icon: Footprints },
   ];
 
   const getCurrentList = () => {
