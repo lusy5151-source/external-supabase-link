@@ -231,4 +231,52 @@ const MountainCard = React.memo(function MountainCard({ m, isCompleted: complete
   );
 });
 
+function WalkingPathsList({ paths }: { paths: any[] }) {
+  if (paths.length === 0) {
+    return <p className="py-12 text-center text-sm text-muted-foreground">등록된 둘레길이 없습니다</p>;
+  }
+  return (
+    <>
+      <p className="text-xs text-muted-foreground">{paths.length}개 둘레길</p>
+      <div className="space-y-2">
+        {paths.map((p) => {
+          const diffColor =
+            p.difficulty === "쉬움"
+              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+              : p.difficulty === "어려움"
+              ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+              : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
+          return (
+            <Link
+              key={p.id}
+              to={`/walking-paths/${p.id}`}
+              className="block rounded-lg border border-border bg-card p-3.5 shadow-sm hover:bg-accent/50 transition-colors"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <p className="font-medium text-foreground truncate">{p.name}</p>
+                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-primary/40 text-primary">
+                      {pathTypeLabel(p.path_type)}
+                    </Badge>
+                    {p.difficulty && (
+                      <span className={`rounded px-1 py-0.5 text-[10px] font-medium ${diffColor}`}>{p.difficulty}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
+                    {p.region && <><span>{p.region}</span><span>·</span></>}
+                    {p.total_distance_km != null && <><span>{p.total_distance_km}km</span><span>·</span></>}
+                    {p.total_courses != null && <span>{p.total_courses}개 코스</span>}
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40 mt-1" />
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
 export default MountainList;
