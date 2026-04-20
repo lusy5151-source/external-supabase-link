@@ -18,6 +18,7 @@ import { WeatherCard } from "@/components/WeatherCard";
 import { TrailInfoSection } from "@/components/TrailInfo";
 import { NearbyPlaces } from "@/components/NearbyPlaces";
 import { TrailMap } from "@/components/TrailMap";
+import { ParkRestrictions } from "@/components/ParkRestrictions";
 import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingJournals } from "@/hooks/useHikingJournals";
@@ -213,6 +214,9 @@ const MountainDetail = () => {
 
       {/* Summit Claim */}
       <SummitClaimSection mountainId={mountain.id} mountainName={mountain.nameKo} />
+
+      {/* Park trail restrictions (국립공원만 표시) */}
+      <ParkRestrictions mountainId={mountain.id} />
 
       {/* Trail info */}
       <TrailInfoSection mountainId={mountain.id} fallbackTrails={mountain.trails} />
