@@ -1168,11 +1168,13 @@ export type Database = {
           id: number
           image_url: string | null
           is_bac100: boolean | null
+          is_national_park: boolean | null
           is_oreum: boolean | null
           lat: number | null
           lng: number | null
           name: string | null
           name_ko: string | null
+          national_park_name: string | null
           overview: string | null
           popularity: number | null
           province: string | null
@@ -1195,11 +1197,13 @@ export type Database = {
           id: number
           image_url?: string | null
           is_bac100?: boolean | null
+          is_national_park?: boolean | null
           is_oreum?: boolean | null
           lat?: number | null
           lng?: number | null
           name?: string | null
           name_ko?: string | null
+          national_park_name?: string | null
           overview?: string | null
           popularity?: number | null
           province?: string | null
@@ -1222,11 +1226,13 @@ export type Database = {
           id?: number
           image_url?: string | null
           is_bac100?: boolean | null
+          is_national_park?: boolean | null
           is_oreum?: boolean | null
           lat?: number | null
           lng?: number | null
           name?: string | null
           name_ko?: string | null
+          national_park_name?: string | null
           overview?: string | null
           popularity?: number | null
           province?: string | null

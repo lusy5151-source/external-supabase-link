@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -50,24 +50,17 @@ const MountainMapSection = () => {
     }
   }, [user]);
 
-  const getFilteredMountains = useCallback(() => {
-    return mountains.filter((m) => {
-      const completed = isCompleted(m.id);
-      const shared = sharedMountains.has(m.id);
-      if (filter === "completed") return completed || shared;
-      if (filter === "not_completed") return !completed && !shared;
-      if (filter === "shared") return shared;
-      return true;
-    });
-  }, [filter, isCompleted, sharedMountains]);
+  // Stable refs to avoid re-creating the map when these change
+  const isCompletedRef = useRef(isCompleted);
+  const getRecordRef = useRef(getRecord);
+  const sharedCompletionMapRef = useRef(sharedCompletionMap);
+  useEffect(() => { isCompletedRef.current = isCompleted; }, [isCompleted]);
+  useEffect(() => { getRecordRef.current = getRecord; }, [getRecord]);
+  useEffect(() => { sharedCompletionMapRef.current = sharedCompletionMap; }, [sharedCompletionMap]);
 
+  // Initialize map ONCE on mount
   useEffect(() => {
-    if (!mapRef.current) return;
-
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.remove();
-      mapInstanceRef.current = null;
-    }
+    if (!mapRef.current || mapInstanceRef.current) return;
 
     const koreaBounds = L.latLngBounds(L.latLng(33.0, 124.5), L.latLng(38.7, 131.9));
     const map = L.map(mapRef.current, {
@@ -85,11 +78,36 @@ const MountainMapSection = () => {
       maxZoom: 18,
     }).addTo(map);
 
-    const filtered = getFilteredMountains();
-    const markers: L.Marker[] = [];
+    mapInstanceRef.current = map;
 
+    return () => {
+      map.remove();
+      mapInstanceRef.current = null;
+      markersRef.current = [];
+    };
+  }, []);
+
+  // Update markers when filter or data changes — without recreating the map
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    // Clear previous markers
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current = [];
+
+    const filtered = mountains.filter((m) => {
+      const completed = isCompletedRef.current(m.id);
+      const shared = sharedMountains.has(m.id);
+      if (filter === "completed") return completed || shared;
+      if (filter === "not_completed") return !completed && !shared;
+      if (filter === "shared") return shared;
+      return true;
+    });
+
+    const markers: L.Marker[] = [];
     filtered.forEach((m) => {
-      const completed = isCompleted(m.id);
+      const completed = isCompletedRef.current(m.id);
       const shared = sharedMountains.has(m.id);
 
       let markerHtml: string;
@@ -113,8 +131,8 @@ const MountainMapSection = () => {
 
       const marker = L.marker([m.lat, m.lng], { icon }).addTo(map);
       marker.on("click", () => {
-        const record = getRecord(m.id);
-        const sc = sharedCompletionMap.get(m.id);
+        const record = getRecordRef.current(m.id);
+        const sc = sharedCompletionMapRef.current.get(m.id);
         setSelectedInfo({
           mountain: m,
           completed,
@@ -127,13 +145,7 @@ const MountainMapSection = () => {
     });
 
     markersRef.current = markers;
-    mapInstanceRef.current = map;
-
-    return () => {
-      map.remove();
-      mapInstanceRef.current = null;
-    };
-  }, [filter, isCompleted, sharedMountains, sharedCompletionMap, getFilteredMountains, getRecord]);
+  }, [mountains, filter, sharedMountains]);
 
   const handleShowMyLocation = () => {
     if (!navigator.geolocation) return;
