@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Building2, Tent, ParkingCircle, MapPin, Loader2 } from "lucide-react";
+import { Building2, Tent, ParkingCircle, MapPin, Loader2, Map as MapIcon } from "lucide-react";
 
 interface Facility {
   id: string;
@@ -70,14 +70,28 @@ export function MountainFacilities({ mountainId }: { mountainId: number }) {
                 <span className="text-[10px] text-muted-foreground">{list.length}개</span>
               </div>
               <div className="space-y-1.5">
-                {list.map((f) => (
-                  <div key={f.id} className={`rounded-lg border px-2.5 py-1.5 ${meta.color}`}>
-                    <p className="text-xs font-medium">{f.name || meta.label}</p>
-                    {f.description && (
-                      <p className="text-[11px] mt-0.5 opacity-80">{f.description}</p>
-                    )}
-                  </div>
-                ))}
+                {list.map((f) => {
+                  const query = encodeURIComponent(f.name || meta.label);
+                  const kakaoUrl = `https://map.kakao.com/link/search/${query}`;
+                  return (
+                    <a
+                      key={f.id}
+                      href={kakaoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`group flex items-start justify-between gap-2 rounded-lg border px-2.5 py-1.5 transition-all hover:shadow-sm hover:scale-[1.01] active:scale-[0.99] cursor-pointer ${meta.color}`}
+                      aria-label={`${f.name || meta.label} 카카오맵에서 보기`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate">{f.name || meta.label}</p>
+                        {f.description && (
+                          <p className="text-[11px] mt-0.5 opacity-80 line-clamp-2">{f.description}</p>
+                        )}
+                      </div>
+                      <MapIcon className="h-3.5 w-3.5 mt-0.5 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" />
+                    </a>
+                  );
+                })}
               </div>
             </div>
           );
