@@ -66,8 +66,8 @@ const Records = () => {
   };
 
   const handleEdit = (journal: HikingJournal) => { setEditingJournal(journal); setShowForm(true); };
-  const handleFormSaved = () => { setShowForm(false); setEditingJournal(null); loadData(); };
-  const handleFormClose = () => { setShowForm(false); setEditingJournal(null); };
+  const handleFormSaved = () => { setShowForm(false); setEditingJournal(null); setPrefillData(null); loadData(); };
+  const handleFormClose = () => { setShowForm(false); setEditingJournal(null); setPrefillData(null); };
 
   const { isOnboarding } = useOnboarding();
   if (!user || isOnboarding) return <DemoRecordsView />;
