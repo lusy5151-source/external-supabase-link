@@ -422,39 +422,77 @@ const Dashboard = () => {
           {/* ── 2. Circular Progress Cards: 100대 명산 + 정상 챌린지 ── */}
           <section className="grid grid-cols-2 gap-3">
             {/* LEFT: 100대 명산 */}
-            <Link
-              to={isDemo ? "/mountains" : "/challenges"}
+            <div
               className="rounded-2xl bg-card p-4"
               style={{ border: "0.5px solid hsl(var(--border))" }}
             >
-              <p style={{ fontSize: 12 }} className="text-muted-foreground mb-3">100대 명산 진행률</p>
-              <div className="flex flex-col items-center">
-                <div className="relative" style={{ width: 80, height: 80 }}>
-                  <svg className="-rotate-90" viewBox="0 0 80 80" width="80" height="80">
-                    <circle cx="40" cy="40" r="32" fill="none" stroke="#FFE0E0" strokeWidth="8" />
-                    <circle
-                      cx="40" cy="40" r="32" fill="none"
-                      stroke="#E24B4A" strokeWidth="8"
-                      strokeLinecap="round"
-                      strokeDasharray={`${2 * Math.PI * 32}`}
-                      strokeDashoffset={`${2 * Math.PI * 32 * (1 - (isDemo ? goalPercent : hundredPercent) / 100)}`}
-                      className="transition-all duration-700 ease-out"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span style={{ fontSize: 18, fontWeight: 500 }} className="text-foreground">
-                      {isDemo ? goalPercent : hundredPercent}%
-                    </span>
+              <div className="flex items-center justify-between mb-3">
+                <p style={{ fontSize: 12 }} className="text-muted-foreground">
+                  {!isDemo && hundredType ? hundredLabel : "100대 명산 진행률"}
+                </p>
+                {!isDemo && (
+                  <button
+                    onClick={() => setShowHundredPicker((v) => !v)}
+                    className="text-muted-foreground hover:text-primary"
+                    aria-label="기준 변경"
+                  >
+                    <Settings2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {!isDemo && showHundredPicker && (
+                <div className="mb-3 flex items-center gap-1.5">
+                  <button
+                    onClick={() => handleHundredTypeSelect("forestry_100")}
+                    className={`rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors ${activeHundredType === "forestry_100" ? "bg-coral text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
+                  >
+                    산림청
+                  </button>
+                  <button
+                    onClick={() => handleHundredTypeSelect("bac_100")}
+                    className={`rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors ${activeHundredType === "bac_100" ? "bg-coral text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
+                  >
+                    BAC
+                  </button>
+                </div>
+              )}
+
+              {!isDemo && !hundredType ? (
+                <div className="flex flex-col items-center text-center py-2">
+                  <Mountain className="h-7 w-7 text-muted-foreground/30 mb-2" />
+                  <p className="text-[11px] text-muted-foreground mb-2 leading-snug">어떤 100대 명산을<br />추적할까요?</p>
+                  <div className="flex flex-col gap-1.5 w-full">
+                    <button onClick={() => handleHundredTypeSelect("forestry_100")} className="rounded-full bg-coral px-3 py-1.5 text-[10px] font-semibold text-primary-foreground">산림청 100대</button>
+                    <button onClick={() => handleHundredTypeSelect("bac_100")} className="rounded-full bg-secondary px-3 py-1.5 text-[10px] font-semibold text-secondary-foreground">BAC 100대</button>
                   </div>
                 </div>
-                <p style={{ fontSize: 11 }} className="text-muted-foreground mt-2 text-center">
-                  {isDemo ? `${displayCompletedCount} / ${displayGoal}` : `${hundredCompleted} / ${hundredTotal}`}
-                </p>
-                <p style={{ fontSize: 11 }} className="text-muted-foreground text-center">
-                  {isDemo ? `백대명산 ${baekduCompleted}/${baekduCount}` : hundredLabel}
-                </p>
-              </div>
-            </Link>
+              ) : (
+                <Link to={isDemo ? "/mountains" : "/challenges"} className="flex flex-col items-center">
+                  <div className="relative" style={{ width: 80, height: 80 }}>
+                    <svg className="-rotate-90" viewBox="0 0 80 80" width="80" height="80">
+                      <circle cx="40" cy="40" r="32" fill="none" stroke="#FFE0E0" strokeWidth="8" />
+                      <circle cx="40" cy="40" r="32" fill="none" stroke="#E24B4A" strokeWidth="8" strokeLinecap="round"
+                        strokeDasharray={`${2 * Math.PI * 32}`}
+                        strokeDashoffset={`${2 * Math.PI * 32 * (1 - (isDemo ? goalPercent : hundredPercent) / 100)}`}
+                        className="transition-all duration-700 ease-out"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span style={{ fontSize: 18, fontWeight: 500 }} className="text-foreground">
+                        {isDemo ? goalPercent : hundredPercent}%
+                      </span>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: 11 }} className="text-muted-foreground mt-2 text-center">
+                    {isDemo ? `${displayCompletedCount} / ${displayGoal}` : `${hundredCompleted} / ${hundredTotal}`}
+                  </p>
+                  <p style={{ fontSize: 11 }} className="text-muted-foreground text-center">
+                    {isDemo ? `백대명산 ${baekduCompleted}/${baekduCount}` : hundredLabel}
+                  </p>
+                </Link>
+              )}
+            </div>
 
             {/* RIGHT: 정상 챌린지 */}
             <div
