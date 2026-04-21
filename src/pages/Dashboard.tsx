@@ -286,24 +286,124 @@ const Dashboard = () => {
           </div>
         </section>
 
-        <div className="space-y-5 px-5 pt-5">
+        <div className="space-y-4 px-5 pt-5">
 
-          {/* ── 완등 MAGAZINE Banner ── */}
+          {/* ── 1. 지금 이 산에 있어요 🔥 ── */}
+          <section>
+            <div className="mb-3 flex items-center gap-2">
+              <Flame className="h-4 w-4 text-coral" />
+              <h2 className="text-base font-bold text-foreground">지금 이 산에 있어요 🔥</h2>
+            </div>
+            <div className="rounded-2xl bg-card border border-border p-3 shadow-sm space-y-2">
+              {!isDemo && liveFeedLoading ? (
+                <div className="py-4 text-center text-sm text-muted-foreground">불러오는 중...</div>
+              ) : displayClaims.length === 0 ? (
+                <div className="py-4 text-center">
+                  <Mountain className="mx-auto h-7 w-7 text-muted-foreground/30 mb-1.5" />
+                  <p className="text-sm text-muted-foreground">아직 정복 기록이 없습니다</p>
+                </div>
+              ) : (
+                displayClaims.slice(0, 3).map((claim: any) => {
+                  const mt = mountains.find((m) => m.id === claim.mountain_id);
+                  const timeAgo = getTimeAgo(claim.claimed_at);
+                  return (
+                    <div key={claim.id} className="flex items-center gap-2.5 px-1 py-1">
+                      <Avatar className="h-7 w-7 shrink-0">
+                        {claim.avatar_url && <AvatarImage src={claim.avatar_url} />}
+                        <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                          {(claim.nickname || "?").charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0 flex items-center gap-1.5 text-sm">
+                        <span className="font-medium text-foreground truncate">{claim.nickname || "등산러"}</span>
+                        <span className="text-muted-foreground">·</span>
+                        <span className="text-foreground truncate">{mt?.nameKo || claim.summit_name}</span>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground shrink-0">{timeAgo}</span>
+                    </div>
+                  );
+                })
+              )}
+              {displayClaims.length > 3 && (
+                <Link to="/leaderboard" className="block text-center text-xs font-medium text-coral hover:underline pt-1">
+                  더 보기 →
+                </Link>
+              )}
+            </div>
+          </section>
+
+          {/* ── Mountain King of the Day ── */}
+          {displayKing && (
+            <section>
+              <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/10 dark:border-amber-800/30 p-4 shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <Crown className="h-4 w-4 text-amber-500" />
+                  <h2 className="text-sm font-bold text-foreground">오늘의 산왕</h2>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10 ring-2 ring-amber-300">
+                    {displayKing.avatar_url && <AvatarImage src={displayKing.avatar_url} />}
+                    <AvatarFallback className="text-sm bg-amber-100 text-amber-700">
+                      {(displayKing.nickname || "?").charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="text-sm font-bold text-foreground">{displayKing.nickname || "등산러"}</p>
+                    <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                      오늘 {displayKing.claim_count}개 정상 정복 👑
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ── 2. Compact Metric Cards: 100대 명산 + 정상 챌린지 ── */}
+          <section className="grid grid-cols-2 gap-3">
+            <Link
+              to={isDemo ? "/mountains" : "/challenges"}
+              className="rounded-xl bg-secondary p-3"
+            >
+              <p style={{ fontSize: 11 }} className="text-muted-foreground">
+                {!isDemo && hundredType ? hundredLabel : "100대 명산"}
+              </p>
+              <p style={{ fontSize: 20, color: "#27500A", fontWeight: 700, marginTop: 4 }}>
+                {isDemo ? goalPercent : hundredPercent}%
+              </p>
+              <p style={{ fontSize: 10 }} className="text-muted-foreground mt-0.5">
+                {isDemo ? `${displayCompletedCount}/${displayGoal}` : `${hundredCompleted}/${hundredTotal}`}
+              </p>
+            </Link>
+            <Link
+              to={isDemo ? "/auth" : "/challenges"}
+              className="rounded-xl bg-secondary p-3"
+            >
+              <p style={{ fontSize: 11 }} className="text-muted-foreground">정상 챌린지</p>
+              <p style={{ fontSize: 20, color: "#27500A", fontWeight: 700, marginTop: 4 }}>
+                {challengeProgress}%
+              </p>
+              <p style={{ fontSize: 10 }} className="text-muted-foreground mt-0.5">
+                {isDemo ? "3개 진행 중" : activeChallenges.length > 0 ? `${activeChallenges.length}개 진행 중` : "참여 없음"}
+              </p>
+            </Link>
+          </section>
+
+          {/* ── 3. 완등 MAGAZINE Banner ── */}
           <section>
             <Link to="/magazine">
-              <div className="relative rounded-3xl p-5 shadow-lg overflow-hidden hover:shadow-xl transition-all hover:scale-[1.01] active:scale-[0.99]" style={{ background: "hsl(var(--magazine))" }}>
+              <div className="relative rounded-2xl p-4 shadow-md overflow-hidden hover:shadow-lg transition-all hover:scale-[1.01] active:scale-[0.99]" style={{ background: "hsl(var(--magazine))" }}>
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-20">
-                  <Newspaper className="h-16 w-16 text-white/20" />
+                  <Newspaper className="h-14 w-14 text-white/20" />
                 </div>
                 <div className="relative z-10">
-                  <h2 className="text-lg font-bold text-white">완등 MAGAZINE</h2>
-                  <p className="text-xs mt-1 text-white/80">등산 정보 · 코스 · 장비 · 안전 팁</p>
+                  <h2 className="text-base font-bold text-white">완등 MAGAZINE</h2>
+                  <p className="text-[11px] mt-0.5 text-white/80">등산 정보 · 코스 · 장비 · 안전 팁</p>
                 </div>
               </div>
             </Link>
           </section>
 
-          {/* ── CTA Buttons (side by side) ── */}
+          {/* ── CTA Buttons ── */}
           <section className="grid grid-cols-2 gap-3">
             <Link to={isDemo ? "/auth" : "/summit-claim"} data-onboarding="summit-claim">
               <Button className="w-full h-14 rounded-2xl text-sm font-bold gap-2 shadow-lg bg-primary hover:bg-primary/90 transition-all hover:shadow-xl hover:scale-[1.01] active:scale-[0.99]">
@@ -319,204 +419,6 @@ const Dashboard = () => {
             </Link>
           </section>
 
-          {/* ── Live Summit Claim Feed ── */}
-          <section>
-            <div className="mb-3 flex items-center gap-2">
-              <Flame className="h-4 w-4 text-coral" />
-              <h2 className="text-base font-bold text-foreground">실시간 정상 정복</h2>
-            </div>
-            <div className="rounded-3xl bg-card border border-border p-4 shadow-sm space-y-3">
-              {!isDemo && liveFeedLoading ? (
-                <div className="py-6 text-center text-sm text-muted-foreground">불러오는 중...</div>
-              ) : displayClaims.length === 0 ? (
-                <div className="py-6 text-center">
-                  <Mountain className="mx-auto h-8 w-8 text-muted-foreground/30 mb-2" />
-                  <p className="text-sm text-muted-foreground">아직 정복 기록이 없습니다</p>
-                  <p className="text-xs text-muted-foreground mt-1">첫 번째 정복자가 되어보세요!</p>
-                </div>
-              ) : (
-                displayClaims.slice(0, 5).map((claim: any) => {
-                  const mt = mountains.find((m) => m.id === claim.mountain_id);
-                  const timeAgo = getTimeAgo(claim.claimed_at);
-                  return (
-                    <div key={claim.id} className="flex items-center gap-3 rounded-xl bg-secondary/30 p-3">
-                      <div className="shrink-0">
-                        <Avatar className="h-9 w-9 ring-2 ring-primary/20">
-                          {claim.avatar_url && <AvatarImage src={claim.avatar_url} />}
-                          <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                            {(claim.nickname || "?").charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs">🏔</span>
-                          <span className="text-sm font-semibold text-foreground truncate">
-                            {claim.summit_name}
-                          </span>
-                          {mt && (
-                            <span className="text-[10px] text-muted-foreground shrink-0">
-                              ({mt.nameKo})
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-xs text-primary font-medium truncate">
-                            {claim.nickname || "등산러"}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">· {timeAgo}</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-              {!isDemo && liveClaims.length > 5 && (
-                <Link to="/leaderboard" className="block text-center text-xs font-medium text-coral hover:underline pt-1">
-                  전체 보기 →
-                </Link>
-              )}
-            </div>
-          </section>
-
-          {/* ── Mountain King of the Day ── */}
-          {displayKing && (
-            <section>
-              <div className="rounded-3xl border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/10 dark:border-amber-800/30 p-5 shadow-sm">
-                <div className="flex items-center gap-2 mb-3">
-                  <Crown className="h-5 w-5 text-amber-500" />
-                  <h2 className="text-base font-bold text-foreground">오늘의 산왕</h2>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-14 w-14 ring-2 ring-amber-300">
-                    {displayKing.avatar_url && <AvatarImage src={displayKing.avatar_url} />}
-                    <AvatarFallback className="text-lg bg-amber-100 text-amber-700">
-                      {(displayKing.nickname || "?").charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-lg font-bold text-foreground">{displayKing.nickname || "등산러"}</p>
-                    <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">
-                      오늘 {displayKing.claim_count}개 정상 정복 👑
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* ── Progress Rings Section ── */}
-          <section className="grid grid-cols-2 gap-4">
-            <div data-onboarding="progress-ring" className="block rounded-3xl bg-card p-5 shadow-sm border border-border">
-              <div className="flex items-center justify-between mb-3 gap-2">
-                <p className="text-xs font-semibold text-muted-foreground truncate">
-                  {!isDemo && hundredType ? hundredLabel + " 진행률" : "100대 명산 진행률"}
-                </p>
-                {!isDemo && (
-                  <button
-                    onClick={() => setShowHundredPicker((v) => !v)}
-                    className="text-muted-foreground hover:text-primary shrink-0"
-                    aria-label="기준 변경"
-                  >
-                    <Settings2 className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
-
-              {!isDemo && showHundredPicker && (
-                <div className="mb-3 flex items-center gap-1.5 flex-wrap">
-                  <button
-                    onClick={() => handleHundredTypeSelect("forestry_100")}
-                    className={`rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors ${hundredType === "forestry_100" ? "bg-coral text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
-                  >
-                    산림청
-                  </button>
-                  <button
-                    onClick={() => handleHundredTypeSelect("bac_100")}
-                    className={`rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors ${hundredType === "bac_100" ? "bg-coral text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
-                  >
-                    BAC
-                  </button>
-                </div>
-              )}
-
-              {!isDemo && !hundredType ? (
-                <div className="flex flex-col items-center text-center py-2">
-                  <Mountain className="h-8 w-8 text-muted-foreground/30 mb-2" />
-                  <p className="text-[11px] text-muted-foreground mb-3 leading-snug">
-                    어떤 100대 명산을<br />추적할까요?
-                  </p>
-                  <div className="flex flex-col gap-1.5 w-full">
-                    <button
-                      onClick={() => handleHundredTypeSelect("forestry_100")}
-                      className="rounded-full bg-coral px-3 py-1.5 text-[10px] font-semibold text-primary-foreground hover:bg-coral/90 transition-colors"
-                    >
-                      산림청 100대
-                    </button>
-                    <button
-                      onClick={() => handleHundredTypeSelect("bac_100")}
-                      className="rounded-full bg-secondary px-3 py-1.5 text-[10px] font-semibold text-secondary-foreground hover:bg-secondary/80 transition-colors"
-                    >
-                      BAC 100대
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <Link to={isDemo ? "/mountains" : "/challenges"} className="flex flex-col items-center">
-                  <div className="relative h-28 w-28">
-                    <svg className="h-28 w-28 -rotate-90" viewBox="0 0 112 112">
-                      <circle cx="56" cy="56" r="48" fill="none" stroke="hsl(var(--coral-light))" strokeWidth="8" />
-                      <circle
-                        cx="56" cy="56" r="48" fill="none"
-                        stroke="hsl(var(--coral))" strokeWidth="8"
-                        strokeLinecap="round"
-                        strokeDasharray={`${2 * Math.PI * 48}`}
-                        strokeDashoffset={`${2 * Math.PI * 48 * (1 - (isDemo ? goalPercent : hundredPercent) / 100)}`}
-                        className="transition-all duration-700 ease-out"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-2xl font-bold text-foreground">{isDemo ? goalPercent : hundredPercent}%</span>
-                    </div>
-                  </div>
-                  <p className="mt-2 text-sm font-bold text-foreground">
-                    {isDemo ? displayCompletedCount : hundredCompleted}
-                    <span className="text-xs font-normal text-muted-foreground"> / {isDemo ? displayGoal : hundredTotal}</span>
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {isDemo ? `백대명산 ${baekduCompleted}/${baekduCount}` : hundredLabel}
-                  </p>
-                </Link>
-              )}
-            </div>
-
-            <div className="rounded-3xl bg-card p-5 shadow-sm border border-border">
-              <p className="text-xs font-semibold text-muted-foreground mb-3">정상 점령 챌린지</p>
-              <div className="flex flex-col items-center">
-                <div className="relative h-28 w-28">
-                  <svg className="h-28 w-28 -rotate-90" viewBox="0 0 112 112">
-                    <circle cx="56" cy="56" r="48" fill="none" stroke="hsl(var(--coral-light))" strokeWidth="8" />
-                    <circle
-                      cx="56" cy="56" r="48" fill="none"
-                      stroke="hsl(var(--coral))" strokeWidth="8"
-                      strokeLinecap="round"
-                      strokeDasharray={`${2 * Math.PI * 48}`}
-                      strokeDashoffset={`${2 * Math.PI * 48 * (1 - challengeProgress / 100)}`}
-                      className="transition-all duration-700 ease-out"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold text-foreground">{challengeProgress}%</span>
-                  </div>
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground text-center">
-                  {isDemo ? "3개 진행 중" : activeChallenges.length > 0 ? `${activeChallenges.length}개 진행 중` : "참여 중인 챌린지 없음"}
-                </p>
-                <Link to={isDemo ? "/auth" : "/challenges"} className="mt-1 text-[10px] font-semibold text-coral hover:underline">전체 보기</Link>
-              </div>
-            </div>
-          </section>
-
           {/* ── Search Bar ── */}
           <section>
             <Link to="/mountains" className="flex items-center gap-3 rounded-2xl bg-card border border-border px-4 py-3.5 shadow-sm">
@@ -525,25 +427,20 @@ const Dashboard = () => {
             </Link>
           </section>
 
-          {/* ── Today's Mountain ── */}
+          {/* ── 4. 오늘의 산 ── */}
           {todayMountain && (
           <section>
             <SectionHeader title="오늘의 산" />
-            <Link to={`/mountains/${todayMountain.id}`} className="block rounded-3xl bg-card border border-border p-5 shadow-sm">
+            <Link to={`/mountains/${todayMountain.id}`} className="block rounded-2xl bg-card border border-border p-4 shadow-sm">
               <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-nature-50 shrink-0">
-                  <Mountain className="h-7 w-7 text-primary" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-nature-50 shrink-0">
+                  <Mountain className="h-6 w-6 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-base font-bold text-foreground">{todayMountain.nameKo}</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">{todayMountain.region} · {todayMountain.height}m</p>
-                  {todayMountain.description && <p className="text-xs text-muted-foreground line-clamp-1 mt-1">{todayMountain.description}</p>}
                 </div>
-              </div>
-              <div className="mt-4 flex justify-end">
-                <span className="inline-flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground">
-                  상세 보기 <ChevronRight className="h-3 w-3" />
-                </span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
               </div>
             </Link>
           </section>
