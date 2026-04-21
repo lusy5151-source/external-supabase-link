@@ -29,6 +29,7 @@ const TrailDetailPage = lazy(() => import("@/pages/TrailDetailPage"));
 const WalkingPathDetail = lazy(() => import("@/pages/WalkingPathDetail"));
 const MapView = lazy(() => import("@/pages/MapView"));
 const Records = lazy(() => import("@/pages/Records"));
+const RecordsHub = lazy(() => import("@/pages/RecordsHub"));
 const GearPage = lazy(() => import("@/pages/GearPage"));
 const SocialPage = lazy(() => import("@/pages/SocialPage"));
 const AchievementsPage = lazy(() => import("@/pages/AchievementsPage"));
