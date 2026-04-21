@@ -14,6 +14,7 @@ import { useUserMountains } from "@/hooks/useUserMountains";
 import { useBac100Mountains } from "@/hooks/useBac100Mountains";
 import { useAllWalkingPaths, pathTypeLabel } from "@/hooks/useWalkingPaths";
 import RegisterMountainModal from "@/components/RegisterMountainModal";
+import { NearbyClubs } from "@/components/NearbyClubs";
 
 const MountainMapSection = lazy(() => import("@/components/MountainMapSection"));
 
@@ -157,6 +158,9 @@ const MountainList = () => {
           </div>
 
           <RegisterMountainModal />
+
+          {/* Nearby clubs */}
+          <NearbyClubs />
 
           <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
             {viewModes.map(({ key, label, icon: Icon }) => (
