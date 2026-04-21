@@ -18,6 +18,8 @@ interface JournalFormProps {
   editJournal?: HikingJournal | null;
   onClose: () => void;
   onSaved: () => void;
+  prefillMountainId?: number;
+  prefillDate?: string;
 }
 
 const weatherOptions = ["☀️ 맑음", "⛅ 구름", "☁️ 흐림", "🌧️ 비", "❄️ 눈", "🌫️ 안개"];
@@ -28,7 +30,7 @@ const visibilityOptions = [
   { value: "private", label: "나만 보기", icon: Lock },
 ];
 
-export function JournalForm({ editJournal, onClose, onSaved }: JournalFormProps) {
+export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, prefillDate }: JournalFormProps) {
   const { mountains } = useMountains();
   const { user } = useAuth();
   const { createJournal, updateJournal, uploadPhoto } = useHikingJournals();
@@ -41,9 +43,11 @@ export function JournalForm({ editJournal, onClose, onSaved }: JournalFormProps)
       ? (editJournal.mountain_ids as number[])
       : editJournal?.mountain_id
         ? [editJournal.mountain_id]
-        : []
+        : prefillMountainId
+          ? [prefillMountainId]
+          : []
   );
-  const [hikedAt, setHikedAt] = useState(editJournal?.hiked_at || new Date().toISOString().split("T")[0]);
+  const [hikedAt, setHikedAt] = useState(editJournal?.hiked_at || prefillDate || new Date().toISOString().split("T")[0]);
   const [courseName, setCourseName] = useState(editJournal?.course_name || "");
   const [courseStartingPoint, setCourseStartingPoint] = useState(editJournal?.course_starting_point || "");
   const [courseNotes, setCourseNotes] = useState(editJournal?.course_notes || "");
