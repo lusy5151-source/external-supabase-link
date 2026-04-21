@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useGuest } from "@/contexts/GuestContext";
 import { Mountain, Mail, Lock, Eye, EyeOff, ArrowRight, User, RefreshCw } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -243,9 +244,28 @@ const AuthPage = () => {
             {isLogin ? "회원가입" : "로그인"}
           </button>
         </p>
+
+        <GuestEntryButton />
       </div>
     </div>
   );
 };
+
+function GuestEntryButton() {
+  const navigate = useNavigate();
+  const { enterGuestMode } = useGuest();
+  return (
+    <button
+      onClick={() => {
+        enterGuestMode();
+        navigate("/");
+      }}
+      className="w-full text-center"
+      style={{ fontSize: 13, color: "hsl(var(--color-text-tertiary))" }}
+    >
+      로그인 없이 둘러보기 →
+    </button>
+  );
+}
 
 export default AuthPage;

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { StoreProvider } from "@/context/StoreContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { GuestProvider, useGuest } from "@/contexts/GuestContext";
 import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import { MountainsProvider } from "@/contexts/MountainsContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
