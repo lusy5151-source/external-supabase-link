@@ -109,24 +109,27 @@ export function JournalCard({ journal, showAuthor = true, onRefresh }: JournalCa
   const taggedFriends = journal.tagged_friends || [];
 
   return (
-    <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+    <div
+      className="overflow-hidden mb-2.5"
+      style={{
+        background: "hsl(var(--card))",
+        border: "0.5px solid hsl(var(--border))",
+        borderRadius: "var(--radius)",
+      }}
+    >
       {/* Author row */}
       {showAuthor && journal.profile && (
-        <div className="flex items-center gap-2.5 px-4 pt-4 pb-2">
-          <Avatar className="h-8 w-8">
+        <div className="flex items-center gap-2.5 px-3 pt-3 pb-2">
+          <Avatar className="h-7 w-7">
             <AvatarImage src={journal.profile.avatar_url || ""} />
-            <AvatarFallback className="text-xs">{journal.profile.nickname?.[0] || "?"}</AvatarFallback>
+            <AvatarFallback className="text-[10px]">{journal.profile.nickname?.[0] || "?"}</AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground">{journal.profile.nickname || "사용자"}</p>
-            <p className="text-[10px] text-muted-foreground">
-              {format(new Date(journal.hiked_at), "M월 d일", { locale: ko })}
-            </p>
           </div>
           <div className="flex items-center gap-1.5">
             <div className={cn("flex items-center gap-1 text-[10px]", vis.color)}>
               <VisIcon className="h-3 w-3" />
-              <span>{vis.label}</span>
             </div>
             <ContentMenu
               targetType="journal"
@@ -138,26 +141,21 @@ export function JournalCard({ journal, showAuthor = true, onRefresh }: JournalCa
         </div>
       )}
 
-      {/* Photos */}
+      {/* Photo variant: full-width photo on top */}
       {photos.length > 0 && (
-        <div className={cn("grid gap-0.5", photos.length === 1 ? "" : photos.length === 2 ? "grid-cols-2" : "grid-cols-3")}>
-          {photos.slice(0, 3).map((src, i) => (
-            <button
-              type="button"
-              key={i}
-              onClick={() => setLightboxIndex(i)}
-              className="aspect-square relative overflow-hidden focus:outline-none focus:ring-2 focus:ring-ring"
-              aria-label={`사진 ${i + 1} 크게 보기`}
-            >
-              <img src={src} alt="" className="h-full w-full object-cover transition-transform hover:scale-105" />
-              {i === 2 && photos.length > 3 && (
-                <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center">
-                  <span className="text-sm font-bold text-white">+{photos.length - 3}</span>
-                </div>
-              )}
-            </button>
-          ))}
-        </div>
+        <button
+          type="button"
+          onClick={() => setLightboxIndex(0)}
+          className="w-full relative overflow-hidden focus:outline-none"
+          style={{ height: 140 }}
+        >
+          <img src={photos[0]} alt="" className="h-full w-full object-cover" />
+          {photos.length > 1 && (
+            <div className="absolute bottom-2 right-2 rounded-full bg-foreground/50 px-2 py-0.5 text-[10px] text-white font-medium">
+              +{photos.length - 1}
+            </div>
+          )}
+        </button>
       )}
       <PhotoLightbox
         photos={photos}
@@ -166,71 +164,42 @@ export function JournalCard({ journal, showAuthor = true, onRefresh }: JournalCa
         onClose={() => setLightboxIndex(null)}
       />
 
-      {/* Content */}
-      <div className="p-4 space-y-2.5">
+      {/* Content area */}
+      <div className={cn("p-3 space-y-1.5", photos.length === 0 && "border-l-[3px]")} style={photos.length === 0 ? { borderLeftColor: "#C0DD97" } : undefined}>
         {/* Summit claim badge */}
         {journal.notes?.includes("정상 점령 성공! 🏔") && (
-          <div className="flex items-center gap-1.5 bg-primary/10 text-primary rounded-lg px-2.5 py-1 w-fit text-xs font-medium">
-            <Mountain className="h-3.5 w-3.5" /> Summit Claim
+          <div className="flex items-center gap-1.5 bg-primary/10 text-primary rounded-md px-2 py-0.5 w-fit text-[11px] font-medium">
+            <Mountain className="h-3 w-3" /> Summit Claim
           </div>
         )}
 
-        {/* Mountain info */}
-        <div className="space-y-1">
-          {allMountains.map((m) => (
-            <div key={m.id} className="flex items-center gap-2">
-              <Mountain className="h-4 w-4 text-primary shrink-0" />
-              <span className="font-semibold text-foreground text-sm">{m.nameKo}</span>
-              <span className="text-[10px] text-muted-foreground">{m.region} · {m.height}m</span>
-            </div>
-          ))}
-        </div>
+        {/* Mountain name */}
+        <p style={{ fontSize: 15, fontWeight: 500 }} className="text-foreground">
+          {allMountains.map((m) => m.nameKo).join(", ")}
+        </p>
 
-        {/* Course & duration */}
-        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-          {journal.course_name && (
-            <span className="flex items-center gap-1 bg-secondary/60 rounded-md px-2 py-0.5">
-              <Route className="h-3 w-3" /> {journal.course_name}
-            </span>
-          )}
-          {journal.duration && (
-            <span className="flex items-center gap-1 bg-secondary/60 rounded-md px-2 py-0.5">
-              <Clock className="h-3 w-3" /> {journal.duration}
-            </span>
-          )}
-          {journal.weather && (
-            <span className="bg-secondary/60 rounded-md px-2 py-0.5">{journal.weather}</span>
-          )}
-          {journal.difficulty && (
-            <span className="bg-secondary/60 rounded-md px-2 py-0.5">{journal.difficulty}</span>
-          )}
-        </div>
+        {/* Date + course + duration */}
+        <p style={{ fontSize: 12 }} className="text-muted-foreground">
+          {format(new Date(journal.hiked_at), "yyyy.M.d", { locale: ko })}
+          {journal.course_name && ` · ${journal.course_name}`}
+          {journal.duration && ` · ${journal.duration}`}
+        </p>
 
-        {/* Notes */}
+        {/* Memo preview */}
         {journal.notes && (
-          <div>
-            <p className={cn("text-sm text-foreground leading-relaxed", !expanded && "line-clamp-3")}>
-              {journal.notes}
-            </p>
-            {journal.notes.length > 150 && (
-              <button
-                onClick={() => setExpanded(!expanded)}
-                className="text-xs text-primary hover:underline mt-0.5"
-              >
-                {expanded ? "접기" : "더 보기"}
-              </button>
-            )}
-          </div>
+          <p style={{ fontSize: 13, marginTop: 4 }} className="text-foreground line-clamp-1">
+            {journal.notes}
+          </p>
         )}
 
         {/* Tagged friends */}
         {taggedFriends.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] text-primary font-medium">🤝 함께한 친구:</span>
+            <span className="text-[10px] text-primary font-medium">🤝</span>
             {taggedFriends.map((fId) => {
               const profile = taggedProfiles.get(fId);
               return (
-                <span key={fId} className="flex items-center gap-1 text-[10px] text-foreground bg-primary/5 rounded-full px-2 py-0.5">
+                <span key={fId} className="text-[10px] text-foreground bg-primary/5 rounded-full px-2 py-0.5">
                   {profile?.nickname || "친구"}
                 </span>
               );
@@ -238,56 +207,35 @@ export function JournalCard({ journal, showAuthor = true, onRefresh }: JournalCa
           </div>
         )}
 
-        {/* Like & Comment row */}
-        <div className="flex items-center gap-4 pt-1 border-t border-border/50">
-          <div className="flex items-center gap-1">
+        {/* Bottom row: chips left, like/comment right */}
+        <div className="flex items-center justify-between pt-1.5">
+          <div className="flex items-center gap-1.5">
+            {journal.weather && (
+              <span className="bg-secondary/60 rounded-md px-2 py-0.5 text-[11px] text-muted-foreground">{journal.weather}</span>
+            )}
+            {journal.difficulty && (
+              <span className="bg-secondary/60 rounded-md px-2 py-0.5 text-[11px] text-muted-foreground">{journal.difficulty}</span>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
             <button
               onClick={handleLike}
               className={cn(
-                "flex items-center gap-1.5 text-xs transition-colors",
+                "flex items-center gap-1 text-[11px] transition-colors",
                 liked ? "text-red-500" : "text-muted-foreground hover:text-red-400"
               )}
             >
-              <Heart className={cn("h-4 w-4", liked && "fill-current")} />
+              <Heart className={cn("h-3.5 w-3.5", liked && "fill-current")} />
               <span>{likeCount}</span>
             </button>
-            {likeCount > 0 && (
-              <button
-                onClick={async () => {
-                  const { data } = await supabase
-                    .from("journal_likes")
-                    .select("user_id")
-                    .eq("journal_id", journal.id);
-                  if (data) {
-                    const userIds = data.map((d: any) => d.user_id);
-                    const { data: profiles } = await supabase
-                      .from("profiles")
-                      .select("user_id, nickname, avatar_url")
-                      .in("user_id", userIds);
-                    setLikers(profiles || []);
-                    setShowLikers((v) => !v);
-                  }
-                }}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="좋아요 누른 사람 보기"
-              >
-                <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showLikers && "rotate-180")} />
-              </button>
-            )}
+            <button
+              onClick={handleShowComments}
+              className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              <span>{commentCount}</span>
+            </button>
           </div>
-          <button
-            onClick={handleShowComments}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <MessageCircle className="h-4 w-4" />
-            <span>{commentCount}</span>
-          </button>
-          {!showAuthor && (
-            <div className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground">
-              <Calendar className="h-3 w-3" />
-              {format(new Date(journal.hiked_at), "yyyy.M.d", { locale: ko })}
-            </div>
-          )}
         </div>
 
         {/* Likers popup */}
@@ -348,7 +296,6 @@ export function JournalCard({ journal, showAuthor = true, onRefresh }: JournalCa
                 </div>
               </div>
             ))}
-
             {user && (
               <div className="flex items-center gap-2">
                 <input

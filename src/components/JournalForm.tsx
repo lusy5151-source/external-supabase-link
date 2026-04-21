@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Mountain, Camera, X, Clock, Route, Globe, Users, Lock, Loader2, Plus,
+  Mountain, Camera, X, Clock, Route, Globe, Users, Lock, Loader2, Plus, ChevronDown,
 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -60,6 +60,7 @@ export function JournalForm({ editJournal, onClose, onSaved }: JournalFormProps)
   const [uploading, setUploading] = useState(false);
   const [mountainSearch, setMountainSearch] = useState("");
   const [showMountainSearch, setShowMountainSearch] = useState(false);
+  const [showOptional, setShowOptional] = useState(!!editJournal);
 
   const isEdit = !!editJournal;
 
@@ -154,9 +155,9 @@ export function JournalForm({ editJournal, onClose, onSaved }: JournalFormProps)
         </div>
 
         <div className="p-4 space-y-4">
-          {/* Mountain Selection */}
+          {/* ═══ REQUIRED: Mountain Selection ═══ */}
           <div>
-            <label className="text-xs font-medium text-foreground mb-1.5 block">산 선택 * (여러 개 가능)</label>
+            <label className="text-xs font-medium text-foreground mb-1.5 block">산 선택 * <span className="text-muted-foreground font-normal">(여러 개 가능)</span></label>
             {selectedMountains.length > 0 && (
               <div className="space-y-1.5 mb-2">
                 {selectedMountains.map((m, idx) => (
@@ -229,116 +230,13 @@ export function JournalForm({ editJournal, onClose, onSaved }: JournalFormProps)
             )}
           </div>
 
-          {/* Date */}
+          {/* ═══ REQUIRED: Date ═══ */}
           <div>
-            <label className="text-xs font-medium text-foreground mb-1.5 block">등산 날짜</label>
+            <label className="text-xs font-medium text-foreground mb-1.5 block">등산 날짜 *</label>
             <Input type="date" value={hikedAt} onChange={(e) => setHikedAt(e.target.value)} />
           </div>
 
-          {/* Course info */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium text-foreground mb-1.5 block">코스명</label>
-              <Input placeholder="예: 백운대 코스" value={courseName} onChange={(e) => setCourseName(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-foreground mb-1.5 block">출발점</label>
-              <Input placeholder="예: 북한산성 탐방지원센터" value={courseStartingPoint} onChange={(e) => setCourseStartingPoint(e.target.value)} />
-            </div>
-          </div>
-
-          {/* Duration & Difficulty */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium text-foreground mb-1.5 block">소요 시간</label>
-              <Input placeholder="예: 3시간 30분" value={duration} onChange={(e) => setDuration(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-foreground mb-1.5 block">난이도</label>
-              <div className="flex flex-wrap gap-1.5">
-                {difficultyOptions.map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => setDifficulty(difficulty === d ? "" : d)}
-                    className={cn(
-                      "rounded-lg border px-2.5 py-1.5 text-xs transition-colors",
-                      difficulty === d
-                        ? "border-primary bg-primary/10 text-primary font-semibold"
-                        : "border-border bg-background text-muted-foreground hover:bg-secondary/50"
-                    )}
-                  >
-                    {d}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Weather */}
-          <div>
-            <label className="text-xs font-medium text-foreground mb-1.5 block">날씨</label>
-            <div className="flex flex-wrap gap-1.5">
-              {weatherOptions.map((w) => (
-                <button
-                  key={w}
-                  onClick={() => setWeather(weather === w ? "" : w)}
-                  className={cn(
-                    "rounded-lg border px-2.5 py-1 text-xs transition-colors",
-                    weather === w
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border bg-background text-muted-foreground hover:bg-secondary/50"
-                  )}
-                >
-                  {w}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Photos */}
-          <div>
-            <label className="text-xs font-medium text-foreground mb-1 block">사진</label>
-            <p className="text-[10px] text-muted-foreground mb-1.5">등산 기록에 첨부할 사진을 선택합니다.</p>
-            <div className="flex flex-wrap gap-2">
-              {photos.map((url, i) => (
-                <div key={i} className="relative h-16 w-16 rounded-lg overflow-hidden border border-border">
-                  <img src={url} alt="" className="h-full w-full object-cover" />
-                  <button
-                    onClick={() => removePhoto(i)}
-                    className="absolute top-0.5 right-0.5 bg-foreground/60 text-background rounded-full p-0.5"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-              <label className={cn(
-                "flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-border cursor-pointer hover:border-primary/50 transition-colors",
-                uploading && "pointer-events-none opacity-50"
-              )}>
-                {uploading ? (
-                  <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
-                ) : (
-                  <Camera className="h-5 w-5 text-muted-foreground" />
-                )}
-                <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} disabled={uploading} />
-              </label>
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div>
-            <label className="text-xs font-medium text-foreground mb-1.5 block">메모</label>
-            <Textarea placeholder="등산 소감을 적어보세요..." value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
-          </div>
-
-          {/* Course Notes */}
-          <div>
-            <label className="text-xs font-medium text-foreground mb-1.5 block">코스 메모</label>
-            <Textarea placeholder="코스에 대한 참고사항..." value={courseNotes} onChange={(e) => setCourseNotes(e.target.value)} rows={2} />
-          </div>
-
-          {/* Visibility */}
+          {/* ═══ Visibility ═══ */}
           <div>
             <label className="text-xs font-medium text-foreground mb-1.5 block">공개 범위</label>
             <div className="flex gap-2">
@@ -361,44 +259,153 @@ export function JournalForm({ editJournal, onClose, onSaved }: JournalFormProps)
                 );
               })}
             </div>
-            {visibility === "public" && (
-              <div className="mt-2 flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 px-3 py-2">
-                <Globe className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-                <p className="text-[11px] text-amber-700 dark:text-amber-300">
-                  이 게시물은 앱의 모든 사용자에게 공개됩니다.
-                </p>
-              </div>
-            )}
           </div>
 
-          {/* Tag Friends */}
-          {acceptedFriends.length > 0 && (
-            <div>
-              <label className="text-xs font-medium text-foreground mb-1.5 block">함께한 친구 태그</label>
-              <div className="flex flex-wrap gap-1.5">
-                {acceptedFriends.map((f) => {
-                  const fId = f.friendProfile.user_id;
-                  const isTagged = taggedFriends.includes(fId);
-                  return (
+          {/* ═══ Toggle for optional fields ═══ */}
+          <button
+            onClick={() => setShowOptional((v) => !v)}
+            className="w-full flex items-center justify-center gap-1.5 py-2.5"
+            style={{ fontSize: 13, color: "#3B6D11" }}
+          >
+            {showOptional ? "간단히 기록하기" : "+ 더 자세히 기록하기"}
+            <ChevronDown className={cn("h-4 w-4 transition-transform", showOptional && "rotate-180")} />
+          </button>
+
+          {/* ═══ OPTIONAL FIELDS ═══ */}
+          {showOptional && (
+            <div className="space-y-4 animate-in slide-in-from-top-2 duration-200">
+              {/* Course info */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-1.5 block">코스명</label>
+                  <Input placeholder="예: 백운대 코스" value={courseName} onChange={(e) => setCourseName(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-1.5 block">출발점</label>
+                  <Input placeholder="예: 북한산성 탐방지원센터" value={courseStartingPoint} onChange={(e) => setCourseStartingPoint(e.target.value)} />
+                </div>
+              </div>
+
+              {/* Duration & Difficulty */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-1.5 block">소요 시간</label>
+                  <Input placeholder="예: 3시간 30분" value={duration} onChange={(e) => setDuration(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-1.5 block">난이도</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {difficultyOptions.map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setDifficulty(difficulty === d ? "" : d)}
+                        className={cn(
+                          "rounded-lg border px-2.5 py-1.5 text-xs transition-colors",
+                          difficulty === d
+                            ? "border-primary bg-primary/10 text-primary font-semibold"
+                            : "border-border bg-background text-muted-foreground hover:bg-secondary/50"
+                        )}
+                      >
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Weather */}
+              <div>
+                <label className="text-xs font-medium text-foreground mb-1.5 block">날씨</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {weatherOptions.map((w) => (
                     <button
-                      key={fId}
-                      onClick={() => toggleFriend(fId)}
+                      key={w}
+                      onClick={() => setWeather(weather === w ? "" : w)}
                       className={cn(
-                        "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors",
-                        isTagged
+                        "rounded-lg border px-2.5 py-1 text-xs transition-colors",
+                        weather === w
                           ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground hover:bg-secondary/50"
+                          : "border-border bg-background text-muted-foreground hover:bg-secondary/50"
                       )}
                     >
-                      <Avatar className="h-4 w-4">
-                        <AvatarImage src={f.friendProfile.avatar_url || ""} />
-                        <AvatarFallback className="text-[7px]">{f.friendProfile.nickname?.[0] || "?"}</AvatarFallback>
-                      </Avatar>
-                      {f.friendProfile.nickname || "친구"}
+                      {w}
                     </button>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
+
+              {/* Photos */}
+              <div>
+                <label className="text-xs font-medium text-foreground mb-1 block">사진</label>
+                <div className="flex flex-wrap gap-2">
+                  {photos.map((url, i) => (
+                    <div key={i} className="relative h-16 w-16 rounded-lg overflow-hidden border border-border">
+                      <img src={url} alt="" className="h-full w-full object-cover" />
+                      <button
+                        onClick={() => removePhoto(i)}
+                        className="absolute top-0.5 right-0.5 bg-foreground/60 text-background rounded-full p-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <label className={cn(
+                    "flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-border cursor-pointer hover:border-primary/50 transition-colors",
+                    uploading && "pointer-events-none opacity-50"
+                  )}>
+                    {uploading ? (
+                      <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
+                    ) : (
+                      <Camera className="h-5 w-5 text-muted-foreground" />
+                    )}
+                    <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} disabled={uploading} />
+                  </label>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="text-xs font-medium text-foreground mb-1.5 block">메모</label>
+                <Textarea placeholder="등산 소감을 적어보세요..." value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
+              </div>
+
+              {/* Course Notes */}
+              <div>
+                <label className="text-xs font-medium text-foreground mb-1.5 block">코스 메모</label>
+                <Textarea placeholder="코스에 대한 참고사항..." value={courseNotes} onChange={(e) => setCourseNotes(e.target.value)} rows={2} />
+              </div>
+
+              {/* Tag Friends */}
+              {acceptedFriends.length > 0 && (
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-1.5 block">함께한 친구 태그</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {acceptedFriends.map((f) => {
+                      const fId = f.friendProfile.user_id;
+                      const isTagged = taggedFriends.includes(fId);
+                      return (
+                        <button
+                          key={fId}
+                          onClick={() => toggleFriend(fId)}
+                          className={cn(
+                            "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors",
+                            isTagged
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border text-muted-foreground hover:bg-secondary/50"
+                          )}
+                        >
+                          <Avatar className="h-4 w-4">
+                            <AvatarImage src={f.friendProfile.avatar_url || ""} />
+                            <AvatarFallback className="text-[7px]">{f.friendProfile.nickname?.[0] || "?"}</AvatarFallback>
+                          </Avatar>
+                          {f.friendProfile.nickname || "친구"}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -406,9 +413,14 @@ export function JournalForm({ editJournal, onClose, onSaved }: JournalFormProps)
         {/* Submit */}
         <div className="sticky bottom-0 z-[61] bg-card border-t border-border p-4 pb-6 sm:pb-4 flex gap-2">
           <Button variant="outline" onClick={onClose} className="flex-1">취소</Button>
-          <Button onClick={handleSubmit} disabled={saving || mountainIds.length === 0} className="flex-1">
+          <Button
+            onClick={handleSubmit}
+            disabled={saving || mountainIds.length === 0}
+            className="flex-1 text-white"
+            style={{ background: "#639922" }}
+          >
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-            {isEdit ? "수정 완료" : "일지 작성"}
+            {isEdit ? "수정 완료" : showOptional ? "상세 기록 저장" : "빠른 기록 저장"}
           </Button>
         </div>
       </div>
