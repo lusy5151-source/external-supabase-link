@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo, Fragment } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useMountains } from "@/contexts/MountainsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingPlans } from "@/hooks/useHikingPlans";
@@ -39,6 +39,7 @@ function dataURLtoFile(dataUrl: string, filename: string): File {
 }
 
 export default function SummitClaimPage() {
+  const navigate = useNavigate();
   const { mountains } = useMountains();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -58,6 +59,9 @@ export default function SummitClaimPage() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [claiming, setClaiming] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showDiaryPrompt, setShowDiaryPrompt] = useState(false);
+  const [claimedMountainName, setClaimedMountainName] = useState("");
+  const [claimedMountainId, setClaimedMountainId] = useState<number | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [aiVerification, setAiVerification] = useState<{
@@ -248,10 +252,12 @@ export default function SummitClaimPage() {
         timestamp: new Date().toISOString(),
       });
       toast({ title: "📱 오프라인 저장 완료", description: "네트워크 연결 시 자동으로 업로드됩니다." });
+      setClaimedMountainName(selectedMountain.nameKo);
+      setClaimedMountainId(selectedMountain.id);
       setShowCelebration(true);
       setTimeout(() => {
         setShowCelebration(false);
-        resetFlow();
+        setShowDiaryPrompt(true);
       }, 3000);
       return;
     }
@@ -282,10 +288,12 @@ export default function SummitClaimPage() {
     setClaiming(false);
 
     if (result.success) {
+      setClaimedMountainName(selectedMountain?.nameKo || "");
+      setClaimedMountainId(selectedMountain?.id ?? null);
       setShowCelebration(true);
       setTimeout(() => {
         setShowCelebration(false);
-        resetFlow();
+        setShowDiaryPrompt(true);
       }, 3000);
     } else {
       toast({ title: "인증 실패", description: result.error, variant: "destructive" });
@@ -383,6 +391,54 @@ export default function SummitClaimPage() {
             <Badge className="mt-3 bg-primary/10 text-primary border-0 gap-1">
               <Flag className="h-3 w-3" /> Summit Claimed!
             </Badge>
+          </div>
+        </div>
+      )}
+
+      {/* Diary prompt bottom sheet */}
+      {showDiaryPrompt && (
+        <div className="fixed inset-0 z-[60] flex items-end justify-center" onClick={() => { setShowDiaryPrompt(false); resetFlow(); }}>
+          <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.4)" }} />
+          <div
+            className="relative w-full max-w-lg animate-in slide-in-from-bottom duration-300"
+            style={{
+              background: "hsl(var(--background))",
+              borderRadius: "20px 20px 0 0",
+              padding: "16px 20px 32px",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Handle bar */}
+            <div className="flex justify-center mb-4">
+              <div className="rounded-full" style={{ width: 40, height: 4, background: "hsl(var(--muted-foreground) / 0.3)" }} />
+            </div>
+
+            <h3 className="text-foreground" style={{ fontSize: 16, fontWeight: 500 }}>등산 기록도 남겨볼까요?</h3>
+            <p className="text-muted-foreground mt-1" style={{ fontSize: 13 }}>
+              오늘 {claimedMountainName || "산"} 등산을 기록해두세요
+            </p>
+
+            <div className="mt-5 space-y-2">
+              <button
+                onClick={() => {
+                  setShowDiaryPrompt(false);
+                  const today = new Date().toISOString().split("T")[0];
+                  navigate("/records", { state: { openJournalForm: true, prefillMountainId: claimedMountainId, prefillDate: today } });
+                  resetFlow();
+                }}
+                className="w-full rounded-xl text-white font-medium"
+                style={{ background: "#639922", height: 48, fontSize: 14 }}
+              >
+                기록 남기기
+              </button>
+              <button
+                onClick={() => { setShowDiaryPrompt(false); resetFlow(); }}
+                className="w-full rounded-xl text-muted-foreground font-medium"
+                style={{ background: "transparent", height: 44, fontSize: 14 }}
+              >
+                다음에 할게요
+              </button>
+            </div>
           </div>
         </div>
       )}
