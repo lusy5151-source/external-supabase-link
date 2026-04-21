@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import NotificationCenter from "@/components/NotificationCenter";
 import MountainMascot from "@/components/MountainMascot";
 import OnboardingTutorial from "@/components/OnboardingTutorial";
-import { Trophy, LogIn } from "lucide-react";
+import { LogIn } from "lucide-react";
 
 const navItems = [
   { to: "/", label: "홈", icon: Home },
