@@ -60,6 +60,7 @@ const Dashboard = () => {
   const { fetchSharedCompletions } = useSharedCompletions();
   const { claims: liveClaims, kingOfDay, loading: liveFeedLoading } = useLiveSummitFeed();
   const [recentJournals, setRecentJournals] = useState<HikingJournal[]>([]);
+  const [lastHikeDate, setLastHikeDate] = useState<string | null>(null);
   const [recentSharedCompletions, setRecentSharedCompletions] = useState<SharedCompletion[]>([]);
   const [activeChallenges, setActiveChallenges] = useState<(UserChallenge & { ch: Challenge })[]>([]);
   const [userGoal, setUserGoal] = useState<number>(() => {
@@ -185,6 +186,16 @@ const Dashboard = () => {
           setActiveChallenges(active);
         })
         .catch(() => setActiveChallenges([]));
+      // Fetch last hike date
+      supabase
+        .from("hiking_journals")
+        .select("hiked_at")
+        .eq("user_id", user.id)
+        .order("hiked_at", { ascending: false })
+        .limit(1)
+        .then(({ data }) => {
+          setLastHikeDate(data?.[0]?.hiked_at || null);
+        });
     }
   }, [user]);
 
@@ -194,6 +205,41 @@ const Dashboard = () => {
     localStorage.setItem(GOAL_KEY, String(clamped));
     setShowGoalEdit(false);
   };
+
+  // Personalized CTA card logic (priority: D > B > C > A)
+  const ctaCard = useMemo(() => {
+    if (isDemo) return null;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    // D: upcoming plan within 3 days
+    if (upcomingPlan && upcomingMountain) {
+      const planDate = new Date(upcomingPlan.planned_date);
+      planDate.setHours(0, 0, 0, 0);
+      const diff = Math.round((planDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      if (diff >= 0 && diff <= 3) {
+        return {
+          msg: diff === 0 ? `D-Day! ${upcomingMountain.nameKo} 등산이에요!` : `D-${diff}일 후 ${upcomingMountain.nameKo} 등산이에요!`,
+          btn: "계획 확인하기", to: `/plans/${upcomingPlan.id}`, bg: "#FAEEDA",
+        };
+      }
+    }
+    // B: last hike within 7 days
+    if (lastHikeDate) {
+      const hikeDate = new Date(lastHikeDate);
+      hikeDate.setHours(0, 0, 0, 0);
+      const daysSince = Math.round((now.getTime() - hikeDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysSince <= 7) {
+        return { msg: "지난 등산 기록을 남겨두셨나요?", btn: "기록 추가하기", to: "/records", bg: "#EAF3DE" };
+      }
+      // C: 7+ days ago
+      return { msg: "슬슬 산이 그리워질 때가 됐어요 ⛰", btn: "등산 계획 만들기", to: "/plans/create", bg: "#EEEDFE" };
+    }
+    // A: no record at all
+    if (completedCount === 0) {
+      return { msg: "첫 번째 산을 정복해볼까요?", btn: "산 탐색하기", to: "/mountains", bg: "#EAF3DE" };
+    }
+    return null;
+  }, [isDemo, upcomingPlan, upcomingMountain, lastHikeDate, completedCount]);
 
   const CondIcon = conditionIcons[weather.condition] || Cloud;
   const todayIndex = mountains.length > 0 ? new Date().getDate() % mountains.length : 0;
@@ -209,6 +255,21 @@ const Dashboard = () => {
         <div className="px-4 pt-4 space-y-3">
           <GuestSignupBanner />
           <PasswordSetupBanner />
+          {ctaCard && (
+            <div
+              className="flex items-center justify-between gap-3"
+              style={{ background: ctaCard.bg, borderRadius: "var(--radius)", padding: 14 }}
+            >
+              <p className="flex-1 text-sm font-medium text-foreground">{ctaCard.msg}</p>
+              <Link
+                to={ctaCard.to}
+                className="shrink-0 inline-flex items-center justify-center text-white"
+                style={{ background: "#639922", borderRadius: "var(--radius)", padding: "6px 12px", fontSize: 12, fontWeight: 500 }}
+              >
+                {ctaCard.btn}
+              </Link>
+            </div>
+          )}
         </div>
         {!isDemo && <AchievementModal badge={newlyEarned} onDismiss={dismissNewBadge} />}
         {/* OnboardingTutorial is now in Layout */}
