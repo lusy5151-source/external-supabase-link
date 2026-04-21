@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo, Fragment } from "react";
 import { Link } from "react-router-dom";
 import { useMountains } from "@/contexts/MountainsContext";
 import { useAuth } from "@/contexts/AuthContext";
