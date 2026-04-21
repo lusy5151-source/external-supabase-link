@@ -38,15 +38,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </Link>
             )}
           </div>
-            ) : (
-              <Link
-                to="/auth"
-                className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:shadow-md"
-              >
-                <LogIn className="h-3.5 w-3.5" /> 로그인
-              </Link>
-            )}
-          </div>
         </div>
       </header>
 
