@@ -476,7 +476,7 @@ export default function SummitClaimPage() {
                       }}
                     />
                   )}
-                </React.Fragment>
+                </Fragment>
               );
             })}
           </div>
