@@ -439,7 +439,7 @@ export default function SummitClaimPage() {
               const isCompleted = idx < currentIdx;
               const isActive = idx === currentIdx;
               return (
-                <React.Fragment key={label}>
+                <Fragment key={label}>
                   <div className="flex flex-col items-center gap-1" style={{ minWidth: 36 }}>
                     <div
                       className="flex items-center justify-center rounded-full text-xs font-bold transition-colors"
