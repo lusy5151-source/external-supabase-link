@@ -74,6 +74,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         {/* FAB - center, lifted above bar */}
         <Link
           to="/summit-claim"
+          onClick={handleFabClick}
           className="absolute left-1/2 flex flex-col items-center"
           style={{ transform: "translateX(-50%)", top: -8 }}
         >
