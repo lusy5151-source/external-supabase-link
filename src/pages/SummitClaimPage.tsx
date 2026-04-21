@@ -395,6 +395,54 @@ export default function SummitClaimPage() {
         </div>
       )}
 
+      {/* Diary prompt bottom sheet */}
+      {showDiaryPrompt && (
+        <div className="fixed inset-0 z-[60] flex items-end justify-center" onClick={() => { setShowDiaryPrompt(false); resetFlow(); }}>
+          <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.4)" }} />
+          <div
+            className="relative w-full max-w-lg animate-in slide-in-from-bottom duration-300"
+            style={{
+              background: "hsl(var(--background))",
+              borderRadius: "20px 20px 0 0",
+              padding: "16px 20px 32px",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Handle bar */}
+            <div className="flex justify-center mb-4">
+              <div className="rounded-full" style={{ width: 40, height: 4, background: "hsl(var(--muted-foreground) / 0.3)" }} />
+            </div>
+
+            <h3 className="text-foreground" style={{ fontSize: 16, fontWeight: 500 }}>등산 기록도 남겨볼까요?</h3>
+            <p className="text-muted-foreground mt-1" style={{ fontSize: 13 }}>
+              오늘 {claimedMountainName || "산"} 등산을 기록해두세요
+            </p>
+
+            <div className="mt-5 space-y-2">
+              <button
+                onClick={() => {
+                  setShowDiaryPrompt(false);
+                  const today = new Date().toISOString().split("T")[0];
+                  navigate("/records", { state: { openJournalForm: true, prefillMountainId: claimedMountainId, prefillDate: today } });
+                  resetFlow();
+                }}
+                className="w-full rounded-xl text-white font-medium"
+                style={{ background: "#639922", height: 48, fontSize: 14 }}
+              >
+                기록 남기기
+              </button>
+              <button
+                onClick={() => { setShowDiaryPrompt(false); resetFlow(); }}
+                className="w-full rounded-xl text-muted-foreground font-medium"
+                style={{ background: "transparent", height: 44, fontSize: 14 }}
+              >
+                다음에 할게요
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center gap-3">
         {step !== "select-mountain" ? (
