@@ -65,10 +65,29 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           borderTop: "0.5px solid hsl(var(--color-border-tertiary))",
         }}
       >
+        {/* FAB - center, lifted above bar */}
+        <Link
+          to="/summit-claim"
+          className="absolute left-1/2 flex flex-col items-center"
+          style={{ transform: "translateX(-50%)", top: -14 }}
+        >
+          <div
+            className="flex items-center justify-center rounded-full"
+            style={{ width: 44, height: 44, background: "#639922" }}
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M10 3L16 15H4L10 3Z" fill="white" />
+              <circle cx="10" cy="5" r="1.5" fill="white" />
+            </svg>
+          </div>
+          <span style={{ fontSize: 10, color: "#3B6D11", fontWeight: 500, marginTop: 2 }}>
+            인증
+          </span>
+        </Link>
+
         <div className="container mx-auto flex items-center justify-around px-2 py-1">
           {navItems.map((item, idx) => {
             if (!item) {
-              // FAB placeholder
               return <div key="fab-placeholder" className="flex-shrink-0" style={{ width: 44 }} />;
             }
 
