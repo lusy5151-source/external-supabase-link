@@ -1,6 +1,7 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, Compass, ClipboardList, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useGuest } from "@/contexts/GuestContext";
 import NotificationCenter from "@/components/NotificationCenter";
 import MountainMascot from "@/components/MountainMascot";
 import OnboardingTutorial from "@/components/OnboardingTutorial";
@@ -16,7 +17,25 @@ const navItems = [
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
+  const { isGuest, showLoginPrompt } = useGuest();
+
+  const restrictedTabs = new Set(["/records", "/my"]);
+
+  const handleNavClick = (e: React.MouseEvent, to: string) => {
+    if (!user && isGuest && restrictedTabs.has(to)) {
+      e.preventDefault();
+      showLoginPrompt();
+    }
+  };
+
+  const handleFabClick = (e: React.MouseEvent) => {
+    if (!user && isGuest) {
+      e.preventDefault();
+      showLoginPrompt();
+    }
+  };
 
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(180deg, hsl(205, 50%, 88%) 0%, hsl(var(--background)) 30%)" }}>
