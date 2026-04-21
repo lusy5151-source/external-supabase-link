@@ -56,11 +56,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <Link
           to="/summit-claim"
           className="absolute left-1/2 flex flex-col items-center"
-          style={{ transform: "translateX(-50%)", top: -36 }}
+          style={{ transform: "translateX(-50%)", top: -8 }}
         >
           <div
             className="relative flex items-center justify-center rounded-full overflow-hidden"
-            style={{ width: 60, height: 60, background: "#639922" }}
+            style={{ width: 56, height: 56, background: "#639922" }}
           >
             <svg width="26" height="26" viewBox="0 0 20 20" fill="none" className="relative z-10">
               <path d="M10 3L16 15H4L10 3Z" fill="white" />
@@ -79,7 +79,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </span>
         </Link>
 
-        <div className="container mx-auto flex items-center justify-around px-2 py-1" style={{ paddingTop: 6 }}>
+        <div className="container mx-auto flex items-center justify-around px-2" style={{ paddingTop: 14, paddingBottom: 6 }}>
           {navItems.map((item, idx) => {
             if (!item) {
               return <div key="fab-placeholder" className="flex-shrink-0" style={{ width: 44 }} />;
