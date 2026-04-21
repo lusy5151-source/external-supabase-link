@@ -97,7 +97,7 @@ const AppRoutes = () => {
       <Route path="/trails/:trailId" element={<LazyPage><TrailDetailPage /></LazyPage>} />
       <Route path="/walking-paths/:id" element={<LazyPage><WalkingPathDetail /></LazyPage>} />
       <Route path="/map" element={<LazyPage><MapView /></LazyPage>} />
-      <Route path="/records" element={<LazyPage><Records /></LazyPage>} />
+      <Route path="/records" element={<LazyPage><RecordsHub /></LazyPage>} />
       <Route path="/gear" element={<LazyPage><GearPage /></LazyPage>} />
       <Route path="/social" element={<LazyPage><SocialPage /></LazyPage>} />
       <Route path="/plans" element={<LazyPage><PlansPage /></LazyPage>} />
