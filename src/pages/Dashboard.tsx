@@ -206,6 +206,41 @@ const Dashboard = () => {
     setShowGoalEdit(false);
   };
 
+  // Personalized CTA card logic (priority: D > B > C > A)
+  const ctaCard = useMemo(() => {
+    if (isDemo) return null;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    // D: upcoming plan within 3 days
+    if (upcomingPlan && upcomingMountain) {
+      const planDate = new Date(upcomingPlan.planned_date);
+      planDate.setHours(0, 0, 0, 0);
+      const diff = Math.round((planDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      if (diff >= 0 && diff <= 3) {
+        return {
+          msg: diff === 0 ? `D-Day! ${upcomingMountain.nameKo} 등산이에요!` : `D-${diff}일 후 ${upcomingMountain.nameKo} 등산이에요!`,
+          btn: "계획 확인하기", to: `/plans/${upcomingPlan.id}`, bg: "#FAEEDA",
+        };
+      }
+    }
+    // B: last hike within 7 days
+    if (lastHikeDate) {
+      const hikeDate = new Date(lastHikeDate);
+      hikeDate.setHours(0, 0, 0, 0);
+      const daysSince = Math.round((now.getTime() - hikeDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysSince <= 7) {
+        return { msg: "지난 등산 기록을 남겨두셨나요?", btn: "기록 추가하기", to: "/records", bg: "#EAF3DE" };
+      }
+      // C: 7+ days ago
+      return { msg: "슬슬 산이 그리워질 때가 됐어요 ⛰", btn: "등산 계획 만들기", to: "/plans/create", bg: "#EEEDFE" };
+    }
+    // A: no record at all
+    if (completedCount === 0) {
+      return { msg: "첫 번째 산을 정복해볼까요?", btn: "산 탐색하기", to: "/mountains", bg: "#EAF3DE" };
+    }
+    return null;
+  }, [isDemo, upcomingPlan, upcomingMountain, lastHikeDate, completedCount]);
+
   const CondIcon = conditionIcons[weather.condition] || Cloud;
   const todayIndex = mountains.length > 0 ? new Date().getDate() % mountains.length : 0;
   const todayMountain = mountains.length > 0 ? mountains[todayIndex] : null;
