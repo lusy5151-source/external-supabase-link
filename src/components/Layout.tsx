@@ -56,7 +56,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <Link
           to="/summit-claim"
           className="absolute left-1/2 flex flex-col items-center"
-          style={{ transform: "translateX(-50%)", top: -20 }}
+          style={{ transform: "translateX(-50%)", top: -36 }}
         >
           <div
             className="relative flex items-center justify-center rounded-full overflow-hidden"
@@ -79,7 +79,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </span>
         </Link>
 
-        <div className="container mx-auto flex items-center justify-around px-2 py-1">
+        <div className="container mx-auto flex items-center justify-around px-2 py-1" style={{ paddingTop: 6 }}>
           {navItems.map((item, idx) => {
             if (!item) {
               return <div key="fab-placeholder" className="flex-shrink-0" style={{ width: 44 }} />;
