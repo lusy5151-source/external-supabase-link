@@ -34,6 +34,7 @@ const GearPage = lazy(() => import("@/pages/GearPage"));
 const SocialPage = lazy(() => import("@/pages/SocialPage"));
 const AchievementsPage = lazy(() => import("@/pages/AchievementsPage"));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
+const MyPage = lazy(() => import("@/pages/MyPage"));
 const PlansPage = lazy(() => import("@/pages/PlansPage"));
 const CreatePlanPage = lazy(() => import("@/pages/CreatePlanPage"));
 const PlanDetailPage = lazy(() => import("@/pages/PlanDetailPage"));
