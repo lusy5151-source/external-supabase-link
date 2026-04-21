@@ -137,7 +137,7 @@ const Records = () => {
         </TabsContent>
       </Tabs>
 
-      {showForm && <JournalForm editJournal={editingJournal} onClose={handleFormClose} onSaved={handleFormSaved} />}
+      {showForm && <JournalForm editJournal={editingJournal} onClose={handleFormClose} onSaved={handleFormSaved} prefillMountainId={prefillData?.mountainId} prefillDate={prefillData?.date} />}
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
