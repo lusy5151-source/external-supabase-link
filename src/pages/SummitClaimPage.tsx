@@ -429,25 +429,59 @@ export default function SummitClaimPage() {
       </div>
 
       {/* Step indicator */}
-      <div className="flex items-center gap-2">
-        {["산 선택", "정상 선택", "사진", "확인"].map((label, idx) => {
-          const steps = ["select-mountain", "select-summit", "upload-photo", "review"];
-          const currentIdx = steps.indexOf(step);
-          const isActive = idx <= currentIdx;
-          return (
-            <div key={label} className="flex-1 flex flex-col items-center gap-1">
-              <div className={cn(
-                "h-1.5 w-full rounded-full transition-colors",
-                isActive ? "bg-primary" : "bg-muted"
-              )} />
-              <span className={cn(
-                "text-[10px] font-medium",
-                isActive ? "text-primary" : "text-muted-foreground"
-              )}>{label}</span>
-            </div>
-          );
-        })}
-      </div>
+      {(() => {
+        const stepKeys = ["select-mountain", "select-summit", "upload-photo", "review"];
+        const stepLabels = ["산 선택", "정상 선택", "사진", "확인"];
+        const currentIdx = stepKeys.indexOf(step);
+        return (
+          <div className="flex items-center justify-between px-2">
+            {stepLabels.map((label, idx) => {
+              const isCompleted = idx < currentIdx;
+              const isActive = idx === currentIdx;
+              return (
+                <React.Fragment key={label}>
+                  <div className="flex flex-col items-center gap-1" style={{ minWidth: 36 }}>
+                    <div
+                      className="flex items-center justify-center rounded-full text-xs font-bold transition-colors"
+                      style={{
+                        width: 20,
+                        height: 20,
+                        fontSize: 10,
+                        ...(isCompleted
+                          ? { background: "#C0DD97", color: "#27500A" }
+                          : isActive
+                            ? { background: "#639922", color: "#fff" }
+                            : { background: "hsl(var(--secondary))", color: "hsl(var(--muted-foreground))" }),
+                      }}
+                    >
+                      {isCompleted ? "✓" : idx + 1}
+                    </div>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: isActive ? 600 : 400,
+                        color: isCompleted ? "#27500A" : isActive ? "#639922" : "hsl(var(--muted-foreground))",
+                      }}
+                    >
+                      {label}
+                    </span>
+                  </div>
+                  {idx < stepLabels.length - 1 && (
+                    <div
+                      className="flex-1 mx-1"
+                      style={{
+                        height: 2,
+                        marginBottom: 18,
+                        background: idx < currentIdx ? "#C0DD97" : "hsl(var(--border))",
+                      }}
+                    />
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {/* Pending offline claims */}
       {pendingClaims.length > 0 && (
