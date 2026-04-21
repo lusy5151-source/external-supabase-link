@@ -114,6 +114,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <Link
                 key={to}
                 to={to}
+                onClick={(e) => handleNavClick(e, to)}
                 className="flex flex-col items-center justify-center gap-0.5 transition-colors"
                 style={{ minWidth: 44, minHeight: 44 }}
               >
