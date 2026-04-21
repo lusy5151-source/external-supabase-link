@@ -23,7 +23,7 @@ import {
   ArrowLeft, Search, Mountain, Flag, Camera, MapPin,
   Navigation, Loader2, Shield, Clock, Users, Wifi, WifiOff,
   CheckCircle2, Calendar, ChevronRight, AlertTriangle,
-  ImagePlus, ShieldCheck, ShieldX, Sparkles,
+  ImagePlus, ShieldCheck, ShieldX, Sparkles, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -638,13 +638,15 @@ export default function SummitClaimPage() {
       {/* STEP 3: Upload Photo + GPS */}
       {step === "upload-photo" && selectedSummit && (
         <div className="space-y-4">
+          {/* Photo guide card */}
+          <PhotoGuideCard />
+
           {/* Info card */}
           <div className="rounded-xl bg-muted/50 p-3 space-y-1.5">
             <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
               <Shield className="h-3.5 w-3.5" /> 인증 안내
             </div>
             <ul className="text-[11px] text-muted-foreground space-y-0.5 ml-5 list-disc">
-              <li>정상 사진 업로드 필수</li>
               <li>GPS는 선택사항 (보조 인증)</li>
               <li>같은 정상 12시간 쿨다운</li>
               <li>AI 인증: 하루 최대 2회, 60초 간격</li>
@@ -783,17 +785,51 @@ export default function SummitClaimPage() {
                   </div>
                 )}
                 {aiVerification.status === "rejected" && (
-                  <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <ShieldX className="h-4 w-4 text-destructive" />
-                      <p className="text-xs font-medium text-destructive">
-                        AI 검증 실패 (신뢰도 {aiVerification.confidence}%)
+                  <div className="space-y-3">
+                    <div
+                      className="p-3.5 space-y-2"
+                      style={{
+                        background: "#FCEBEB",
+                        border: "0.5px solid #F09595",
+                        borderRadius: "var(--radius)",
+                      }}
+                    >
+                      <p style={{ fontSize: 14, fontWeight: 500, color: "#791F1F" }}>
+                        인증에 실패했어요
                       </p>
+                      <p style={{ fontSize: 12, color: "#A32D2D" }}>
+                        아래 이유 중 하나일 수 있어요
+                      </p>
+                      <ul className="space-y-0.5" style={{ fontSize: 12, color: "#A32D2D" }}>
+                        <li>· 정상석이 사진에 보이지 않아요</li>
+                        <li>· 사진이 너무 어둡거나 흐려요</li>
+                        <li>· 12시간이 지난 사진이에요</li>
+                      </ul>
                     </div>
-                    <p className="text-[11px] text-destructive/80">{aiVerification.reason}</p>
-                    <p className="text-[10px] text-muted-foreground">
-                      다른 정상 사진을 선택하거나, 그래도 인증을 진행할 수 있습니다.
-                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        className="flex-1 flex items-center justify-center rounded-lg text-sm font-medium"
+                        style={{
+                          height: 44,
+                          border: "0.5px solid #A32D2D",
+                          color: "#A32D2D",
+                          background: "transparent",
+                        }}
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        다시 촬영하기
+                      </button>
+                      <button
+                        className="flex-1 flex items-center justify-center rounded-lg text-sm font-medium text-white"
+                        style={{
+                          height: 44,
+                          background: "#639922",
+                        }}
+                        onClick={handleGetLocation}
+                      >
+                        GPS로 인증하기
+                      </button>
+                    </div>
                   </div>
                 )}
                 {aiVerification.status === "error" && (
@@ -824,7 +860,9 @@ export default function SummitClaimPage() {
               </div>
             ) : (
               <>
-                <p className="text-[10px] text-muted-foreground mb-1">정상 도달을 인증하기 위해 현장 사진이 필요합니다. 사진은 인증 용도로만 사용됩니다.</p>
+                <p className="text-center" style={{ fontSize: 12, color: "hsl(var(--muted-foreground))" }}>
+                  정상 아래에서도 정상석 사진으로 AI 인증이 가능해요
+                </p>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     variant="outline"
