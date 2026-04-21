@@ -419,34 +419,76 @@ const Dashboard = () => {
             </section>
           )}
 
-          {/* ── 2. Compact Metric Cards: 100대 명산 + 정상 챌린지 ── */}
+          {/* ── 2. Circular Progress Cards: 100대 명산 + 정상 챌린지 ── */}
           <section className="grid grid-cols-2 gap-3">
+            {/* LEFT: 100대 명산 */}
             <Link
               to={isDemo ? "/mountains" : "/challenges"}
-              className="rounded-xl bg-secondary p-3"
+              className="rounded-2xl bg-card p-4"
+              style={{ border: "0.5px solid hsl(var(--border))" }}
             >
-              <p style={{ fontSize: 11 }} className="text-muted-foreground">
-                {!isDemo && hundredType ? hundredLabel : "100대 명산"}
-              </p>
-              <p style={{ fontSize: 20, color: "#27500A", fontWeight: 700, marginTop: 4 }}>
-                {isDemo ? goalPercent : hundredPercent}%
-              </p>
-              <p style={{ fontSize: 10 }} className="text-muted-foreground mt-0.5">
-                {isDemo ? `${displayCompletedCount}/${displayGoal}` : `${hundredCompleted}/${hundredTotal}`}
-              </p>
+              <p style={{ fontSize: 12 }} className="text-muted-foreground mb-3">100대 명산 진행률</p>
+              <div className="flex flex-col items-center">
+                <div className="relative" style={{ width: 80, height: 80 }}>
+                  <svg className="-rotate-90" viewBox="0 0 80 80" width="80" height="80">
+                    <circle cx="40" cy="40" r="32" fill="none" stroke="#FFE0E0" strokeWidth="8" />
+                    <circle
+                      cx="40" cy="40" r="32" fill="none"
+                      stroke="#E24B4A" strokeWidth="8"
+                      strokeLinecap="round"
+                      strokeDasharray={`${2 * Math.PI * 32}`}
+                      strokeDashoffset={`${2 * Math.PI * 32 * (1 - (isDemo ? goalPercent : hundredPercent) / 100)}`}
+                      className="transition-all duration-700 ease-out"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span style={{ fontSize: 18, fontWeight: 500 }} className="text-foreground">
+                      {isDemo ? goalPercent : hundredPercent}%
+                    </span>
+                  </div>
+                </div>
+                <p style={{ fontSize: 11 }} className="text-muted-foreground mt-2 text-center">
+                  {isDemo ? `${displayCompletedCount} / ${displayGoal}` : `${hundredCompleted} / ${hundredTotal}`}
+                </p>
+                <p style={{ fontSize: 11 }} className="text-muted-foreground text-center">
+                  {isDemo ? `백대명산 ${baekduCompleted}/${baekduCount}` : hundredLabel}
+                </p>
+              </div>
             </Link>
-            <Link
-              to={isDemo ? "/auth" : "/challenges"}
-              className="rounded-xl bg-secondary p-3"
+
+            {/* RIGHT: 정상 챌린지 */}
+            <div
+              className="rounded-2xl bg-card p-4"
+              style={{ border: "0.5px solid hsl(var(--border))" }}
             >
-              <p style={{ fontSize: 11 }} className="text-muted-foreground">정상 챌린지</p>
-              <p style={{ fontSize: 20, color: "#27500A", fontWeight: 700, marginTop: 4 }}>
-                {challengeProgress}%
-              </p>
-              <p style={{ fontSize: 10 }} className="text-muted-foreground mt-0.5">
-                {isDemo ? "3개 진행 중" : activeChallenges.length > 0 ? `${activeChallenges.length}개 진행 중` : "참여 없음"}
-              </p>
-            </Link>
+              <p style={{ fontSize: 12 }} className="text-muted-foreground mb-3">정상 챌린지</p>
+              <div className="flex flex-col items-center">
+                <div className="relative" style={{ width: 80, height: 80 }}>
+                  <svg className="-rotate-90" viewBox="0 0 80 80" width="80" height="80">
+                    <circle cx="40" cy="40" r="32" fill="none" stroke="#FFE0E0" strokeWidth="8" />
+                    <circle
+                      cx="40" cy="40" r="32" fill="none"
+                      stroke="#E24B4A" strokeWidth="8"
+                      strokeLinecap="round"
+                      strokeDasharray={`${2 * Math.PI * 32}`}
+                      strokeDashoffset={`${2 * Math.PI * 32 * (1 - challengeProgress / 100)}`}
+                      className="transition-all duration-700 ease-out"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span style={{ fontSize: 18, fontWeight: 500 }} className="text-foreground">
+                      {challengeProgress}%
+                    </span>
+                  </div>
+                </div>
+                <p style={{ fontSize: 11 }} className="text-muted-foreground mt-2 text-center">
+                  {isDemo ? "3개 진행 중" : activeChallenges.length > 0 ? `${activeChallenges.length}개 진행 중` : "참여 없음"}
+                </p>
+                <Link to={isDemo ? "/auth" : "/challenges"} style={{ fontSize: 11, color: "#E24B4A" }} className="font-medium hover:underline">
+                  전체 보기
+                </Link>
+              </div>
+            </div>
           </section>
 
           {/* ── 3. 완등 MAGAZINE Banner ── */}
