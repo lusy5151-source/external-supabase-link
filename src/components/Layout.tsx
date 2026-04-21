@@ -11,7 +11,7 @@ const navItems = [
   { to: "/mountains", label: "탐색", icon: Compass },
   null, // FAB placeholder
   { to: "/records", label: "기록", icon: ClipboardList },
-  { to: "/profile", label: "마이", icon: User },
+  { to: "/my", label: "마이", icon: User },
 ];
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -29,19 +29,15 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </Link>
           <div className="flex items-center gap-1.5">
             {user && <NotificationCenter />}
-            <Link
-              to="/achievements"
-              className="rounded-xl p-2 text-muted-foreground transition-all hover:bg-nature-50 hover:text-nature-600"
-            >
-              <Trophy className="h-4 w-4" />
-            </Link>
-            {user ? (
+            {!user && (
               <Link
-                to="/profile"
-                className="rounded-xl p-2 text-muted-foreground transition-all hover:bg-nature-50 hover:text-nature-600"
+                to="/auth"
+                className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:shadow-md"
               >
-                <User className="h-4 w-4" />
+                <LogIn className="h-3.5 w-3.5" /> 로그인
               </Link>
+            )}
+          </div>
             ) : (
               <Link
                 to="/auth"

@@ -112,6 +112,7 @@ const AppRoutes = () => {
       <Route path="/groups" element={<Navigate to="/social" replace />} />
       <Route path="/groups/:id" element={<ProtectedRoute><LazyPage><GroupDetailPage /></LazyPage></ProtectedRoute>} />
       <Route path="/profile/:userId" element={<ProtectedRoute><LazyPage><FriendProfilePage /></LazyPage></ProtectedRoute>} />
+      <Route path="/my" element={<ProtectedRoute><LazyPage><MyPage /></LazyPage></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><LazyPage><ProfilePage /></LazyPage></ProtectedRoute>} />
       <Route path="/admin/announcements" element={<ProtectedRoute><LazyPage><AdminAnnouncementsPage /></LazyPage></ProtectedRoute>} />
       <Route path="/leaderboard" element={<LazyPage><LeaderboardPage /></LazyPage>} />
