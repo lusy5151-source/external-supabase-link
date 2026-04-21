@@ -980,3 +980,44 @@ export default function SummitClaimPage() {
     </div>
   );
 }
+
+function PhotoGuideCard() {
+  const [expanded, setExpanded] = useState(true);
+  const items = [
+    "정상석이 사진에 포함되어야 해요",
+    "사진이 선명하고 정상석 글자가 읽혀야 해요",
+    "촬영 후 12시간 이내 사진만 인증 가능해요",
+  ];
+  return (
+    <div
+      style={{ background: "#EAF3DE", borderRadius: "var(--radius)", padding: 12 }}
+    >
+      <button
+        className="flex items-center justify-between w-full"
+        onClick={() => setExpanded((v) => !v)}
+      >
+        <span style={{ fontSize: 13, fontWeight: 500, color: "#27500A" }}>
+          어떤 사진이 인증되나요?
+        </span>
+        {expanded ? (
+          <ChevronUp className="h-4 w-4" style={{ color: "#27500A" }} />
+        ) : (
+          <ChevronDown className="h-4 w-4" style={{ color: "#27500A" }} />
+        )}
+      </button>
+      {expanded && (
+        <div className="mt-2 space-y-1">
+          {items.map((text) => (
+            <div key={text} className="flex items-start gap-2" style={{ lineHeight: 1.6 }}>
+              <span
+                className="shrink-0 mt-1 rounded-full"
+                style={{ width: 12, height: 12, background: "#639922" }}
+              />
+              <span style={{ fontSize: 12, color: "#27500A" }}>{text}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
