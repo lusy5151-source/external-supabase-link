@@ -156,11 +156,13 @@ const App = () => {
               {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
               {!showSplash && <MagazinePopup />}
               <BrowserRouter>
+                <GuestProvider>
                 <Layout>
                   <ErrorBoundary fallbackMessage="데이터를 불러오는 중 오류가 발생했습니다.">
                     <AppRoutes />
                   </ErrorBoundary>
                 </Layout>
+                </GuestProvider>
               </BrowserRouter>
             </StoreProvider>
             </MountainsProvider>
