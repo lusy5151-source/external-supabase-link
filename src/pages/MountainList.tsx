@@ -19,6 +19,7 @@ const MountainMapSection = lazy(() => import("@/components/MountainMapSection"))
 
 type SortKey = "name" | "height" | "popularity";
 type ViewMode = "all" | "national" | "forestry100" | "bac100" | "region" | "oreum" | "walking" | "full";
+type Segment = "list" | "map";
 
 const MountainList = () => {
   const { mountains: dbMountains } = useMountains();
@@ -35,6 +36,7 @@ const MountainList = () => {
   const [viewMode, setViewMode] = useState<ViewMode>("all");
   const [openRegions, setOpenRegions] = useState<Set<string>>(new Set());
   const [showUserOnly, setShowUserOnly] = useState(false);
+  const [segment, setSegment] = useState<Segment>("list");
 
   const allMountains = useMemo(() => {
     const visibleUserMountains = userMountainsAsMountains.filter((m) => {
