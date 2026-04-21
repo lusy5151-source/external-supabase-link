@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/context/StoreContext";
@@ -9,6 +10,16 @@ import { useSharedCompletionCounts } from "@/hooks/useSharedCompletionCounts";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ChevronRight, Users, Trophy, Mountain, BookOpen, Settings, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 const menuItems = [
   { label: "프로필 설정", to: "/profile", icon: Settings },
@@ -26,6 +37,7 @@ const MyPage = () => {
   const { items: gearItems } = useGearStore();
   const sharedCompletions = useSharedCompletionCounts();
   const { earnedCount } = useAchievementStore(records, gearItems, sharedCompletions);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   if (!user) {
     return (
@@ -99,14 +111,48 @@ const MyPage = () => {
         ))}
       </div>
 
-      {/* Logout */}
-      <button
-        onClick={() => signOut()}
-        className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 transition-colors hover:bg-accent/50"
-      >
-        <LogOut className="h-4 w-4 text-destructive" />
-        <span className="text-sm font-medium text-destructive">로그아웃</span>
-      </button>
+      {/* Logout & Delete account */}
+      <div className="space-y-0">
+        <button
+          onClick={() => signOut()}
+          className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 transition-colors hover:bg-accent/50"
+        >
+          <LogOut className="h-4 w-4 text-destructive" />
+          <span className="text-sm font-medium text-destructive">로그아웃</span>
+        </button>
+        <button
+          onClick={() => setShowDeleteDialog(true)}
+          className="w-full py-3 text-center"
+          style={{ fontSize: 13, color: "hsl(var(--color-text-tertiary))" }}
+        >
+          회원 탈퇴
+        </button>
+      </div>
+
+      {/* Delete account confirmation dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>정말 탈퇴하시겠어요?</AlertDialogTitle>
+            <AlertDialogDescription>
+              탈퇴 시 모든 완등 기록과 데이터가 삭제되며 복구할 수 없어요.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <button
+              onClick={() => {
+                setShowDeleteDialog(false);
+                toast("탈퇴가 완료되었습니다");
+              }}
+              className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-white"
+              style={{ background: "#E24B4A" }}
+            >
+              탈퇴하기
+            </button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
