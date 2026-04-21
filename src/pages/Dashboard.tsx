@@ -186,6 +186,16 @@ const Dashboard = () => {
           setActiveChallenges(active);
         })
         .catch(() => setActiveChallenges([]));
+      // Fetch last hike date
+      supabase
+        .from("hiking_journals")
+        .select("hiked_at")
+        .eq("user_id", user.id)
+        .order("hiked_at", { ascending: false })
+        .limit(1)
+        .then(({ data }) => {
+          setLastHikeDate(data?.[0]?.hiked_at || null);
+        });
     }
   }, [user]);
 
