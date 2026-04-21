@@ -172,3 +172,9 @@
 .leaflet-container { z-index: 0 !important; }
 .leaflet-top, .leaflet-bottom { z-index: 500 !important; }
 .leaflet-pane { z-index: 400 !important; }
+
+@keyframes fab-shimmer {
+  0%   { transform: translateX(-100%) rotate(25deg); }
+  40%  { transform: translateX(200%) rotate(25deg); }
+  100% { transform: translateX(200%) rotate(25deg); }
+}
