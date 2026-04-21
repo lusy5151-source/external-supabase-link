@@ -60,6 +60,7 @@ const Dashboard = () => {
   const { fetchSharedCompletions } = useSharedCompletions();
   const { claims: liveClaims, kingOfDay, loading: liveFeedLoading } = useLiveSummitFeed();
   const [recentJournals, setRecentJournals] = useState<HikingJournal[]>([]);
+  const [lastHikeDate, setLastHikeDate] = useState<string | null>(null);
   const [recentSharedCompletions, setRecentSharedCompletions] = useState<SharedCompletion[]>([]);
   const [activeChallenges, setActiveChallenges] = useState<(UserChallenge & { ch: Challenge })[]>([]);
   const [userGoal, setUserGoal] = useState<number>(() => {
