@@ -258,7 +258,21 @@ export function JournalForm({ editJournal, onClose, onSaved }: JournalFormProps)
                   </button>
                 );
               })}
-            </div>
+          </div>
+          </div>
+
+          {/* ═══ Memo (always visible, optional) ═══ */}
+          <div>
+            <label className="text-xs text-muted-foreground mb-1.5 block" style={{ fontSize: 12 }}>한 줄 메모 (선택)</label>
+            <textarea
+              placeholder="오늘 등산 한 줄 소감을 남겨보세요..."
+              value={notes}
+              onChange={(e) => { if (e.target.value.length <= 100) setNotes(e.target.value); }}
+              rows={3}
+              className="w-full rounded-md border bg-background px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              style={{ fontSize: 13, borderWidth: "0.5px", padding: "10px 12px" }}
+            />
+            <p className="text-right mt-1" style={{ fontSize: 11, color: "hsl(var(--muted-foreground))" }}>{notes.length}/100</p>
           </div>
 
           {/* ═══ Toggle for optional fields ═══ */}
@@ -364,11 +378,7 @@ export function JournalForm({ editJournal, onClose, onSaved }: JournalFormProps)
                 </div>
               </div>
 
-              {/* Notes */}
-              <div>
-                <label className="text-xs font-medium text-foreground mb-1.5 block">메모</label>
-                <Textarea placeholder="등산 소감을 적어보세요..." value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
-              </div>
+              {/* Course Notes */}
 
               {/* Course Notes */}
               <div>

@@ -146,10 +146,10 @@ export function JournalCard({ journal, showAuthor = true, onRefresh }: JournalCa
         <button
           type="button"
           onClick={() => setLightboxIndex(0)}
-          className="w-full relative overflow-hidden focus:outline-none"
-          style={{ height: 140 }}
+          className="w-full relative overflow-hidden focus:outline-none bg-secondary/30"
+          style={{ maxHeight: 320 }}
         >
-          <img src={photos[0]} alt="" className="h-full w-full object-cover" />
+          <img src={photos[0]} alt="" className="w-full object-contain" style={{ maxHeight: 320 }} />
           {photos.length > 1 && (
             <div className="absolute bottom-2 right-2 rounded-full bg-foreground/50 px-2 py-0.5 text-[10px] text-white font-medium">
               +{photos.length - 1}
