@@ -1,17 +1,17 @@
 import { Link, useLocation } from "react-router-dom";
-import { Mountain, BookOpen, Users, Home, Trophy, User, LogIn, Flag, FileText } from "lucide-react";
+import { Home, Compass, ClipboardList, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import NotificationCenter from "@/components/NotificationCenter";
 import MountainMascot from "@/components/MountainMascot";
 import OnboardingTutorial from "@/components/OnboardingTutorial";
+import { Trophy, LogIn } from "lucide-react";
 
 const navItems = [
   { to: "/", label: "홈", icon: Home },
-  { to: "/mountains", label: "산", icon: Mountain },
-  { to: "/records", label: "등산일지", icon: FileText },
-  { to: "/leaderboard", label: "순위", icon: Flag },
-  { to: "/plans", label: "계획", icon: BookOpen },
-  { to: "/social", label: "친구", icon: Users },
+  { to: "/mountains", label: "탐색", icon: Compass },
+  null, // FAB placeholder
+  { to: "/records", label: "기록", icon: ClipboardList },
+  { to: "/profile", label: "마이", icon: User },
 ];
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -58,24 +58,62 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <OnboardingTutorial />
 
       {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card" style={{ borderTop: '0.5px solid hsl(210, 58%, 86%)' }}>
-        <div className="container mx-auto flex items-center justify-around px-2 py-2">
-          {navItems.map(({ to, label, icon: Icon }) => {
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-50"
+        style={{
+          background: "hsl(var(--color-background-primary))",
+          borderTop: "0.5px solid hsl(var(--color-border-tertiary))",
+        }}
+      >
+        <div className="container mx-auto flex items-center justify-around px-2 py-1">
+          {navItems.map((item, idx) => {
+            if (!item) {
+              // FAB placeholder
+              return <div key="fab-placeholder" className="flex-shrink-0" style={{ width: 44 }} />;
+            }
+
+            const { to, label, icon: Icon } = item;
             const active = to === "/"
               ? pathname === "/"
-              : pathname.startsWith(to) && !(to === "/mountains" && pathname === "/");
+              : pathname.startsWith(to);
+
             return (
               <Link
                 key={to}
                 to={to}
-                className={`flex flex-col items-center gap-1 rounded-2xl px-3 py-2 transition-all ${
-                  active
-                    ? "text-primary"
-                    : "text-foreground/40"
-                }`}
+                className="flex flex-col items-center justify-center gap-0.5 transition-colors"
+                style={{ minWidth: 44, minHeight: 44 }}
               >
-                <Icon className={`h-5 w-5 transition-transform ${active ? "scale-110" : ""}`} />
-                <span className={`text-[10px] font-semibold`}>{label}</span>
+                <div
+                  className="flex items-center justify-center rounded-full transition-colors"
+                  style={{
+                    width: 32,
+                    height: 32,
+                    background: active ? "hsl(var(--color-tab-active-bg))" : "transparent",
+                  }}
+                >
+                  <Icon
+                    className="transition-colors"
+                    style={{
+                      width: 20,
+                      height: 20,
+                      color: active
+                        ? "hsl(var(--color-tab-active-label))"
+                        : "hsl(var(--color-text-tertiary))",
+                    }}
+                  />
+                </div>
+                <span
+                  className="font-semibold leading-none"
+                  style={{
+                    fontSize: 10,
+                    color: active
+                      ? "hsl(var(--color-tab-active-label))"
+                      : "hsl(var(--color-text-tertiary))",
+                  }}
+                >
+                  {label}
+                </span>
               </Link>
             );
           })}
