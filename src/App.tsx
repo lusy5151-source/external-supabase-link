@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { StoreProvider } from "@/context/StoreContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { GuestProvider, useGuest } from "@/contexts/GuestContext";
 import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import { MountainsProvider } from "@/contexts/MountainsContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -74,7 +75,12 @@ const queryClient = new QueryClient({
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const { isGuest, showLoginPrompt } = useGuest();
   if (loading) return <LoadingSpinner message="인증 확인 중..." />;
+  if (!user && isGuest) {
+    showLoginPrompt();
+    return <Navigate to="/" replace />;
+  }
   if (!user) return <Navigate to="/auth" replace />;
   return <>{children}</>;
 }
@@ -150,11 +156,13 @@ const App = () => {
               {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
               {!showSplash && <MagazinePopup />}
               <BrowserRouter>
+                <GuestProvider>
                 <Layout>
                   <ErrorBoundary fallbackMessage="데이터를 불러오는 중 오류가 발생했습니다.">
                     <AppRoutes />
                   </ErrorBoundary>
                 </Layout>
+                </GuestProvider>
               </BrowserRouter>
             </StoreProvider>
             </MountainsProvider>
