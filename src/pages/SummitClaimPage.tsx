@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo, Fragment } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useMountains } from "@/contexts/MountainsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingPlans } from "@/hooks/useHikingPlans";
@@ -39,6 +39,7 @@ function dataURLtoFile(dataUrl: string, filename: string): File {
 }
 
 export default function SummitClaimPage() {
+  const navigate = useNavigate();
   const { mountains } = useMountains();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -58,6 +59,9 @@ export default function SummitClaimPage() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [claiming, setClaiming] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showDiaryPrompt, setShowDiaryPrompt] = useState(false);
+  const [claimedMountainName, setClaimedMountainName] = useState("");
+  const [claimedMountainId, setClaimedMountainId] = useState<number | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [aiVerification, setAiVerification] = useState<{
@@ -248,10 +252,12 @@ export default function SummitClaimPage() {
         timestamp: new Date().toISOString(),
       });
       toast({ title: "📱 오프라인 저장 완료", description: "네트워크 연결 시 자동으로 업로드됩니다." });
+      setClaimedMountainName(selectedMountain.nameKo);
+      setClaimedMountainId(selectedMountain.id);
       setShowCelebration(true);
       setTimeout(() => {
         setShowCelebration(false);
-        resetFlow();
+        setShowDiaryPrompt(true);
       }, 3000);
       return;
     }
@@ -282,10 +288,12 @@ export default function SummitClaimPage() {
     setClaiming(false);
 
     if (result.success) {
+      setClaimedMountainName(selectedMountain?.nameKo || "");
+      setClaimedMountainId(selectedMountain?.id ?? null);
       setShowCelebration(true);
       setTimeout(() => {
         setShowCelebration(false);
-        resetFlow();
+        setShowDiaryPrompt(true);
       }, 3000);
     } else {
       toast({ title: "인증 실패", description: result.error, variant: "destructive" });
