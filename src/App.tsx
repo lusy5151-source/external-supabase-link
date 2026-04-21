@@ -75,7 +75,12 @@ const queryClient = new QueryClient({
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const { isGuest, showLoginPrompt } = useGuest();
   if (loading) return <LoadingSpinner message="인증 확인 중..." />;
+  if (!user && isGuest) {
+    showLoginPrompt();
+    return <Navigate to="/" replace />;
+  }
   if (!user) return <Navigate to="/auth" replace />;
   return <>{children}</>;
 }
