@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { useMountains } from "@/contexts/MountainsContext";
 import { demoJournals, type DemoJournal } from "@/data/demoFeed";
 import { useHikingJournals, type HikingJournal } from "@/hooks/useHikingJournals";
@@ -21,6 +22,7 @@ import { cn } from "@/lib/utils";
 const Records = () => {
   const { mountains } = useMountains();
   const { user } = useAuth();
+  const location = useLocation();
   const { fetchMyJournals, fetchFeed, deleteJournal } = useHikingJournals();
   const { toast } = useToast();
   const [myJournals, setMyJournals] = useState<HikingJournal[]>([]);
@@ -31,6 +33,19 @@ const Records = () => {
   const [deleteTarget, setDeleteTarget] = useState<HikingJournal | null>(null);
   const [activeTab, setActiveTab] = useState("feed");
   const [selectedJournal, setSelectedJournal] = useState<HikingJournal | null>(null);
+  const [prefillData, setPrefillData] = useState<{ mountainId?: number; date?: string } | null>(null);
+
+  // Handle navigation state from summit claim diary prompt
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.openJournalForm) {
+      setPrefillData({ mountainId: state.prefillMountainId, date: state.prefillDate });
+      setEditingJournal(null);
+      setShowForm(true);
+      // Clear the state so it doesn't re-trigger
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
