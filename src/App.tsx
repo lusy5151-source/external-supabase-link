@@ -61,6 +61,7 @@ const DeleteAccountPage = lazy(() => import("@/pages/DeleteAccountPage"));
 const TermsOfServicePage = lazy(() => import("@/pages/TermsOfServicePage"));
 const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
+const AuthCallbackPage = lazy(() => import("@/pages/AuthCallbackPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -101,6 +102,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/auth" element={user && !loading ? <Navigate to="/" replace /> : <AuthPage />} />
+      <Route path="/auth/callback" element={<LazyPage><AuthCallbackPage /></LazyPage>} />
       <Route path="/kakao/callback" element={<LazyPage><KakaoCallback /></LazyPage>} />
       <Route path="/" element={<LazyPage fallback={<DashboardSkeleton />}><Dashboard /></LazyPage>} />
       <Route path="/mountains" element={<LazyPage><MountainList /></LazyPage>} />
