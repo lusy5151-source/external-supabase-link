@@ -170,13 +170,31 @@ export function usePlanNotifications() {
 
   const testNotification = useCallback(
     (mountainName: string) => {
-      setTimeout(() => {
-        sendRef.current(
-          `오늘 ${mountainName} 등산 날이에요! 🚩`,
-          "즐거운 등산 되세요 💪\n정상에서 인증 잊지 마세요!"
-        );
-      }, 10_000);
+      if (!("Notification" in window)) {
+        toast.error("이 브라우저는 알림을 지원하지 않아요");
+        return;
+      }
+      if (Notification.permission !== "granted") {
+        toast.error("알림 권한이 없어요. 마이 → 알림 설정에서 허용해주세요");
+        return;
+      }
       toast("10초 후 알림이 울립니다 ⏰");
+      setTimeout(() => {
+        try {
+          const n = sendRef.current(
+            `오늘 ${mountainName} 등산 날이에요! 🚩`,
+            "즐거운 등산 되세요 💪\n정상에서 인증 잊지 마세요!"
+          );
+          if (n) {
+            n.onshow = () => toast.success("알림이 성공적으로 전송됐어요! ✅");
+            n.onerror = () => toast.error("알림 전송에 실패했어요. 브라우저 설정을 확인해주세요");
+          } else {
+            toast.error("알림 생성 실패 — 권한이 해제되었을 수 있어요");
+          }
+        } catch (err) {
+          toast.error(`알림 오류: ${err instanceof Error ? err.message : "알 수 없는 오류"}`);
+        }
+      }, 10_000);
     },
     []
   );
