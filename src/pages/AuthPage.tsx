@@ -256,6 +256,7 @@ function GuestEntryButton() {
   const { enterGuestMode } = useGuest();
   return (
     <button
+      data-onboarding="guest-browse"
       onClick={() => {
         enterGuestMode();
         navigate("/");
