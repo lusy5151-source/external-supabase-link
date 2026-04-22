@@ -16,9 +16,11 @@ export interface TutorialStep {
   /** Task hint text shown instead of button */
   taskHint?: string;
   /** Custom content type for rendering extras in tooltip */
-  customContent?: "welcome-chips" | "filter-interactive" | "fab-methods" | "share-card";
+  customContent?: "welcome-chips" | "filter-interactive" | "fab-methods" | "share-card" | "plan-checklist" | "club-chips" | "mini-leaderboard" | "final-celebration";
   /** Whether to show extra glow ring animation on spotlight */
   glowRing?: boolean;
+  /** For RecordsHub segment switching */
+  recordsSegment?: string;
 }
 
 interface TutorialContextType {
@@ -98,6 +100,56 @@ export const tutorialSteps: TutorialStep[] = [
     buttonLabel: "다음 →",
     spotlightShape: "rect",
     customContent: "share-card",
+  },
+  // Step 5 — Hiking plans (interactive)
+  {
+    route: "/plans",
+    targetSelector: '[data-onboarding="plan-create"]',
+    title: "함께 오를 산을 미리 계획해요 📅",
+    description:
+      "날짜, 출발 시간, 모임 장소를 설정하고 친구를 초대할 수 있어요.\n계획을 공개하면 새로운 등산 동료를 만날 수도 있어요!",
+    buttonLabel: "",
+    spotlightShape: "rect",
+    interactive: true,
+    interactiveSelector: '[data-onboarding="plan-create"]',
+    taskHint: "✋ 계획 만들기 버튼을 탭해보세요",
+    customContent: "plan-checklist",
+  },
+  // Step 6 — Clubs
+  {
+    route: "/social",
+    targetSelector: '[data-onboarding="club-create"]',
+    title: "같이 오르면 더 즐거워요 🤝",
+    description:
+      "산악회를 만들거나 가입해서 멤버들과 함께 등산 계획을 세우고 채팅으로 소통할 수 있어요.",
+    buttonLabel: "다음 →",
+    spotlightShape: "rect",
+    customContent: "club-chips",
+  },
+  // Step 7 — Leaderboard
+  {
+    route: "/records",
+    targetSelector: '[data-onboarding="leaderboard"]',
+    title: "산 대장이 되어보세요 🏆",
+    description:
+      "정상 인증을 할수록 순위가 올라가요.\n개인 순위, 산 대장, 산악회 순위를 확인할 수 있어요.",
+    buttonLabel: "다음 →",
+    spotlightShape: "rect",
+    customContent: "mini-leaderboard",
+    /** RecordsHub should switch to "ranking" segment */
+    recordsSegment: "ranking",
+  },
+  // Step 8 — Challenge & achievements (final)
+  {
+    route: "/records",
+    targetSelector: "",
+    title: "이제 완등을 시작할 준비가 됐어요! 🎉",
+    description:
+      "챌린지에 도전하고 업적 배지를 모아보세요.\n100대 명산 완등, 거리 챌린지 등 다양한 목표가 기다리고 있어요.",
+    buttonLabel: "완등 시작하기 🏔",
+    spotlightShape: "none",
+    customContent: "final-celebration",
+    recordsSegment: "challenge",
   },
 ];
 
