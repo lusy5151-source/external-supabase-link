@@ -3,7 +3,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const VWORLD_API_KEY = "F41DD5DC-6774-33EA-8E02-68505ADAF394";
+const VWORLD_API_KEY = Deno.env.get("VWORLD_API_KEY");
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
