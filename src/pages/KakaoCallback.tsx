@@ -14,7 +14,7 @@ const KakaoCallback = () => {
 
     const handleKakaoLogin = async () => {
       const params = new URLSearchParams(window.location.search);
-      const code = params.get("code");
+      const code = new URLSearchParams(window.location.search).get("code");
       const errorParam = params.get("error");
 
       if (errorParam) {
@@ -30,30 +30,39 @@ const KakaoCallback = () => {
       }
 
       try {
-        const redirectUri = `${window.location.origin}/kakao/callback`;
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/kakao-auth`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify({
+              code,
+              redirect_uri: `${window.location.origin}/kakao/callback`,
+            }),
+          }
+        );
 
-        const { data, error: fnError } = await supabase.functions.invoke("kakao-auth", {
-          body: { code, redirect_uri: redirectUri },
-        });
+        const { session, error: responseError, details } = await response.json();
 
-        if (fnError) {
-          console.error("Edge function error:", fnError);
-          setError("카카오 로그인 처리 중 오류가 발생했습니다.");
+        if (
+          !response.ok ||
+          responseError ||
+          !session?.access_token ||
+          !session?.refresh_token
+        ) {
+          console.error("Kakao auth error:", responseError, details);
+          setError(responseError || "카카오 로그인 처리 중 오류가 발생했습니다.");
           setTimeout(() => navigate("/auth"), 2000);
           return;
         }
 
-        if (data?.error) {
-          console.error("Kakao auth error:", data.error, data.details);
-          setError(data.error);
-          setTimeout(() => navigate("/auth"), 2000);
-          return;
-        }
-
-        if (data?.session) {
+        if (session) {
           await supabase.auth.setSession({
-            access_token: data.session.access_token,
-            refresh_token: data.session.refresh_token,
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
           });
           navigate("/");
         } else {
