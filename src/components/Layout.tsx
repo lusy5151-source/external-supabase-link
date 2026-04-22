@@ -5,7 +5,7 @@ import { useGuest } from "@/contexts/GuestContext";
 import { useUnreadChat } from "@/contexts/UnreadChatContext";
 import NotificationCenter from "@/components/NotificationCenter";
 import MountainMascot from "@/components/MountainMascot";
-import OnboardingTutorial from "@/components/OnboardingTutorial";
+import TutorialOverlay from "@/components/tutorial/TutorialOverlay";
 import { LogIn } from "lucide-react";
 
 const navItems = [
