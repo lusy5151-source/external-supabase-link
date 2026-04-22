@@ -175,13 +175,16 @@ export default function ClubChat({ clubId, onUnreadCount }: Props) {
       }
     }
 
-    await supabase.from("club_messages" as any).insert({
+    const { error: insertError } = await supabase.from("club_messages").insert({
       club_id: clubId,
       user_id: user.id,
       message: text.trim() || null,
       image_url: uploadedUrl,
       reply_to_id: replyTo?.id || null,
     });
+    if (insertError) {
+      console.error("Chat insert error:", insertError);
+    }
 
     setText("");
     setImageFile(null);
