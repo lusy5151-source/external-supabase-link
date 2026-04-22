@@ -244,7 +244,7 @@ const GroupDetailPage = () => {
       return;
     }
     const { data: urlData } = supabase.storage.from("club-logos").getPublicUrl(path);
-    await (supabase as any).from("hiking_groups").update({ avatar_url: urlData.publicUrl }).eq("id", id);
+    await (supabase as any).from("hiking_group").update({ avatar_url: urlData.publicUrl }).eq("id", id);
     setUploadingLogo(false);
     toast({ title: "로고가 업데이트되었습니다!" });
     loadData();

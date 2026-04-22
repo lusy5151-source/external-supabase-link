@@ -32,7 +32,7 @@ interface Props {
 
 export default function ClubChat({ clubId, onUnreadCount }: Props) {
   const { user } = useAuth();
-  const { increment: incrementUnread } = useUnreadChat();
+  const { reset: resetUnread } = useUnreadChat();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -110,7 +110,8 @@ export default function ClubChat({ clubId, onUnreadCount }: Props) {
     await supabase
       .from("message_reads" as any)
       .upsert({ club_id: clubId, user_id: user.id, last_read_at: new Date().toISOString() } as any, { onConflict: "club_id,user_id" });
-  }, [clubId, user]);
+    resetUnread();
+  }, [clubId, user, resetUnread]);
 
   useEffect(() => { fetchMessages().then(() => markAsRead()); }, [fetchMessages, markAsRead]);
 
@@ -372,14 +373,6 @@ export default function ClubChat({ clubId, onUnreadCount }: Props) {
         <Button size="icon" className="h-8 w-8 rounded-full shrink-0" disabled={sending || (!text.trim() && !imageFile)} onClick={handleSend}>
           <Send className="h-4 w-4" />
         </Button>
-        <button
-          onClick={incrementUnread}
-          className="h-7 px-2 rounded-full text-[10px] font-bold text-white shrink-0"
-          style={{ background: "#E24B4A" }}
-          title="Test: increment unread"
-        >
-          +1
-        </button>
       </div>
     </section>
   );
