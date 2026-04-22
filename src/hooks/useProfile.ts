@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Profile = Tables<"profiles">;
+const PROFILE_SELECT = "id, user_id, email, nickname, avatar_url, bio, location, hiking_styles, provider, is_active, created_at, updated_at";
 
 export function useProfile() {
   const { user } = useAuth();
@@ -19,7 +20,7 @@ export function useProfile() {
 
     const { data } = await supabase
       .from("profiles")
-      .select("*")
+      .select(PROFILE_SELECT)
       .eq("user_id", user.id)
       .single();
 
@@ -38,7 +39,7 @@ export function useProfile() {
       .from("profiles")
       .update(updates)
       .eq("user_id", user.id)
-      .select()
+      .select(PROFILE_SELECT)
       .single();
 
     if (error) {
