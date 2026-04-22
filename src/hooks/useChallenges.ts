@@ -87,18 +87,21 @@ export function useChallenges() {
   }, [user]);
 
   /**
-   * Compute progress for a given goal_type using the user's hiking journals.
+   * Compute progress for a given goal_type.
+   * Summit-based types use summitClaims, journal-based types use journals.
    * Returns -1 when goal type is not auto-trackable here (skip update).
    */
-  const computeProgress = (goalType: string, journals: any[]): number => {
+  const computeProgress = (goalType: string, journals: any[], summitClaims: any[]): number => {
     switch (goalType) {
       case "mountain":
-        return new Set(journals.map((j: any) => j.mountain_id).filter(Boolean)).size;
+        // Total summit claim count (not distinct)
+        return summitClaims.length;
       case "count":
+        return summitClaims.length;
       case "monthly_count": {
         const now = new Date();
-        return journals.filter((j: any) => {
-          const d = new Date(j.hiked_at);
+        return summitClaims.filter((sc: any) => {
+          const d = new Date(sc.claimed_at);
           return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
         }).length;
       }
