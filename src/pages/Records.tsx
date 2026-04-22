@@ -4,6 +4,7 @@ import { useMountains } from "@/contexts/MountainsContext";
 import { demoJournals, type DemoJournal } from "@/data/demoFeed";
 import { useHikingJournals, type HikingJournal } from "@/hooks/useHikingJournals";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUnreadChat } from "@/contexts/UnreadChatContext";
 import { useOnboarding } from "@/contexts/OnboardingContext";
 import { JournalForm } from "@/components/JournalForm";
 import { JournalCard, JournalGridCard } from "@/components/JournalCard";
@@ -23,6 +24,7 @@ const Records = () => {
   const { mountains } = useMountains();
   const { user } = useAuth();
   const location = useLocation();
+  const { resetFriendActivityUnread } = useUnreadChat();
   const { fetchMyJournals, fetchFeed, deleteJournal } = useHikingJournals();
   const { toast } = useToast();
   const [myJournals, setMyJournals] = useState<HikingJournal[]>([]);
@@ -34,6 +36,11 @@ const Records = () => {
   const [activeTab, setActiveTab] = useState("feed");
   const [selectedJournal, setSelectedJournal] = useState<HikingJournal | null>(null);
   const [prefillData, setPrefillData] = useState<{ mountainId?: number; date?: string } | null>(null);
+
+  // Reset friend activity unread badge when viewing feed tab
+  useEffect(() => {
+    if (activeTab === "feed") resetFriendActivityUnread();
+  }, [activeTab, resetFriendActivityUnread]);
 
   // Handle navigation state from summit claim diary prompt
   useEffect(() => {
