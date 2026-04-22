@@ -492,10 +492,28 @@ const ChallengePage = () => {
                         <Icon className={`h-5 w-5 ${meta.color}`} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm text-foreground">{meta.label}</p>
-                        <p className="text-[11px] text-muted-foreground truncate">
-                          총 {g.ladder.length}단계 · 시작: {lv1?.title ?? "LV1"}
-                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-semibold text-sm text-foreground">{meta.label}</p>
+                          {g.wasAbandoned && (
+                            <span style={{
+                              background: "#FAEEDA",
+                              color: "#633806",
+                              fontSize: 10,
+                              borderRadius: 10,
+                              padding: "1px 6px",
+                              fontWeight: 500,
+                            }}>재도전</span>
+                          )}
+                        </div>
+                        {g.wasAbandoned ? (
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            이전에 도전한 적 있어요
+                          </p>
+                        ) : (
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            총 {g.ladder.length}단계 · 시작: {lv1?.title ?? "LV1"}
+                          </p>
+                        )}
                       </div>
                       {noActive ? (
                         <button
