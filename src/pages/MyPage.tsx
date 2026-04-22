@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/context/StoreContext";
 import { useProfile } from "@/hooks/useProfile";
@@ -8,9 +8,10 @@ import { useAchievementStore } from "@/hooks/useAchievementStore";
 import { useGearStore } from "@/hooks/useGearStore";
 import { useSharedCompletionCounts } from "@/hooks/useSharedCompletionCounts";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ChevronRight, Users, Mountain, BookOpen, Settings, LogOut } from "lucide-react";
+import { ChevronRight, Users, Mountain, BookOpen, Settings, LogOut, HelpCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useUnreadChat } from "@/contexts/UnreadChatContext";
+import { useOnboarding } from "@/contexts/OnboardingContext";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -39,6 +40,8 @@ const MyPage = () => {
   const sharedCompletions = useSharedCompletionCounts();
   const { earnedCount } = useAchievementStore(records, gearItems, sharedCompletions);
   const { unreadChatCount } = useUnreadChat();
+  const { startOnboarding } = useOnboarding();
+  const nav = useNavigate();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   if (!user) {
@@ -120,6 +123,26 @@ const MyPage = () => {
           </Link>
         ))}
       </div>
+
+      {/* Tutorial replay */}
+      <button
+        onClick={() => {
+          localStorage.removeItem("tutorial_seen");
+          startOnboarding();
+          nav("/");
+        }}
+        className="flex w-full items-center gap-3 px-4"
+        style={{
+          height: 48,
+          borderBottom: "0.5px solid hsl(var(--color-border-tertiary, var(--border)))",
+        }}
+      >
+        <HelpCircle style={{ width: 16, height: 16, color: "hsl(var(--color-text-secondary, var(--muted-foreground)))" }} />
+        <span className="flex-1 text-left" style={{ fontSize: 14, color: "hsl(var(--color-text-primary, var(--foreground)))" }}>
+          튜토리얼 다시 보기
+        </span>
+        <ChevronRight style={{ width: 16, height: 16, color: "hsl(var(--color-text-tertiary, var(--muted-foreground)))" }} />
+      </button>
 
       {/* Logout & Delete account */}
       <div className="space-y-0">
