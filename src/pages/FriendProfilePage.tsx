@@ -60,7 +60,7 @@ const FriendProfilePage = () => {
       // Fetch profile
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("*")
+        .select("user_id, nickname, avatar_url, bio, location, hiking_styles")
         .eq("user_id", userId)
         .single();
       setProfile(profileData as Profile | null);

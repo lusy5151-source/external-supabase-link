@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.24.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,6 +9,11 @@ const corsHeaders = {
 const OPENWEATHER_API_KEY = Deno.env.get("OPENWEATHER_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const requestSchema = z.object({
+  lat: z.coerce.number().finite().min(-90).max(90),
+  lon: z.coerce.number().finite().min(-180).max(180),
+  type: z.enum(["weather", "forecast"]).optional(),
+});
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -34,14 +40,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { lat, lon, type } = await req.json();
+    const payload = requestSchema.safeParse(await req.json());
 
-    if (lat == null || lon == null) {
+    if (!payload.success) {
       return new Response(
-        JSON.stringify({ error: "lat and lon are required" }),
+        JSON.stringify({ error: "올바른 위치 정보가 필요합니다" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const { lat, lon, type } = payload.data;
 
     if (!OPENWEATHER_API_KEY) {
       return new Response(
