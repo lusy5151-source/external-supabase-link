@@ -212,6 +212,7 @@ const PlansPage = () => {
 };
 
 function DemoPlansView() {
+  const { isTutorialActive, currentStep, steps } = useTutorial();
   const daysFromNow = (n: number) => {
     const d = new Date();
     d.setDate(d.getDate() + n);
