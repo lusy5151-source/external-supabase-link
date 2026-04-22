@@ -53,8 +53,8 @@ export function useHikingGroups() {
       return;
     }
     const groupIds = memberships.map((m) => m.group_id);
-    const { data: groups } = await db
-      .from("hiking_groups")
+    const { data: groups } = await supabase
+      .from("hiking_group")
       .select("*")
       .in("id", groupIds)
       .order("created_at", { ascending: false });
@@ -77,8 +77,8 @@ export function useHikingGroups() {
   useEffect(() => { fetchMyGroups(); }, [fetchMyGroups]);
 
   const fetchPublicGroups = async (): Promise<HikingGroup[]> => {
-    const { data } = await db
-      .from("hiking_groups")
+    const { data } = await supabase
+      .from("hiking_group")
       .select("*")
       .eq("is_public", true)
       .order("created_at", { ascending: false })
@@ -87,8 +87,8 @@ export function useHikingGroups() {
   };
 
   const fetchGroupById = async (groupId: string): Promise<HikingGroup | null> => {
-    const { data } = await db
-      .from("hiking_groups")
+    const { data } = await supabase
+      .from("hiking_group")
       .select("*")
       .eq("id", groupId)
       .single();
@@ -97,9 +97,9 @@ export function useHikingGroups() {
 
   const createGroup = async (params: { name: string; description?: string; is_public?: boolean }) => {
     if (!user) return { error: { message: "Not authenticated" } };
-    const { data, error } = await db
-      .from("hiking_groups")
-      .insert({ ...params, creator_id: user.id })
+    const { data, error } = await supabase
+      .from("hiking_group")
+      .insert({ ...params, creator_id: user.id } as any)
       .select()
       .single();
     if (!error && data) {
@@ -115,8 +115,8 @@ export function useHikingGroups() {
 
   const deleteGroup = async (groupId: string) => {
     if (!user) return { error: { message: "Not authenticated" } };
-    const { error } = await db
-      .from("hiking_groups")
+    const { error } = await supabase
+      .from("hiking_group")
       .delete()
       .eq("id", groupId);
     if (!error) fetchMyGroups();
@@ -125,9 +125,9 @@ export function useHikingGroups() {
 
   const updateGroup = async (groupId: string, params: { name?: string; description?: string; is_public?: boolean }) => {
     if (!user) return { error: { message: "Not authenticated" } };
-    const { error } = await db
-      .from("hiking_groups")
-      .update(params)
+    const { error } = await supabase
+      .from("hiking_group")
+      .update(params as any)
       .eq("id", groupId);
     if (!error) fetchMyGroups();
     return { error };
