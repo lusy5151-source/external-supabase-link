@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { X } from "lucide-react";
 import { useOnboarding } from "@/contexts/OnboardingContext";
 
 interface OnboardingStep {
@@ -8,82 +7,50 @@ interface OnboardingStep {
   route: string;
   title: string;
   description: string;
+  buttonLabel: string;
+  spotlightShape: "rect" | "circle";
 }
 
 const steps: OnboardingStep[] = [
-  // 🏠 홈 탭 (Steps 1-4)
   {
-    route: "/",
-    targetSelector: '[data-onboarding="upcoming-schedule"]',
-    title: "등산 계획을 확인하세요 📅",
-    description: "예정된 등산 일정이 홈 화면에 바로 표시돼요",
+    route: "/auth",
+    targetSelector: '[data-onboarding="guest-browse"]',
+    title: "먼저 둘러봐도 괜찮아요",
+    description:
+      "로그인 없이 산 탐색과 홈을 자유롭게 둘러볼 수 있어요. 정상 인증과 기록은 로그인 후 이용 가능해요.",
+    buttonLabel: "다음 →",
+    spotlightShape: "rect",
   },
   {
     route: "/",
-    targetSelector: '[data-onboarding="summit-claim"]',
-    title: "정상을 인증하세요 🏔",
-    description: "산 정상에서 인증하면 리더보드에 이름이 올라가요!",
+    targetSelector: '[data-onboarding="fab-summit"]',
+    title: "올랐으면 인증까지!",
+    description:
+      "언제 어디서든 이 버튼 하나로 정상 인증을 바로 시작할 수 있어요. GPS 또는 정상석 사진으로 인증 가능해요.",
+    buttonLabel: "다음 →",
+    spotlightShape: "circle",
   },
   {
     route: "/",
-    targetSelector: '[data-onboarding="progress-ring"]',
-    title: "100대 명산 완등에 도전하세요 🎯",
-    description: "완등한 산을 기록하고 목표를 향해 나아가세요",
+    targetSelector: '[data-onboarding="tab-records"]',
+    title: "등산 기록을 남겨보세요",
+    description:
+      "산 이름과 날짜만 입력하면 빠르게 일지를 저장할 수 있어요. 완성된 기록은 예쁜 공유 카드로 SNS에 자랑해보세요!",
+    buttonLabel: "다음 →",
+    spotlightShape: "circle",
   },
   {
     route: "/",
-    targetSelector: '[data-onboarding="badge-gallery"]',
-    title: "업적을 모아보세요 🏆",
-    description: "등산하면서 다양한 챌린지와 업적을 달성해보세요",
-  },
-  // 🏔 산 탭 (Steps 5-6)
-  {
-    route: "/mountains",
-    targetSelector: '[data-onboarding="mountain-map"]',
-    title: "산을 지도에서 찾아보세요 🗺",
-    description: "140개의 산을 지도에서 한눈에 확인할 수 있어요",
-  },
-  {
-    route: "/mountains",
-    targetSelector: '[data-onboarding="mountain-filter"]',
-    title: "완등한 산을 관리하세요 ✅",
-    description: "완등, 미등으로 나눠서 나만의 등산 기록을 관리해요",
-  },
-  // 📔 등산일지 탭 (Steps 7-8)
-  {
-    route: "/records",
-    targetSelector: '[data-onboarding="journal-feed"]',
-    title: "등산 일지를 작성하세요 📔",
-    description: "등산 후 사진과 함께 소중한 기록을 남겨보세요",
-  },
-  {
-    route: "/records",
-    targetSelector: '[data-onboarding="journal-create"]',
-    title: "나만의 등산 기록 작성 ✍️",
-    description: "코스, 날씨, 사진, 메모를 함께 기록할 수 있어요",
-  },
-  // 🚩 순위 탭 (Step 9)
-  {
-    route: "/leaderboard",
-    targetSelector: '[data-onboarding="leaderboard"]',
-    title: "정상 정복 순위를 확인하세요 🥇",
-    description: "가장 많은 정상을 정복한 등산왕은 누구일까요?",
-  },
-  // 📅 계획 탭 (Step 10)
-  {
-    route: "/plans",
-    targetSelector: '[data-onboarding="plan-create"]',
-    title: "등산 계획을 세워보세요 📅",
-    description: "친구들과 함께 등산 일정을 만들고 공유할 수 있어요",
-  },
-  // 👥 친구 탭 (Step 11)
-  {
-    route: "/social",
-    targetSelector: '[data-onboarding="social-tabs"]',
-    title: "친구와 함께 걸어요 👥",
-    description: "친구를 추가하고 산악회를 만들어 함께 등산해요",
+    targetSelector: '[data-onboarding="tab-records"]',
+    title: "도전하고 업적을 모아보세요",
+    description:
+      "100대 명산 완등, 거리 챌린지 등 다양한 목표에 도전해보세요. 달성할 때마다 특별한 업적 배지를 받을 수 있어요.",
+    buttonLabel: "시작하기",
+    spotlightShape: "circle",
   },
 ];
+
+const TOTAL = steps.length;
 
 interface Rect {
   top: number;
@@ -92,129 +59,106 @@ interface Rect {
   height: number;
 }
 
-const TOTAL_STEPS = steps.length;
-
 const OnboardingTutorial = () => {
   const { isOnboarding, finishOnboarding } = useOnboarding();
   const [visible, setVisible] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
+  const [step, setStep] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
-  const [tooltipPos, setTooltipPos] = useState<{
-    top: number;
-    left: number;
-    arrowLeft: number;
-    arrowDir: "up" | "down";
-  }>({ top: 0, left: 0, arrowLeft: 50, arrowDir: "up" });
   const [fading, setFading] = useState(false);
   const [ready, setReady] = useState(false);
-  const rafRef = useRef<number>(0);
+  const rafRef = useRef(0);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     if (isOnboarding) {
-      const t = setTimeout(() => setVisible(true), 1000);
+      const t = setTimeout(() => setVisible(true), 600);
       return () => clearTimeout(t);
+    } else {
+      setVisible(false);
     }
   }, [isOnboarding]);
 
   const dismiss = useCallback(() => {
     setVisible(false);
     finishOnboarding();
-    navigate("/");
-  }, [navigate, finishOnboarding]);
+    if (location.pathname !== "/") navigate("/");
+  }, [finishOnboarding, navigate, location.pathname]);
 
-  const isFinal = currentStep >= TOTAL_STEPS;
+  const current = step < TOTAL ? steps[step] : null;
+  const isCircle = current?.spotlightShape === "circle";
 
   const measure = useCallback(() => {
-    if (isFinal || !visible) return;
-    const el = document.querySelector(steps[currentStep].targetSelector);
+    if (!current || !visible) return;
+    const el = document.querySelector(current.targetSelector);
     if (!el) {
       setRect(null);
       return;
     }
     const r = el.getBoundingClientRect();
-    const pad = 6;
-    const sr: Rect = {
-      top: r.top - pad,
-      left: r.left - pad,
-      width: r.width + pad * 2,
-      height: r.height + pad * 2,
-    };
-    setRect(sr);
+    if (isCircle) {
+      const size = Math.max(r.width, r.height) + 16;
+      setRect({
+        top: r.top + r.height / 2 - size / 2,
+        left: r.left + r.width / 2 - size / 2,
+        width: size,
+        height: size,
+      });
+    } else {
+      const pad = 6;
+      setRect({
+        top: r.top - pad,
+        left: r.left - pad,
+        width: r.width + pad * 2,
+        height: r.height + pad * 2,
+      });
+    }
+  }, [current, visible, isCircle]);
 
-    const tw = Math.min(300, window.innerWidth - 32);
-    const th = 148;
-    const bannerHeight = 52;
-    const topSafe = bannerHeight + 12;
-    const bottomSafe = 16;
-    const gap = 14;
-    const spaceBelow = window.innerHeight - r.bottom - bottomSafe;
-    const spaceAbove = r.top - topSafe;
-
-    let tTop = spaceBelow >= th + gap
-      ? sr.top + sr.height + gap
-      : sr.top - th - gap;
-
-    const arrowDir: "up" | "down" =
-      spaceBelow >= th + gap || spaceBelow >= spaceAbove ? "up" : "down";
-
-    tTop = Math.max(topSafe, Math.min(tTop, window.innerHeight - th - bottomSafe));
-
-    const cx = sr.left + sr.width / 2;
-    let tLeft = Math.max(16, Math.min(cx - tw / 2, window.innerWidth - tw - 16));
-    const arrowLeft = Math.max(20, Math.min(cx - tLeft, tw - 20));
-
-    setTooltipPos({ top: tTop, left: tLeft, arrowLeft, arrowDir });
-  }, [currentStep, isFinal, visible]);
-
-  // Navigate to correct route
+  // Route navigation
   useEffect(() => {
-    if (!visible || isFinal) return;
-    const step = steps[currentStep];
-    if (location.pathname !== step.route) {
+    if (!visible || !current) return;
+    if (location.pathname !== current.route) {
       setReady(false);
-      navigate(step.route);
+      navigate(current.route);
     } else {
       setReady(false);
       const t = setTimeout(() => setReady(true), 300);
       return () => clearTimeout(t);
     }
-  }, [visible, currentStep, isFinal]);
+  }, [visible, step, current?.route]);
 
-  // After route change, wait for elements
+  // Wait for route change
   useEffect(() => {
-    if (!visible || isFinal) return;
-    const step = steps[currentStep];
-    if (location.pathname === step.route && !ready) {
+    if (!visible || !current) return;
+    if (location.pathname === current.route && !ready) {
       const t = setTimeout(() => setReady(true), 500);
       return () => clearTimeout(t);
     }
-  }, [location.pathname, visible, currentStep, isFinal, ready]);
+  }, [location.pathname, visible, step, ready]);
 
-  // Measure when ready — poll until element appears (handles lazy routes)
+  // Measure when ready
   useEffect(() => {
-    if (!ready || !visible || isFinal) {
+    if (!ready || !visible || !current) {
       setRect(null);
       return;
     }
     let cancelled = false;
     let attempts = 0;
-    const maxAttempts = 20; // up to ~4 seconds
-
     const tryFind = () => {
       if (cancelled) return;
-      const el = document.querySelector(steps[currentStep].targetSelector);
+      const el = document.querySelector(current.targetSelector);
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
-        setTimeout(() => { if (!cancelled) measure(); }, 450);
-      } else if (attempts < maxAttempts) {
+        setTimeout(() => {
+          if (!cancelled) measure();
+        }, 350);
+      } else if (attempts < 20) {
         attempts++;
         setTimeout(tryFind, 200);
       }
     };
     tryFind();
-
     const onScroll = () => {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(measure);
@@ -227,209 +171,160 @@ const OnboardingTutorial = () => {
       window.removeEventListener("resize", onScroll);
       cancelAnimationFrame(rafRef.current);
     };
-  }, [ready, visible, currentStep, isFinal, measure]);
+  }, [ready, visible, step, measure]);
 
   const goNext = useCallback(() => {
+    if (step >= TOTAL - 1) {
+      dismiss();
+      return;
+    }
     setFading(true);
     setTimeout(() => {
-      setCurrentStep((s) => s + 1);
+      setStep((s) => s + 1);
       setReady(false);
       setFading(false);
     }, 200);
-  }, []);
+  }, [step, dismiss]);
 
-  if (!visible) return null;
+  if (!visible || !current) return null;
+
+  // Tooltip position: above or below the target
+  const tooltipW = 280;
+  let tooltipStyle: React.CSSProperties = {
+    width: tooltipW,
+    left: Math.max(16, Math.min((rect ? rect.left + rect.width / 2 : window.innerWidth / 2) - tooltipW / 2, window.innerWidth - tooltipW - 16)),
+  };
+  if (rect) {
+    const spaceAbove = rect.top;
+    const spaceBelow = window.innerHeight - rect.top - rect.height;
+    if (step === 0) {
+      // below the button
+      tooltipStyle.top = rect.top + rect.height + 14;
+    } else {
+      // above the element
+      tooltipStyle.bottom = window.innerHeight - rect.top + 14;
+    }
+  } else {
+    tooltipStyle.top = "50%";
+  }
+
+  // SVG mask for spotlight
+  const renderOverlay = () => {
+    if (!rect) {
+      return (
+        <div
+          className="fixed inset-0 z-[9998]"
+          style={{ background: "rgba(0,0,0,0.6)" }}
+        />
+      );
+    }
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    return (
+      <svg className="fixed inset-0 z-[9998]" width={vw} height={vh} style={{ display: "block" }}>
+        <defs>
+          <mask id="onboarding-mask">
+            <rect x="0" y="0" width={vw} height={vh} fill="white" />
+            {isCircle ? (
+              <circle
+                cx={rect.left + rect.width / 2}
+                cy={rect.top + rect.height / 2}
+                r={rect.width / 2}
+                fill="black"
+              />
+            ) : (
+              <rect
+                x={rect.left}
+                y={rect.top}
+                width={rect.width}
+                height={rect.height}
+                rx={10}
+                fill="black"
+              />
+            )}
+          </mask>
+        </defs>
+        <rect
+          x="0" y="0" width={vw} height={vh}
+          fill="rgba(0,0,0,0.6)"
+          mask="url(#onboarding-mask)"
+        />
+      </svg>
+    );
+  };
 
   return (
     <>
-      {/* Dark overlay — only when no spotlight or final */}
-      {(!rect || isFinal) && (
-        <div
-          className="fixed inset-0 z-[9998]"
-          style={{ backgroundColor: "rgba(0,0,0,0.25)" }}
-        />
-      )}
+      {renderOverlay()}
 
-      {/* Spotlight */}
-      {rect && !isFinal && (
-        <div
-          className="fixed z-[9999] transition-all duration-300 ease-out"
-          style={{
-            top: rect.top,
-            left: rect.left,
-            width: rect.width,
-            height: rect.height,
-            borderRadius: 12,
-            border: "2px solid #C7D66D",
-            boxShadow: "0 0 0 9999px rgba(0,0,0,0.25)",
-            backgroundColor: "transparent",
-            pointerEvents: "none",
-          }}
-        />
-      )}
-
-      {/* Top banner */}
-      {!isFinal && (
-        <div
-          className="fixed top-0 left-0 right-0 z-[10002] flex items-center justify-center py-3 px-4"
-          style={{ backgroundColor: "#2F403A" }}
-        >
-          <p className="text-sm text-white font-medium text-center">
-            완등 사용법을 알아볼까요? 👆 화면을 탭해서 둘러보세요
-          </p>
-        </div>
-      )}
-
-      {/* Skip + counter */}
-      {!isFinal && (
-        <div className="fixed z-[10003] flex items-center gap-3" style={{ top: 52, right: 16 }}>
-          <span
-            className="text-sm font-semibold tabular-nums"
-            style={{ color: "rgba(255,255,255,0.9)" }}
-          >
-            {currentStep + 1}/{TOTAL_STEPS}
-          </span>
-          <button
-            onClick={dismiss}
-            className="flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium transition-colors backdrop-blur-sm"
-            style={{
-              color: "rgba(255,255,255,0.9)",
-              backgroundColor: "rgba(0,0,0,0.3)",
-            }}
-          >
-            건너뛰기 <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
+      {/* Skip button */}
+      <button
+        onClick={dismiss}
+        className="fixed z-[10003]"
+        style={{ top: 16, right: 16, fontSize: 12, color: "rgba(255,255,255,0.8)" }}
+      >
+        건너뛰기
+      </button>
 
       {/* Tooltip */}
-      {!isFinal && rect && (
+      <div
+        className={`fixed z-[10001] transition-all duration-200 ${fading ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}
+        style={tooltipStyle}
+      >
         <div
-          className={`fixed z-[10001] transition-all duration-200 ${
-            fading ? "opacity-0 scale-95" : "opacity-100 scale-100"
-          }`}
           style={{
-            top:
-              tooltipPos.arrowDir === "up" ? tooltipPos.top : undefined,
-            bottom:
-              tooltipPos.arrowDir === "down"
-                ? window.innerHeight - tooltipPos.top
-                : undefined,
-            left: tooltipPos.left,
-            width: Math.min(300, window.innerWidth - 32),
+            background: "#FFFFFF",
+            borderRadius: "var(--border-radius-lg, 16px)",
+            padding: "16px 18px",
           }}
         >
-          {tooltipPos.arrowDir === "up" && (
-            <div
-              className="absolute -top-2 w-4 h-4 rotate-45"
-              style={{
-                left: tooltipPos.arrowLeft - 8,
-                borderRadius: 2,
-                backgroundColor: "#FFFFFF",
-              }}
-            />
-          )}
-          <div
-            className="p-5 shadow-2xl"
+          <h3 style={{ fontSize: 15, fontWeight: 500, color: "hsl(var(--foreground))" }}>
+            {current.title}
+          </h3>
+          <p
             style={{
-              backgroundColor: "#FFFFFF",
-              borderRadius: 12,
+              fontSize: 13,
+              color: "hsl(var(--color-text-secondary, var(--muted-foreground)))",
+              lineHeight: 1.6,
+              marginTop: 6,
             }}
           >
-            <h3
-              className="text-[15px] mb-1"
-              style={{ fontWeight: 500, color: "#2F403A" }}
-            >
-              {steps[currentStep].title}
-            </h3>
-            <p
-              className="leading-relaxed"
-              style={{ fontSize: 13, color: "#666666" }}
-            >
-              {steps[currentStep].description}
-            </p>
-            <div className="mt-4 flex items-center justify-between">
-              <div className="flex gap-1.5">
-                {Array.from({ length: TOTAL_STEPS + 1 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-2 w-2 rounded-full transition-all duration-200"
-                    style={{
-                      backgroundColor:
-                        i === currentStep ? "#C7D66D" : "#E5E7EB",
-                      transform:
-                        i === currentStep ? "scale(1.3)" : "scale(1)",
-                    }}
-                  />
-                ))}
-              </div>
-              <button
-                onClick={goNext}
-                className="rounded-full px-5 py-2 text-sm font-bold transition-all hover:opacity-90 active:scale-95"
-                style={{ backgroundColor: "#C7D66D", color: "#2F403A" }}
-              >
-                다음
-              </button>
-            </div>
-          </div>
-          {tooltipPos.arrowDir === "down" && (
-            <div
-              className="absolute -bottom-2 w-4 h-4 rotate-45"
-              style={{
-                left: tooltipPos.arrowLeft - 8,
-                borderRadius: 2,
-                backgroundColor: "#FFFFFF",
-              }}
-            />
-          )}
-        </div>
-      )}
+            {current.description}
+          </p>
 
-      {/* Final screen */}
-      {isFinal && (
-        <div className="fixed inset-0 z-[10001] flex items-center justify-center px-8">
-          <div
-            className={`max-w-sm w-full text-center shadow-2xl transition-all duration-300 ${
-              fading ? "opacity-0 scale-90" : "opacity-100 scale-100"
-            }`}
+          {/* Dots */}
+          <div className="flex justify-center gap-1.5 mt-4">
+            {Array.from({ length: TOTAL }).map((_, i) => (
+              <div
+                key={i}
+                className="rounded-full transition-all"
+                style={{
+                  width: 6,
+                  height: 6,
+                  background:
+                    i === step
+                      ? "#639922"
+                      : "hsl(var(--color-border-tertiary, var(--border)))",
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Action button */}
+          <button
+            onClick={goNext}
+            className="w-full font-medium text-white mt-3"
             style={{
-              backgroundColor: "#FFFFFF",
-              borderRadius: 24,
-              padding: 32,
+              height: 44,
+              background: "#639922",
+              borderRadius: "var(--border-radius-md, 12px)",
+              fontSize: 14,
             }}
           >
-            <div className="text-5xl mb-4">🏔</div>
-            <h2
-              className="text-xl mb-2"
-              style={{ fontWeight: 500, color: "#2F403A" }}
-            >
-              이제 시작할 준비가 됐어요! 🏔
-            </h2>
-            <p className="text-sm mb-6" style={{ color: "#666666" }}>
-              완등과 함께 나만의 등산 기록을 시작해볼까요?
-            </p>
-            <button
-              onClick={dismiss}
-              className="w-full rounded-2xl px-6 py-3.5 text-base font-bold transition-all hover:opacity-90 active:scale-95"
-              style={{ backgroundColor: "#C7D66D", color: "#2F403A" }}
-            >
-              시작하기
-            </button>
-            <div className="flex justify-center gap-1.5 mt-5">
-              {Array.from({ length: TOTAL_STEPS + 1 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-2 w-2 rounded-full"
-                  style={{
-                    backgroundColor:
-                      i === TOTAL_STEPS ? "#C7D66D" : "#E5E7EB",
-                  }}
-                />
-              ))}
-            </div>
-          </div>
+            {current.buttonLabel}
+          </button>
         </div>
-      )}
+      </div>
     </>
   );
 };

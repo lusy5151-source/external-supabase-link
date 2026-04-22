@@ -77,6 +77,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <Link
           to="/summit-claim"
           onClick={handleFabClick}
+          data-onboarding="fab-summit"
           className="absolute left-1/2 flex flex-col items-center"
           style={{ transform: "translateX(-50%)", top: -8 }}
         >
@@ -117,6 +118,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 key={to}
                 to={to}
                 onClick={(e) => handleNavClick(e, to)}
+                data-onboarding={label === "기록" ? "tab-records" : undefined}
                 className="flex flex-col items-center justify-center gap-0.5 transition-colors"
                 style={{ minWidth: 44, minHeight: 44 }}
               >
