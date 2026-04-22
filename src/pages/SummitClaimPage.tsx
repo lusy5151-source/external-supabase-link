@@ -326,7 +326,7 @@ export default function SummitClaimPage() {
         } else {
           // Check if any active challenge was updated (progress increased)
           const activeSummitCh = userCh.find(
-            (uc) => !uc.completed && uc.challenge && (uc.challenge as any).goal_type === "summit_count"
+            (uc) => !uc.completed && uc.challenge && (uc.challenge as any).goal_type === "mountain"
           );
           if (activeSummitCh) {
             sonnerToast.success(`정상 인증 완료! 챌린지 진행 중 🎯 ${activeSummitCh.progress}/${(activeSummitCh.challenge as any)?.goal_value ?? "?"}`);

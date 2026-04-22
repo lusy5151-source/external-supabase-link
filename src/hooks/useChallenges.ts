@@ -87,18 +87,21 @@ export function useChallenges() {
   }, [user]);
 
   /**
-   * Compute progress for a given goal_type using the user's hiking journals.
+   * Compute progress for a given goal_type.
+   * Summit-based types use summitClaims, journal-based types use journals.
    * Returns -1 when goal type is not auto-trackable here (skip update).
    */
-  const computeProgress = (goalType: string, journals: any[]): number => {
+  const computeProgress = (goalType: string, journals: any[], summitClaims: any[]): number => {
     switch (goalType) {
       case "mountain":
-        return new Set(journals.map((j: any) => j.mountain_id).filter(Boolean)).size;
+        // Total summit claim count (not distinct)
+        return summitClaims.length;
       case "count":
+        return summitClaims.length;
       case "monthly_count": {
         const now = new Date();
-        return journals.filter((j: any) => {
-          const d = new Date(j.hiked_at);
+        return summitClaims.filter((sc: any) => {
+          const d = new Date(sc.claimed_at);
           return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
         }).length;
       }
@@ -116,8 +119,12 @@ export function useChallenges() {
     if (!user) return;
     setLoading(true);
     try {
-      const { data: journals } = await supabase.from("hiking_journals").select("*").eq("user_id", user.id);
+      const [{ data: journals }, { data: claims }] = await Promise.all([
+        supabase.from("hiking_journals").select("*").eq("user_id", user.id),
+        (supabase as any).from("summit_claims").select("*").eq("user_id", user.id),
+      ]);
       const allJournals = journals || [];
+      const allClaims = claims || [];
 
       // Get all of this user's user_challenges + their challenges
       const { data: ucRows } = await supabase
@@ -167,7 +174,7 @@ export function useChallenges() {
 
           if (joinedItem.uc.completed) continue;
 
-          const newProgress = computeProgress(rung.goal_type, allJournals);
+          const newProgress = computeProgress(rung.goal_type, allJournals, allClaims);
           if (newProgress < 0) continue;
 
           const completed = newProgress >= (rung.goal_value || 1);
