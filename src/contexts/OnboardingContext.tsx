@@ -14,7 +14,7 @@ const OnboardingContext = createContext<OnboardingContextType>({
 
 export const useOnboarding = () => useContext(OnboardingContext);
 
-const ONBOARDING_KEY = "onboarding_completed";
+const ONBOARDING_KEY = "tutorial_seen";
 
 export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
   const [isOnboarding, setIsOnboarding] = useState(() => {
