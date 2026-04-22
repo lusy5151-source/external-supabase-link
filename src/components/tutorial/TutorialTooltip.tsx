@@ -38,6 +38,15 @@ const TOOLTIP_STYLES = `
   0%, 100% { border-color: transparent; }
   50% { border-color: #639922; }
 }
+@keyframes tutorial-bounce-in {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  70% { transform: translate(-50%, -50%) scale(1.05); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes tutorial-confetti-fall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(120px) rotate(360deg); opacity: 0; }
+}
 `;
 
 const WelcomeChips = () => (
@@ -82,27 +91,109 @@ const ShareCardPreview = () => (
   <div className="flex flex-col items-center mt-3">
     <div
       style={{
-        width: 120,
-        height: 70,
-        borderRadius: 10,
+        width: 120, height: 70, borderRadius: 10,
         background: "linear-gradient(135deg, #D4EDDA, #A8D5B5)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       }}
     >
       <span style={{ fontSize: 12, color: "white", fontWeight: 500 }}>북한산</span>
       <span style={{ fontSize: 10, color: "white" }}>2026.04.22</span>
     </div>
-    <span
-      style={{
-        fontSize: 10,
-        color: "hsl(var(--color-text-tertiary, var(--muted-foreground)))",
-        marginTop: 4,
-      }}
-    >
+    <span style={{ fontSize: 10, color: "hsl(var(--color-text-tertiary, var(--muted-foreground)))", marginTop: 4 }}>
       공유 카드 미리보기
+    </span>
+  </div>
+);
+
+const PlanChecklist = () => (
+  <div style={{ marginTop: 8, fontSize: 12, color: "#3B6D11", lineHeight: 1.8 }}>
+    <p>✓ 산 선택 &amp; 날짜 설정</p>
+    <p>✓ 친구 초대 코드 생성</p>
+    <p>✓ 공개 설정으로 새 동료 모집</p>
+  </div>
+);
+
+const ClubChips = () => (
+  <div className="flex gap-2 mt-3">
+    <span style={{ background: "#EAF3DE", color: "#27500A", borderRadius: 20, fontSize: 12, padding: "5px 12px" }}>
+      👥 산악회 만들기
+    </span>
+    <span style={{
+      background: "hsl(var(--color-background-secondary, var(--secondary)))",
+      color: "hsl(var(--color-text-secondary, var(--muted-foreground)))",
+      borderRadius: 20, fontSize: 12, padding: "5px 12px",
+    }}>
+      🔍 산악회 찾기
+    </span>
+  </div>
+);
+
+const MiniLeaderboard = () => (
+  <div style={{ marginTop: 10 }}>
+    {[
+      { medal: "🥇", name: "산바람", count: "47회" },
+      { medal: "🥈", name: "숲속여행자", count: "32회" },
+      { medal: "🥉", name: "초보동산리", count: "8회" },
+    ].map((r, i) => (
+      <div
+        key={i}
+        style={{
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          fontSize: 11, color: "hsl(var(--color-text-secondary, var(--muted-foreground)))",
+          padding: "3px 0",
+          borderBottom: i < 2 ? "0.5px solid hsl(var(--color-border-tertiary, var(--border)))" : "none",
+        }}
+      >
+        <span>{r.medal} {r.name}</span>
+        <span>{r.count}</span>
+      </div>
+    ))}
+  </div>
+);
+
+const CONFETTI_COLORS = ["#639922", "#C0DD97", "#EF9F27", "#E24B4A"];
+
+const FinalCelebration = () => (
+  <div className="flex flex-col items-center mt-3 relative overflow-hidden" style={{ minHeight: 90 }}>
+    {/* Confetti */}
+    {Array.from({ length: 12 }).map((_, i) => (
+      <div
+        key={i}
+        style={{
+          position: "absolute",
+          top: -10,
+          left: `${8 + (i * 7.5)}%`,
+          width: 6, height: 6,
+          borderRadius: "50%",
+          background: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+          animation: `tutorial-confetti-fall ${1.2 + (i % 3) * 0.3}s ease-in ${i * 0.1}s infinite`,
+          pointerEvents: "none",
+        }}
+      />
+    ))}
+    {/* Badge previews */}
+    <div className="flex gap-4">
+      <div className="flex flex-col items-center">
+        <div style={{
+          width: 40, height: 40, borderRadius: "50%", background: "#EAF3DE",
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
+        }}>⛰️</div>
+        <span style={{ fontSize: 10, marginTop: 4, color: "hsl(var(--foreground))" }}>첫 발자국</span>
+      </div>
+      <div className="flex flex-col items-center">
+        <div style={{
+          width: 40, height: 40, borderRadius: "50%",
+          background: "hsl(var(--color-background-secondary, var(--secondary)))",
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, opacity: 0.4,
+        }}>🔒</div>
+        <span style={{ fontSize: 10, marginTop: 4, color: "hsl(var(--color-text-tertiary, var(--muted-foreground)))" }}>???</span>
+      </div>
+    </div>
+    <span style={{
+      fontSize: 11, marginTop: 6,
+      color: "hsl(var(--color-text-tertiary, var(--muted-foreground)))", textAlign: "center",
+    }}>
+      등산 기록을 쌓으면 잠긴 업적이 열려요
     </span>
   </div>
 );
@@ -148,7 +239,10 @@ const TutorialTooltip = ({
     style.top = "50%";
     style.left = "50%";
     style.transform = "translate(-50%, -50%)";
-    if (noSpotlight) {
+    if (noSpotlight && customContent === "final-celebration") {
+      style.animation = "tutorial-bounce-in 0.4s ease-out forwards";
+      style.maxWidth = 320;
+    } else if (noSpotlight) {
       style.animation = "tutorial-slide-up 0.3s ease-out forwards";
     }
   } else {
@@ -267,6 +361,10 @@ const TutorialTooltip = ({
           {customContent === "welcome-chips" && <WelcomeChips />}
           {customContent === "fab-methods" && !interactionComplete && <FabMethods />}
           {customContent === "share-card" && <ShareCardPreview />}
+          {customContent === "plan-checklist" && !interactionComplete && <PlanChecklist />}
+          {customContent === "club-chips" && <ClubChips />}
+          {customContent === "mini-leaderboard" && <MiniLeaderboard />}
+          {customContent === "final-celebration" && <FinalCelebration />}
 
           {/* Action button or task hint */}
           {interactive && !interactionComplete ? (
@@ -298,10 +396,11 @@ const TutorialTooltip = ({
               onClick={onNext}
               className="w-full font-medium text-white"
               style={{
-                height: 44,
+                height: customContent === "final-celebration" ? 48 : 44,
                 background: "#639922",
                 borderRadius: 10,
-                fontSize: 14,
+                fontSize: customContent === "final-celebration" ? 15 : 14,
+                fontWeight: customContent === "final-celebration" ? 500 : undefined,
                 marginTop: 14,
               }}
             >

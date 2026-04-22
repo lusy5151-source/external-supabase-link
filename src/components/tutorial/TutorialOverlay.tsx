@@ -73,8 +73,8 @@ const TutorialOverlay = () => {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as Element;
       if (target.closest(current.interactiveSelector!)) {
-        // For FAB step, intercept navigation
-        if (current.customContent === "fab-methods") {
+        // Intercept navigation for FAB and plan-create steps
+        if (current.customContent === "fab-methods" || current.customContent === "plan-checklist") {
           e.preventDefault();
           e.stopPropagation();
           e.stopImmediatePropagation();
@@ -104,13 +104,17 @@ const TutorialOverlay = () => {
   }, [interactionComplete, nextStep, current?.customContent]);
 
   const handleNext = useCallback(() => {
+    const isLastStep = currentStep >= steps.length - 1;
     setFading(true);
     setTimeout(() => {
       nextStep();
       setReady(false);
       setFading(false);
+      if (isLastStep && location.pathname !== "/") {
+        navigate("/");
+      }
     }, 200);
-  }, [nextStep]);
+  }, [nextStep, currentStep, steps.length, navigate, location.pathname]);
 
   const handleSkip = useCallback(() => {
     setVisible(false);
