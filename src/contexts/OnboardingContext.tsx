@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+// Backward-compatible wrapper — delegates to TutorialContext
+import { createContext, useContext, type ReactNode } from "react";
+import { useTutorial } from "./TutorialContext";
 
 interface OnboardingContextType {
   isOnboarding: boolean;
@@ -12,25 +14,16 @@ const OnboardingContext = createContext<OnboardingContextType>({
   finishOnboarding: () => {},
 });
 
-export const useOnboarding = () => useContext(OnboardingContext);
-
-const ONBOARDING_KEY = "tutorial_seen";
+export const useOnboarding = () => {
+  const tutorial = useTutorial();
+  return {
+    isOnboarding: tutorial.isTutorialActive,
+    startOnboarding: tutorial.restartTutorial,
+    finishOnboarding: tutorial.completeTutorial,
+  };
+};
 
 export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
-  const [isOnboarding, setIsOnboarding] = useState(() => {
-    return !localStorage.getItem(ONBOARDING_KEY);
-  });
-
-  const startOnboarding = useCallback(() => setIsOnboarding(true), []);
-
-  const finishOnboarding = useCallback(() => {
-    setIsOnboarding(false);
-    localStorage.setItem(ONBOARDING_KEY, "true");
-  }, []);
-
-  return (
-    <OnboardingContext.Provider value={{ isOnboarding, startOnboarding, finishOnboarding }}>
-      {children}
-    </OnboardingContext.Provider>
-  );
+  // No-op wrapper — TutorialProvider handles state now
+  return <>{children}</>;
 };

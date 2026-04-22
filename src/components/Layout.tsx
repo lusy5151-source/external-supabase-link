@@ -5,7 +5,7 @@ import { useGuest } from "@/contexts/GuestContext";
 import { useUnreadChat } from "@/contexts/UnreadChatContext";
 import NotificationCenter from "@/components/NotificationCenter";
 import MountainMascot from "@/components/MountainMascot";
-import OnboardingTutorial from "@/components/OnboardingTutorial";
+import TutorialOverlay from "@/components/tutorial/TutorialOverlay";
 import { LogIn } from "lucide-react";
 
 const navItems = [
@@ -63,7 +63,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       </header>
 
       <main className="container mx-auto px-5 py-7">{children}</main>
-      <OnboardingTutorial />
+      <TutorialOverlay />
 
       {/* Bottom Navigation Bar */}
       <nav
