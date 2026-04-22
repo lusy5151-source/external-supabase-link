@@ -112,7 +112,7 @@ const TutorialSpotlight = ({ targetSelector, isCircle, visible, onRectChange, gl
       <div
         style={{
           zIndex: 9998,
-          pointerEvents: "auto",
+          pointerEvents: "none",
           boxShadow: "0 0 0 9999px rgba(0,0,0,0.65)",
           borderRadius: isCircle ? "50%" : 12,
           width: rect.width,
