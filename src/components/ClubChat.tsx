@@ -32,7 +32,7 @@ interface Props {
 
 export default function ClubChat({ clubId, onUnreadCount }: Props) {
   const { user } = useAuth();
-  const { increment: incrementUnread } = useUnreadChat();
+  const { reset: resetUnread } = useUnreadChat();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
