@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/context/StoreContext";
@@ -8,7 +9,7 @@ import { useAchievementStore } from "@/hooks/useAchievementStore";
 import { useGearStore } from "@/hooks/useGearStore";
 import { useSharedCompletionCounts } from "@/hooks/useSharedCompletionCounts";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ChevronRight, Users, Mountain, BookOpen, Settings, LogOut } from "lucide-react";
+import { ChevronRight, Users, Mountain, BookOpen, Settings, LogOut, HelpCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useUnreadChat } from "@/contexts/UnreadChatContext";
 import {
