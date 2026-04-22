@@ -389,7 +389,7 @@ const ChallengePage = () => {
                     className={`rounded-2xl border bg-card p-4 shadow-sm ${
                       g.allComplete ? "border-primary/40 bg-primary/5" : "border-border"
                     }`}
-                  >
+                   >
                     <div className="flex items-start gap-3">
                       <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${meta.bg}`}>
                         <Icon className={`h-5 w-5 ${meta.color}`} />
@@ -406,9 +406,31 @@ const ChallengePage = () => {
                               LV{ch.level}
                             </span>
                           )}
-                          <span className="text-[10px] text-muted-foreground ml-auto">
+                          <span className="text-[10px] text-muted-foreground ml-auto mr-1">
                             {g.completedCount}/{g.ladder.length} 단계
                           </span>
+                          {!g.allComplete && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button className="p-1 -mr-1 rounded-md hover:bg-muted transition" aria-label="더보기">
+                                  <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="min-w-[140px]">
+                                <DropdownMenuItem
+                                  onClick={() => setAbandonTarget({
+                                    key: g.key,
+                                    challengeName: meta.label,
+                                    progress,
+                                    goal,
+                                  })}
+                                  style={{ color: "#E24B4A", fontSize: 14 }}
+                                >
+                                  챌린지 포기하기
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </div>
 
                         <p className="text-xs text-foreground mt-1.5 font-medium truncate">
