@@ -32,8 +32,14 @@ interface Props {
 
 export default function ClubChat({ clubId, onUnreadCount }: Props) {
   const { user } = useAuth();
-  const { reset: resetUnread } = useUnreadChat();
+  const { reset: resetUnread, setActiveClubId } = useUnreadChat();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+
+  // Mark this club as actively viewed (suppresses notifications)
+  useEffect(() => {
+    setActiveClubId(clubId);
+    return () => setActiveClubId(null);
+  }, [clubId, setActiveClubId]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
