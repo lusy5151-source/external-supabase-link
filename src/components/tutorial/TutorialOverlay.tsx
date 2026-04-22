@@ -104,13 +104,17 @@ const TutorialOverlay = () => {
   }, [interactionComplete, nextStep, current?.customContent]);
 
   const handleNext = useCallback(() => {
+    const isLastStep = currentStep >= steps.length - 1;
     setFading(true);
     setTimeout(() => {
       nextStep();
       setReady(false);
       setFading(false);
+      if (isLastStep && location.pathname !== "/") {
+        navigate("/");
+      }
     }, 200);
-  }, [nextStep]);
+  }, [nextStep, currentStep, steps.length, navigate, location.pathname]);
 
   const handleSkip = useCallback(() => {
     setVisible(false);
