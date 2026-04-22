@@ -3,14 +3,14 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 
 const Records = lazy(() => import("@/pages/Records"));
 const LeaderboardPage = lazy(() => import("@/pages/LeaderboardPage"));
-const ChallengePage = lazy(() => import("@/pages/ChallengePage"));
+const MyChallengePage = lazy(() => import("@/pages/MyChallengePage"));
 
 type Segment = "journal" | "ranking" | "challenge";
 
 const segments: { key: Segment; label: string }[] = [
   { key: "journal", label: "일지" },
   { key: "ranking", label: "순위" },
-  { key: "challenge", label: "챌린지" },
+  { key: "challenge", label: "나의 도전" },
 ];
 
 const RecordsHub = () => {
@@ -41,7 +41,7 @@ const RecordsHub = () => {
         <Suspense fallback={<LoadingSpinner />}>
           {active === "journal" && <Records />}
           {active === "ranking" && <LeaderboardPage />}
-          {active === "challenge" && <ChallengePage />}
+          {active === "challenge" && <MyChallengePage />}
         </Suspense>
       </div>
     </div>

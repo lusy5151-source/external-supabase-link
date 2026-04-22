@@ -8,7 +8,7 @@ import { useAchievementStore } from "@/hooks/useAchievementStore";
 import { useGearStore } from "@/hooks/useGearStore";
 import { useSharedCompletionCounts } from "@/hooks/useSharedCompletionCounts";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ChevronRight, Users, Trophy, Mountain, BookOpen, Settings, LogOut } from "lucide-react";
+import { ChevronRight, Users, Mountain, BookOpen, Settings, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useUnreadChat } from "@/contexts/UnreadChatContext";
 import {
@@ -26,7 +26,7 @@ const menuItems = [
   { label: "프로필 설정", to: "/profile", icon: Settings },
   { label: "친구 관리", to: "/social", icon: Users },
   { label: "산악회", to: "/social", icon: Users },
-  { label: "업적", to: "/achievements", icon: Trophy },
+  
   { label: "등산 계획", to: "/plans", icon: BookOpen },
 ];
 
