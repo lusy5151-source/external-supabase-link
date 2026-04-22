@@ -194,6 +194,16 @@ const MyPage = () => {
                 onCheckedChange={(checked) => setChatNotifEnabled(checked)}
               />
             </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-foreground">친구 활동 알림</p>
+                <p className="text-xs text-muted-foreground mt-0.5">정상 인증, 등산일지 작성 알림</p>
+              </div>
+              <Switch
+                checked={isFriendActivityEnabled}
+                onCheckedChange={(checked) => setFriendActivityEnabled(checked)}
+              />
+            </div>
           </div>
         )}
 
