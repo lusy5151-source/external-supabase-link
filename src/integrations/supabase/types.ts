@@ -2737,7 +2737,7 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
     }
     Enums: {
       challenge_list_type: "forestry_100" | "bac_100"
