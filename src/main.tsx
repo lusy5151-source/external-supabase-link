@@ -1,7 +1,15 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
+import { supabase } from "@/integrations/supabase/client";
 import "./index.css";
+
+supabase.auth.getSession().then(({ data, error }) => {
+  if (error || !data.session) {
+    supabase.auth.signOut();
+    localStorage.removeItem("supabase.auth.token");
+  }
+});
 
 // Prevent SW registration in preview/iframe contexts
 const isInIframe = (() => {
