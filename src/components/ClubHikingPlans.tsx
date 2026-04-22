@@ -8,8 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Calendar, MapPin, Plus, UserCheck, Clock, Mountain } from "lucide-react";
+import { Calendar, MapPin, Plus, UserCheck, Clock, Mountain, X } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -84,7 +83,7 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
     if (error) {
       toast({ title: "계획 생성에 실패했습니다", variant: "destructive" });
     } else {
-      toast({ title: "등산 계획이 생성되었습니다!" });
+      toast({ title: "계획이 생성되었어요!" });
       setShowCreate(false);
       setTrailName(""); setPlannedDate(""); setStartTime(""); setMeetingLocation(""); setNotes("");
       fetchPlans();
@@ -127,9 +126,18 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
       {loading ? (
         <p className="text-xs text-muted-foreground text-center py-4">불러오는 중...</p>
       ) : plans.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
-          <Calendar className="mx-auto h-6 w-6 text-muted-foreground/30 mb-2" />
-          <p className="text-xs text-muted-foreground">아직 등산 계획이 없습니다</p>
+        <div className="rounded-2xl p-4 text-center" style={{ background: "#EAF3DE", borderRadius: "var(--border-radius-lg)" }}>
+          <p style={{ fontSize: 13, color: "#3B6D11", fontWeight: 500 }}>아직 등산 계획이 없어요</p>
+          <p style={{ fontSize: 12, color: "#3B6D11", marginTop: 4 }}>멤버들과 함께 첫 계획을 만들어볼까요?</p>
+          {isMember && (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="mt-3 inline-flex items-center gap-1 font-medium text-white"
+              style={{ background: "#639922", borderRadius: "var(--border-radius-md)", padding: "8px 20px", fontSize: 13 }}
+            >
+              <Plus className="h-3.5 w-3.5" /> 계획 만들기
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
@@ -184,51 +192,72 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
         </div>
       )}
 
-      {/* Create Plan Dialog */}
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="rounded-2xl">
-          <DialogHeader><DialogTitle>새 등산 계획</DialogTitle></DialogHeader>
-          <div className="space-y-3 mt-2">
-            <div>
-              <Label className="text-xs">산 선택</Label>
-              <select
-                value={mountainId}
-                onChange={(e) => setMountainId(Number(e.target.value))}
-                className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm"
-              >
-                {mountains.map((m) => (
-                  <option key={m.id} value={m.id}>{m.nameKo}</option>
-                ))}
-              </select>
+      {/* Create Plan Bottom Sheet */}
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setShowCreate(false)}>
+          <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.4)" }} />
+          <div
+            className="relative w-full max-w-lg bg-white dark:bg-card overflow-y-auto"
+            style={{ borderRadius: "20px 20px 0 0", padding: "20px 20px 40px", maxHeight: "85vh" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Handle */}
+            <div className="flex justify-center mb-4">
+              <div style={{ width: 40, height: 4, borderRadius: 2, background: "hsl(var(--color-border-secondary))" }} />
             </div>
-            <div>
-              <Label className="text-xs">코스/정상</Label>
-              <Input value={trailName} onChange={(e) => setTrailName(e.target.value)} placeholder="예: 백운대 코스" className="mt-1 rounded-xl" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
+
+            {/* X button */}
+            <button
+              onClick={() => setShowCreate(false)}
+              className="absolute top-4 right-4 rounded-full p-1 text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <h2 style={{ fontSize: 16, fontWeight: 500 }} className="text-foreground mb-4">등산 계획 만들기</h2>
+
+            <div className="space-y-3">
               <div>
-                <Label className="text-xs">날짜</Label>
-                <Input type="date" value={plannedDate} onChange={(e) => setPlannedDate(e.target.value)} className="mt-1 rounded-xl" />
+                <Label className="text-xs">산 선택</Label>
+                <select
+                  value={mountainId}
+                  onChange={(e) => setMountainId(Number(e.target.value))}
+                  className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm"
+                >
+                  {mountains.map((m) => (
+                    <option key={m.id} value={m.id}>{m.nameKo}</option>
+                  ))}
+                </select>
               </div>
               <div>
-                <Label className="text-xs">시간</Label>
-                <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="mt-1 rounded-xl" />
+                <Label className="text-xs">코스/정상</Label>
+                <Input value={trailName} onChange={(e) => setTrailName(e.target.value)} placeholder="예: 백운대 코스" className="mt-1 rounded-xl" />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">날짜</Label>
+                  <Input type="date" value={plannedDate} onChange={(e) => setPlannedDate(e.target.value)} className="mt-1 rounded-xl" />
+                </div>
+                <div>
+                  <Label className="text-xs">시간</Label>
+                  <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="mt-1 rounded-xl" />
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs">모임 장소</Label>
+                <Input value={meetingLocation} onChange={(e) => setMeetingLocation(e.target.value)} placeholder="예: 북한산성 입구" className="mt-1 rounded-xl" />
+              </div>
+              <div>
+                <Label className="text-xs">설명</Label>
+                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="등산 계획 설명" className="mt-1 rounded-xl" rows={2} />
+              </div>
+              <Button onClick={handleCreate} disabled={creating || !plannedDate} className="w-full rounded-xl" style={{ background: "#639922" }}>
+                {creating ? "생성 중..." : "계획 만들기"}
+              </Button>
             </div>
-            <div>
-              <Label className="text-xs">모임 장소</Label>
-              <Input value={meetingLocation} onChange={(e) => setMeetingLocation(e.target.value)} placeholder="예: 북한산성 입구" className="mt-1 rounded-xl" />
-            </div>
-            <div>
-              <Label className="text-xs">설명</Label>
-              <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="등산 계획 설명" className="mt-1 rounded-xl" rows={2} />
-            </div>
-            <Button onClick={handleCreate} disabled={creating || !plannedDate} className="w-full rounded-xl">
-              {creating ? "생성 중..." : "계획 만들기"}
-            </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
     </section>
   );
 }
