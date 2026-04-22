@@ -199,6 +199,27 @@ export function usePlanNotifications() {
     []
   );
 
+  const sendNow = useCallback(
+    (title: string, body: string, icon?: string) => {
+      if (!isGranted) {
+        toast.error("알림 권한이 없어요. 마이 → 알림 설정에서 허용해주세요");
+        return Promise.resolve(false);
+      }
+      return Promise.resolve(
+        sendLocalNotification(title, body, icon ? { icon } : undefined)
+      ).then((n) => {
+        if (n) {
+          toast.success("알림이 성공적으로 전송됐어요! ✅");
+          return true;
+        } else {
+          toast.error("알림 전송에 실패했어요");
+          return false;
+        }
+      });
+    },
+    [isGranted, sendLocalNotification]
+  );
+
   return {
     schedulePlan,
     unschedulePlan,
@@ -207,5 +228,6 @@ export function usePlanNotifications() {
     setDdayEnabled,
     isPlanScheduled,
     testNotification,
+    sendNow,
   };
 }
