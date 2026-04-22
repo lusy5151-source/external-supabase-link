@@ -113,7 +113,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ features: [], error: error.message }), {
+    console.error("get-trails internal error", error);
+    return new Response(JSON.stringify({ features: [], error: "서비스 오류가 발생했습니다" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
