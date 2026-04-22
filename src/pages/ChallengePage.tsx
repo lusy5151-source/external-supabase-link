@@ -21,6 +21,7 @@ import {
   Users,
   ChevronRight,
   RefreshCw,
+  MoreVertical,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -35,6 +36,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import ChallengeCompletionModal, { CompletionInfo } from "@/components/ChallengeCompletionModal";
 
 // Category visual meta
