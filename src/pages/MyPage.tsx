@@ -26,7 +26,7 @@ const menuItems = [
   { label: "프로필 설정", to: "/profile", icon: Settings },
   { label: "친구 관리", to: "/social", icon: Users },
   { label: "산악회", to: "/social", icon: Users },
-  { label: "업적", to: "/achievements", icon: Trophy },
+  
   { label: "등산 계획", to: "/plans", icon: BookOpen },
 ];
 
