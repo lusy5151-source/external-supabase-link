@@ -113,10 +113,11 @@ const AuthPage = () => {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
+      const redirectTo = `${window.location.origin}/auth/callback`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: "https://external-spark.lovable.app",
+          redirectTo,
         },
       });
       if (error) throw error;
