@@ -396,10 +396,11 @@ const TutorialTooltip = ({
               onClick={onNext}
               className="w-full font-medium text-white"
               style={{
-                height: 44,
+                height: customContent === "final-celebration" ? 48 : 44,
                 background: "#639922",
                 borderRadius: 10,
-                fontSize: 14,
+                fontSize: customContent === "final-celebration" ? 15 : 14,
+                fontWeight: customContent === "final-celebration" ? 500 : undefined,
                 marginTop: 14,
               }}
             >
