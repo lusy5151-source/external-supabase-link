@@ -40,6 +40,8 @@ const MyPage = () => {
   const sharedCompletions = useSharedCompletionCounts();
   const { earnedCount } = useAchievementStore(records, gearItems, sharedCompletions);
   const { unreadChatCount } = useUnreadChat();
+  const { startOnboarding } = useOnboarding();
+  const nav = useNavigate();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   if (!user) {
