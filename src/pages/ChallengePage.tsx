@@ -480,7 +480,7 @@ const ChallengePage = () => {
               )}
 
               <div className="grid grid-cols-1 gap-2.5">
-                {(joinedGroups.length === 0 ? availableGroups.slice(0, 3) : availableGroups).map((g) => {
+                {availableGroups.map((g) => {
                   const meta = getCategoryMeta(g.key);
                   const Icon = meta.icon;
                   const lv1 = g.ladder.find((c) => c.level === 1) ?? g.ladder[0];
