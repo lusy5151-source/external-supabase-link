@@ -108,15 +108,15 @@ export function usePlanNotifications() {
         }, dMinusOneMs);
       }
 
-      // Schedule D-day notification
-      if (dDayMs > 0 && dDayMs <= MAX_TIMEOUT_MS) {
-        timers.dDay = setTimeout(() => {
-          sendRef.current(
-            `오늘 ${plan.mountainName} 등산 날이에요! 🚩`,
-            "즐거운 등산 되세요 💪\n정상에서 인증 잊지 마세요!"
-          );
-        }, dDayMs);
-      }
+      // Schedule D-day notification — TEST: fires after 10 seconds
+      const TEST_DELAY = 10_000;
+      timers.dDay = setTimeout(() => {
+        sendRef.current(
+          `오늘 ${plan.mountainName} 등산 날이에요! 🚩`,
+          "즐거운 등산 되세요 💪\n정상에서 인증 잊지 마세요!"
+        );
+      }, TEST_DELAY);
+      // Original: if (dDayMs > 0 && dDayMs <= MAX_TIMEOUT_MS) { setTimeout(..., dDayMs); }
 
       if (timers.dMinusOne || timers.dDay) {
         activeTimers.set(plan.id, timers);
@@ -168,6 +168,19 @@ export function usePlanNotifications() {
     return activeTimers.has(planId) || getScheduled().some((e) => e.planId === planId);
   }, []);
 
+  const testNotification = useCallback(
+    (mountainName: string) => {
+      setTimeout(() => {
+        sendRef.current(
+          `오늘 ${mountainName} 등산 날이에요! 🚩`,
+          "즐거운 등산 되세요 💪\n정상에서 인증 잊지 마세요!"
+        );
+      }, 10_000);
+      toast("10초 후 알림이 울립니다 ⏰");
+    },
+    []
+  );
+
   return {
     schedulePlan,
     unschedulePlan,
@@ -175,5 +188,6 @@ export function usePlanNotifications() {
     isDdayEnabled,
     setDdayEnabled,
     isPlanScheduled,
+    testNotification,
   };
 }

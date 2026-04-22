@@ -51,7 +51,7 @@ const PlanDetailPage = () => {
     deletePlan, updatePlanWithHistory, fetchEditHistory,
   } = useHikingPlans();
   const { toast } = useToast();
-  const { isDdayEnabled } = usePlanNotifications();
+  const { isDdayEnabled, testNotification } = usePlanNotifications();
 
   const [plan, setPlan] = useState<HikingPlan | null>(null);
   const [participants, setParticipants] = useState<PlanParticipant[]>([]);
@@ -314,6 +314,15 @@ const PlanDetailPage = () => {
                       <span style={{ fontSize: 11, color: "hsl(var(--muted-foreground))" }}>알림 꺼짐</span>
                     </>
                   )}
+                </button>
+              )}
+              {/* TEST BUTTON — remove after confirming */}
+              {!isPastDate && (
+                <button
+                  onClick={() => testNotification(mountain?.nameKo || "테스트 산")}
+                  className="col-span-2 flex items-center justify-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent/50 transition-colors"
+                >
+                  🔔 알림 테스트
                 </button>
               )}
               {editing ? (
