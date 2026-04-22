@@ -4,7 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Profile = Tables<"profiles">;
-const PROFILE_SELECT = "id, user_id, email, nickname, avatar_url, bio, location, hiking_styles, provider, is_active, created_at, updated_at";
+type SafeProfile = Omit<Profile, "email">;
+const PROFILE_SELECT = "id, user_id, nickname, avatar_url, bio, location, hiking_styles, provider, is_active, created_at, updated_at";
 
 export function useProfile() {
   const { user } = useAuth();
@@ -24,7 +25,7 @@ export function useProfile() {
       .eq("user_id", user.id)
       .single();
 
-    setProfile(data);
+    setProfile(data ? { ...(data as SafeProfile), email: user.email ?? null } : null);
     setLoading(false);
   }, [user]);
 
@@ -47,7 +48,7 @@ export function useProfile() {
       const { toast } = await import("sonner");
       toast.error("저장에 실패했습니다. 다시 시도해주세요.");
     } else if (data) {
-      setProfile(data);
+      setProfile({ ...(data as SafeProfile), email: user.email ?? profile?.email ?? null });
     }
     return { data, error };
   };
