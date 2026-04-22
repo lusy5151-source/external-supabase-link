@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClubChatNotifications } from "@/hooks/useClubChatNotifications";
+import { useFriendActivityNotifications } from "@/hooks/useFriendActivityNotifications";
 
 interface UnreadChatContextType {
   unreadChatCount: number;
@@ -11,6 +12,11 @@ interface UnreadChatContextType {
   setActiveClubId: (id: string | null) => void;
   isChatNotifEnabled: boolean;
   setChatNotifEnabled: (enabled: boolean) => void;
+  // Friend activity
+  friendActivityUnread: number;
+  resetFriendActivityUnread: () => void;
+  isFriendActivityEnabled: boolean;
+  setFriendActivityEnabled: (enabled: boolean) => void;
 }
 
 const UnreadChatContext = createContext<UnreadChatContextType>({
@@ -21,6 +27,10 @@ const UnreadChatContext = createContext<UnreadChatContextType>({
   setActiveClubId: () => {},
   isChatNotifEnabled: true,
   setChatNotifEnabled: () => {},
+  friendActivityUnread: 0,
+  resetFriendActivityUnread: () => {},
+  isFriendActivityEnabled: true,
+  setFriendActivityEnabled: () => {},
 });
 
 export const useUnreadChat = () => useContext(UnreadChatContext);
@@ -29,18 +39,26 @@ export const UnreadChatProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const { user } = useAuth();
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [activeClubId, setActiveClubId] = useState<string | null>(null);
+  const [friendActivityUnread, setFriendActivityUnread] = useState(0);
   const increment = useCallback(() => setUnreadChatCount((c) => c + 1), []);
   const reset = useCallback(() => setUnreadChatCount(0), []);
+  const incrementFriendActivity = useCallback(() => setFriendActivityUnread((c) => c + 1), []);
+  const resetFriendActivityUnread = useCallback(() => setFriendActivityUnread(0), []);
 
-  // Club chat realtime notifications (browser push + badge increment)
+  // Club chat realtime notifications
   const { isChatNotifEnabled, setChatNotifEnabled } = useClubChatNotifications({
     activeClubId,
     onUnread: increment,
   });
 
+  // Friend activity realtime notifications
+  const { isFriendActivityEnabled, setFriendActivityEnabled } = useFriendActivityNotifications({
+    onUnread: incrementFriendActivity,
+  });
+
   // Calculate initial unread count across all clubs
   useEffect(() => {
-    if (!user) { setUnreadChatCount(0); return; }
+    if (!user) { setUnreadChatCount(0); setFriendActivityUnread(0); return; }
 
     const calcAllUnread = async () => {
       const { data: memberships } = await supabase
@@ -91,6 +109,10 @@ export const UnreadChatProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setActiveClubId,
       isChatNotifEnabled,
       setChatNotifEnabled,
+      friendActivityUnread,
+      resetFriendActivityUnread,
+      isFriendActivityEnabled,
+      setFriendActivityEnabled,
     }}>
       {children}
     </UnreadChatContext.Provider>

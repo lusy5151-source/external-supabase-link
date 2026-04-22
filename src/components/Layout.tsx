@@ -22,7 +22,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isGuest, showLoginPrompt } = useGuest();
-  const { unreadChatCount } = useUnreadChat();
+  const { unreadChatCount, friendActivityUnread } = useUnreadChat();
 
   const restrictedTabs = new Set(["/records", "/my"]);
 
@@ -142,7 +142,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                         : "hsl(var(--color-text-tertiary))",
                     }}
                   />
-                  {label === "마이" && unreadChatCount > 0 && (
+                  {label === "마이" && (unreadChatCount > 0 || friendActivityUnread > 0) && (
                     <span
                       className="absolute top-0 right-0 rounded-full"
                       style={{ width: 8, height: 8, background: "#E24B4A" }}
