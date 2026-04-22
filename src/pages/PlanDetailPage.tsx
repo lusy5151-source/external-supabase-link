@@ -51,6 +51,7 @@ const PlanDetailPage = () => {
     deletePlan, updatePlanWithHistory, fetchEditHistory,
   } = useHikingPlans();
   const { toast } = useToast();
+  const { isDdayEnabled } = usePlanNotifications();
 
   const [plan, setPlan] = useState<HikingPlan | null>(null);
   const [participants, setParticipants] = useState<PlanParticipant[]>([]);
