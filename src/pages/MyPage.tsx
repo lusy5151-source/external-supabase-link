@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { useUnreadChat } from "@/contexts/UnreadChatContext";
 import { useTutorial } from "@/contexts/TutorialContext";
 import { usePushNotification } from "@/hooks/usePushNotification";
+import { usePlanNotifications } from "@/hooks/usePlanNotifications";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -43,8 +45,10 @@ const MyPage = () => {
   const { unreadChatCount } = useUnreadChat();
   const { restartTutorial } = useTutorial();
   const { isGranted, isDenied, requestPermission } = usePushNotification();
+  const { isDdayEnabled, setDdayEnabled } = usePlanNotifications();
   const nav = useNavigate();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showNotifSettings, setShowNotifSettings] = useState(false);
 
   if (!user) {
     return (
@@ -138,7 +142,7 @@ const MyPage = () => {
             } else if (!isGranted) {
               requestPermission();
             } else {
-              toast("알림이 이미 활성화되어 있어요 🔔");
+              setShowNotifSettings((p) => !p);
             }
           }}
           className="flex w-full items-center gap-3 px-4"
@@ -154,7 +158,34 @@ const MyPage = () => {
           >
             {isGranted ? "켜짐" : "꺼짐"}
           </span>
-          <ChevronRight style={{ width: 16, height: 16, color: "hsl(var(--muted-foreground) / 0.4)" }} />
+          <ChevronRight
+            style={{
+              width: 16, height: 16,
+              color: "hsl(var(--muted-foreground) / 0.4)",
+              transform: showNotifSettings ? "rotate(90deg)" : "rotate(0deg)",
+              transition: "transform 0.2s ease",
+            }}
+          />
+        </button>
+
+        {/* Notification sub-settings */}
+        {showNotifSettings && isGranted && (
+          <div
+            className="px-4 py-3"
+            style={{ borderTop: "0.5px solid hsl(var(--border))", background: "hsl(var(--muted) / 0.3)" }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-foreground">등산 계획 D-day 알림</p>
+                <p className="text-xs text-muted-foreground mt-0.5">D-1 저녁, 당일 아침 알림</p>
+              </div>
+              <Switch
+                checked={isDdayEnabled}
+                onCheckedChange={(checked) => setDdayEnabled(checked)}
+              />
+            </div>
+          </div>
+        )
         </button>
 
         {/* 튜토리얼 다시 보기 */}
