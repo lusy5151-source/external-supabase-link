@@ -119,8 +119,12 @@ export function useChallenges() {
     if (!user) return;
     setLoading(true);
     try {
-      const { data: journals } = await supabase.from("hiking_journals").select("*").eq("user_id", user.id);
+      const [{ data: journals }, { data: claims }] = await Promise.all([
+        supabase.from("hiking_journals").select("*").eq("user_id", user.id),
+        (supabase as any).from("summit_claims").select("*").eq("user_id", user.id),
+      ]);
       const allJournals = journals || [];
+      const allClaims = claims || [];
 
       // Get all of this user's user_challenges + their challenges
       const { data: ucRows } = await supabase
