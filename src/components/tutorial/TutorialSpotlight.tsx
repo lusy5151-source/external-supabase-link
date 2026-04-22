@@ -70,6 +70,7 @@ const TutorialSpotlight = ({ targetSelector, isCircle, visible, onRectChange, gl
 
     attemptsRef.current = 0;
     let cancelled = false;
+    let intervalId: ReturnType<typeof setInterval>;
 
     const tryFind = () => {
       if (cancelled) return;
@@ -77,11 +78,17 @@ const TutorialSpotlight = ({ targetSelector, isCircle, visible, onRectChange, gl
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
         setTimeout(() => {
-          if (!cancelled) measure();
-        }, 300);
-      } else if (attemptsRef.current < 25) {
+          if (!cancelled) {
+            measure();
+            // Keep re-measuring periodically in case layout shifts
+            intervalId = setInterval(() => {
+              if (!cancelled) measure();
+            }, 500);
+          }
+        }, 350);
+      } else if (attemptsRef.current < 40) {
         attemptsRef.current++;
-        setTimeout(tryFind, 150);
+        setTimeout(tryFind, 200);
       }
     };
     tryFind();
@@ -94,6 +101,7 @@ const TutorialSpotlight = ({ targetSelector, isCircle, visible, onRectChange, gl
     window.addEventListener("resize", onScroll);
     return () => {
       cancelled = true;
+      clearInterval(intervalId);
       window.removeEventListener("scroll", onScroll, true);
       window.removeEventListener("resize", onScroll);
       cancelAnimationFrame(rafRef.current);

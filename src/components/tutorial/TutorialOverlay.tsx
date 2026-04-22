@@ -56,11 +56,11 @@ const TutorialOverlay = () => {
     }
   }, [visible, currentStep, current?.route]);
 
-  // Wait for route change to complete
+  // Wait for route change to complete (lazy pages need more time)
   useEffect(() => {
     if (!visible || !current) return;
     if (location.pathname === current.route && !ready) {
-      const t = setTimeout(() => setReady(true), 500);
+      const t = setTimeout(() => setReady(true), 800);
       return () => clearTimeout(t);
     }
   }, [location.pathname, visible, currentStep, ready]);
