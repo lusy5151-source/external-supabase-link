@@ -54,6 +54,7 @@ export function useSummits(mountainId?: number) {
 
   const claimSummit = async (summitId: string, userLat: number, userLng: number, photoFile: File, groupId?: string, fallbackSummitData?: any, aiVerified?: boolean | null, aiConfidence?: number | null) => {
     if (!user) return { success: false, error: "로그인이 필요합니다" };
+    console.log("Summit claim user_id:", user.id);
     let actualSummitId = summitId;
     if (summitId.startsWith("fallback-") && fallbackSummitData) {
       const { data: inserted, error: insertErr } = await (supabase as any).from("summits").insert(fallbackSummitData as any).select("id").single();
