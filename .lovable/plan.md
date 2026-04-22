@@ -1,48 +1,144 @@
 
+목표
+- `/kakao/callback` 페이지의 현재 코드를 확인하고, 카카오 리다이렉트 시 `code` 파라미터를 추출해 `kakao-auth` Edge Function에 전달하는지 검증합니다.
+- 현재 구현이 이미 요구사항을 충족하는지 판단하고, 필요할 경우 적용할 수정 범위를 정리합니다.
 
-# 완등횟수 챌린지 카운트 수정 계획
+현재 `/kakao/callback` 핵심 코드
+```tsx
+const handleKakaoLogin = async () => {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+  const errorParam = params.get("error");
 
-## 문제 요약
+  if (errorParam) {
+    setError("카카오 로그인이 취소되었습니다.");
+    setTimeout(() => navigate("/auth"), 2000);
+    return;
+  }
 
-완등횟수 챌린지가 정상 인증 후에도 progress가 0으로 유지되는 문제입니다. 원인은 3군데에 있습니다.
+  if (!code) {
+    setError("인증 코드가 없습니다.");
+    setTimeout(() => navigate("/auth"), 2000);
+    return;
+  }
 
----
+  const redirectUri = `${window.location.origin}/kakao/callback`;
 
-## 문제 1: DB 트리거가 중복 제거 카운트 사용
+  const { data, error: fnError } = await supabase.functions.invoke("kakao-auth", {
+    body: { code, redirect_uri: redirectUri },
+  });
 
-현재 `update_challenge_progress_on_summit` 트리거에서 `goal_type = 'mountain'`일 때 `COUNT(DISTINCT mountain_id)`를 사용합니다. 사용자가 원하는 것은 **정상 인증 건수(총 횟수)**이므로 `COUNT(*)`로 변경해야 합니다.
+  if (data?.session) {
+    await supabase.auth.setSession({
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+    });
+    navigate("/");
+  }
+};
+```
 
-### 변경
-- Supabase migration으로 트리거 함수 수정
-- `goal_type = 'mountain'` 분기에서 `COUNT(DISTINCT mountain_id)` → `COUNT(*)`
+검증 결과
+- `/kakao/callback` 페이지는 이미 존재합니다.
+  - 파일: `src/pages/KakaoCallback.tsx`
+  - 라우트 등록: `src/App.tsx`의 `path="/kakao/callback"`
+- URL에서 `code` 파라미터를 추출하고 있습니다.
+  - 현재 코드: `const code = params.get("code")`
+  - 사용 방식은 요청하신 `new URLSearchParams(window.location.search).get('code')`와 동일합니다.
+- `kakao-auth` Edge Function에 `code`와 `redirect_uri`를 전달하고 있습니다.
+  - 현재 코드: `body: { code, redirect_uri: \`${window.location.origin}/kakao/callback\` }`
+- 응답의 `session`으로 Supabase 세션을 설정하고 있습니다.
+  - 현재 코드: `await supabase.auth.setSession(...)`
+- 세션 설정 후 홈(`/`)으로 이동하고 있습니다.
+  - 현재 코드: `navigate("/")`
 
-## 문제 2: 프론트엔드 recalculateProgress가 hiking_journals 기반
+판단
+- 현재 `/kakao/callback` 구현은 요청하신 로그인 흐름의 핵심 요구사항을 이미 충족합니다.
+- 즉, “코드가 없거나 잘못된 상태”는 아닙니다.
+- 차이점은 한 가지입니다:
+  - 현재는 `fetch(${import.meta.env.VITE_SUPABASE_URL}/functions/v1/kakao-auth, ...)` 대신
+  - `supabase.functions.invoke("kakao-auth", ...)`를 사용하고 있습니다.
+- 이 방식은 이 프로젝트 스택에서는 정상적이고 권장되는 호출 방식입니다. 기능상으로는 동일한 목적을 수행합니다.
 
-`useChallenges.ts`의 `recalculateProgress`와 `computeProgress`가 `hiking_journals` 테이블을 기준으로 progress를 계산합니다. 정상 인증은 `summit_claims` 테이블에 저장되므로, summit 관련 goal_type은 `summit_claims`에서 카운트해야 합니다.
+추가로 확인된 서버측 토큰 교환 흐름
+- `supabase/functions/kakao-auth/index.ts`에서 다음 흐름이 구현되어 있습니다.
+  1. 요청 body에서 `code`, `redirect_uri` 수신
+  2. `https://kauth.kakao.com/oauth/token`으로 authorization code 교환
+  3. `https://kapi.kakao.com/v2/user/me`로 사용자 정보 조회
+  4. Supabase 사용자 생성/갱신
+  5. 세션 생성 후 `{ session }` 반환
+- 따라서 “클라이언트가 code를 넘기지 않는다”는 문제는 코드상 확인되지 않았습니다.
 
-### 변경 (src/hooks/useChallenges.ts)
-- `recalculateProgress`에서 `summit_claims`도 함께 조회
-- `computeProgress` 함수에서 `goal_type = 'mountain'`일 때 `summit_claims` 건수 사용
-- `hiking_journals` 기반 로직은 journal 관련 goal_type에만 적용
+승인 후 적용 가능한 정리 작업
+1. `src/pages/KakaoCallback.tsx`를 요청하신 형태와 최대한 동일하게 맞춥니다.
+   - `supabase.functions.invoke(...)`를 직접 `fetch(...)` 호출로 교체
+   - `apikey: import.meta.env.VITE_SUPABASE_ANON_KEY` 헤더 추가
+2. 에러 처리 로직은 유지합니다.
+   - `error`, `code 없음`, `session 없음`, fetch 실패 모두 사용자 메시지 표시
+3. 필요하면 응답 검증을 조금 더 강화합니다.
+   - `response.ok` 확인
+   - `session.access_token`, `session.refresh_token` 존재 여부 확인
+4. 카카오 콜백 페이지 동작은 그대로 유지합니다.
+   - 세션 설정 성공 시 `/` 이동
 
-## 문제 3: SummitClaimPage 토스트가 잘못된 goal_type 필터링
+기술 세부사항
+- 현재 파일:
+  - `src/pages/KakaoCallback.tsx`
+  - `src/App.tsx`
+  - `supabase/functions/kakao-auth/index.ts`
+- 현재 구현은 아래 두 조건을 이미 만족합니다.
+  - `code`를 URL query에서 추출
+  - `redirect_uri`를 `${window.location.origin}/kakao/callback`으로 동적 전달
+- 미충족 항목은 “정확히 fetch 형태로 쓰고 싶은지” 여부뿐입니다. 기능적 문제로 보이지는 않습니다.
 
-`SummitClaimPage.tsx` 329번 줄에서 `goal_type === "summit_count"`로 필터하지만, 실제 DB의 goal_type은 `"mountain"`입니다.
+승인 후 실제 수정안
+```tsx
+useEffect(() => {
+  const handleKakaoLogin = async () => {
+    const code = new URLSearchParams(window.location.search).get("code");
 
-### 변경 (src/pages/SummitClaimPage.tsx)
-- 329번 줄: `"summit_count"` → `"mountain"`
+    if (!code) {
+      setError("인증 코드가 없습니다.");
+      setTimeout(() => navigate("/auth"), 2000);
+      return;
+    }
 
----
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/kakao-auth`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            code,
+            redirect_uri: `${window.location.origin}/kakao/callback`,
+          }),
+        }
+      );
 
-## 기존 데이터 동기화
+      const { session, error } = await response.json();
 
-migration에서 기존 사용자들의 `user_challenges` progress를 `summit_claims` 기준으로 재계산하는 UPDATE 포함.
+      if (!response.ok || error || !session) {
+        setError(error || "카카오 로그인 처리 중 오류가 발생했습니다.");
+        setTimeout(() => navigate("/auth"), 2000);
+        return;
+      }
 
-## 파일 변경 목록
+      await supabase.auth.setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+      });
 
-| 파일 | 변경 내용 |
-|------|-----------|
-| Supabase migration (신규) | 트리거 함수에서 `COUNT(*)` 사용 + 기존 데이터 동기화 |
-| `src/hooks/useChallenges.ts` | `recalculateProgress`가 `summit_claims` 기반으로 계산 |
-| `src/pages/SummitClaimPage.tsx` | goal_type 필터 `"summit_count"` → `"mountain"` |
+      navigate("/");
+    } catch {
+      setError("카카오 로그인 처리 중 오류가 발생했습니다.");
+      setTimeout(() => navigate("/auth"), 2000);
+    }
+  };
 
+  handleKakaoLogin();
+}, [navigate]);
+```
