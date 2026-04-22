@@ -285,6 +285,7 @@ const ChallengePage = () => {
   };
 
 
+  if (!user) {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
         <Target className="h-12 w-12 text-muted-foreground" />
@@ -294,6 +295,7 @@ const ChallengePage = () => {
         </Link>
       </div>
     );
+  }
 
   return (
     <div className="space-y-6 pb-24">
