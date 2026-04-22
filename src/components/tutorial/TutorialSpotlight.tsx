@@ -12,16 +12,21 @@ interface TutorialSpotlightProps {
   isCircle: boolean;
   visible: boolean;
   onRectChange: (rect: Rect | null) => void;
+  glowRing?: boolean;
 }
 
-const PULSE_STYLE = `
+const SPOTLIGHT_STYLES = `
 @keyframes tutorial-pulse {
   0%, 100% { transform: translate(-50%, -50%) scale(1); }
   50% { transform: translate(-50%, -50%) scale(1.08); }
 }
+@keyframes tutorial-glow {
+  0% { width: 80px; height: 80px; opacity: 0.6; }
+  100% { width: 110px; height: 110px; opacity: 0; }
+}
 `;
 
-const TutorialSpotlight = ({ targetSelector, isCircle, visible, onRectChange }: TutorialSpotlightProps) => {
+const TutorialSpotlight = ({ targetSelector, isCircle, visible, onRectChange, glowRing }: TutorialSpotlightProps) => {
   const [rect, setRect] = useState<Rect | null>(null);
   const rafRef = useRef(0);
   const attemptsRef = useRef(0);
@@ -99,18 +104,16 @@ const TutorialSpotlight = ({ targetSelector, isCircle, visible, onRectChange }: 
 
   const cx = rect.left + rect.width / 2;
   const cy = rect.top + rect.height / 2;
-  const radius = isCircle ? rect.width / 2 : Math.max(rect.width, rect.height) / 2 + 4;
 
   return (
     <>
-      <style>{PULSE_STYLE}</style>
-      {/* Dark backdrop with circular cutout via box-shadow */}
+      <style>{SPOTLIGHT_STYLES}</style>
+      {/* Dark backdrop with cutout via box-shadow */}
       <div
-        className="fixed inset-0"
         style={{
           zIndex: 9998,
           pointerEvents: "auto",
-          boxShadow: `0 0 0 9999px rgba(0,0,0,0.65)`,
+          boxShadow: "0 0 0 9999px rgba(0,0,0,0.65)",
           borderRadius: isCircle ? "50%" : 12,
           width: rect.width,
           height: rect.height,
@@ -126,8 +129,8 @@ const TutorialSpotlight = ({ targetSelector, isCircle, visible, onRectChange }: 
           zIndex: 9999,
           left: cx,
           top: cy,
-          width: isCircle ? rect.width + 4 : rect.width + 4,
-          height: isCircle ? rect.height + 4 : rect.height + 4,
+          width: rect.width + 4,
+          height: rect.height + 4,
           transform: "translate(-50%, -50%)",
           borderRadius: isCircle ? "50%" : 14,
           border: "2px solid rgba(255,255,255,0.5)",
@@ -135,6 +138,24 @@ const TutorialSpotlight = ({ targetSelector, isCircle, visible, onRectChange }: 
           animation: "tutorial-pulse 1.5s ease-in-out infinite",
         }}
       />
+      {/* Extra glow ring for FAB step */}
+      {glowRing && isCircle && (
+        <div
+          style={{
+            position: "fixed",
+            zIndex: 9999,
+            left: cx,
+            top: cy,
+            width: 80,
+            height: 80,
+            transform: "translate(-50%, -50%)",
+            borderRadius: "50%",
+            background: "rgba(99,153,34,0.4)",
+            pointerEvents: "none",
+            animation: "tutorial-glow 1.5s ease-out infinite",
+          }}
+        />
+      )}
     </>
   );
 };

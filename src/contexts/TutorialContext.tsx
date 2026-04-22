@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 
 const STORAGE_KEY = "wandeung_tutorial_v2";
 
@@ -8,7 +8,17 @@ export interface TutorialStep {
   title: string;
   description: string;
   buttonLabel: string;
-  spotlightShape: "rect" | "circle";
+  spotlightShape: "rect" | "circle" | "none";
+  /** If true, step waits for user interaction instead of showing button */
+  interactive?: boolean;
+  /** Selector user must tap to complete interactive step */
+  interactiveSelector?: string;
+  /** Task hint text shown instead of button */
+  taskHint?: string;
+  /** Custom content type for rendering extras in tooltip */
+  customContent?: "welcome-chips" | "filter-interactive" | "fab-methods" | "share-card";
+  /** Whether to show extra glow ring animation on spotlight */
+  glowRing?: boolean;
 }
 
 interface TutorialContextType {
@@ -38,41 +48,56 @@ const TutorialContext = createContext<TutorialContextType>({
 export const useTutorial = () => useContext(TutorialContext);
 
 export const tutorialSteps: TutorialStep[] = [
+  // Step 1 — Welcome / Guest mode
   {
-    route: "/auth",
-    targetSelector: '[data-onboarding="guest-browse"]',
-    title: "먼저 둘러봐도 괜찮아요",
+    route: "/",
+    targetSelector: "",
+    title: "완등에 오신 걸 환영해요! 🏔",
     description:
-      "로그인 없이 산 탐색과 홈을 자유롭게 둘러볼 수 있어요. 정상 인증과 기록은 로그인 후 이용 가능해요.",
+      "로그인 없이도 산 탐색과 홈을 자유롭게 둘러볼 수 있어요.\n정상 인증과 기록 기능은 로그인 후 이용 가능해요.",
     buttonLabel: "다음 →",
-    spotlightShape: "rect",
+    spotlightShape: "none",
+    customContent: "welcome-chips",
   },
+  // Step 2 — Mountain filter (interactive)
+  {
+    route: "/mountains",
+    targetSelector: '[data-onboarding="mountain-filter"]',
+    title: "원하는 산을 쉽게 찾아요",
+    description:
+      "지역, 난이도, 완등 여부로 산을 필터링할 수 있어요.\n아래 필터 중 하나를 직접 눌러보세요!",
+    buttonLabel: "",
+    spotlightShape: "rect",
+    interactive: true,
+    interactiveSelector: '[data-onboarding="mountain-filter"] button',
+    taskHint: "✋ 필터 칩을 하나 탭해보세요",
+    customContent: "filter-interactive",
+  },
+  // Step 3 — FAB summit claim (interactive)
   {
     route: "/",
     targetSelector: '[data-onboarding="fab-summit"]',
-    title: "올랐으면 인증까지!",
+    title: "올랐으면 인증까지! 🚩",
     description:
-      "언제 어디서든 이 버튼 하나로 정상 인증을 바로 시작할 수 있어요. GPS 또는 정상석 사진으로 인증 가능해요.",
-    buttonLabel: "다음 →",
+      "이 버튼 하나로 정상 인증을 바로 시작해요.\nGPS로 현장 인증하거나, 정상석 사진을 AI가 인증해줘요.",
+    buttonLabel: "",
     spotlightShape: "circle",
+    interactive: true,
+    interactiveSelector: '[data-onboarding="fab-summit"]',
+    taskHint: "✋ 인증 버튼을 직접 탭해보세요",
+    customContent: "fab-methods",
+    glowRing: true,
   },
+  // Step 4 — Journal & share card
   {
-    route: "/",
-    targetSelector: '[data-onboarding="tab-records"]',
-    title: "등산 기록을 남겨보세요",
+    route: "/records",
+    targetSelector: '[data-onboarding="journal-create"]',
+    title: "등산 기록을 남겨보세요 📔",
     description:
-      "산 이름과 날짜만 입력하면 빠르게 일지를 저장할 수 있어요. 완성된 기록은 예쁜 공유 카드로 SNS에 자랑해보세요!",
+      "산 이름과 날짜만 입력하면 빠르게 일지 저장 완료!\n완성된 기록은 예쁜 공유 카드로 SNS에 자랑할 수 있어요.",
     buttonLabel: "다음 →",
-    spotlightShape: "circle",
-  },
-  {
-    route: "/",
-    targetSelector: '[data-onboarding="tab-records"]',
-    title: "도전하고 업적을 모아보세요",
-    description:
-      "100대 명산 완등, 거리 챌린지 등 다양한 목표에 도전해보세요. 달성할 때마다 특별한 업적 배지를 받을 수 있어요.",
-    buttonLabel: "시작하기",
-    spotlightShape: "circle",
+    spotlightShape: "rect",
+    customContent: "share-card",
   },
 ];
 
@@ -106,7 +131,6 @@ export const TutorialProvider = ({ children }: { children: ReactNode }) => {
 
   const restartTutorial = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
-    // Also clear old key
     localStorage.removeItem("tutorial_seen");
     setTutorialCompleted(false);
     setCurrentStep(0);
