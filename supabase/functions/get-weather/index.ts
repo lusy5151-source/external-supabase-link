@@ -65,8 +65,9 @@ Deno.serve(async (req) => {
     const data = await response.json();
 
     if (!response.ok) {
+      console.error("get-weather upstream error", { status: response.status, body: data });
       return new Response(
-        JSON.stringify({ error: data.message || "Weather API error" }),
+        JSON.stringify({ error: "날씨 정보를 불러오지 못했습니다" }),
         { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -75,8 +76,9 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
+    console.error("get-weather internal error", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "서비스 오류가 발생했습니다" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

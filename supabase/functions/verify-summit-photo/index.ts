@@ -229,7 +229,7 @@ serve(async (req) => {
         await adminClient.from("ai_verification_attempts").update({ status: "failed", fail_reason: `Gemini ${geminiResponse.status}` }).eq("id", attemptId);
       }
       return new Response(
-        JSON.stringify({ error: "AI 분석에 실패했습니다", details: errText, remaining: remaining - 1, daily_limit: DAILY_LIMIT }),
+        JSON.stringify({ error: "AI 분석에 실패했습니다", remaining: remaining - 1, daily_limit: DAILY_LIMIT }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -287,7 +287,7 @@ serve(async (req) => {
     console.error("verify-summit-photo error:", e);
     return new Response(
       JSON.stringify({
-        error: e instanceof Error ? e.message : "알 수 없는 오류",
+        error: "서비스 오류가 발생했습니다",
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
