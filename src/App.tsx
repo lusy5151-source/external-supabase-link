@@ -16,10 +16,11 @@ import SplashScreen from "@/components/SplashScreen";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import MagazinePopup from "@/components/MagazinePopup";
 import NotFound from "./pages/NotFound";
-import { useState, useCallback, lazy, Suspense } from "react";
+import { useState, useCallback, lazy, Suspense, useEffect } from "react";
 import PageSkeleton from "@/components/PageSkeleton";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
 import { useProfileSync } from "@/hooks/useProfileSync";
+import { supabase } from "@/integrations/supabase/client";
 
 // Eagerly loaded (auth only)
 import AuthPage from "@/pages/AuthPage";
@@ -144,6 +145,19 @@ const AppRoutes = () => {
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
   const handleSplashFinish = useCallback(() => setShowSplash(false), []);
+
+  useEffect(() => {
+    const clearBrokenSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+
+      if (error || !data.session?.user?.id) {
+        await supabase.auth.signOut();
+        localStorage.removeItem("sb-ylcjlzlchinijvyojdbc-auth-token");
+      }
+    };
+
+    clearBrokenSession();
+  }, []);
 
   return (
     <ErrorBoundary fallbackMessage="데이터를 불러오는 중 오류가 발생했습니다.">
