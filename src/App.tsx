@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { GuestProvider, useGuest } from "@/contexts/GuestContext";
 import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import { MountainsProvider } from "@/contexts/MountainsContext";
+import { UnreadChatProvider } from "@/contexts/UnreadChatContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Layout from "@/components/Layout";
 import SplashScreen from "@/components/SplashScreen";
@@ -157,11 +158,13 @@ const App = () => {
               {!showSplash && <MagazinePopup />}
               <BrowserRouter>
                 <GuestProvider>
+                <UnreadChatProvider>
                 <Layout>
                   <ErrorBoundary fallbackMessage="데이터를 불러오는 중 오류가 발생했습니다.">
                     <AppRoutes />
                   </ErrorBoundary>
                 </Layout>
+                </UnreadChatProvider>
                 </GuestProvider>
               </BrowserRouter>
             </StoreProvider>

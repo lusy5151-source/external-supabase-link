@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { useUnreadChat } from "@/contexts/UnreadChatContext";
 
 const typeConfig: Record<string, { icon: any; color: string }> = {
   invitation: { icon: Calendar, color: "text-primary" },
@@ -19,10 +20,12 @@ const NotificationCenter = () => {
   const { notifications, markNotificationRead, deleteNotification } = useHikingPlans();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { unreadChatCount } = useUnreadChat();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
+  const totalBadge = unreadCount + unreadChatCount;
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -51,9 +54,9 @@ const NotificationCenter = () => {
         className="relative rounded-lg p-1.5 text-muted-foreground transition-colors hover:text-primary"
       >
         <Bell className="h-4 w-4" />
-        {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
-            {unreadCount > 9 ? "9+" : unreadCount}
+        {totalBadge > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold text-white" style={{ background: "#E24B4A" }}>
+            {totalBadge > 9 ? "9+" : totalBadge}
           </span>
         )}
       </button>

@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, Compass, ClipboardList, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuest } from "@/contexts/GuestContext";
+import { useUnreadChat } from "@/contexts/UnreadChatContext";
 import NotificationCenter from "@/components/NotificationCenter";
 import MountainMascot from "@/components/MountainMascot";
 import OnboardingTutorial from "@/components/OnboardingTutorial";
@@ -20,6 +21,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isGuest, showLoginPrompt } = useGuest();
+  const { unreadChatCount } = useUnreadChat();
 
   const restrictedTabs = new Set(["/records", "/my"]);
 
@@ -119,7 +121,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 style={{ minWidth: 44, minHeight: 44 }}
               >
                 <div
-                  className="flex items-center justify-center rounded-full transition-colors"
+                  className="relative flex items-center justify-center rounded-full transition-colors"
                   style={{
                     width: 32,
                     height: 32,
@@ -136,6 +138,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                         : "hsl(var(--color-text-tertiary))",
                     }}
                   />
+                  {label === "마이" && unreadChatCount > 0 && (
+                    <span
+                      className="absolute top-0 right-0 rounded-full"
+                      style={{ width: 8, height: 8, background: "#E24B4A" }}
+                    />
+                  )}
                 </div>
                 <span
                   className="font-semibold leading-none"
