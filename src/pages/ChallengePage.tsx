@@ -93,6 +93,8 @@ const ChallengePage = () => {
   const [confirmGroup, setConfirmGroup] = useState<string | null>(null);
   const [completion, setCompletion] = useState<CompletionInfo | null>(null);
   const [prevCompletedIds, setPrevCompletedIds] = useState<Set<string> | null>(null);
+  const [abandonTarget, setAbandonTarget] = useState<{ key: string; challengeName: string; progress: number; goal: number } | null>(null);
+  const [abandoning, setAbandoning] = useState(false);
 
   const load = async () => {
     setLoading(true);
