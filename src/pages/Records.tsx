@@ -37,6 +37,11 @@ const Records = () => {
   const [selectedJournal, setSelectedJournal] = useState<HikingJournal | null>(null);
   const [prefillData, setPrefillData] = useState<{ mountainId?: number; date?: string } | null>(null);
 
+  // Reset friend activity unread badge when viewing feed tab
+  useEffect(() => {
+    if (activeTab === "feed") resetFriendActivityUnread();
+  }, [activeTab, resetFriendActivityUnread]);
+
   // Handle navigation state from summit claim diary prompt
   useEffect(() => {
     const state = location.state as any;
