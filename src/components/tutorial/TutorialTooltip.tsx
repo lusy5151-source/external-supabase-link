@@ -239,7 +239,10 @@ const TutorialTooltip = ({
     style.top = "50%";
     style.left = "50%";
     style.transform = "translate(-50%, -50%)";
-    if (noSpotlight) {
+    if (noSpotlight && customContent === "final-celebration") {
+      style.animation = "tutorial-bounce-in 0.4s ease-out forwards";
+      style.maxWidth = 320;
+    } else if (noSpotlight) {
       style.animation = "tutorial-slide-up 0.3s ease-out forwards";
     }
   } else {
@@ -358,6 +361,10 @@ const TutorialTooltip = ({
           {customContent === "welcome-chips" && <WelcomeChips />}
           {customContent === "fab-methods" && !interactionComplete && <FabMethods />}
           {customContent === "share-card" && <ShareCardPreview />}
+          {customContent === "plan-checklist" && !interactionComplete && <PlanChecklist />}
+          {customContent === "club-chips" && <ClubChips />}
+          {customContent === "mini-leaderboard" && <MiniLeaderboard />}
+          {customContent === "final-celebration" && <FinalCelebration />}
 
           {/* Action button or task hint */}
           {interactive && !interactionComplete ? (
