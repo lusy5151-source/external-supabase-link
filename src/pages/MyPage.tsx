@@ -187,24 +187,6 @@ const MyPage = () => {
           </div>
         )}
 
-        {/* Notification sub-settings - outside the button */}
-        {showNotifSettings && isGranted && (
-          <div
-            className="px-4 py-3"
-            style={{ borderTop: "0.5px solid hsl(var(--border))", background: "hsl(var(--muted) / 0.3)" }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-foreground">등산 계획 D-day 알림</p>
-                <p className="text-xs text-muted-foreground mt-0.5">D-1 저녁, 당일 아침 알림</p>
-              </div>
-              <Switch
-                checked={isDdayEnabled}
-                onCheckedChange={(checked) => setDdayEnabled(checked)}
-              />
-            </div>
-          </div>
-        )
 
         {/* 튜토리얼 다시 보기 */}
         <button
