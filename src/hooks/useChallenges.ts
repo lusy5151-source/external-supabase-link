@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 export interface Challenge { id: string; title: string; description: string | null; type: string; goal_type: string; goal_value: number; start_date: string | null; end_date: string | null; badge_id: string | null; level: number; category: string; category_group?: string | null; badge?: { name: string; image_url: string | null; description: string | null }; }
-export interface UserChallenge { id: string; user_id: string; challenge_id: string; progress: number; completed: boolean; completed_at: string | null; joined_at: string; challenge?: Challenge; }
+export interface UserChallenge { id: string; user_id: string; challenge_id: string; progress: number; completed: boolean; completed_at: string | null; joined_at: string; abandoned_at?: string | null; abandon_reason?: string | null; challenge?: Challenge; }
 const TIER_ORDER = ["bronze", "silver", "gold", "platinum"] as const;
 export type BadgeTier = (typeof TIER_ORDER)[number];
 export function getTierForLevel(level: number): BadgeTier { return TIER_ORDER[Math.min(level - 1, 3)] || "bronze"; }
