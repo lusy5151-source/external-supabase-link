@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.24.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,6 +9,9 @@ const corsHeaders = {
 const VWORLD_API_KEY = Deno.env.get("VWORLD_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const requestSchema = z.object({
+  mountainName: z.string().trim().min(1).max(100).transform((value) => value.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ")),
+});
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -34,14 +38,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { mountainName } = await req.json();
+    const payload = requestSchema.safeParse(await req.json());
 
-    if (!mountainName) {
+    if (!payload.success) {
       return new Response(
-        JSON.stringify({ error: "mountainName is required" }),
+        JSON.stringify({ error: "올바른 산 이름이 필요합니다" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const { mountainName } = payload.data;
 
     if (!VWORLD_API_KEY) {
       return new Response(
