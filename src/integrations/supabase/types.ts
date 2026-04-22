@@ -2336,6 +2336,8 @@ export type Database = {
       }
       user_challenges: {
         Row: {
+          abandon_reason: string | null
+          abandoned_at: string | null
           challenge_id: string
           completed: boolean | null
           completed_at: string | null
@@ -2348,6 +2350,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          abandon_reason?: string | null
+          abandoned_at?: string | null
           challenge_id: string
           completed?: boolean | null
           completed_at?: string | null
@@ -2360,6 +2364,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          abandon_reason?: string | null
+          abandoned_at?: string | null
           challenge_id?: string
           completed?: boolean | null
           completed_at?: string | null
