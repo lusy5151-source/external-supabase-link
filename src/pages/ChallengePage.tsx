@@ -226,11 +226,18 @@ const ChallengePage = () => {
     try {
       const { data: existing } = await (supabase as any)
         .from("user_challenges")
-        .select("id")
+        .select("id, abandoned_at")
         .eq("user_id", user.id)
         .eq("challenge_id", lv1.id)
         .maybeSingle();
-      if (!existing) {
+      if (existing && existing.abandoned_at) {
+        // Re-join: clear abandoned status and reset progress
+        const { error } = await (supabase as any)
+          .from("user_challenges")
+          .update({ abandoned_at: null, abandon_reason: null, progress: 0, completed: false, completed_at: null })
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else if (!existing) {
         const { error } = await (supabase as any)
           .from("user_challenges")
           .insert({ user_id: user.id, challenge_id: lv1.id });
