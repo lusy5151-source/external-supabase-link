@@ -229,7 +229,9 @@ function DemoPlansView() {
       <div className="flex items-center justify-between">
         <h1 className="font-bold text-foreground text-base">등산 계획</h1>
         <div className="flex gap-2">
-          <Link to="/auth">
+          <Link to="/auth" onClick={(e) => {
+            if (isTutorialActive && steps[currentStep]?.customContent === "plan-checklist") e.preventDefault();
+          }}>
             <Button data-onboarding="plan-create" size="sm">
               <Plus className="h-4 w-4 mr-1" /> 새 계획
             </Button>
