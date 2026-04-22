@@ -152,6 +152,7 @@ const App = () => {
           <AuthProvider>
             <TutorialProvider>
             <OnboardingProvider>
+            <MountainsProvider>
             <StoreProvider>
               <Toaster />
               <Sonner />
