@@ -5,9 +5,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useHikingPlans } from "@/hooks/useHikingPlans";
 import { useHikingGroups } from "@/hooks/useHikingGroups";
 import { useSummits, type Summit } from "@/hooks/useSummits";
+import { useChallenges } from "@/hooks/useChallenges";
 import { useOfflineClaims } from "@/hooks/useOfflineClaims";
 import { useToast } from "@/hooks/use-toast";
+import { toast as sonnerToast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import ChallengeCompletionModal, { CompletionInfo } from "@/components/ChallengeCompletionModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +49,8 @@ export default function SummitClaimPage() {
   const { plans } = useHikingPlans();
   const { myGroups } = useHikingGroups();
   const { pendingClaims, addOfflineClaim, markSynced, removeOfflineClaim } = useOfflineClaims();
+  const { fetchAllChallenges, fetchUserChallenges } = useChallenges();
+  const [challengeCompletion, setChallengeCompletion] = useState<CompletionInfo | null>(null);
 
   // Steps: select-mountain → select-summit → upload-photo → review
   const [step, setStep] = useState<"select-mountain" | "select-summit" | "upload-photo" | "review">("select-mountain");
@@ -291,6 +296,48 @@ export default function SummitClaimPage() {
       setClaimedMountainName(selectedMountain?.nameKo || "");
       setClaimedMountainId(selectedMountain?.id ?? null);
       setShowCelebration(true);
+
+      // Check challenge progress after summit claim
+      try {
+        const [allCh, userCh] = await Promise.all([fetchAllChallenges(), fetchUserChallenges()]);
+        const newlyCompleted = userCh.find(
+          (uc) => uc.completed && uc.completed_at && (Date.now() - new Date(uc.completed_at).getTime()) < 30000
+        );
+        if (newlyCompleted) {
+          const ch = allCh.find((c) => c.id === newlyCompleted.challenge_id);
+          if (ch) {
+            const key = (ch as any).category_group ?? ch.category ?? "other";
+            const ladder = allCh
+              .filter((x) => ((x as any).category_group ?? x.category) === key)
+              .sort((a, b) => a.level - b.level);
+            const next = ladder.find((x) => x.level === ch.level + 1);
+            setChallengeCompletion({
+              categoryLabel: ch.category ?? "챌린지",
+              completedLevel: ch.level,
+              completedTitle: ch.title,
+              nextLevel: next?.level ?? null,
+              nextTitle: next?.title ?? null,
+              nextGoalValue: next?.goal_value ?? null,
+              isFinalLevel: !next,
+              badge: (ch as any).badge ?? null,
+            });
+          }
+          sonnerToast.success(`정상 인증 완료! 챌린지 진행 중 🎯 ${newlyCompleted.progress}/${ch?.goal_value ?? "?"}`);
+        } else {
+          // Check if any active challenge was updated (progress increased)
+          const activeSummitCh = userCh.find(
+            (uc) => !uc.completed && uc.challenge && (uc.challenge as any).goal_type === "summit_count"
+          );
+          if (activeSummitCh) {
+            sonnerToast.success(`정상 인증 완료! 챌린지 진행 중 🎯 ${activeSummitCh.progress}/${(activeSummitCh.challenge as any)?.goal_value ?? "?"}`);
+          } else {
+            sonnerToast.success("정상 인증 완료! 🚩");
+          }
+        }
+      } catch {
+        sonnerToast.success("정상 인증 완료! 🚩");
+      }
+
       setTimeout(() => {
         setShowCelebration(false);
         setShowDiaryPrompt(true);
@@ -379,6 +426,9 @@ export default function SummitClaimPage() {
 
   return (
     <div className="mx-auto max-w-lg space-y-6 pb-28">
+      {/* Challenge completion modal */}
+      <ChallengeCompletionModal completion={challengeCompletion} onDismiss={() => setChallengeCompletion(null)} />
+
       {/* Celebration overlay */}
       {showCelebration && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm">

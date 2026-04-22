@@ -20,6 +20,7 @@ import {
   Sparkles,
   Users,
   ChevronRight,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -76,6 +77,7 @@ const groupKey = (c: Challenge) => c.category_group ?? c.category ?? "other";
 const ChallengePage = () => {
   const { user } = useAuth();
   const { fetchAllChallenges, fetchUserChallenges, recalculateProgress } = useChallenges();
+  const [refreshing, setRefreshing] = useState(false);
   
   const [allChallenges, setAllChallenges] = useState<Challenge[]>([]);
   const [userChallenges, setUserChallenges] = useState<UserChallenge[]>([]);
@@ -245,7 +247,22 @@ const ChallengePage = () => {
         <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-primary/15">
           <Trophy className="h-8 w-8 text-primary" />
         </div>
-        <h1 className="text-xl font-bold text-foreground">레벨업 챌린지</h1>
+        <div className="flex items-center justify-center gap-2">
+          <h1 className="text-xl font-bold text-foreground">레벨업 챌린지</h1>
+          <button
+            onClick={async () => {
+              setRefreshing(true);
+              await load();
+              setRefreshing(false);
+              toast.success("챌린지 진행 상황을 새로고침했어요");
+            }}
+            disabled={refreshing}
+            className="rounded-full p-1.5 hover:bg-background/60 transition"
+            aria-label="새로고침"
+          >
+            <RefreshCw className={`h-4 w-4 text-muted-foreground ${refreshing ? "animate-spin" : ""}`} />
+          </button>
+        </div>
         <p className="text-sm text-muted-foreground mt-1">카테고리별로 1번 참여하고 레벨업 하세요</p>
         <div className="mt-4 flex justify-center gap-6 text-sm">
           <div>
