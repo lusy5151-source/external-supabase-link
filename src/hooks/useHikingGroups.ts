@@ -35,7 +35,6 @@ export interface GroupInvitation {
 }
 
 
-
 export function useHikingGroups() {
   const { user } = useAuth();
   const [myGroups, setMyGroups] = useState<HikingGroup[]>([]);
