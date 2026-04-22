@@ -1,9 +1,13 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 const VWORLD_API_KEY = Deno.env.get("VWORLD_API_KEY");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -11,12 +15,38 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Invalid token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { mountainName } = await req.json();
 
     if (!mountainName) {
       return new Response(
         JSON.stringify({ error: "mountainName is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!VWORLD_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: "VWorld API key not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -51,18 +81,15 @@ Deno.serve(async (req) => {
         text = await res.text();
         if (!res.ok) continue;
       } catch {
-        // VWorld API may reject connections from overseas IPs
         console.log("VWorld connection failed for:", name);
         continue;
       }
 
-      // VWorld sometimes returns malformed JSON with unescaped quotes in error text
       let data;
       try {
         data = JSON.parse(text);
       } catch {
         try {
-          // Fix unescaped quotes like: 단일검색="Y"
           const fixed = text.replace(/="([^"{}[\]:,]*?)"/g, '=\\"$1\\"');
           data = JSON.parse(fixed);
         } catch {
@@ -80,7 +107,6 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    // Always return 200 with empty features so frontend handles gracefully
     return new Response(JSON.stringify({ features: [], error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
