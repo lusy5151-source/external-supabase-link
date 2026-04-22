@@ -38,6 +38,15 @@ const TOOLTIP_STYLES = `
   0%, 100% { border-color: transparent; }
   50% { border-color: #639922; }
 }
+@keyframes tutorial-bounce-in {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  70% { transform: translate(-50%, -50%) scale(1.05); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes tutorial-confetti-fall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(120px) rotate(360deg); opacity: 0; }
+}
 `;
 
 const WelcomeChips = () => (
