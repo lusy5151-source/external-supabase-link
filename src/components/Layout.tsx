@@ -63,7 +63,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       </header>
 
       <main className="container mx-auto px-5 py-7">{children}</main>
-      <OnboardingTutorial />
+      <TutorialOverlay />
 
       {/* Bottom Navigation Bar */}
       <nav

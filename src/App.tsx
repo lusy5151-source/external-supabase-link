@@ -7,6 +7,7 @@ import { StoreProvider } from "@/context/StoreContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { GuestProvider, useGuest } from "@/contexts/GuestContext";
 import { OnboardingProvider } from "@/contexts/OnboardingContext";
+import { TutorialProvider } from "@/contexts/TutorialContext";
 import { MountainsProvider } from "@/contexts/MountainsContext";
 import { UnreadChatProvider } from "@/contexts/UnreadChatContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -149,8 +150,8 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <AuthProvider>
+            <TutorialProvider>
             <OnboardingProvider>
-            <MountainsProvider>
             <StoreProvider>
               <Toaster />
               <Sonner />
