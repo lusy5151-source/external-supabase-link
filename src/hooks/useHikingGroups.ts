@@ -179,7 +179,7 @@ export function useHikingGroups() {
 
   const sendInvite = async (groupId: string, userId: string) => {
     if (!user) return { error: { message: "Not authenticated" } };
-    const { error } = await db
+    const { error } = await (supabase as any)
       .from("group_invitations")
       .insert({ group_id: groupId, user_id: userId, invited_by: user.id, type: "invite", status: "pending" });
     return { error };
@@ -187,14 +187,14 @@ export function useHikingGroups() {
 
   const requestJoin = async (groupId: string) => {
     if (!user) return { error: { message: "Not authenticated" } };
-    const { error } = await db
+    const { error } = await (supabase as any)
       .from("group_invitations")
       .insert({ group_id: groupId, user_id: user.id, type: "request", status: "pending" });
     return { error };
   };
 
   const fetchInvitations = async (groupId: string): Promise<GroupInvitation[]> => {
-    const { data } = await db
+    const { data } = await (supabase as any)
       .from("group_invitations")
       .select("*")
       .eq("group_id", groupId)
@@ -211,7 +211,7 @@ export function useHikingGroups() {
 
   const fetchMyInvitations = async (): Promise<GroupInvitation[]> => {
     if (!user) return [];
-    const { data } = await db
+    const { data } = await (supabase as any)
       .from("group_invitations")
       .select("*")
       .eq("user_id", user.id)
@@ -222,7 +222,7 @@ export function useHikingGroups() {
 
   const respondToInvitation = async (invitationId: string, accept: boolean, groupId?: string) => {
     const status = accept ? "accepted" : "rejected";
-    const { error } = await db
+    const { error } = await (supabase as any)
       .from("group_invitations")
       .update({ status })
       .eq("id", invitationId);
@@ -238,7 +238,7 @@ export function useHikingGroups() {
   };
 
   const acceptJoinRequest = async (invitationId: string, groupId: string, userId: string) => {
-    const { error } = await db
+    const { error } = await (supabase as any)
       .from("group_invitations")
       .update({ status: "accepted" })
       .eq("id", invitationId);
@@ -253,7 +253,7 @@ export function useHikingGroups() {
   };
 
   const rejectJoinRequest = async (invitationId: string) => {
-    const { error } = await db
+    const { error } = await (supabase as any)
       .from("group_invitations")
       .update({ status: "rejected" })
       .eq("id", invitationId);
