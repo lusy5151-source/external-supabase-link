@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOnboarding } from "@/contexts/OnboardingContext";
+import { useTutorial } from "@/contexts/TutorialContext";
 import { useFriends } from "@/hooks/useFriends";
 import { useHikingGroups, type HikingGroup } from "@/hooks/useHikingGroups";
 import { demoFriends, demoGroups } from "@/data/demoFeed";
@@ -40,6 +41,14 @@ const SocialPage = () => {
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [searching, setSearching] = useState(false);
   const [mainTab, setMainTab] = useState<"friends" | "clubs">("friends");
+  const { isTutorialActive, steps, currentStep } = useTutorial();
+
+  // Auto-switch to clubs tab when tutorial step targets it
+  useEffect(() => {
+    if (isTutorialActive && steps[currentStep]?.customContent === "club-chips") {
+      setMainTab("clubs");
+    }
+  }, [isTutorialActive, currentStep, steps]);
   const [friendTab, setFriendTab] = useState<"list" | "requests">("list");
 
   // Club state
