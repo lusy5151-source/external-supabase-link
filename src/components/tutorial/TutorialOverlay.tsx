@@ -17,11 +17,14 @@ const TutorialOverlay = () => {
   const [ready, setReady] = useState(false);
   const [fading, setFading] = useState(false);
   const [targetRect, setTargetRect] = useState<Rect | null>(null);
+  const [interactionComplete, setInteractionComplete] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const interceptRef = useRef(false);
 
   const current = currentStep < steps.length ? steps[currentStep] : null;
   const isCircle = current?.spotlightShape === "circle";
+  const noSpotlight = current?.spotlightShape === "none";
 
   // Delay visibility on activation
   useEffect(() => {
@@ -33,6 +36,12 @@ const TutorialOverlay = () => {
       setReady(false);
     }
   }, [isTutorialActive]);
+
+  // Reset interaction state on step change
+  useEffect(() => {
+    setInteractionComplete(false);
+    interceptRef.current = false;
+  }, [currentStep]);
 
   // Route navigation for current step
   useEffect(() => {
@@ -56,6 +65,44 @@ const TutorialOverlay = () => {
     }
   }, [location.pathname, visible, currentStep, ready]);
 
+  // Interactive step: listen for user taps on target
+  useEffect(() => {
+    if (!visible || !ready || !current?.interactive || !current.interactiveSelector) return;
+    if (interactionComplete) return;
+
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as Element;
+      if (target.closest(current.interactiveSelector!)) {
+        // For FAB step, intercept navigation
+        if (current.customContent === "fab-methods") {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+        }
+        setInteractionComplete(true);
+      }
+    };
+
+    // Use capture to intercept before normal handlers
+    document.addEventListener("click", handleClick, true);
+    return () => document.removeEventListener("click", handleClick, true);
+  }, [visible, ready, currentStep, current?.interactive, current?.interactiveSelector, interactionComplete]);
+
+  // Auto-advance after interaction complete
+  useEffect(() => {
+    if (!interactionComplete) return;
+    const delay = current?.customContent === "fab-methods" ? 1000 : 1200;
+    const t = setTimeout(() => {
+      setFading(true);
+      setTimeout(() => {
+        nextStep();
+        setReady(false);
+        setFading(false);
+      }, 200);
+    }, delay);
+    return () => clearTimeout(t);
+  }, [interactionComplete, nextStep, current?.customContent]);
+
   const handleNext = useCallback(() => {
     setFading(true);
     setTimeout(() => {
@@ -77,17 +124,22 @@ const TutorialOverlay = () => {
 
   if (!visible || !current) return null;
 
+  const showSpotlight = !noSpotlight && current.targetSelector;
+
   return (
     <>
-      <TutorialSpotlight
-        targetSelector={current.targetSelector}
-        isCircle={!!isCircle}
-        visible={ready}
-        onRectChange={handleRectChange}
-      />
+      {showSpotlight && (
+        <TutorialSpotlight
+          targetSelector={current.targetSelector}
+          isCircle={!!isCircle}
+          visible={ready}
+          onRectChange={handleRectChange}
+          glowRing={current.glowRing}
+        />
+      )}
 
-      {/* Clickable backdrop to prevent interaction */}
-      {!targetRect && ready && (
+      {/* Dark backdrop for no-spotlight steps */}
+      {(noSpotlight || (!targetRect && !noSpotlight)) && ready && (
         <div
           className="fixed inset-0"
           style={{ zIndex: 9998, background: "rgba(0,0,0,0.65)" }}
@@ -100,10 +152,15 @@ const TutorialOverlay = () => {
         buttonLabel={current.buttonLabel}
         currentStep={currentStep}
         totalSteps={totalSteps}
-        targetRect={targetRect}
+        targetRect={noSpotlight ? null : targetRect}
         onNext={handleNext}
         onSkip={handleSkip}
         fading={fading}
+        interactive={current.interactive}
+        taskHint={current.taskHint}
+        interactionComplete={interactionComplete}
+        customContent={current.customContent}
+        noSpotlight={noSpotlight}
       />
     </>
   );
