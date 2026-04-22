@@ -11,7 +11,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ChevronRight, Users, Mountain, BookOpen, Settings, LogOut, HelpCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useUnreadChat } from "@/contexts/UnreadChatContext";
-import { useOnboarding } from "@/contexts/OnboardingContext";
+import { useTutorial } from "@/contexts/TutorialContext";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -40,7 +40,7 @@ const MyPage = () => {
   const sharedCompletions = useSharedCompletionCounts();
   const { earnedCount } = useAchievementStore(records, gearItems, sharedCompletions);
   const { unreadChatCount } = useUnreadChat();
-  const { startOnboarding } = useOnboarding();
+  const { restartTutorial } = useTutorial();
   const nav = useNavigate();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -127,9 +127,8 @@ const MyPage = () => {
       {/* Tutorial replay */}
       <button
         onClick={() => {
-          localStorage.removeItem("tutorial_seen");
-          startOnboarding();
-          nav("/");
+          restartTutorial();
+          nav("/auth");
         }}
         className="flex w-full items-center gap-3 px-4"
         style={{
