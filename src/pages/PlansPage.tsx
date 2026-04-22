@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useOnboarding } from "@/contexts/OnboardingContext";
+import { useTutorial } from "@/contexts/TutorialContext";
 import { useMountains } from "@/contexts/MountainsContext";
 import { useHikingPlans } from "@/hooks/useHikingPlans";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,11 +20,18 @@ const PlansPage = () => {
   const { mountains } = useMountains();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isTutorialActive, currentStep, steps } = useTutorial();
   const { plans, loading, notifications, markNotificationRead, joinByCode } = useHikingPlans();
   const { toast } = useToast();
   const [inviteCode, setInviteCode] = useState("");
   const [joining, setJoining] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
+
+  const handlePlanCreate = () => {
+    // During tutorial step 5, don't actually navigate — the overlay handles it
+    if (isTutorialActive && steps[currentStep]?.customContent === "plan-checklist") return;
+    navigate("/plans/create");
+  };
 
   const handleJoinByCode = async () => {
     if (!inviteCode.trim()) return;
@@ -55,7 +63,7 @@ const PlansPage = () => {
           <Button variant="outline" size="sm" onClick={() => setShowJoin(!showJoin)}>
             <Link2 className="h-4 w-4 mr-1" /> 코드 참여
           </Button>
-          <Button data-onboarding="plan-create" size="sm" onClick={() => navigate("/plans/create")}>
+          <Button data-onboarding="plan-create" size="sm" onClick={handlePlanCreate}>
             <Plus className="h-4 w-4 mr-1" /> 새 계획
           </Button>
         </div>
@@ -204,6 +212,7 @@ const PlansPage = () => {
 };
 
 function DemoPlansView() {
+  const { isTutorialActive, currentStep, steps } = useTutorial();
   const daysFromNow = (n: number) => {
     const d = new Date();
     d.setDate(d.getDate() + n);
@@ -221,7 +230,9 @@ function DemoPlansView() {
       <div className="flex items-center justify-between">
         <h1 className="font-bold text-foreground text-base">등산 계획</h1>
         <div className="flex gap-2">
-          <Link to="/auth">
+          <Link to="/auth" onClick={(e) => {
+            if (isTutorialActive && steps[currentStep]?.customContent === "plan-checklist") e.preventDefault();
+          }}>
             <Button data-onboarding="plan-create" size="sm">
               <Plus className="h-4 w-4 mr-1" /> 새 계획
             </Button>
