@@ -34,7 +34,7 @@ export interface GroupInvitation {
   profile?: { nickname: string | null; avatar_url: string | null };
 }
 
-const db = supabase as any;
+
 
 export function useHikingGroups() {
   const { user } = useAuth();
