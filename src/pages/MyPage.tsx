@@ -126,24 +126,56 @@ const MyPage = () => {
         ))}
       </div>
 
-      {/* Tutorial replay */}
-      <button
-        onClick={() => {
-          restartTutorial();
-          nav("/auth");
-        }}
-        className="flex w-full items-center gap-3 px-4"
-        style={{
-          height: 48,
-          borderBottom: "0.5px solid hsl(var(--color-border-tertiary, var(--border)))",
-        }}
-      >
-        <HelpCircle style={{ width: 16, height: 16, color: "hsl(var(--color-text-secondary, var(--muted-foreground)))" }} />
-        <span className="flex-1 text-left" style={{ fontSize: 14, color: "hsl(var(--color-text-primary, var(--foreground)))" }}>
-          튜토리얼 다시 보기
-        </span>
-        <ChevronRight style={{ width: 16, height: 16, color: "hsl(var(--color-text-tertiary, var(--muted-foreground)))" }} />
-      </button>
+      {/* Extra menu rows */}
+      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+        {/* 알림 설정 */}
+        <button
+          onClick={() => {
+            if (isDenied) {
+              toast("브라우저 설정에서 알림을 허용해주세요", {
+                description: "주소창 왼쪽 🔒 아이콘 → 사이트 설정 → 알림 → 허용",
+              });
+            } else if (!isGranted) {
+              requestPermission();
+            } else {
+              toast("알림이 이미 활성화되어 있어요 🔔");
+            }
+          }}
+          className="flex w-full items-center gap-3 px-4"
+          style={{ height: 48 }}
+        >
+          <Bell style={{ width: 16, height: 16, color: "hsl(var(--muted-foreground))" }} />
+          <span className="flex-1 text-left text-sm font-medium text-foreground">
+            알림 설정
+          </span>
+          <span
+            className="text-xs font-medium"
+            style={{ color: isGranted ? "#3B6D11" : "hsl(var(--muted-foreground))", marginRight: 4 }}
+          >
+            {isGranted ? "켜짐" : "꺼짐"}
+          </span>
+          <ChevronRight style={{ width: 16, height: 16, color: "hsl(var(--muted-foreground) / 0.4)" }} />
+        </button>
+
+        {/* 튜토리얼 다시 보기 */}
+        <button
+          onClick={() => {
+            restartTutorial();
+            nav("/auth");
+          }}
+          className="flex w-full items-center gap-3 px-4"
+          style={{
+            height: 48,
+            borderTop: "0.5px solid hsl(var(--border))",
+          }}
+        >
+          <HelpCircle style={{ width: 16, height: 16, color: "hsl(var(--muted-foreground))" }} />
+          <span className="flex-1 text-left text-sm font-medium text-foreground">
+            튜토리얼 다시 보기
+          </span>
+          <ChevronRight style={{ width: 16, height: 16, color: "hsl(var(--muted-foreground) / 0.4)" }} />
+        </button>
+      </div>
 
       {/* Logout & Delete account */}
       <div className="space-y-0">
