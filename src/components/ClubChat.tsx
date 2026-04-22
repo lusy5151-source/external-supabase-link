@@ -110,7 +110,8 @@ export default function ClubChat({ clubId, onUnreadCount }: Props) {
     await supabase
       .from("message_reads" as any)
       .upsert({ club_id: clubId, user_id: user.id, last_read_at: new Date().toISOString() } as any, { onConflict: "club_id,user_id" });
-  }, [clubId, user]);
+    resetUnread();
+  }, [clubId, user, resetUnread]);
 
   useEffect(() => { fetchMessages().then(() => markAsRead()); }, [fetchMessages, markAsRead]);
 
