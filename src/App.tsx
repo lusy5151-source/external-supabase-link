@@ -171,6 +171,7 @@ const App = () => {
             </StoreProvider>
             </MountainsProvider>
             </OnboardingProvider>
+            </TutorialProvider>
           </AuthProvider>
         </TooltipProvider>
       </QueryClientProvider>
