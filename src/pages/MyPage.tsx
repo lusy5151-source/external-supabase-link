@@ -8,10 +8,11 @@ import { useAchievementStore } from "@/hooks/useAchievementStore";
 import { useGearStore } from "@/hooks/useGearStore";
 import { useSharedCompletionCounts } from "@/hooks/useSharedCompletionCounts";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ChevronRight, Users, Mountain, BookOpen, Settings, LogOut, HelpCircle } from "lucide-react";
+import { ChevronRight, Users, Mountain, BookOpen, Settings, LogOut, HelpCircle, Bell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useUnreadChat } from "@/contexts/UnreadChatContext";
 import { useTutorial } from "@/contexts/TutorialContext";
+import { usePushNotification } from "@/hooks/usePushNotification";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -41,6 +42,7 @@ const MyPage = () => {
   const { earnedCount } = useAchievementStore(records, gearItems, sharedCompletions);
   const { unreadChatCount } = useUnreadChat();
   const { restartTutorial } = useTutorial();
+  const { isGranted, isDenied, requestPermission } = usePushNotification();
   const nav = useNavigate();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
