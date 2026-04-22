@@ -171,7 +171,7 @@ const MyPage = () => {
         {/* Notification sub-settings */}
         {showNotifSettings && isGranted && (
           <div
-            className="px-4 py-3"
+            className="px-4 py-3 space-y-3"
             style={{ borderTop: "0.5px solid hsl(var(--border))", background: "hsl(var(--muted) / 0.3)" }}
           >
             <div className="flex items-center justify-between">
@@ -182,6 +182,16 @@ const MyPage = () => {
               <Switch
                 checked={isDdayEnabled}
                 onCheckedChange={(checked) => setDdayEnabled(checked)}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-foreground">산악회 채팅 알림</p>
+                <p className="text-xs text-muted-foreground mt-0.5">새 메시지가 올 때 알림</p>
+              </div>
+              <Switch
+                checked={isChatNotifEnabled}
+                onCheckedChange={(checked) => setChatNotifEnabled(checked)}
               />
             </div>
           </div>
