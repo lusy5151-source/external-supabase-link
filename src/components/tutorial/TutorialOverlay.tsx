@@ -73,8 +73,8 @@ const TutorialOverlay = () => {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as Element;
       if (target.closest(current.interactiveSelector!)) {
-        // For FAB step, intercept navigation
-        if (current.customContent === "fab-methods") {
+        // Intercept navigation for FAB and plan-create steps
+        if (current.customContent === "fab-methods" || current.customContent === "plan-checklist") {
           e.preventDefault();
           e.stopPropagation();
           e.stopImmediatePropagation();
