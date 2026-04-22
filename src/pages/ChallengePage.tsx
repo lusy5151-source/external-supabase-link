@@ -246,7 +246,45 @@ const ChallengePage = () => {
     }
   };
 
-  if (!user)
+  const handleAbandon = async () => {
+    if (!user || !abandonTarget) return;
+    setAbandoning(true);
+    try {
+      const ladder = ladders.get(abandonTarget.key);
+      if (!ladder) return;
+      // Find all user_challenges for this group and abandon them
+      const challengeIds = ladder.map((c) => c.id);
+      const ucsToAbandon = userChallenges.filter(
+        (uc) => challengeIds.includes(uc.challenge_id) && !(uc as any).abandoned_at
+      );
+      for (const uc of ucsToAbandon) {
+        await (supabase as any)
+          .from("user_challenges")
+          .update({
+            abandoned_at: new Date().toISOString(),
+            progress: 0,
+          })
+          .eq("id", uc.id);
+      }
+      setAbandonTarget(null);
+      await load();
+      toast("챌린지를 포기했어요. 언제든 다시 도전할 수 있어요 💪", {
+        style: {
+          background: "#444441",
+          color: "white",
+          borderRadius: "var(--border-radius-md, 12px)",
+          padding: "10px 16px",
+        },
+        duration: 3000,
+      });
+    } catch (e: any) {
+      toast.error(e.message ?? "다시 시도해주세요.");
+    } finally {
+      setAbandoning(false);
+    }
+  };
+
+
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
         <Target className="h-12 w-12 text-muted-foreground" />
