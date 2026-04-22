@@ -48,6 +48,7 @@ export function useChallenges() {
 
   const fetchUserChallenges = useCallback(async (): Promise<UserChallenge[]> => {
     if (!user) return [];
+    console.log("Challenges user_id:", user.id);
     const { data, error } = await supabase
       .from("user_challenges")
       .select("*")
