@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Friendship = Tables<"friendships">;
-type Profile = Tables<"profiles">;
+type Profile = Omit<Tables<"profiles">, "email">;
 
 interface FriendWithProfile extends Friendship {
   friendProfile: Profile;
