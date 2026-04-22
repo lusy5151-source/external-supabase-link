@@ -529,6 +529,53 @@ const Dashboard = () => {
             </div>
           </section>
 
+          {/* ── Achievement Progress Widget ── */}
+          {records.length > 0 && (() => {
+            const nextBadge = badges.find((b) => !isEarned(b.id));
+            if (!nextBadge) return null;
+            const cond = nextBadge.condition;
+            let current = 0;
+            let target = cond.value || 5;
+            if (cond.type === "completedCount") {
+              current = Math.min(records.length, target);
+            } else if (cond.type === "firstAction") {
+              current = 0; target = 1;
+            } else {
+              current = 0; target = 1;
+            }
+            const pct = target > 0 ? Math.min(Math.round((current / target) * 100), 100) : 0;
+            return (
+              <button
+                onClick={() => navigate("/records?tab=나의 도전")}
+                className="w-full flex items-center bg-card text-left"
+                style={{
+                  gap: 12,
+                  border: "0.5px solid hsl(var(--color-border-tertiary, var(--border)))",
+                  borderRadius: "var(--border-radius-lg, 16px)",
+                  padding: "12px 14px",
+                }}
+              >
+                <div
+                  className="shrink-0 flex items-center justify-center rounded-full"
+                  style={{ width: 36, height: 36, background: "#EAF3DE" }}
+                >
+                  <Flag className="h-[18px] w-[18px]" style={{ color: "#639922" }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-muted-foreground" style={{ fontSize: 11 }}>다음 업적까지</p>
+                  <p className="text-foreground truncate" style={{ fontSize: 13, fontWeight: 500 }}>
+                    {nextBadge.name} {current}/{target}
+                  </p>
+                  <div className="w-full mt-1 overflow-hidden" style={{ height: 4, borderRadius: 2, background: "hsl(var(--color-border-tertiary, var(--border)))" }}>
+                    <div className="h-full transition-all duration-500" style={{ width: `${pct}%`, borderRadius: 2, background: "#639922" }} />
+                  </div>
+                  <p style={{ fontSize: 10, color: "#3B6D11", marginTop: 2 }}>{current}/{target}</p>
+                </div>
+                <ChevronRight className="shrink-0 h-4 w-4 text-muted-foreground" />
+              </button>
+            );
+          })()}
+
           {/* ── 3. 완등 MAGAZINE Banner ── */}
           <section>
             <Link to="/magazine">
