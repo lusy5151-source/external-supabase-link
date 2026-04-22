@@ -42,7 +42,7 @@ const MyPage = () => {
   const { items: gearItems } = useGearStore();
   const sharedCompletions = useSharedCompletionCounts();
   const { earnedCount } = useAchievementStore(records, gearItems, sharedCompletions);
-  const { unreadChatCount, isChatNotifEnabled, setChatNotifEnabled } = useUnreadChat();
+  const { unreadChatCount, isChatNotifEnabled, setChatNotifEnabled, isFriendActivityEnabled, setFriendActivityEnabled } = useUnreadChat();
   const { restartTutorial } = useTutorial();
   const { isGranted, isDenied, requestPermission } = usePushNotification();
   const { isDdayEnabled, setDdayEnabled } = usePlanNotifications();
