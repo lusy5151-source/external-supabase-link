@@ -1,12 +1,12 @@
 import { BadgeDefinition } from "@/data/badges";
-import { X } from "lucide-react";
 import { useEffect, useState } from "react";
-import MountainMascot from "@/components/MountainMascot";
 
 interface Props {
   badge: BadgeDefinition | null;
   onDismiss: () => void;
 }
+
+const CONFETTI_COLORS = ["#639922", "#C0DD97", "#EF9F27", "#E24B4A"];
 
 const AchievementModal = ({ badge, onDismiss }: Props) => {
   const [visible, setVisible] = useState(false);
@@ -14,73 +14,86 @@ const AchievementModal = ({ badge, onDismiss }: Props) => {
   useEffect(() => {
     if (badge) {
       const t = setTimeout(() => setVisible(true), 50);
-      return () => clearTimeout(t);
+      const autoDismiss = setTimeout(onDismiss, 4000);
+      return () => { clearTimeout(t); clearTimeout(autoDismiss); };
     } else {
       setVisible(false);
     }
-  }, [badge]);
+  }, [badge, onDismiss]);
 
   if (!badge) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      {/* Backdrop */}
+    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+      {/* Overlay */}
       <div
-        className="absolute inset-0 bg-foreground/40 backdrop-blur-sm transition-opacity duration-300"
-        style={{ opacity: visible ? 1 : 0 }}
+        className="absolute inset-0 transition-opacity duration-300"
+        style={{ background: "rgba(0,0,0,0.5)", opacity: visible ? 1 : 0 }}
         onClick={onDismiss}
       />
 
-      {/* Modal */}
+      {/* Confetti */}
+      {visible && Array.from({ length: 12 }).map((_, i) => (
+        <span
+          key={i}
+          className="absolute rounded-full z-10"
+          style={{
+            width: 6,
+            height: 6,
+            background: CONFETTI_COLORS[i % 4],
+            left: `${15 + (i * 6.5) % 70}%`,
+            top: "30%",
+            animation: `confettiFall 1.2s ease-out ${(i * 0.05).toFixed(2)}s forwards`,
+            opacity: 0,
+          }}
+        />
+      ))}
+
+      {/* Card */}
       <div
-        className="relative z-10 w-full max-w-xs rounded-2xl border border-border bg-card p-8 text-center shadow-xl transition-all duration-500"
+        className="relative z-20 w-full bg-card text-center transition-all duration-500"
         style={{
+          maxWidth: 280,
+          padding: "28px 24px",
+          borderRadius: "var(--border-radius-xl, 20px)",
           opacity: visible ? 1 : 0,
-          transform: visible ? "scale(1) translateY(0)" : "scale(0.8) translateY(20px)",
+          transform: visible ? "scale(1) translateY(0)" : "scale(0.85) translateY(20px)",
         }}
       >
-        <button
-          onClick={onDismiss}
-          className="absolute right-3 top-3 rounded-full p-1 text-muted-foreground hover:bg-secondary"
+        {/* Icon circle */}
+        <div
+          className="mx-auto flex items-center justify-center rounded-full"
+          style={{ width: 60, height: 60, background: "#EAF3DE" }}
         >
-          <X className="h-4 w-4" />
-        </button>
-
-        {/* Mascot celebrating */}
-        <div className="mx-auto mb-2">
-          <MountainMascot size={80} mood="celebrating" />
+          <span style={{ fontSize: 28, lineHeight: 1, color: "#639922" }}>{badge.icon}</span>
         </div>
 
-        {/* Badge icon */}
-        <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-          <span
-            className="text-5xl"
-            style={{
-              animation: visible ? "badgeBounce 0.6s ease-out" : "none",
-            }}
-          >
-            {badge.icon}
-          </span>
-        </div>
-
-        <p className="text-xs font-medium uppercase tracking-wider text-primary">업적 달성!</p>
-        <h3 className="mt-1 text-lg font-bold text-foreground">{badge.name}</h3>
-        <p className="mt-2 text-sm text-muted-foreground">{badge.description}</p>
+        <p className="text-foreground" style={{ fontSize: 18, fontWeight: 500, marginTop: 12 }}>
+          업적 달성!
+        </p>
+        <p className="text-muted-foreground" style={{ fontSize: 14, marginTop: 4 }}>
+          {badge.name}
+        </p>
 
         <button
           onClick={onDismiss}
-          className="mt-6 w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          className="w-full text-white font-medium"
+          style={{
+            background: "#639922",
+            borderRadius: "var(--border-radius-md, 12px)",
+            height: 44,
+            marginTop: 20,
+            fontSize: 14,
+          }}
         >
           확인
         </button>
       </div>
 
       <style>{`
-        @keyframes badgeBounce {
-          0% { transform: scale(0); }
-          50% { transform: scale(1.3); }
-          70% { transform: scale(0.9); }
-          100% { transform: scale(1); }
+        @keyframes confettiFall {
+          0% { opacity: 1; transform: translateY(0) scale(1); }
+          100% { opacity: 0; transform: translateY(120px) scale(0.5); }
         }
       `}</style>
     </div>
