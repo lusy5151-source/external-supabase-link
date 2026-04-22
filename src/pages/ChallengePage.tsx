@@ -167,6 +167,7 @@ const ChallengePage = () => {
     currentUc: UserChallenge | null;
     allComplete: boolean;
     completedCount: number;
+    wasAbandoned: boolean; // previously abandoned this group
   };
 
   const groupStates = useMemo<GroupState[]>(() => {
@@ -176,8 +177,16 @@ const ChallengePage = () => {
     ];
     return orderedKeys.map((key) => {
       const ladder = ladders.get(key) ?? [];
-      const joinedRungs = ladder.filter((ch) => ucByChallenge.has(ch.id));
+      const joinedRungs = ladder.filter((ch) => {
+        const uc = ucByChallenge.get(ch.id);
+        return uc && !(uc as any).abandoned_at;
+      });
+      const abandonedRungs = ladder.filter((ch) => {
+        const uc = ucByChallenge.get(ch.id);
+        return uc && !!(uc as any).abandoned_at;
+      });
       const joined = joinedRungs.length > 0;
+      const wasAbandoned = abandonedRungs.length > 0 && !joined;
       const completedCount = joinedRungs.filter((ch) => ucByChallenge.get(ch.id)?.completed).length;
       // current rung = lowest level that is joined and NOT completed
       let currentRung: Challenge | null =
@@ -198,6 +207,7 @@ const ChallengePage = () => {
         currentUc: currentRung ? ucByChallenge.get(currentRung.id) ?? null : null,
         allComplete,
         completedCount,
+        wasAbandoned,
       };
     });
   }, [ladders, ucByChallenge]);
