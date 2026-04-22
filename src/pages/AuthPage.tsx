@@ -113,17 +113,13 @@ const AuthPage = () => {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          queryParams: {
-            access_type: "offline",
-            prompt: "consent",
-          },
+          skipBrowserRedirect: false,
         },
       });
-      if (error) throw error;
     } catch (err: any) {
       toast({ title: "오류", description: friendlyError(err.message), variant: "destructive" });
     } finally {
@@ -132,7 +128,7 @@ const AuthPage = () => {
   };
 
   const handleKakaoLogin = () => {
-    const redirectUri = `${window.location.origin}/kakao/callback`;
+    const redirectUri = window.location.origin + "/kakao/callback";
     const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${API_KEYS.kakao}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`;
     window.location.href = kakaoAuthUrl;
   };
