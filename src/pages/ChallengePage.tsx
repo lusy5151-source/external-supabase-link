@@ -21,7 +21,7 @@ import {
   Users,
   ChevronRight,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -76,7 +76,7 @@ const groupKey = (c: Challenge) => c.category_group ?? c.category ?? "other";
 const ChallengePage = () => {
   const { user } = useAuth();
   const { fetchAllChallenges, fetchUserChallenges, recalculateProgress } = useChallenges();
-  const { toast } = useToast();
+  
   const [allChallenges, setAllChallenges] = useState<Challenge[]>([]);
   const [userChallenges, setUserChallenges] = useState<UserChallenge[]>([]);
   const [loading, setLoading] = useState(true);
@@ -216,12 +216,9 @@ const ChallengePage = () => {
         if (error) throw error;
       }
       await load();
-      toast({
-        title: "챌린지 참여 완료!",
-        description: `${getCategoryMeta(key).label} LV1부터 시작합니다.`,
-      });
+      toast.success("챌린지를 시작했어요!");
     } catch (e: any) {
-      toast({ title: "참여 실패", description: e.message ?? "다시 시도해주세요.", variant: "destructive" });
+      toast.error(e.message ?? "다시 시도해주세요.");
     } finally {
       setJoiningGroup(null);
       setConfirmGroup(null);
@@ -285,10 +282,19 @@ const ChallengePage = () => {
             </div>
 
             {joinedGroups.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                아직 참여 중인 챌린지가 없습니다.
-                <br />
-                아래에서 카테고리를 선택해 시작해보세요.
+              <div
+                style={{
+                  background: "#EEEDFE",
+                  borderRadius: "var(--border-radius-lg, 16px)",
+                  padding: 14,
+                }}
+              >
+                <p style={{ fontSize: 13, fontWeight: 500, color: "#3C3489" }}>
+                  도전할 챌린지를 선택해보세요
+                </p>
+                <p style={{ fontSize: 12, color: "#534AB7", marginTop: 2 }}>
+                  하나를 선택하면 진행 상황을 추적할 수 있어요
+                </p>
               </div>
             ) : (
               joinedGroups.map((g) => {
@@ -365,24 +371,26 @@ const ChallengePage = () => {
           {/* Available section */}
           {availableGroups.length > 0 && (
             <section className="space-y-3">
-              <div className="flex items-center gap-2 px-1">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-muted">
-                  <Plus className="h-4 w-4 text-muted-foreground" />
+              {joinedGroups.length > 0 && (
+                <div className="flex items-center gap-2 px-1">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-muted">
+                    <Plus className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <h2 className="text-base font-bold text-foreground">참여하기</h2>
+                  <span className="text-xs text-muted-foreground">· {availableGroups.length}개 카테고리</span>
                 </div>
-                <h2 className="text-base font-bold text-foreground">참여하기</h2>
-                <span className="text-xs text-muted-foreground">· {availableGroups.length}개 카테고리</span>
-              </div>
+              )}
 
               <div className="grid grid-cols-1 gap-2.5">
-                {availableGroups.map((g) => {
+                {(joinedGroups.length === 0 ? availableGroups.slice(0, 3) : availableGroups).map((g) => {
                   const meta = getCategoryMeta(g.key);
                   const Icon = meta.icon;
                   const lv1 = g.ladder.find((c) => c.level === 1) ?? g.ladder[0];
+                  const noActive = joinedGroups.length === 0;
                   return (
-                    <button
+                    <div
                       key={g.key}
-                      onClick={() => setConfirmGroup(g.key)}
-                      className="group flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 text-left shadow-sm transition hover:border-primary/40 active:scale-[0.99]"
+                      className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 text-left shadow-sm"
                     >
                       <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${meta.bg}`}>
                         <Icon className={`h-5 w-5 ${meta.color}`} />
@@ -393,8 +401,31 @@ const ChallengePage = () => {
                           총 {g.ladder.length}단계 · 시작: {lv1?.title ?? "LV1"}
                         </p>
                       </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 group-hover:text-primary transition" />
-                    </button>
+                      {noActive ? (
+                        <button
+                          onClick={() => handleJoinGroup(g.key)}
+                          disabled={!!joiningGroup}
+                          style={{
+                            border: "0.5px solid #534AB7",
+                            color: "#534AB7",
+                            borderRadius: 20,
+                            fontSize: 12,
+                            padding: "4px 10px",
+                            background: "transparent",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          도전 시작
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmGroup(g.key)}
+                          className="shrink-0"
+                        >
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </button>
+                      )}
+                    </div>
                   );
                 })}
               </div>
