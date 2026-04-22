@@ -337,7 +337,7 @@ const SocialPage = () => {
           <div className="flex justify-end">
             <Dialog open={showCreate} onOpenChange={setShowCreate}>
               <DialogTrigger asChild>
-                <Button size="sm" className="rounded-full gap-1.5">
+                <Button data-onboarding="club-create" size="sm" className="rounded-full gap-1.5">
                   <Plus className="h-4 w-4" /> 산악회 만들기
                 </Button>
               </DialogTrigger>

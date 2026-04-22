@@ -1,4 +1,5 @@
-import { useState, lazy, Suspense } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
+import { useTutorial } from "@/contexts/TutorialContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 const Records = lazy(() => import("@/pages/Records"));
@@ -15,6 +16,16 @@ const segments: { key: Segment; label: string }[] = [
 
 const RecordsHub = () => {
   const [active, setActive] = useState<Segment>("journal");
+  const { isTutorialActive, steps, currentStep } = useTutorial();
+
+  // Switch segment when tutorial step requires it
+  useEffect(() => {
+    if (!isTutorialActive) return;
+    const current = steps[currentStep];
+    if (current?.recordsSegment) {
+      setActive(current.recordsSegment as Segment);
+    }
+  }, [isTutorialActive, currentStep, steps]);
 
   return (
     <div className="pb-24">
