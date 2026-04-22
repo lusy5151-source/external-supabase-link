@@ -569,6 +569,53 @@ const ChallengePage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Abandon bottom sheet */}
+      {abandonTarget && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setAbandonTarget(null)}>
+          <div className="fixed inset-0 bg-black/40" />
+          <div
+            className="relative w-full max-w-lg bg-card rounded-t-2xl p-5 pb-8 animate-in slide-in-from-bottom duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Handle bar */}
+            <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-muted-foreground/30" />
+            
+            <h3 style={{ fontSize: 16, fontWeight: 500 }} className="text-foreground text-center">
+              챌린지를 포기할까요?
+            </h3>
+            <p style={{ fontSize: 13, lineHeight: 1.6 }} className="text-muted-foreground text-center mt-2">
+              지금까지의 진행 상황이 모두 초기화돼요.{"\n"}나중에 다시 처음부터 도전할 수 있어요.
+            </p>
+
+            {/* Progress summary */}
+            <div
+              className="mt-4 rounded-xl bg-secondary/50"
+              style={{ padding: "10px 12px" }}
+            >
+              <p style={{ fontSize: 13 }} className="text-muted-foreground text-center">
+                {abandonTarget.challengeName} · {abandonTarget.progress}/{abandonTarget.goal} 달성
+              </p>
+            </div>
+
+            <button
+              onClick={handleAbandon}
+              disabled={abandoning}
+              className="w-full mt-5 rounded-xl text-white font-medium transition disabled:opacity-50"
+              style={{ background: "#E24B4A", height: 44 }}
+            >
+              {abandoning ? "처리 중..." : "포기하기"}
+            </button>
+            <button
+              onClick={() => setAbandonTarget(null)}
+              className="w-full mt-2 text-muted-foreground font-medium transition"
+              style={{ height: 40 }}
+            >
+              계속 도전할게요
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
