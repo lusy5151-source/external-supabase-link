@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import PlanChat from "@/components/PlanChat";
 import PlanApplicationManager from "@/components/PlanApplicationManager";
+import { usePlanNotifications } from "@/hooks/usePlanNotifications";
 
 const conditionIcons: Record<string, any> = {
   "맑음": Sun, "구름": CloudSun, "흐림": Cloud, "비": CloudRain, "눈": CloudSnow,
@@ -50,6 +51,7 @@ const PlanDetailPage = () => {
     deletePlan, updatePlanWithHistory, fetchEditHistory,
   } = useHikingPlans();
   const { toast } = useToast();
+  const { isDdayEnabled } = usePlanNotifications();
 
   const [plan, setPlan] = useState<HikingPlan | null>(null);
   const [participants, setParticipants] = useState<PlanParticipant[]>([]);
@@ -295,6 +297,25 @@ const PlanDetailPage = () => {
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span className="text-foreground">{format(new Date(plan.planned_date), "PPP", { locale: ko })}</span>
               </div>
+              {/* Notification status indicator */}
+              {!isPastDate && (
+                <button
+                  onClick={() => navigate("/my")}
+                  className="col-span-2 flex items-center gap-1 mt-1"
+                >
+                  {isDdayEnabled ? (
+                    <>
+                      <span style={{ fontSize: 11 }}>🔔</span>
+                      <span style={{ fontSize: 11, color: "#3B6D11" }}>D-1, D-day 알림 설정됨</span>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ fontSize: 11 }}>🔕</span>
+                      <span style={{ fontSize: 11, color: "hsl(var(--muted-foreground))" }}>알림 꺼짐</span>
+                    </>
+                  )}
+                </button>
+              )}
               {editing ? (
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
