@@ -6,6 +6,7 @@ import { useUnreadChat } from "@/contexts/UnreadChatContext";
 import NotificationCenter from "@/components/NotificationCenter";
 import MountainMascot from "@/components/MountainMascot";
 import TutorialOverlay from "@/components/tutorial/TutorialOverlay";
+import PushPermissionPrompt from "@/components/PushPermissionPrompt";
 import { LogIn } from "lucide-react";
 
 const navItems = [
@@ -64,6 +65,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       <main className="container mx-auto px-5 py-7">{children}</main>
       <TutorialOverlay />
+      <PushPermissionPrompt />
 
       {/* Bottom Navigation Bar */}
       <nav
