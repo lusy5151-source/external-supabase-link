@@ -1,4 +1,3 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://esm.sh/zod@3.24.2";
 
 const corsHeaders = {
@@ -7,12 +6,10 @@ const corsHeaders = {
 };
 
 const OPENWEATHER_API_KEY = Deno.env.get("OPENWEATHER_API_KEY");
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const requestSchema = z.object({
   lat: z.coerce.number().finite().min(-90).max(90),
   lon: z.coerce.number().finite().min(-180).max(180),
-  type: z.enum(["weather", "forecast"]).optional(),
+  type: z.enum(["current", "weather", "forecast"]).optional(),
 });
 
 Deno.serve(async (req) => {
@@ -21,25 +18,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Invalid token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const payload = requestSchema.safeParse(await req.json());
 
     if (!payload.success) {
