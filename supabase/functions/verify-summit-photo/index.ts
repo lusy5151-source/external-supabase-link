@@ -123,9 +123,8 @@ serve(async (req) => {
     const sanitizePromptField = (value: unknown, fallback: string) => {
       if (typeof value !== "string") return fallback;
       const normalized = value
-        .replace(/[
-	]+/g, " ")
-        .replace(/[{}<>`\]/g, "")
+        .replace(/[\r\n\t]+/g, " ")
+        .replace(/[{}<>`\\]/g, "")
         .replace(/\s+/g, " ")
         .trim()
         .slice(0, 100);
