@@ -21,6 +21,7 @@ import {
   Users,
   ChevronRight,
   RefreshCw,
+  MoreVertical,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -35,6 +36,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import ChallengeCompletionModal, { CompletionInfo } from "@/components/ChallengeCompletionModal";
 
 // Category visual meta
@@ -86,6 +93,8 @@ const ChallengePage = () => {
   const [confirmGroup, setConfirmGroup] = useState<string | null>(null);
   const [completion, setCompletion] = useState<CompletionInfo | null>(null);
   const [prevCompletedIds, setPrevCompletedIds] = useState<Set<string> | null>(null);
+  const [abandonTarget, setAbandonTarget] = useState<{ key: string; challengeName: string; progress: number; goal: number } | null>(null);
+  const [abandoning, setAbandoning] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -158,6 +167,7 @@ const ChallengePage = () => {
     currentUc: UserChallenge | null;
     allComplete: boolean;
     completedCount: number;
+    wasAbandoned: boolean; // previously abandoned this group
   };
 
   const groupStates = useMemo<GroupState[]>(() => {
@@ -167,8 +177,16 @@ const ChallengePage = () => {
     ];
     return orderedKeys.map((key) => {
       const ladder = ladders.get(key) ?? [];
-      const joinedRungs = ladder.filter((ch) => ucByChallenge.has(ch.id));
+      const joinedRungs = ladder.filter((ch) => {
+        const uc = ucByChallenge.get(ch.id);
+        return uc && !(uc as any).abandoned_at;
+      });
+      const abandonedRungs = ladder.filter((ch) => {
+        const uc = ucByChallenge.get(ch.id);
+        return uc && !!(uc as any).abandoned_at;
+      });
       const joined = joinedRungs.length > 0;
+      const wasAbandoned = abandonedRungs.length > 0 && !joined;
       const completedCount = joinedRungs.filter((ch) => ucByChallenge.get(ch.id)?.completed).length;
       // current rung = lowest level that is joined and NOT completed
       let currentRung: Challenge | null =
@@ -189,6 +207,7 @@ const ChallengePage = () => {
         currentUc: currentRung ? ucByChallenge.get(currentRung.id) ?? null : null,
         allComplete,
         completedCount,
+        wasAbandoned,
       };
     });
   }, [ladders, ucByChallenge]);
@@ -227,7 +246,45 @@ const ChallengePage = () => {
     }
   };
 
-  if (!user)
+  const handleAbandon = async () => {
+    if (!user || !abandonTarget) return;
+    setAbandoning(true);
+    try {
+      const ladder = ladders.get(abandonTarget.key);
+      if (!ladder) return;
+      // Find all user_challenges for this group and abandon them
+      const challengeIds = ladder.map((c) => c.id);
+      const ucsToAbandon = userChallenges.filter(
+        (uc) => challengeIds.includes(uc.challenge_id) && !(uc as any).abandoned_at
+      );
+      for (const uc of ucsToAbandon) {
+        await (supabase as any)
+          .from("user_challenges")
+          .update({
+            abandoned_at: new Date().toISOString(),
+            progress: 0,
+          })
+          .eq("id", uc.id);
+      }
+      setAbandonTarget(null);
+      await load();
+      toast("챌린지를 포기했어요. 언제든 다시 도전할 수 있어요 💪", {
+        style: {
+          background: "#444441",
+          color: "white",
+          borderRadius: "var(--border-radius-md, 12px)",
+          padding: "10px 16px",
+        },
+        duration: 3000,
+      });
+    } catch (e: any) {
+      toast.error(e.message ?? "다시 시도해주세요.");
+    } finally {
+      setAbandoning(false);
+    }
+  };
+
+
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
         <Target className="h-12 w-12 text-muted-foreground" />
@@ -332,7 +389,7 @@ const ChallengePage = () => {
                     className={`rounded-2xl border bg-card p-4 shadow-sm ${
                       g.allComplete ? "border-primary/40 bg-primary/5" : "border-border"
                     }`}
-                  >
+                   >
                     <div className="flex items-start gap-3">
                       <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${meta.bg}`}>
                         <Icon className={`h-5 w-5 ${meta.color}`} />
@@ -349,9 +406,31 @@ const ChallengePage = () => {
                               LV{ch.level}
                             </span>
                           )}
-                          <span className="text-[10px] text-muted-foreground ml-auto">
+                          <span className="text-[10px] text-muted-foreground ml-auto mr-1">
                             {g.completedCount}/{g.ladder.length} 단계
                           </span>
+                          {!g.allComplete && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button className="p-1 -mr-1 rounded-md hover:bg-muted transition" aria-label="더보기">
+                                  <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="min-w-[140px]">
+                                <DropdownMenuItem
+                                  onClick={() => setAbandonTarget({
+                                    key: g.key,
+                                    challengeName: meta.label,
+                                    progress,
+                                    goal,
+                                  })}
+                                  style={{ color: "#E24B4A", fontSize: 14 }}
+                                >
+                                  챌린지 포기하기
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </div>
 
                         <p className="text-xs text-foreground mt-1.5 font-medium truncate">
@@ -413,10 +492,28 @@ const ChallengePage = () => {
                         <Icon className={`h-5 w-5 ${meta.color}`} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm text-foreground">{meta.label}</p>
-                        <p className="text-[11px] text-muted-foreground truncate">
-                          총 {g.ladder.length}단계 · 시작: {lv1?.title ?? "LV1"}
-                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-semibold text-sm text-foreground">{meta.label}</p>
+                          {g.wasAbandoned && (
+                            <span style={{
+                              background: "#FAEEDA",
+                              color: "#633806",
+                              fontSize: 10,
+                              borderRadius: 10,
+                              padding: "1px 6px",
+                              fontWeight: 500,
+                            }}>재도전</span>
+                          )}
+                        </div>
+                        {g.wasAbandoned ? (
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            이전에 도전한 적 있어요
+                          </p>
+                        ) : (
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            총 {g.ladder.length}단계 · 시작: {lv1?.title ?? "LV1"}
+                          </p>
+                        )}
                       </div>
                       {noActive ? (
                         <button
@@ -472,6 +569,53 @@ const ChallengePage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Abandon bottom sheet */}
+      {abandonTarget && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setAbandonTarget(null)}>
+          <div className="fixed inset-0 bg-black/40" />
+          <div
+            className="relative w-full max-w-lg bg-card rounded-t-2xl p-5 pb-8 animate-in slide-in-from-bottom duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Handle bar */}
+            <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-muted-foreground/30" />
+            
+            <h3 style={{ fontSize: 16, fontWeight: 500 }} className="text-foreground text-center">
+              챌린지를 포기할까요?
+            </h3>
+            <p style={{ fontSize: 13, lineHeight: 1.6 }} className="text-muted-foreground text-center mt-2">
+              지금까지의 진행 상황이 모두 초기화돼요.{"\n"}나중에 다시 처음부터 도전할 수 있어요.
+            </p>
+
+            {/* Progress summary */}
+            <div
+              className="mt-4 rounded-xl bg-secondary/50"
+              style={{ padding: "10px 12px" }}
+            >
+              <p style={{ fontSize: 13 }} className="text-muted-foreground text-center">
+                {abandonTarget.challengeName} · {abandonTarget.progress}/{abandonTarget.goal} 달성
+              </p>
+            </div>
+
+            <button
+              onClick={handleAbandon}
+              disabled={abandoning}
+              className="w-full mt-5 rounded-xl text-white font-medium transition disabled:opacity-50"
+              style={{ background: "#E24B4A", height: 44 }}
+            >
+              {abandoning ? "처리 중..." : "포기하기"}
+            </button>
+            <button
+              onClick={() => setAbandonTarget(null)}
+              className="w-full mt-2 text-muted-foreground font-medium transition"
+              style={{ height: 40 }}
+            >
+              계속 도전할게요
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
