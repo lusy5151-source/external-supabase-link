@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Friendship = Tables<"friendships">;
-type Profile = Tables<"profiles">;
+type Profile = Omit<Tables<"profiles">, "email">;
 
 interface FriendWithProfile extends Friendship {
   friendProfile: Profile;
@@ -41,7 +41,7 @@ export function useFriends() {
       ];
 
       const { data: profiles } = userIds.length > 0
-        ? await supabase.from("profiles").select("*").in("user_id", userIds)
+        ? await supabase.from("profiles").select("id, user_id, nickname, avatar_url, bio, location, hiking_styles, provider, is_active, created_at, updated_at").in("user_id", userIds)
         : { data: [] };
 
       const profileMap = new Map((profiles || []).map((p) => [p.user_id, p]));
@@ -120,7 +120,7 @@ export function useFriends() {
     if (!query.trim() || !user) return [];
     const { data } = await supabase
       .from("profiles")
-      .select("*")
+      .select("id, user_id, nickname, avatar_url, bio, location, hiking_styles, provider, is_active, created_at, updated_at")
       .neq("user_id", user.id)
       .ilike("nickname", `%${query}%`)
       .limit(10);

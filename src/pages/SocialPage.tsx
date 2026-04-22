@@ -22,7 +22,7 @@ import { BlockedUsersList } from "@/components/BlockedUsersList";
 
 import type { Tables } from "@/integrations/supabase/types";
 
-type Profile = Tables<"profiles">;
+type Profile = Omit<Tables<"profiles">, "email">;
 
 const SocialPage = () => {
   const navigate = useNavigate();

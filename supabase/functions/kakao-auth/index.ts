@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const KAKAO_REST_API_KEY = "c8b31eed7d32a5ad3a13a56f3b8e3995";
+const KAKAO_REST_API_KEY = Deno.env.get("KAKAO_REST_API_KEY");
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
