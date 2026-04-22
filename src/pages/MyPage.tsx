@@ -10,6 +10,7 @@ import { useSharedCompletionCounts } from "@/hooks/useSharedCompletionCounts";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ChevronRight, Users, Trophy, Mountain, BookOpen, Settings, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useUnreadChat } from "@/contexts/UnreadChatContext";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -37,6 +38,7 @@ const MyPage = () => {
   const { items: gearItems } = useGearStore();
   const sharedCompletions = useSharedCompletionCounts();
   const { earnedCount } = useAchievementStore(records, gearItems, sharedCompletions);
+  const { unreadChatCount } = useUnreadChat();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   if (!user) {
@@ -106,6 +108,14 @@ const MyPage = () => {
           >
             <item.icon className="h-4.5 w-4.5 text-muted-foreground" style={{ width: 18, height: 18 }} />
             <span className="flex-1 text-sm font-medium text-foreground">{item.label}</span>
+            {item.label === "산악회" && unreadChatCount > 0 && (
+              <span
+                className="rounded-full px-1.5 py-0.5 font-semibold text-white"
+                style={{ fontSize: 11, background: "#E24B4A", lineHeight: "14px" }}
+              >
+                {unreadChatCount}개 새 메시지
+              </span>
+            )}
             <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
           </Link>
         ))}

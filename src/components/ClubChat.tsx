@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useUnreadChat } from "@/contexts/UnreadChatContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ interface Props {
 
 export default function ClubChat({ clubId, onUnreadCount }: Props) {
   const { user } = useAuth();
+  const { increment: incrementUnread } = useUnreadChat();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -367,6 +369,14 @@ export default function ClubChat({ clubId, onUnreadCount }: Props) {
         <Button size="icon" className="h-8 w-8 rounded-full shrink-0" disabled={sending || (!text.trim() && !imageFile)} onClick={handleSend}>
           <Send className="h-4 w-4" />
         </Button>
+        <button
+          onClick={incrementUnread}
+          className="h-7 px-2 rounded-full text-[10px] font-bold text-white shrink-0"
+          style={{ background: "#E24B4A" }}
+          title="Test: increment unread"
+        >
+          +1
+        </button>
       </div>
     </section>
   );
