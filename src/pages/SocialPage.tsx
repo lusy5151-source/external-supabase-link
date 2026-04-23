@@ -194,7 +194,7 @@ const SocialPage = () => {
             {searchResults.length > 0 && (
               <div className="mt-3 space-y-2">
                 {searchResults.map((p) => (
-                  <div key={p.id} className="flex items-center gap-3 rounded-lg bg-secondary/40 p-3">
+                  <div key={p.user_id} className="flex items-center gap-3 rounded-lg bg-secondary/40 p-3">
                     {p.avatar_url ? (
                       <img src={p.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />
                     ) : (
