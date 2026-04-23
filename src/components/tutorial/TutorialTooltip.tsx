@@ -261,22 +261,22 @@ const TutorialTooltip = ({
             transition: "border-color 0.3s",
           }}
         >
-          {/* Progress bar segments */}
-          <div className="flex gap-1 mb-4">
-            {Array.from({ length: totalSteps }).map((_, i) => (
-              <div
-                key={i}
-                className="flex-1 rounded-full"
-                style={{
-                  height: 3,
-                  background:
-                    i <= currentStep
-                      ? "#639922"
-                      : "hsl(var(--color-border-tertiary, var(--border)))",
-                  transition: "background-color 0.2s ease",
-                }}
-              />
-            ))}
+          {/* Progress bar */}
+          <div
+            className="mb-4 overflow-hidden rounded-full"
+            style={{
+              height: 4,
+              background: "hsl(var(--color-border-tertiary, var(--border)))",
+            }}
+          >
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${((currentStep + 1) / totalSteps) * 100}%`,
+                background: "#639922",
+                transition: "width 0.2s ease",
+              }}
+            />
           </div>
 
           <h3 style={{ fontSize: 15, fontWeight: 500, color: "hsl(var(--foreground))" }}>
