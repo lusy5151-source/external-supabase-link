@@ -63,6 +63,28 @@ export async function getClientAuthDebugState() {
   };
 }
 
+export type AuthProbeVerdict = "success" | "email_confirmation" | "timeout" | "reachable" | "failure";
+
+export function classifyAuthProbeResult({
+  errorMessage,
+  hasSession,
+  hasUser,
+}: {
+  errorMessage?: string | null;
+  hasSession: boolean;
+  hasUser: boolean;
+}): AuthProbeVerdict {
+  const normalizedMessage = normalizeProvider(errorMessage)?.replace(/-/g, " ") ?? "";
+
+  if (hasSession) return "success";
+  if (/timed out|timeout|deadline exceeded|upstream request timeout|request timeout/.test(normalizedMessage)) {
+    return hasUser ? "timeout" : "failure";
+  }
+  if (/email not confirmed|confirmation|verify/.test(normalizedMessage)) return "email_confirmation";
+  if (hasUser) return "reachable";
+  return "failure";
+}
+
 export async function logClientAuthDebug(label: string, extra: Record<string, unknown> = {}) {
   const state = await getClientAuthDebugState();
   const payload = { label, ...state, ...extra };
