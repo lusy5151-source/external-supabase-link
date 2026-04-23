@@ -27,15 +27,77 @@ const isSafeRedirectUri = (value: string | null) => {
   }
 }
 
+const normalizeProvider = (value: unknown) =>
+  typeof value === 'string' && value.trim() ? value.trim().toLowerCase() : null
+
+const summarizeAuthUser = (user: any) => {
+  if (!user) return null
+
+  const identityProviders = Array.isArray(user.identities)
+    ? user.identities
+        .map((identity: any) => ({
+          id: identity.identity_id,
+          provider: normalizeProvider(identity.provider),
+          user_id: identity.user_id,
+        }))
+        .filter((identity: { provider: string | null }) => Boolean(identity.provider))
+    : []
+
+  const providerCandidates = Array.from(
+    new Set(
+      [
+        normalizeProvider(user.app_metadata?.provider),
+        normalizeProvider(user.user_metadata?.provider),
+        ...(Array.isArray(user.app_metadata?.providers) ? user.app_metadata.providers.map(normalizeProvider) : []),
+        ...identityProviders.map((identity: { provider: string | null }) => identity.provider),
+      ].filter((provider): provider is string => Boolean(provider)),
+    ),
+  )
+
+  return {
+    id: user.id,
+    email: user.email ?? null,
+    appProvider: normalizeProvider(user.app_metadata?.provider),
+    userProvider: normalizeProvider(user.user_metadata?.provider),
+    providerCandidates,
+    hasKakaoIdentity: providerCandidates.includes('kakao'),
+    identities: identityProviders,
+  }
+}
+
+const logDebug = (stage: string, payload: Record<string, unknown>) => {
+  console.log(`[kakao-auth:${stage}]`, JSON.stringify(payload))
+}
+
 const findExistingUser = async (supabaseAdmin: ReturnType<typeof createClient>, email: string, kakaoId: string) => {
-  const { data: profileByEmail } = await supabaseAdmin
+  const { data: profileByEmail, error: profileError } = await supabaseAdmin
     .from('profiles')
     .select('user_id, provider')
     .eq('email', email)
     .maybeSingle()
 
+  if (profileError) {
+    throw profileError
+  }
+
   if (profileByEmail?.user_id) {
-    return profileByEmail
+    const { data: authUserByProfile, error: authUserByProfileError } = await supabaseAdmin.auth.admin.getUserById(profileByEmail.user_id)
+
+    if (authUserByProfileError) {
+      logDebug('profile-auth-fetch-error', {
+        email,
+        profileUserId: profileByEmail.user_id,
+        error: authUserByProfileError.message,
+      })
+    }
+
+    if (authUserByProfile?.user) {
+      return {
+        profileByEmail,
+        authUser: authUserByProfile.user,
+        matchedBy: 'profile-email',
+      }
+    }
   }
 
   let page = 1
@@ -48,19 +110,24 @@ const findExistingUser = async (supabaseAdmin: ReturnType<typeof createClient>, 
       throw error
     }
 
-    const matchedUser = data.users.find(
-      (user) => user.user_metadata?.kakao_id === kakaoId || (user.email === email && user.app_metadata?.provider === 'kakao')
-    )
+    const matchedUser =
+      data.users.find((user) => user.user_metadata?.kakao_id === kakaoId) ??
+      data.users.find((user) => user.email === email)
 
     if (matchedUser) {
       return {
-        user_id: matchedUser.id,
-        provider: typeof matchedUser.app_metadata?.provider === 'string' ? matchedUser.app_metadata.provider : null,
+        profileByEmail,
+        authUser: matchedUser,
+        matchedBy: matchedUser.user_metadata?.kakao_id === kakaoId ? 'auth-kakao-id' : 'auth-email',
       }
     }
 
     if (data.users.length < perPage) {
-      return null
+      return {
+        profileByEmail,
+        authUser: null,
+        matchedBy: 'none',
+      }
     }
 
     page += 1
@@ -138,6 +205,13 @@ Deno.serve(async (req) => {
     const nickname = kakaoUser.kakao_account?.profile?.nickname || `카카오유저${kakaoId.slice(-4)}`
     const avatarUrl = kakaoUser.kakao_account?.profile?.profile_image_url || null
 
+    logDebug('request', {
+      email,
+      kakaoId,
+      currentProvider: 'kakao',
+      redirectUri: redirect_uri,
+    })
+
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: { autoRefreshToken: false, persistSession: false },
     })
@@ -147,15 +221,54 @@ Deno.serve(async (req) => {
     })
 
     const existingUser = await findExistingUser(supabaseAdmin, email, kakaoId)
+    const authSummary = summarizeAuthUser(existingUser.authUser)
+    const profileProvider = normalizeProvider(existingUser.profileByEmail?.provider)
+    const resolvedProvider = authSummary?.hasKakaoIdentity
+      ? 'kakao'
+      : authSummary?.providerCandidates.find((provider) => provider !== 'email') ??
+        authSummary?.appProvider ??
+        authSummary?.userProvider ??
+        profileProvider
 
-    if (existingUser?.provider && existingUser.provider !== 'kakao') {
+    logDebug('existing-user-check', {
+      email,
+      currentProvider: 'kakao',
+      existingAuthUserExists: Boolean(existingUser.authUser),
+      authUserId: authSummary?.id ?? null,
+      authUserEmail: authSummary?.email ?? null,
+      existingIdentities: authSummary?.identities ?? [],
+      authProviderCandidates: authSummary?.providerCandidates ?? [],
+      profileUserId: existingUser.profileByEmail?.user_id ?? null,
+      profileProvider,
+      matchedBy: existingUser.matchedBy,
+      resolvedProvider,
+    })
+
+    if ((existingUser.authUser || existingUser.profileByEmail) && resolvedProvider && resolvedProvider !== 'kakao') {
+      logDebug('conflict', {
+        email,
+        reason: 'existing-non-kakao-provider',
+        currentProvider: 'kakao',
+        resolvedProvider,
+        existingAuthUserExists: Boolean(existingUser.authUser),
+        existingIdentities: authSummary?.identities ?? [],
+        profileProvider,
+        matchedBy: existingUser.matchedBy,
+      })
       return jsonResponse(
         { error: '이미 다른 로그인 방식으로 가입된 이메일입니다. 기존 로그인 방식을 이용해주세요.' },
         409,
       )
     }
 
-    let userId = existingUser?.user_id ?? null
+    logDebug('branch', {
+      email,
+      branch: existingUser.authUser ? 'reuse-existing-user' : 'create-new-user',
+      currentProvider: 'kakao',
+      resolvedProvider: resolvedProvider ?? 'none',
+    })
+
+    let userId = existingUser.authUser?.id ?? existingUser.profileByEmail?.user_id ?? null
 
     const userPayload = {
       email,
@@ -206,6 +319,23 @@ Deno.serve(async (req) => {
 
     await supabaseAdmin.from('privacy_settings').upsert({ user_id: userId }, { onConflict: 'user_id' })
 
+    const { data: persistedUserData, error: persistedUserError } = await supabaseAdmin.auth.admin.getUserById(userId)
+    const { data: persistedProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('user_id, email, provider')
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    logDebug('persisted-state', {
+      email,
+      currentProvider: 'kakao',
+      authUserId: userId,
+      persistedAuthUser: persistedUserError ? { error: persistedUserError.message } : summarizeAuthUser(persistedUserData.user),
+      persistedProfile,
+      userMetadataProvider: normalizeProvider(persistedUserData.user?.user_metadata?.provider),
+      appMetadataProvider: normalizeProvider(persistedUserData.user?.app_metadata?.provider),
+    })
+
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
       email,
@@ -227,6 +357,13 @@ Deno.serve(async (req) => {
       console.error('OTP verify error:', verifyError)
       return jsonResponse({ error: '인증 확인 실패', details: verifyError?.message ?? 'session_missing' }, 500)
     }
+
+    logDebug('session-issued', {
+      email,
+      authUserId: userId,
+      currentProvider: 'kakao',
+      sessionUserId: verifyData.user?.id ?? null,
+    })
 
     return jsonResponse({ session: verifyData.session })
   } catch (err) {

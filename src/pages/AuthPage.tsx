@@ -5,6 +5,7 @@ import { useGuest } from "@/contexts/GuestContext";
 import { Mountain, Mail, Lock, Eye, EyeOff, ArrowRight, User, RefreshCw } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { logClientAuthDebug } from "@/lib/authDebug";
 
 const friendlyError = (msg: string) => {
   if (/invalid login credentials/i.test(msg)) return "이메일 또는 비밀번호가 올바르지 않습니다.";
@@ -126,9 +127,12 @@ const AuthPage = () => {
     }
   };
 
-  const handleKakaoLogin = () => {
+  const handleKakaoLogin = async () => {
     const redirectUri = `${window.location.origin}/kakao/callback`;
     const kakaoAuthUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/kakao-auth?redirect_uri=${encodeURIComponent(redirectUri)}`;
+    await logClientAuthDebug("kakao-login:start", {
+      redirectUri,
+    });
     window.location.assign(kakaoAuthUrl);
   };
 

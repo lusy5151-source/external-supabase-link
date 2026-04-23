@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
+import { logClientAuthDebug } from "@/lib/authDebug";
 
 interface AuthContextType {
   user: User | null;
@@ -28,19 +29,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      void logClientAuthDebug("auth-context:init", {
+        hasSession: Boolean(session),
+      });
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      void logClientAuthDebug(`auth-state:${event}`, {
+        hasSession: Boolean(session),
+      });
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
   const signOut = async () => {
+    await logClientAuthDebug("logout:before");
     await supabase.auth.signOut();
+    await logClientAuthDebug("logout:after");
     window.location.replace('/auth');
   };
 
