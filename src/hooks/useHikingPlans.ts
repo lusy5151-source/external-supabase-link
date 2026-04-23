@@ -136,16 +136,48 @@ export function useHikingPlans() {
     max_participants?: number;
   }) => {
     if (!user) return { error: { message: "Not authenticated" } };
+
+    const {
+      data: { session: currentSession },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
+    let activeSession = currentSession;
+
+    if (!activeSession?.user?.id) {
+      const {
+        data: { session: refreshedSession },
+        error: refreshError,
+      } = await supabase.auth.refreshSession();
+
+      if (refreshError) {
+        console.error("Failed to refresh auth session before plan creation:", refreshError);
+      }
+
+      activeSession = refreshedSession ?? null;
+    }
+
+    if (sessionError) {
+      console.error("Failed to read auth session before plan creation:", sessionError);
+    }
+
+    if (!activeSession?.user?.id) {
+      return { error: { message: "로그인이 만료되었습니다. 다시 로그인한 후 시도해 주세요." } };
+    }
+
+    const payload = { ...plan, creator_id: activeSession.user.id };
+    console.log("Creating hiking plan with payload:", payload);
+
     const { data, error } = await supabase
       .from("hiking_plans")
-      .insert({ ...plan, creator_id: user.id } as any)
+      .insert(payload as any)
       .select()
       .single();
+
     if (error) {
       console.error("Failed to create plan:", error);
-      const { toast } = await import("sonner");
-      toast.error("저장에 실패했습니다. 다시 시도해주세요.");
     }
+
     if (!error && data) {
       fetchPlans();
       // Send auto welcome message for plan chat
