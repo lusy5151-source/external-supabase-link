@@ -4,6 +4,14 @@ import { Mountain, Lock, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
+const getSupabaseErrorMessage = (error: unknown, fallback: string) => {
+  if (typeof error === "object" && error && "message" in error && typeof error.message === "string" && error.message.trim()) {
+    return error.message;
+  }
+
+  return fallback;
+};
+
 const ResetPasswordPage = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -11,6 +19,7 @@ const ResetPasswordPage = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -26,6 +35,9 @@ const ResetPasswordPage = () => {
     // Also check if session already exists
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) setSessionReady(true);
+      setSessionChecked(true);
+    }).catch(() => {
+      setSessionChecked(true);
     });
 
     return () => subscription.unsubscribe();
@@ -50,17 +62,34 @@ const ResetPasswordPage = () => {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       toast({ title: "비밀번호가 성공적으로 변경되었습니다 🎉" });
-      navigate("/");
+      navigate("/auth", { replace: true });
     } catch (err: any) {
+      const message = getSupabaseErrorMessage(err, "비밀번호 변경에 실패했습니다.");
       toast({
         title: "오류",
-        description: err.message || "비밀번호 변경에 실패했습니다.",
+        description: message,
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
+
+  if (sessionChecked && !sessionReady) {
+    return (
+      <div className="flex min-h-[80vh] items-center justify-center pb-24">
+        <div className="w-full max-w-sm space-y-6 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+            <Mountain className="h-8 w-8 text-primary" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-xl font-bold text-foreground">재설정 링크가 유효하지 않습니다</h1>
+            <p className="text-sm text-muted-foreground">비밀번호 재설정 이메일의 링크를 다시 눌러 접속해 주세요.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!sessionReady) {
     return (

@@ -4,6 +4,14 @@ import { Mountain, Mail, ArrowLeft, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
+const getSupabaseErrorMessage = (error: unknown, fallback: string) => {
+  if (typeof error === "object" && error && "message" in error && typeof error.message === "string" && error.message.trim()) {
+    return error.message;
+  }
+
+  return fallback;
+};
+
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,17 +30,19 @@ const ForgotPasswordPage = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: "https://external-spark.lovable.app/reset-password",
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
       setSent(true);
     } catch (err: any) {
+      const message = getSupabaseErrorMessage(err, "비밀번호 재설정 이메일 전송 중 오류가 발생했습니다.");
       toast({
         title: "오류",
-        description: err.message || "오류가 발생했습니다.",
+        description: message,
         variant: "destructive",
       });
+      setError(message);
     } finally {
       setLoading(false);
     }

@@ -19,6 +19,13 @@ const passwordSchema = z
   .max(72, "비밀번호는 72자 이하로 입력해주세요.");
 
 const buildDisplayName = (email: string) => email.split("@")[0]?.slice(0, 50) || "user";
+const getSupabaseErrorMessage = (error: unknown, fallback: string) => {
+  if (typeof error === "object" && error && "message" in error && typeof error.message === "string" && error.message.trim()) {
+    return error.message;
+  }
+
+  return fallback;
+};
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -62,8 +69,9 @@ const AuthPage = () => {
 
     try {
       if (isLogin) {
+        const normalizedEmail = email.trim().toLowerCase();
         const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
+          email: normalizedEmail,
           password,
         });
 
@@ -106,20 +114,21 @@ const AuthPage = () => {
         if (data.session) {
           navigate("/");
         } else {
-          setAuthSuccess("회원가입이 완료되었습니다. 이메일 인증 후 로그인해 주세요.");
+          setAuthSuccess("이메일로 발송된 인증 링크를 확인한 뒤 로그인해 주세요.");
           setIsLogin(true);
           setPassword("");
           setConfirmPassword("");
         }
       }
     } catch (err: any) {
-      const message = typeof err?.message === "string" && err.message.trim()
-        ? err.message
-        : isLogin
-          ? "로그인 처리 중 오류가 발생했습니다."
-          : "회원가입 처리 중 오류가 발생했습니다.";
+      const message = getSupabaseErrorMessage(
+        err,
+        isLogin ? "로그인 처리 중 오류가 발생했습니다." : "회원가입 처리 중 오류가 발생했습니다."
+      );
       if (!isLogin) {
         console.error("Supabase signup error:", err);
+      } else {
+        console.error("Supabase login error:", err);
       }
       setAuthError(message);
       toast({
@@ -147,7 +156,8 @@ const AuthPage = () => {
 
       if (error) throw error;
     } catch (err: any) {
-      const message = err?.message || "Authentication error";
+      const message = getSupabaseErrorMessage(err, "로그인 처리 중 오류가 발생했습니다.");
+      console.error("Supabase Google login error:", err);
       setAuthError(message);
       toast({ title: "인증 오류", description: message, variant: "destructive" });
     } finally {

@@ -37,7 +37,7 @@ export default function AuthCallbackPage() {
 
         if (error) {
           console.error("Auth callback error:", error);
-          setStatus("로그인 실패. 다시 시도해주세요.");
+          setStatus(error.message || "이메일 인증 처리 중 문제가 발생했습니다. 다시 시도해주세요.");
           timeoutId = setTimeout(() => navigate("/auth", { replace: true }), 2000);
           return () => subscription.unsubscribe();
         }
