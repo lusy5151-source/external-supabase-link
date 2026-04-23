@@ -1,144 +1,82 @@
 
 목표
-- `/kakao/callback` 페이지의 현재 코드를 확인하고, 카카오 리다이렉트 시 `code` 파라미터를 추출해 `kakao-auth` Edge Function에 전달하는지 검증합니다.
-- 현재 구현이 이미 요구사항을 충족하는지 판단하고, 필요할 경우 적용할 수정 범위를 정리합니다.
+- 카카오 로그인이 다시 동작하지 않는 원인을 현재 코드와 설정 기준으로 정확히 정리하고, 로그인 흐름을 안정적으로 복구합니다.
+- 프론트엔드에서 잘못된 환경변수 사용을 정리하고, Edge Function의 세션 발급 방식을 Supabase에 맞는 안전한 흐름으로 교체합니다.
 
-현재 `/kakao/callback` 핵심 코드
-```tsx
-const handleKakaoLogin = async () => {
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get("code");
-  const errorParam = params.get("error");
+문제 진단
+1. 클라이언트에서 잘못된 Supabase 키 이름을 사용하고 있습니다.
+   - `src/pages/KakaoCallback.tsx`는 `import.meta.env.VITE_SUPABASE_ANON_KEY`를 참조합니다.
+   - 이 프로젝트에 실제로 제공되는 값은 `VITE_SUPABASE_PUBLISHABLE_KEY`이며, 코드베이스와 연결 정보도 이 이름을 기준으로 동작합니다.
+   - 결과적으로 카카오 콜백에서 Edge Function 호출 시 `apikey` 헤더가 비어 있을 가능성이 높습니다.
 
-  if (errorParam) {
-    setError("카카오 로그인이 취소되었습니다.");
-    setTimeout(() => navigate("/auth"), 2000);
-    return;
-  }
+2. 카카오 로그인 시작 코드가 환경변수 누락에 취약합니다.
+   - `src/pages/AuthPage.tsx`는 `VITE_KAKAO_API_KEY`를 사용하지만, 현재 제공된 환경 정보에는 이 값이 보이지 않습니다.
+   - 카카오 JavaScript 키가 아니라 REST API 키를 공개 클라이언트에 넣는 구조도 관리가 불안정합니다.
+   - 키가 비어 있으면 인가 요청 URL 자체가 잘못되어 로그인 시작 단계부터 실패할 수 있습니다.
 
-  if (!code) {
-    setError("인증 코드가 없습니다.");
-    setTimeout(() => navigate("/auth"), 2000);
-    return;
-  }
+3. Edge Function의 세션 생성 방식이 취약합니다.
+   - `supabase/functions/kakao-auth/index.ts`는 `auth.admin.generateLink({ type: "magiclink" })` 후 `verifyOtp()`로 세션을 만들고 있습니다.
+   - 이 방식은 OAuth 소셜 로그인 세션 처리 용도로는 우회적이며, Supabase Auth 정책/메일 OTP 동작과 충돌할 수 있습니다.
+   - 특히 `hashed_token` 기반 검증은 안정성이 낮고, 향후 Supabase 동작 변경에도 취약합니다.
 
-  const redirectUri = `${window.location.origin}/kakao/callback`;
+4. 사용자 조회 방식도 비효율적입니다.
+   - 현재는 `listUsers()`로 전체 유저를 가져와 email/kakao_id를 탐색합니다.
+   - 데이터가 늘어나면 성능과 안정성 모두 나빠집니다.
 
-  const { data, error: fnError } = await supabase.functions.invoke("kakao-auth", {
-    body: { code, redirect_uri: redirectUri },
-  });
+구현 계획
+1. 카카오 로그인 시작부 정리
+   - `src/pages/AuthPage.tsx`에서 카카오 로그인 URL 생성 로직을 점검합니다.
+   - `API_KEYS.kakao`가 비어 있을 때 즉시 사용자에게 설정 오류 메시지를 보여주도록 방어 로직을 추가합니다.
+   - 공개 클라이언트에서 사용하는 키 이름을 프로젝트 실제 환경과 일치하도록 정리합니다.
+   - 필요 시 `src/config/apiKeys.ts`를 수정해 카카오 클라이언트용 공개 키 참조 방식을 명확히 맞춥니다.
 
-  if (data?.session) {
-    await supabase.auth.setSession({
-      access_token: data.session.access_token,
-      refresh_token: data.session.refresh_token,
-    });
-    navigate("/");
-  }
-};
-```
+2. 카카오 콜백 페이지 안정화
+   - `src/pages/KakaoCallback.tsx`에서 Edge Function 호출 헤더의 `apikey`를 실제 프로젝트 키(`VITE_SUPABASE_PUBLISHABLE_KEY`) 기준으로 수정합니다.
+   - 응답 파싱 전에 `response.ok`와 JSON 에러 구조를 더 엄격하게 검증합니다.
+   - 세션 설정 성공 시 `navigate("/", { replace: true })`로 정리해 히스토리 오염을 줄입니다.
+   - 에러 상황별 메시지를 분리해 “인가 코드 없음”, “토큰 교환 실패”, “세션 생성 실패”를 구분합니다.
 
-검증 결과
-- `/kakao/callback` 페이지는 이미 존재합니다.
-  - 파일: `src/pages/KakaoCallback.tsx`
-  - 라우트 등록: `src/App.tsx`의 `path="/kakao/callback"`
-- URL에서 `code` 파라미터를 추출하고 있습니다.
-  - 현재 코드: `const code = params.get("code")`
-  - 사용 방식은 요청하신 `new URLSearchParams(window.location.search).get('code')`와 동일합니다.
-- `kakao-auth` Edge Function에 `code`와 `redirect_uri`를 전달하고 있습니다.
-  - 현재 코드: `body: { code, redirect_uri: \`${window.location.origin}/kakao/callback\` }`
-- 응답의 `session`으로 Supabase 세션을 설정하고 있습니다.
-  - 현재 코드: `await supabase.auth.setSession(...)`
-- 세션 설정 후 홈(`/`)으로 이동하고 있습니다.
-  - 현재 코드: `navigate("/")`
+3. Edge Function 재구성
+   - `supabase/functions/kakao-auth/index.ts`를 카카오 토큰 교환과 사용자 식별까지는 유지하되, 세션 발급 부분을 재설계합니다.
+   - 현재의 `generateLink + verifyOtp` 흐름을 제거하고, Supabase에서 지원되는 더 직접적이고 안정적인 사용자 연결 방식으로 바꿉니다.
+   - 구현 시 아래를 함께 정리합니다:
+     - 입력값 검증 추가 (`code`, `redirect_uri`)
+     - Kakao API 응답 실패 시 상세 에러 반환
+     - `listUsers()` 전수 탐색 최소화
+     - 모든 응답에 일관된 CORS 헤더 유지
 
-판단
-- 현재 `/kakao/callback` 구현은 요청하신 로그인 흐름의 핵심 요구사항을 이미 충족합니다.
-- 즉, “코드가 없거나 잘못된 상태”는 아닙니다.
-- 차이점은 한 가지입니다:
-  - 현재는 `fetch(${import.meta.env.VITE_SUPABASE_URL}/functions/v1/kakao-auth, ...)` 대신
-  - `supabase.functions.invoke("kakao-auth", ...)`를 사용하고 있습니다.
-- 이 방식은 이 프로젝트 스택에서는 정상적이고 권장되는 호출 방식입니다. 기능상으로는 동일한 목적을 수행합니다.
+4. 사용자 프로필 동기화 영향 점검
+   - 카카오로 신규 가입/기존 로그인 시 `handle_new_auth_user`와 현재 프로필 구조가 정상적으로 이어지는지 확인합니다.
+   - `provider`, `full_name`, `avatar_url` 메타데이터 형식이 기존 Google/이메일 흐름과 충돌하지 않도록 맞춥니다.
 
-추가로 확인된 서버측 토큰 교환 흐름
-- `supabase/functions/kakao-auth/index.ts`에서 다음 흐름이 구현되어 있습니다.
-  1. 요청 body에서 `code`, `redirect_uri` 수신
-  2. `https://kauth.kakao.com/oauth/token`으로 authorization code 교환
-  3. `https://kapi.kakao.com/v2/user/me`로 사용자 정보 조회
-  4. Supabase 사용자 생성/갱신
-  5. 세션 생성 후 `{ session }` 반환
-- 따라서 “클라이언트가 code를 넘기지 않는다”는 문제는 코드상 확인되지 않았습니다.
+5. 라우팅 및 인증 흐름 검증
+   - `/auth` → 카카오 시작 → `/kakao/callback?code=...` → 세션 저장 → `/` 이동 흐름으로 검증합니다.
+   - 로그인 실패 시 `/auth`로 되돌아가되, 다시 카카오 로그인을 자동 시작하는 루프가 없는지 확인합니다.
+   - 기존 Google 콜백(`/auth/callback`)과 충돌하지 않는지도 함께 점검합니다.
 
-승인 후 적용 가능한 정리 작업
-1. `src/pages/KakaoCallback.tsx`를 요청하신 형태와 최대한 동일하게 맞춥니다.
-   - `supabase.functions.invoke(...)`를 직접 `fetch(...)` 호출로 교체
-   - `apikey: import.meta.env.VITE_SUPABASE_ANON_KEY` 헤더 추가
-2. 에러 처리 로직은 유지합니다.
-   - `error`, `code 없음`, `session 없음`, fetch 실패 모두 사용자 메시지 표시
-3. 필요하면 응답 검증을 조금 더 강화합니다.
-   - `response.ok` 확인
-   - `session.access_token`, `session.refresh_token` 존재 여부 확인
-4. 카카오 콜백 페이지 동작은 그대로 유지합니다.
-   - 세션 설정 성공 시 `/` 이동
+6. 운영 설정 확인 항목 정리
+   - 코드 수정과 별개로, 실제 카카오 개발자 콘솔 설정값도 함께 맞춰야 합니다.
+   - 확인할 항목:
+     - 카카오 Redirect URI에 `https://www.wandeung.com/kakao/callback`
+     - `https://wandeung.com/kakao/callback`
+     - 필요 시 현재 preview URL의 `/kakao/callback`
+     - Edge Function secret `KAKAO_REST_API_KEY`가 최신 REST API 키인지
+   - preview에서만 실패하고 published/custom domain에서 성공한다면, 환경별 리다이렉트 등록 누락 가능성을 우선 확인합니다.
+
+수정 대상 파일
+- `src/config/apiKeys.ts`
+- `src/pages/AuthPage.tsx`
+- `src/pages/KakaoCallback.tsx`
+- `supabase/functions/kakao-auth/index.ts`
+
+완료 기준
+- 카카오 로그인 버튼 클릭 시 정상적으로 카카오 인가 화면으로 이동
+- `/kakao/callback`에서 `code`를 받아 Edge Function 호출 성공
+- 세션이 생성되고 앱에 로그인 상태가 반영됨
+- 최종적으로 홈(`/`)으로 이동
+- 실패 시에도 재시도 가능한 상태로 `/auth`에 복귀하고 무한 루프가 없음
 
 기술 세부사항
-- 현재 파일:
-  - `src/pages/KakaoCallback.tsx`
-  - `src/App.tsx`
-  - `supabase/functions/kakao-auth/index.ts`
-- 현재 구현은 아래 두 조건을 이미 만족합니다.
-  - `code`를 URL query에서 추출
-  - `redirect_uri`를 `${window.location.origin}/kakao/callback`으로 동적 전달
-- 미충족 항목은 “정확히 fetch 형태로 쓰고 싶은지” 여부뿐입니다. 기능적 문제로 보이지는 않습니다.
-
-승인 후 실제 수정안
-```tsx
-useEffect(() => {
-  const handleKakaoLogin = async () => {
-    const code = new URLSearchParams(window.location.search).get("code");
-
-    if (!code) {
-      setError("인증 코드가 없습니다.");
-      setTimeout(() => navigate("/auth"), 2000);
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/kakao-auth`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify({
-            code,
-            redirect_uri: `${window.location.origin}/kakao/callback`,
-          }),
-        }
-      );
-
-      const { session, error } = await response.json();
-
-      if (!response.ok || error || !session) {
-        setError(error || "카카오 로그인 처리 중 오류가 발생했습니다.");
-        setTimeout(() => navigate("/auth"), 2000);
-        return;
-      }
-
-      await supabase.auth.setSession({
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-      });
-
-      navigate("/");
-    } catch {
-      setError("카카오 로그인 처리 중 오류가 발생했습니다.");
-      setTimeout(() => navigate("/auth"), 2000);
-    }
-  };
-
-  handleKakaoLogin();
-}, [navigate]);
-```
+- 현재 가장 의심되는 1차 원인은 `VITE_SUPABASE_ANON_KEY` 사용입니다. 이 프로젝트는 `VITE_SUPABASE_PUBLISHABLE_KEY` 기준으로 연결되어 있습니다.
+- 현재 Edge Function의 `generateLink`/`verifyOtp` 방식은 소셜 로그인 세션 생성 방식으로 부적절할 가능성이 높아, 로그인 불안정의 핵심 원인 후보입니다.
+- CORS 자체는 현재 함수 코드상 큰 문제는 없어 보이므로, 우선순위는 키 정합성 및 세션 발급 로직 교체입니다.
