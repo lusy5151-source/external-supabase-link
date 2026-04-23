@@ -147,7 +147,7 @@ const Dashboard = () => {
     if (!journals || journals.length === 0) return [];
     const userIds = [...new Set((journals as any[]).map((j) => j.user_id))];
     const { data: profiles } = await supabase
-      .from("public_profiles" as any)
+      .from("public_profiles)
       .select("user_id, nickname, avatar_url")
       .in("user_id", userIds);
     const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));

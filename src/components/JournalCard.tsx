@@ -63,7 +63,7 @@ export function JournalCard({ journal, showAuthor = true, onRefresh }: JournalCa
   useEffect(() => {
     if (!journal.tagged_friends || journal.tagged_friends.length === 0) return;
     supabase
-      .from("public_profiles" as any)
+      .from("public_profiles)
       .select("user_id, nickname, avatar_url")
       .in("user_id", journal.tagged_friends)
       .then(({ data }) => {

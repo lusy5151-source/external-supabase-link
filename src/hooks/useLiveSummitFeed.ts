@@ -32,7 +32,7 @@ export function useLiveSummitFeed() {
     const summitIds = [...new Set(rawClaims.map((c) => c.summit_id))];
 
     const [{ data: profiles }, { data: summits }] = await Promise.all([
-      supabase.from("public_profiles" as any).select("user_id, nickname, avatar_url").in("user_id", userIds),
+      supabase.from("public_profiles).select("user_id, nickname, avatar_url").in("user_id", userIds),
       (supabase as any).from("summits").select("id, summit_name").in("id", summitIds),
     ]);
 
@@ -94,7 +94,7 @@ export function useLiveSummitFeed() {
     }
 
     const { data: profile } = await supabase
-      .from("public_profiles" as any)
+      .from("public_profiles)
       .select("user_id, nickname, avatar_url")
       .eq("user_id", topUser)
       .single();

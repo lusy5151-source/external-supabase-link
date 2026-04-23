@@ -30,7 +30,7 @@ export default function JournalDetailPage() {
     }
 
     const [{ data: profile }, { data: likes }, { data: comments }] = await Promise.all([
-      supabase.from("public_profiles" as any).select("user_id, nickname, avatar_url").eq("user_id", (data as any).user_id).maybeSingle(),
+      supabase.from("public_profiles).select("user_id, nickname, avatar_url").eq("user_id", (data as any).user_id).maybeSingle(),
       supabase.from("journal_likes").select("user_id").eq("journal_id", id),
       supabase.from("journal_comments").select("id").eq("journal_id", id),
     ]);

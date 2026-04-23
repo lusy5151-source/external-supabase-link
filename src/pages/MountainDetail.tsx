@@ -83,7 +83,7 @@ const MountainDetail = () => {
 
   useEffect(() => {
     if (!createdBy) return;
-    supabase.from("public_profiles" as any).select("nickname").eq("user_id", createdBy).single().then(({ data }) => {
+    supabase.from("public_profiles).select("nickname").eq("user_id", createdBy).single().then(({ data }) => {
       setCreatorName(data?.nickname || "사용자");
     });
   }, [createdBy]);
@@ -348,7 +348,7 @@ function JournalSection({
   useEffect(() => {
     if (taggedFriends.length === 0) return;
     supabase
-      .from("public_profiles" as any)
+      .from("public_profiles)
       .select("user_id, nickname, avatar_url")
       .in("user_id", taggedFriends)
       .then(({ data }) => {
