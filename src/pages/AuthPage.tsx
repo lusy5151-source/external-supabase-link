@@ -1,82 +1,37 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useGuest } from "@/contexts/GuestContext";
-import { Mountain, Mail, Lock, Eye, EyeOff, ArrowRight, User, RefreshCw } from "lucide-react";
+import { Mountain, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
-const getEmailAuthRedirectUrl = () => `${window.location.origin}/auth/callback`;
-
-const friendlyError = (msg: string) => {
-  if (/invalid login credentials/i.test(msg)) return "이메일 또는 비밀번호가 올바르지 않습니다.";
-  if (/email not confirmed/i.test(msg)) return "이메일 인증 후 로그인할 수 있습니다.\n인증 메일을 확인해주세요.";
-  if (/user already registered|already.*registered|database error saving new user/i.test(msg)) return "이미 가입된 이메일입니다. 로그인을 시도해주세요.";
-  if (/password.*characters/i.test(msg)) return "비밀번호는 최소 8자 이상이어야 합니다.";
-  if (/timed out|timeout|deadline exceeded|upstream request timeout|request timeout/i.test(msg)) return "가입 요청이 지연되고 있습니다. 이미 인증 메일이 발송됐을 수 있으니 메일함을 먼저 확인해주세요.";
-  if (/rate limit/i.test(msg)) return "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.";
-  if (/network/i.test(msg)) return "네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.";
-  return msg || "오류가 발생했습니다.";
-};
-
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [signupSuccess, setSignupSuccess] = useState(false);
-  const [signupEmail, setSignupEmail] = useState("");
-  const [signupNotice, setSignupNotice] = useState("이메일을 확인하고 인증 버튼을 눌러주세요.");
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const [agreePrivacy, setAgreePrivacy] = useState(false);
-  const [agreeTerms, setAgreeTerms] = useState(false);
-  const [agreeMarketing, setAgreeMarketing] = useState(false);
+  const [authError, setAuthError] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const timer = setInterval(() => setResendCooldown((c) => c - 1), 1000);
-    return () => clearInterval(timer);
-  }, [resendCooldown]);
-
   const validate = () => {
     const errors: Record<string, string> = {};
-    if (!isLogin && !name.trim()) errors.name = "이름을 입력해주세요.";
+
     if (!email.trim()) errors.email = "이메일을 입력해주세요.";
     if (!password) errors.password = "비밀번호를 입력해주세요.";
-    else if (password.length < 8) errors.password = "비밀번호는 최소 8자 이상이어야 합니다.";
-    if (!isLogin && (!agreePrivacy || !agreeTerms)) errors.consent = "필수 약관에 동의해주세요.";
+
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  const canSignup = isLogin || (agreePrivacy && agreeTerms);
-
-  const handleResendEmail = useCallback(async () => {
-    if (resendCooldown > 0 || !signupEmail) return;
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.resend({
-        type: "signup",
-        email: signupEmail,
-        options: { emailRedirectTo: getEmailAuthRedirectUrl() },
-      });
-      if (error) throw error;
-      setResendCooldown(60);
-      toast({ title: "인증 메일을 재발송했습니다." });
-    } catch (err: any) {
-      toast({ title: "오류", description: friendlyError(err.message), variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  }, [resendCooldown, signupEmail, toast]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthError("");
+
     if (!validate()) return;
+
     setLoading(true);
 
     try {
@@ -85,97 +40,64 @@ const AuthPage = () => {
           email: email.trim(),
           password,
         });
+
         if (error) throw error;
         navigate("/");
       } else {
-        const normalizedEmail = email.trim().toLowerCase();
-        const { data, error } = await supabase.auth.signUp({
-          email: normalizedEmail,
+        const { error } = await supabase.auth.signUp({
+          email: email.trim(),
           password,
-          options: {
-            emailRedirectTo: getEmailAuthRedirectUrl(),
-            data: { full_name: name.trim() },
-          },
         });
 
         if (error) throw error;
-        if (data.session) {
-          navigate("/");
-        } else {
-          setSignupEmail(normalizedEmail);
-          setSignupNotice("인증 메일을 확인하고 인증 버튼을 눌러주세요.");
-          setSignupSuccess(true);
-          setResendCooldown(60);
-        }
+
+        toast({
+          title: "회원가입 요청 완료",
+          description: "이메일을 확인해 계정을 활성화해주세요.",
+        });
+        setIsLogin(true);
       }
     } catch (err: any) {
-      const message = err?.message ?? "";
-      const normalizedEmail = email.trim().toLowerCase();
-
-      if (/timed out|timeout|deadline exceeded|upstream request timeout|request timeout/i.test(message)) {
-        setSignupEmail(normalizedEmail);
-        setSignupNotice("가입 요청이 지연됐습니다. 이미 인증 메일이 발송됐을 수 있으니 메일함을 먼저 확인해주세요.");
-        setSignupSuccess(true);
-        setResendCooldown(60);
-        toast({ title: "인증 메일 확인", description: friendlyError(message) });
-      } else if (/user already registered|already.*registered|database error saving new user/i.test(message) && !isLogin) {
-        setSignupEmail(normalizedEmail);
-        setSignupNotice("이미 생성된 계정일 수 있습니다. 인증 메일을 다시 보내거나 로그인해보세요.");
-        setSignupSuccess(true);
-        setResendCooldown(0);
-        toast({ title: "이미 가입된 이메일", description: "이미 가입된 계정일 수 있습니다. 인증 메일을 다시 보내거나 로그인해주세요." });
-      } else {
-        toast({ title: "오류", description: friendlyError(message), variant: "destructive" });
-      }
+      const message = err?.message || "Authentication error";
+      setAuthError(message);
+      toast({
+        title: "인증 오류",
+        description: message,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
+    setAuthError("");
     setLoading(true);
     try {
-      await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
           skipBrowserRedirect: false,
         },
       });
+
+      if (error) throw error;
     } catch (err: any) {
-      toast({ title: "오류", description: friendlyError(err.message), variant: "destructive" });
+      const message = err?.message || "Authentication error";
+      setAuthError(message);
+      toast({ title: "인증 오류", description: message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
   const handleKakaoLogin = async () => {
+    setAuthError("");
     const redirectUri = `${window.location.origin}/kakao/callback`;
     const kakaoAuthUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/kakao-auth?redirect_uri=${encodeURIComponent(redirectUri)}`;
     window.location.assign(kakaoAuthUrl);
   };
-
-  if (signupSuccess) {
-    return (
-      <div className="flex min-h-[80vh] items-center justify-center pb-24">
-        <div className="w-full max-w-sm space-y-6 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-            <Mail className="h-8 w-8 text-primary" />
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-xl font-bold text-foreground">인증 메일을 발송했습니다 📧</h1>
-            <p className="text-sm text-muted-foreground whitespace-pre-line">{signupNotice}</p>
-            <p className="text-xs text-muted-foreground/70">{signupEmail}</p>
-          </div>
-          <button onClick={handleResendEmail} disabled={loading || resendCooldown > 0} className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50 disabled:opacity-50">
-            <RefreshCw className="h-4 w-4" />
-            {resendCooldown > 0 ? `인증 메일 재발송 (${resendCooldown}초)` : "인증 메일 재발송"}
-          </button>
-          <button onClick={() => { setSignupSuccess(false); setIsLogin(true); setFieldErrors({}); setSignupNotice("이메일을 확인하고 인증 버튼을 눌러주세요."); }} className="text-sm font-medium text-primary hover:underline">로그인으로 돌아가기</button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex min-h-[80vh] items-center justify-center pb-24">
@@ -185,7 +107,7 @@ const AuthPage = () => {
             <Mountain className="h-7 w-7 text-primary" />
           </div>
           <h1 className="text-xl font-bold text-foreground">완등</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{isLogin ? "로그인하여 등산 여정을 시작하세요" : "새 계정을 만들어보세요"}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{isLogin ? "로그인하여 등산 여정을 시작하세요" : "이메일로 새 계정을 만드세요"}</p>
         </div>
 
         <div className="space-y-2">
@@ -209,27 +131,39 @@ const AuthPage = () => {
               </Link>
             </div>
           )}
-          {!isLogin && (
-            <div>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input type="text" value={name} onChange={(e) => { setName(e.target.value); setFieldErrors(prev => ({ ...prev, name: "" })); }} placeholder="이름을 입력하세요" className="w-full rounded-xl border border-border bg-card py-3 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30" />
-              </div>
-              {fieldErrors.name && <p className="mt-1 text-xs text-destructive">{fieldErrors.name}</p>}
-            </div>
-          )}
 
           <div>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input type="email" value={email} onChange={(e) => { setEmail(e.target.value); setFieldErrors(prev => ({ ...prev, email: "" })); }} placeholder="이메일" className="w-full rounded-xl border border-border bg-card py-3 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setFieldErrors((prev) => ({ ...prev, email: "" }));
+                  setAuthError("");
+                }}
+                placeholder="이메일"
+                className="w-full rounded-xl border border-border bg-card py-3 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
             </div>
             {fieldErrors.email && <p className="mt-1 text-xs text-destructive">{fieldErrors.email}</p>}
           </div>
+
           <div>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => { setPassword(e.target.value); setFieldErrors(prev => ({ ...prev, password: "" })); }} placeholder="비밀번호" className="w-full rounded-xl border border-border bg-card py-3 pl-10 pr-10 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setFieldErrors((prev) => ({ ...prev, password: "" }));
+                  setAuthError("");
+                }}
+                placeholder="비밀번호"
+                className="w-full rounded-xl border border-border bg-card py-3 pl-10 pr-10 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -237,25 +171,9 @@ const AuthPage = () => {
             {fieldErrors.password && <p className="mt-1 text-xs text-destructive">{fieldErrors.password}</p>}
           </div>
 
-          {!isLogin && (
-            <div className="space-y-2.5 py-1">
-              <label className="flex items-start gap-2.5 cursor-pointer">
-                <input type="checkbox" checked={agreePrivacy} onChange={(e) => { setAgreePrivacy(e.target.checked); setFieldErrors(prev => ({ ...prev, consent: "" })); }} className="mt-0.5 h-4 w-4 rounded border-border accent-primary shrink-0" />
-                <span className="text-[13px] text-foreground leading-snug"><span className="text-destructive font-medium">(필수)</span> 개인정보처리방침에 동의합니다 <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">전문 보기</a></span>
-              </label>
-              <label className="flex items-start gap-2.5 cursor-pointer">
-                <input type="checkbox" checked={agreeTerms} onChange={(e) => { setAgreeTerms(e.target.checked); setFieldErrors(prev => ({ ...prev, consent: "" })); }} className="mt-0.5 h-4 w-4 rounded border-border accent-primary shrink-0" />
-                <span className="text-[13px] text-foreground leading-snug"><span className="text-destructive font-medium">(필수)</span> 이용약관에 동의합니다 <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">전문 보기</a></span>
-              </label>
-              <label className="flex items-start gap-2.5 cursor-pointer">
-                <input type="checkbox" checked={agreeMarketing} onChange={(e) => setAgreeMarketing(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-border accent-primary shrink-0" />
-                <span className="text-[13px] text-muted-foreground leading-snug">(선택) 마케팅 정보 수신에 동의합니다</span>
-              </label>
-              {fieldErrors.consent && <p className="text-xs text-destructive">{fieldErrors.consent}</p>}
-            </div>
-          )}
+          {authError && <p className="text-sm text-destructive">{authError}</p>}
 
-          <button type="submit" disabled={loading || (!isLogin && !canSignup)} className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors disabled:opacity-50 ${!isLogin && canSignup ? "bg-primary text-primary-foreground hover:bg-primary/90" : !isLogin ? "bg-muted text-muted-foreground" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}>
+          <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50">
             {loading ? "처리 중..." : isLogin ? "로그인" : "회원가입"}
             {!loading && <ArrowRight className="h-4 w-4" />}
           </button>
@@ -263,7 +181,7 @@ const AuthPage = () => {
 
         <p className="text-center text-sm text-muted-foreground">
           {isLogin ? "계정이 없으신가요?" : "이미 계정이 있으신가요?"}{" "}
-          <button onClick={() => { setIsLogin(!isLogin); setFieldErrors({}); setAgreePrivacy(false); setAgreeTerms(false); setAgreeMarketing(false); }} className="font-medium text-primary hover:underline">
+          <button onClick={() => { setIsLogin(!isLogin); setFieldErrors({}); setAuthError(""); }} className="font-medium text-primary hover:underline">
             {isLogin ? "회원가입" : "로그인"}
           </button>
         </p>
@@ -277,6 +195,7 @@ const AuthPage = () => {
 function GuestEntryButton() {
   const navigate = useNavigate();
   const { enterGuestMode } = useGuest();
+
   return (
     <button
       data-onboarding="guest-browse"
