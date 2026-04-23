@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { logClientAuthDebug } from "@/lib/authDebug";
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate();
@@ -13,10 +12,6 @@ export default function AuthCallbackPage() {
 
     const handleCallback = async () => {
       try {
-        await logClientAuthDebug("auth-callback:start", {
-          search: window.location.search,
-          hash: window.location.hash,
-        });
         const searchParams = new URLSearchParams(window.location.search);
         const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
         const hasCode = Boolean(searchParams.get("code"));
@@ -42,29 +37,18 @@ export default function AuthCallbackPage() {
 
         if (error) {
           console.error("Auth callback error:", error);
-          await logClientAuthDebug("auth-callback:error", {
-            message: error.message,
-          });
           setStatus("로그인 실패. 다시 시도해주세요.");
           timeoutId = setTimeout(() => navigate("/auth", { replace: true }), 2000);
           return () => subscription.unsubscribe();
         }
 
         if (data.session) {
-          await logClientAuthDebug("auth-callback:session-found", {
-            hasCode,
-            hasAccessToken,
-          });
           subscription.unsubscribe();
           navigate("/", { replace: true });
           return;
         }
 
         if (!hasCode && !hasAccessToken) {
-          await logClientAuthDebug("auth-callback:missing-token", {
-            hasCode,
-            hasAccessToken,
-          });
           subscription.unsubscribe();
           navigate("/auth", { replace: true });
           return;
@@ -80,9 +64,6 @@ export default function AuthCallbackPage() {
         return () => subscription.unsubscribe();
       } catch (err) {
         console.error("Callback error:", err);
-        await logClientAuthDebug("auth-callback:exception", {
-          message: err instanceof Error ? err.message : String(err),
-        });
         if (isActive) {
           navigate("/auth", { replace: true });
         }

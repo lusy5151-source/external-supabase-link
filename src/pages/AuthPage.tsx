@@ -1,48 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import { useGuest } from "@/contexts/GuestContext";
-import { Mountain, Mail, Lock, Eye, EyeOff, ArrowRight, User, RefreshCw, Bug, TerminalSquare, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
+import { Mountain, Mail, Lock, Eye, EyeOff, ArrowRight, User, RefreshCw } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { classifyAuthProbeResult, logClientAuthDebug } from "@/lib/authDebug";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const getEmailAuthRedirectUrl = () => `${window.location.origin}/auth/callback`;
-
-type AuthTestLog = {
-  id: string;
-  timestamp: string;
-  email: string;
-  supabaseUrl: string;
-  signUpSuccess: boolean;
-  sessionExists: boolean;
-  errorMessage: string | null;
-  userId: string | null;
-  userEmail: string | null;
-  providerCandidates: string[];
-  profileProvider: string | null;
-  verdict: "success" | "email_confirmation" | "timeout" | "reachable" | "failure";
-  note: string;
-};
-
-const verdictMeta: Record<AuthTestLog["verdict"], { label: string; icon: typeof CheckCircle2; tone: string }> = {
-  success: { label: "연결 성공", icon: CheckCircle2, tone: "text-primary" },
-  email_confirmation: { label: "이메일 확인 필요", icon: Mail, tone: "text-primary" },
-  timeout: { label: "타임아웃", icon: AlertTriangle, tone: "text-destructive" },
-  reachable: { label: "Auth 요청 도달", icon: TerminalSquare, tone: "text-primary" },
-  failure: { label: "실패", icon: XCircle, tone: "text-destructive" },
-};
-
-const verdictNote = (verdict: AuthTestLog["verdict"], errorMessage: string | null, hasSession: boolean) => {
-  if (verdict === "success") return "테스트 가입과 세션 생성까지 정상적으로 완료됐습니다.";
-  if (verdict === "email_confirmation") return "Supabase 연결은 정상이며, 메일 인증 완료 후 로그인할 수 있습니다.";
-  if (verdict === "timeout") return "Auth 요청은 도달했지만 이메일 발송 또는 후처리 단계에서 지연됐을 가능성이 큽니다.";
-  if (verdict === "reachable") return hasSession
-    ? "연결과 인증이 모두 응답했습니다."
-    : "Auth 요청은 처리됐지만 즉시 세션은 생성되지 않았습니다.";
-  return errorMessage ? `인증 실패: ${errorMessage}` : "설정 또는 인증 단계에서 실패했습니다.";
-};
 
 const friendlyError = (msg: string) => {
   if (/invalid login credentials/i.test(msg)) return "이메일 또는 비밀번호가 올바르지 않습니다.";
@@ -70,8 +33,6 @@ const AuthPage = () => {
   const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreeMarketing, setAgreeMarketing] = useState(false);
-  const [authTestLoading, setAuthTestLoading] = useState(false);
-  const [authTestLogs, setAuthTestLogs] = useState<AuthTestLog[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -128,22 +89,15 @@ const AuthPage = () => {
         navigate("/");
       } else {
         const normalizedEmail = email.trim().toLowerCase();
-        const redirectTo = getEmailAuthRedirectUrl();
         const { data, error } = await supabase.auth.signUp({
           email: normalizedEmail,
           password,
           options: {
-            emailRedirectTo: redirectTo,
+            emailRedirectTo: getEmailAuthRedirectUrl(),
             data: { full_name: name.trim() },
           },
         });
-        await logClientAuthDebug("email-signup:result", {
-          requestedEmail: normalizedEmail,
-          hasSession: Boolean(data.session),
-          hasUser: Boolean(data.user),
-          redirectTo,
-          errorMessage: error?.message ?? null,
-        });
+
         if (error) throw error;
         if (data.session) {
           navigate("/");
@@ -198,96 +152,7 @@ const AuthPage = () => {
   const handleKakaoLogin = async () => {
     const redirectUri = `${window.location.origin}/kakao/callback`;
     const kakaoAuthUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/kakao-auth?redirect_uri=${encodeURIComponent(redirectUri)}`;
-    await logClientAuthDebug("kakao-login:start", {
-      redirectUri,
-    });
     window.location.assign(kakaoAuthUrl);
-  };
-
-  const handleConnectionTest = async () => {
-    if (authTestLoading) return;
-
-    const timestamp = new Date();
-    const testEmail = `supabase-test-${Date.now()}@example.com`;
-    const testPassword = `Test!${Math.random().toString(36).slice(2)}Aa1`;
-    const redirectTo = getEmailAuthRedirectUrl();
-
-    setAuthTestLoading(true);
-
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: testEmail,
-        password: testPassword,
-        options: {
-          emailRedirectTo: redirectTo,
-          data: { full_name: "Supabase Test Probe" },
-        },
-      });
-
-      const debugState = await logClientAuthDebug("auth-test:signup", {
-        requestedEmail: testEmail,
-        redirectTo,
-        hasSession: Boolean(data.session),
-        hasUser: Boolean(data.user),
-        errorMessage: error?.message ?? null,
-      });
-
-      const verdict = classifyAuthProbeResult({
-        errorMessage: error?.message ?? null,
-        hasSession: Boolean(data.session),
-        hasUser: Boolean(data.user),
-      });
-
-      const entry: AuthTestLog = {
-        id: `${timestamp.toISOString()}-${Math.random().toString(36).slice(2, 8)}`,
-        timestamp: timestamp.toLocaleString("ko-KR"),
-        email: testEmail,
-        supabaseUrl: import.meta.env.VITE_SUPABASE_URL ?? "",
-        signUpSuccess: !error,
-        sessionExists: Boolean(data.session),
-        errorMessage: error?.message ?? null,
-        userId: data.user?.id ?? debugState.userId,
-        userEmail: data.user?.email ?? debugState.email,
-        providerCandidates: debugState.providerCandidates,
-        profileProvider: debugState.profileProvider,
-        verdict,
-        note: verdictNote(verdict, error?.message ?? null, Boolean(data.session)),
-      };
-
-      setAuthTestLogs((prev) => [entry, ...prev].slice(0, 6));
-
-      if (verdict === "success") {
-        toast({ title: "Supabase 연결 확인됨", description: "테스트 가입과 세션 생성이 정상적으로 완료됐습니다." });
-      } else if (verdict === "timeout") {
-        toast({ title: "타임아웃 감지", description: "연결은 정상이나 이메일 가입 후속 단계에서 지연이 발생했습니다." });
-      } else if (verdict === "email_confirmation" || verdict === "reachable") {
-        toast({ title: "Auth 요청 도달", description: "Supabase 연결은 정상이며 인증 요청이 처리되었습니다." });
-      } else {
-        toast({ title: "연결 테스트 실패", description: entry.note, variant: "destructive" });
-      }
-    } catch (err: any) {
-      const errorMessage = err?.message ?? "알 수 없는 오류";
-      const entry: AuthTestLog = {
-        id: `${timestamp.toISOString()}-${Math.random().toString(36).slice(2, 8)}`,
-        timestamp: timestamp.toLocaleString("ko-KR"),
-        email: testEmail,
-        supabaseUrl: import.meta.env.VITE_SUPABASE_URL ?? "",
-        signUpSuccess: false,
-        sessionExists: false,
-        errorMessage,
-        userId: null,
-        userEmail: null,
-        providerCandidates: [],
-        profileProvider: null,
-        verdict: classifyAuthProbeResult({ errorMessage, hasSession: false, hasUser: false }),
-        note: verdictNote(classifyAuthProbeResult({ errorMessage, hasSession: false, hasUser: false }), errorMessage, false),
-      };
-
-      setAuthTestLogs((prev) => [entry, ...prev].slice(0, 6));
-      toast({ title: "연결 테스트 실패", description: entry.note, variant: "destructive" });
-    } finally {
-      setAuthTestLoading(false);
-    }
   };
 
   if (signupSuccess) {
@@ -353,6 +218,7 @@ const AuthPage = () => {
               {fieldErrors.name && <p className="mt-1 text-xs text-destructive">{fieldErrors.name}</p>}
             </div>
           )}
+
           <div>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -394,77 +260,6 @@ const AuthPage = () => {
             {!loading && <ArrowRight className="h-4 w-4" />}
           </button>
         </form>
-
-        <Card className="border-border/80 bg-card/80">
-          <CardHeader className="space-y-2 pb-4">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Bug className="h-4 w-4 text-primary" />
-              Supabase 연결 테스트
-            </CardTitle>
-            <CardDescription>
-              임시 테스트 계정으로 현재 연결된 Supabase 인증 응답을 바로 확인합니다.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <button
-              type="button"
-              onClick={handleConnectionTest}
-              disabled={authTestLoading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-secondary px-4 py-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80 disabled:opacity-50"
-            >
-              {authTestLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <TerminalSquare className="h-4 w-4" />}
-              {authTestLoading ? "테스트 실행 중..." : "원클릭 연결 테스트"}
-            </button>
-
-            <div className="rounded-xl border border-border bg-background/60 p-3 text-xs text-muted-foreground">
-              <div>URL: {import.meta.env.VITE_SUPABASE_URL ?? "미설정"}</div>
-              <div>Redirect: {getEmailAuthRedirectUrl()}</div>
-            </div>
-
-            <div className="space-y-3">
-              {authTestLogs.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
-                  아직 실행 로그가 없습니다.
-                </div>
-              ) : (
-                authTestLogs.map((log) => {
-                  const meta = verdictMeta[log.verdict];
-                  const VerdictIcon = meta.icon;
-
-                  return (
-                    <div key={log.id} className="rounded-xl border border-border bg-background/70 p-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-1">
-                          <div className="text-sm font-medium text-foreground">{log.timestamp}</div>
-                          <div className="break-all text-xs text-muted-foreground">{log.email}</div>
-                        </div>
-                        <div className={`flex items-center gap-1 text-xs font-medium ${meta.tone}`}>
-                          <VerdictIcon className="h-3.5 w-3.5" />
-                          {meta.label}
-                        </div>
-                      </div>
-
-                      <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
-                        <div>signUp 성공 여부: {log.signUpSuccess ? "성공" : "실패"}</div>
-                        <div>세션 존재 여부: {log.sessionExists ? "있음" : "없음"}</div>
-                        <div>사용자 ID: {log.userId ?? "없음"}</div>
-                        <div>사용자 이메일: {log.userEmail ?? "없음"}</div>
-                        <div>provider 후보: {log.providerCandidates.length ? log.providerCandidates.join(", ") : "없음"}</div>
-                        <div>profiles.provider: {log.profileProvider ?? "없음"}</div>
-                        <div>Supabase URL: {log.supabaseUrl || "미설정"}</div>
-                        {log.errorMessage && <div className="text-destructive">error.message: {log.errorMessage}</div>}
-                      </div>
-
-                      <div className="mt-3 rounded-lg bg-muted/60 px-3 py-2 text-xs text-foreground">
-                        최종 판정: {log.note}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </CardContent>
-        </Card>
 
         <p className="text-center text-sm text-muted-foreground">
           {isLogin ? "계정이 없으신가요?" : "이미 계정이 있으신가요?"}{" "}
