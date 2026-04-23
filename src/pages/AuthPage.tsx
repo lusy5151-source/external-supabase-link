@@ -20,8 +20,19 @@ const passwordSchema = z
 
 const buildDisplayName = (email: string) => email.split("@")[0]?.slice(0, 50) || "user";
 const getSupabaseErrorMessage = (error: unknown, fallback: string) => {
-  if (typeof error === "object" && error && "message" in error && typeof error.message === "string" && error.message.trim()) {
-    return error.message;
+  if (typeof error === "string" && error.trim()) return error;
+
+  if (typeof error === "object" && error) {
+    if ("message" in error && typeof error.message === "string" && error.message.trim()) {
+      return error.message;
+    }
+
+    try {
+      const serialized = JSON.stringify(error);
+      if (serialized && serialized !== "{}") return serialized;
+    } catch {
+      return fallback;
+    }
   }
 
   return fallback;
@@ -87,37 +98,45 @@ const AuthPage = () => {
           },
         });
 
+        console.log("Supabase signup response:", { data, error });
+
         if (error) throw error;
 
         if (data.user?.id) {
-          const { error: profileError } = await supabase.from("profiles").upsert(
-            {
-              id: data.user.id,
-              user_id: data.user.id,
-              email: data.user.email ?? normalizedEmail,
-              nickname: buildDisplayName(data.user.email ?? normalizedEmail),
-              provider: "email",
-            },
-            { onConflict: "user_id" }
-          );
+          const hasActiveSession = data.session?.user?.id === data.user.id;
 
-          if (profileError) {
-            console.error("Profile creation error after signup:", profileError);
-            setAuthSuccess("계정은 생성되었지만 프로필 설정 중 문제가 발생했습니다. 다시 로그인해 주세요.");
+          if (hasActiveSession) {
+            const { error: profileError } = await supabase.from("profiles").upsert(
+              {
+                id: data.user.id,
+                user_id: data.user.id,
+                email: data.user.email ?? normalizedEmail,
+                nickname: buildDisplayName(data.user.email ?? normalizedEmail),
+                provider: "email",
+              },
+              { onConflict: "user_id" }
+            );
+
+            if (profileError) {
+              console.error("Profile insert error after signup:", profileError);
+              setAuthSuccess("계정은 생성되었습니다. 로그인 후 다시 시도해주세요.");
+              setIsLogin(true);
+              setPassword("");
+              setConfirmPassword("");
+              return;
+            }
+          }
+
+          if (data.session) {
+            navigate("/");
+          } else {
+            setAuthSuccess("회원가입이 완료되었습니다. 이메일 인증 후 로그인해 주세요.");
             setIsLogin(true);
             setPassword("");
             setConfirmPassword("");
-            return;
           }
-        }
-
-        if (data.session) {
-          navigate("/");
         } else {
-          setAuthSuccess("회원가입이 완료되었습니다. 이메일 인증 후 로그인해 주세요.");
-          setIsLogin(true);
-          setPassword("");
-          setConfirmPassword("");
+          setAuthError("회원가입 응답을 확인할 수 없습니다. 잠시 후 다시 시도해 주세요.");
         }
       }
     } catch (err: any) {
