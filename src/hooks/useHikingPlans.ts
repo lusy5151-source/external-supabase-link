@@ -149,7 +149,6 @@ export function useHikingPlans() {
     }
 
     const payload = {
-      creator_id: authUser.id,
       mountain_id: plan.mountain_id,
       trail_name: plan.trail_name ?? null,
       planned_date: plan.planned_date,

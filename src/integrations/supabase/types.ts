@@ -757,7 +757,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          creator_id: string
+          creator_id?: string
           group_id?: string | null
           id?: string
           invite_code?: string | null
