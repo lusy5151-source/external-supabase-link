@@ -48,7 +48,7 @@ export function useHikingJournals() {
         .eq("user_id", user.id)
         .order("hiked_at", { ascending: false }),
       supabase
-        .from("public_profiles)
+        .from("public_profiles")
         .select("user_id, nickname, avatar_url")
         .eq("user_id", user.id)
         .single(),
@@ -115,7 +115,7 @@ export function useHikingJournals() {
     // Get profiles
     const userIds = [...new Set((journals as any[]).map((j) => j.user_id))];
     const { data: profiles } = await supabase
-      .from("public_profiles)
+      .from("public_profiles")
       .select("user_id, nickname, avatar_url")
       .in("user_id", userIds);
     const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
@@ -331,7 +331,7 @@ export function useHikingJournals() {
 
     const userIds = [...new Set((comments as any[]).map((c) => c.user_id))];
     const { data: profiles } = await supabase
-      .from("public_profiles)
+      .from("public_profiles")
       .select("user_id, nickname, avatar_url")
       .in("user_id", userIds);
     const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));

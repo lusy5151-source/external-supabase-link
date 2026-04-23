@@ -59,7 +59,7 @@ const FriendProfilePage = () => {
 
       // Fetch profile
       const { data: profileData } = await supabase
-        .from("public_profiles)
+        .from("public_profiles")
         .select("user_id, nickname, avatar_url, bio, location, hiking_styles")
         .eq("user_id", userId)
         .single();

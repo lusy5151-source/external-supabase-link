@@ -38,7 +38,7 @@ export function useSummits(mountainId?: number) {
     const { data: claimsData } = await (supabase as any).from("summit_claims").select("*").eq("mountain_id", mountainId).order("claimed_at", { ascending: false });
     if (!claimsData || (claimsData as any[]).length === 0) { setClaims([]); setLoading(false); return; }
     const userIds = [...new Set((claimsData as any[]).map((c: any) => c.user_id))];
-    const { data: profiles } = await supabase.from("public_profiles).select("user_id, nickname, avatar_url").in("user_id", userIds);
+    const { data: profiles } = await supabase.from("public_profiles").select("user_id, nickname, avatar_url").in("user_id", userIds);
     const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
     setClaims((claimsData as any[]).map((c: any) => ({ ...c, profile: profileMap.get(c.user_id) || null })));
     setLoading(false);
@@ -93,7 +93,7 @@ export function useLeaderboard() {
       (allClaims as any[]).forEach((c: any) => userCounts.set(c.user_id, (userCounts.get(c.user_id) || 0) + 1));
       const topUsers = [...userCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 20);
       const userIds = topUsers.map(([id]) => id);
-      const { data: profiles } = await supabase.from("public_profiles).select("user_id, nickname, avatar_url").in("user_id", userIds);
+      const { data: profiles } = await supabase.from("public_profiles").select("user_id, nickname, avatar_url").in("user_id", userIds);
       const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
       setTopClaimers(topUsers.map(([userId, count]) => ({
         user_id: userId, count, nickname: profileMap.get(userId)?.nickname || null, avatar_url: profileMap.get(userId)?.avatar_url || null,

@@ -44,7 +44,7 @@ export function useFriends() {
       ];
 
       const { data: profiles } = userIds.length > 0
-        ? await supabase.from("public_profiles).select("user_id, nickname, avatar_url, bio, location, hiking_styles, is_active, created_at, updated_at").in("user_id", userIds)
+        ? await supabase.from("public_profiles").select("user_id, nickname, avatar_url, bio, location, hiking_styles, is_active, created_at, updated_at").in("user_id", userIds)
         : { data: [] };
 
       const profileMap = new Map((profiles || []).map((p) => [p.user_id, p]));
@@ -122,7 +122,7 @@ export function useFriends() {
   const searchUsers = async (query: string) => {
     if (!query.trim() || !user) return [];
     const { data } = await supabase
-      .from("public_profiles)
+      .from("public_profiles")
       .select("user_id, nickname, avatar_url, bio, location, hiking_styles, is_active, created_at, updated_at")
       .neq("user_id", user.id)
       .ilike("nickname", `%${query}%`)

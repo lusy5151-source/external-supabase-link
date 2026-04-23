@@ -42,7 +42,7 @@ export default function PlanApplicationManager({ planId, mountainId, isCreator }
     if (apps.length > 0) {
       const userIds = apps.map((a) => a.user_id);
       const { data: profiles } = await supabase
-        .from("public_profiles)
+        .from("public_profiles")
         .select("user_id, nickname, avatar_url")
         .in("user_id", userIds);
       const profileMap = new Map((profiles as any[] || []).map((p) => [p.user_id, p]));

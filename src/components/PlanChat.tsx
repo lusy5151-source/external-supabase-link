@@ -50,7 +50,7 @@ export default function PlanChat({ planId }: Props) {
     const userIds = [...new Set(msgs.map((m) => m.user_id))];
     if (userIds.length > 0) {
       const { data: profileData } = await supabase
-        .from("public_profiles)
+        .from("public_profiles")
         .select("user_id, nickname, avatar_url")
         .in("user_id", userIds);
       const pMap = new Map<string, Profile>();
@@ -72,7 +72,7 @@ export default function PlanChat({ planId }: Props) {
           setMessages((prev) => [...prev, newMsg]);
           if (!profiles.has(newMsg.user_id)) {
             const { data } = await supabase
-              .from("public_profiles)
+              .from("public_profiles")
               .select("user_id, nickname, avatar_url")
               .eq("user_id", newMsg.user_id)
               .single();

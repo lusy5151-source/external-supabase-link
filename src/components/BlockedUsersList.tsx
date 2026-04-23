@@ -14,7 +14,7 @@ export function BlockedUsersList() {
     queryFn: async () => {
       if (blockedUsers.length === 0) return [];
       const { data } = await supabase
-        .from("public_profiles)
+        .from("public_profiles")
         .select("user_id, nickname, avatar_url")
         .in("user_id", blockedUsers.map((b) => b.blocked_id));
       return data || [];

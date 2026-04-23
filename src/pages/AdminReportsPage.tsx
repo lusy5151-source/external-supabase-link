@@ -73,7 +73,7 @@ const AdminReportsPage = () => {
     let profileMap: Record<string, string> = {};
     if (reporterIds.length > 0) {
       const { data: profiles } = await supabase
-        .from("public_profiles)
+        .from("public_profiles")
         .select("user_id, nickname")
         .in("user_id", reporterIds);
       (profiles || []).forEach((p: any) => {
