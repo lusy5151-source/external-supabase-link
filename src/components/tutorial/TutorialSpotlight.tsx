@@ -12,21 +12,9 @@ interface TutorialSpotlightProps {
   isCircle: boolean;
   visible: boolean;
   onRectChange: (rect: Rect | null) => void;
-  glowRing?: boolean;
 }
 
-const SPOTLIGHT_STYLES = `
-@keyframes tutorial-pulse {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); }
-  50% { transform: translate(-50%, -50%) scale(1.08); }
-}
-@keyframes tutorial-glow {
-  0% { width: 80px; height: 80px; opacity: 0.6; }
-  100% { width: 110px; height: 110px; opacity: 0; }
-}
-`;
-
-const TutorialSpotlight = ({ targetSelector, isCircle, visible, onRectChange, glowRing }: TutorialSpotlightProps) => {
+const TutorialSpotlight = ({ targetSelector, isCircle, visible, onRectChange }: TutorialSpotlightProps) => {
   const [rect, setRect] = useState<Rect | null>(null);
   const rafRef = useRef(0);
   const attemptsRef = useRef(0);
@@ -115,7 +103,6 @@ const TutorialSpotlight = ({ targetSelector, isCircle, visible, onRectChange, gl
 
   return (
     <>
-      <style>{SPOTLIGHT_STYLES}</style>
       {/* Dark backdrop with cutout via box-shadow */}
       <div
         style={{
@@ -130,7 +117,7 @@ const TutorialSpotlight = ({ targetSelector, isCircle, visible, onRectChange, gl
           position: "fixed",
         }}
       />
-      {/* Pulse ring */}
+      {/* Static border */}
       <div
         style={{
           position: "fixed",
@@ -143,27 +130,8 @@ const TutorialSpotlight = ({ targetSelector, isCircle, visible, onRectChange, gl
           borderRadius: isCircle ? "50%" : 14,
           border: "2px solid rgba(255,255,255,0.5)",
           pointerEvents: "none",
-          animation: "tutorial-pulse 1.5s ease-in-out infinite",
         }}
       />
-      {/* Extra glow ring for FAB step */}
-      {glowRing && isCircle && (
-        <div
-          style={{
-            position: "fixed",
-            zIndex: 9999,
-            left: cx,
-            top: cy,
-            width: 80,
-            height: 80,
-            transform: "translate(-50%, -50%)",
-            borderRadius: "50%",
-            background: "rgba(99,153,34,0.4)",
-            pointerEvents: "none",
-            animation: "tutorial-glow 1.5s ease-out infinite",
-          }}
-        />
-      )}
     </>
   );
 };

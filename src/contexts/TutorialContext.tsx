@@ -17,8 +17,6 @@ export interface TutorialStep {
   taskHint?: string;
   /** Custom content type for rendering extras in tooltip */
   customContent?: "welcome-chips" | "filter-interactive" | "fab-methods" | "share-card" | "plan-checklist" | "club-chips" | "mini-leaderboard" | "final-celebration";
-  /** Whether to show extra glow ring animation on spotlight */
-  glowRing?: boolean;
   /** For RecordsHub segment switching */
   recordsSegment?: string;
 }
@@ -88,7 +86,6 @@ export const tutorialSteps: TutorialStep[] = [
     interactiveSelector: '[data-onboarding="fab-summit"]',
     taskHint: "✋ 인증 버튼을 직접 탭해보세요",
     customContent: "fab-methods",
-    glowRing: true,
   },
   // Step 4 — Journal & share card
   {

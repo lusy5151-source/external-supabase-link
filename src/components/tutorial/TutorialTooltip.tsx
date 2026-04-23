@@ -17,7 +17,6 @@ interface TutorialTooltipProps {
   targetRect: Rect | null;
   onNext: () => void;
   onSkip: () => void;
-  fading: boolean;
   interactive?: boolean;
   taskHint?: string;
   interactionComplete?: boolean;
@@ -26,26 +25,13 @@ interface TutorialTooltipProps {
 }
 
 const TOOLTIP_STYLES = `
-@keyframes tutorial-arrow-bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
-@keyframes tutorial-slide-up {
+@keyframes tutorial-card-enter {
   0% { opacity: 0; transform: translate(-50%, calc(-50% + 20px)); }
   100% { opacity: 1; transform: translate(-50%, -50%); }
 }
 @keyframes tutorial-border-flash {
   0%, 100% { border-color: transparent; }
   50% { border-color: #639922; }
-}
-@keyframes tutorial-bounce-in {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-  70% { transform: translate(-50%, -50%) scale(1.05); }
-  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-}
-@keyframes tutorial-confetti-fall {
-  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(120px) rotate(360deg); opacity: 0; }
 }
 `;
 
@@ -151,27 +137,8 @@ const MiniLeaderboard = () => (
   </div>
 );
 
-const CONFETTI_COLORS = ["#639922", "#C0DD97", "#EF9F27", "#E24B4A"];
-
 const FinalCelebration = () => (
-  <div className="flex flex-col items-center mt-3 relative overflow-hidden" style={{ minHeight: 90 }}>
-    {/* Confetti */}
-    {Array.from({ length: 12 }).map((_, i) => (
-      <div
-        key={i}
-        style={{
-          position: "absolute",
-          top: -10,
-          left: `${8 + (i * 7.5)}%`,
-          width: 6, height: 6,
-          borderRadius: "50%",
-          background: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-          animation: `tutorial-confetti-fall ${1.2 + (i % 3) * 0.3}s ease-in ${i * 0.1}s infinite`,
-          pointerEvents: "none",
-        }}
-      />
-    ))}
-    {/* Badge previews */}
+  <div className="mt-3 flex flex-col items-center" style={{ minHeight: 90 }}>
     <div className="flex gap-4">
       <div className="flex flex-col items-center">
         <div style={{
@@ -207,7 +174,6 @@ const TutorialTooltip = ({
   targetRect,
   onNext,
   onSkip,
-  fading,
   interactive,
   taskHint,
   interactionComplete,
@@ -235,15 +201,16 @@ const TutorialTooltip = ({
   let arrowDirection: "up" | "down" = "down";
 
   if (noSpotlight || !targetRect) {
-    // Centered card with slide-up animation
     style.top = "50%";
     style.left = "50%";
     style.transform = "translate(-50%, -50%)";
-    if (noSpotlight && customContent === "final-celebration") {
-      style.animation = "tutorial-bounce-in 0.4s ease-out forwards";
-      style.maxWidth = 320;
-    } else if (noSpotlight) {
-      style.animation = "tutorial-slide-up 0.3s ease-out forwards";
+    if (noSpotlight) {
+      if (currentStep === 0) {
+        style.animation = "tutorial-card-enter 0.25s ease-out forwards";
+      }
+      if (customContent === "final-celebration") {
+        style.maxWidth = 320;
+      }
     }
   } else {
     const centerX = targetRect.left + targetRect.width / 2;
@@ -258,8 +225,6 @@ const TutorialTooltip = ({
       arrowDirection = "down";
     }
   }
-
-  const showArrow = targetRect && !noSpotlight;
 
   return (
     <>
@@ -284,34 +249,8 @@ const TutorialTooltip = ({
         건너뛰기
       </button>
 
-      {/* Arrow pointer */}
-      {showArrow && (
-        <div
-          style={{
-            position: "fixed",
-            zIndex: 10002,
-            left: targetRect.left + targetRect.width / 2 - 8,
-            ...(arrowDirection === "up"
-              ? { top: targetRect.top + targetRect.height + 8 }
-              : { top: targetRect.top - 20 }),
-            width: 0,
-            height: 0,
-            borderLeft: "8px solid transparent",
-            borderRight: "8px solid transparent",
-            ...(arrowDirection === "up"
-              ? { borderBottom: "8px solid white" }
-              : { borderTop: "8px solid white" }),
-            animation: "tutorial-arrow-bounce 0.8s ease-in-out infinite",
-            pointerEvents: "none",
-          }}
-        />
-      )}
-
       {/* Tooltip card */}
-      <div
-        className={`transition-all duration-200 ${fading ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}
-        style={style}
-      >
+      <div style={style}>
         <div
           style={{
             background: "#FFFFFF",
@@ -322,22 +261,22 @@ const TutorialTooltip = ({
             transition: "border-color 0.3s",
           }}
         >
-          {/* Progress bar segments */}
-          <div className="flex gap-1 mb-4">
-            {Array.from({ length: totalSteps }).map((_, i) => (
-              <div
-                key={i}
-                className="flex-1 rounded-full"
-                style={{
-                  height: 3,
-                  background:
-                    i <= currentStep
-                      ? "#639922"
-                      : "hsl(var(--color-border-tertiary, var(--border)))",
-                  transition: "background 0.3s",
-                }}
-              />
-            ))}
+          {/* Progress bar */}
+          <div
+            className="mb-4 overflow-hidden rounded-full"
+            style={{
+              height: 4,
+              background: "hsl(var(--color-border-tertiary, var(--border)))",
+            }}
+          >
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${((currentStep + 1) / totalSteps) * 100}%`,
+                background: "#639922",
+                transition: "width 0.2s ease",
+              }}
+            />
           </div>
 
           <h3 style={{ fontSize: 15, fontWeight: 500, color: "hsl(var(--foreground))" }}>

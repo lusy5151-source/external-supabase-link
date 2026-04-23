@@ -15,7 +15,6 @@ const TutorialOverlay = () => {
   const { isTutorialActive, currentStep, steps, totalSteps, nextStep, skipTutorial } = useTutorial();
   const [visible, setVisible] = useState(false);
   const [ready, setReady] = useState(false);
-  const [fading, setFading] = useState(false);
   const [targetRect, setTargetRect] = useState<Rect | null>(null);
   const [interactionComplete, setInteractionComplete] = useState(false);
   const navigate = useNavigate();
@@ -93,27 +92,19 @@ const TutorialOverlay = () => {
     if (!interactionComplete) return;
     const delay = current?.customContent === "fab-methods" ? 1000 : 1200;
     const t = setTimeout(() => {
-      setFading(true);
-      setTimeout(() => {
-        nextStep();
-        setReady(false);
-        setFading(false);
-      }, 200);
+      nextStep();
+      setReady(false);
     }, delay);
     return () => clearTimeout(t);
   }, [interactionComplete, nextStep, current?.customContent]);
 
   const handleNext = useCallback(() => {
     const isLastStep = currentStep >= steps.length - 1;
-    setFading(true);
-    setTimeout(() => {
-      nextStep();
-      setReady(false);
-      setFading(false);
-      if (isLastStep && location.pathname !== "/") {
-        navigate("/");
-      }
-    }, 200);
+    nextStep();
+    setReady(false);
+    if (isLastStep && location.pathname !== "/") {
+      navigate("/");
+    }
   }, [nextStep, currentStep, steps.length, navigate, location.pathname]);
 
   const handleSkip = useCallback(() => {
@@ -138,7 +129,6 @@ const TutorialOverlay = () => {
           isCircle={!!isCircle}
           visible={ready}
           onRectChange={handleRectChange}
-          glowRing={current.glowRing}
         />
       )}
 
@@ -159,7 +149,6 @@ const TutorialOverlay = () => {
         targetRect={noSpotlight ? null : targetRect}
         onNext={handleNext}
         onSkip={handleSkip}
-        fading={fading}
         interactive={current.interactive}
         taskHint={current.taskHint}
         interactionComplete={interactionComplete}
