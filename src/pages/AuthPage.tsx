@@ -7,11 +7,14 @@ import { useNavigate, Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { logClientAuthDebug } from "@/lib/authDebug";
 
+const getEmailAuthRedirectUrl = () => `${window.location.origin}/auth/callback`;
+
 const friendlyError = (msg: string) => {
   if (/invalid login credentials/i.test(msg)) return "이메일 또는 비밀번호가 올바르지 않습니다.";
   if (/email not confirmed/i.test(msg)) return "이메일 인증 후 로그인할 수 있습니다.\n인증 메일을 확인해주세요.";
   if (/user already registered|already.*registered|database error saving new user/i.test(msg)) return "이미 가입된 이메일입니다. 로그인을 시도해주세요.";
   if (/password.*characters/i.test(msg)) return "비밀번호는 최소 8자 이상이어야 합니다.";
+  if (/timed out|timeout|deadline exceeded|upstream request timeout|request timeout/i.test(msg)) return "가입 요청이 지연되고 있습니다. 이미 인증 메일이 발송됐을 수 있으니 메일함을 먼저 확인해주세요.";
   if (/rate limit/i.test(msg)) return "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.";
   if (/network/i.test(msg)) return "네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.";
   return msg || "오류가 발생했습니다.";
@@ -27,6 +30,7 @@ const AuthPage = () => {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [signupSuccess, setSignupSuccess] = useState(false);
   const [signupEmail, setSignupEmail] = useState("");
+  const [signupNotice, setSignupNotice] = useState("이메일을 확인하고 인증 버튼을 눌러주세요.");
   const [resendCooldown, setResendCooldown] = useState(0);
   const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
@@ -60,7 +64,7 @@ const AuthPage = () => {
       const { error } = await supabase.auth.resend({
         type: "signup",
         email: signupEmail,
-        options: { emailRedirectTo: window.location.origin },
+        options: { emailRedirectTo: getEmailAuthRedirectUrl() },
       });
       if (error) throw error;
       setResendCooldown(60);
@@ -86,25 +90,52 @@ const AuthPage = () => {
         if (error) throw error;
         navigate("/");
       } else {
+        const normalizedEmail = email.trim().toLowerCase();
+        const redirectTo = getEmailAuthRedirectUrl();
         const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
+          email: normalizedEmail,
           password,
           options: {
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: redirectTo,
             data: { full_name: name.trim() },
           },
+        });
+        await logClientAuthDebug("email-signup:result", {
+          requestedEmail: normalizedEmail,
+          hasSession: Boolean(data.session),
+          hasUser: Boolean(data.user),
+          redirectTo,
+          errorMessage: error?.message ?? null,
         });
         if (error) throw error;
         if (data.session) {
           navigate("/");
         } else {
-          setSignupEmail(email.trim());
+          setSignupEmail(normalizedEmail);
+          setSignupNotice("인증 메일을 확인하고 인증 버튼을 눌러주세요.");
           setSignupSuccess(true);
           setResendCooldown(60);
         }
       }
     } catch (err: any) {
-      toast({ title: "오류", description: friendlyError(err.message), variant: "destructive" });
+      const message = err?.message ?? "";
+      const normalizedEmail = email.trim().toLowerCase();
+
+      if (/timed out|timeout|deadline exceeded|upstream request timeout|request timeout/i.test(message)) {
+        setSignupEmail(normalizedEmail);
+        setSignupNotice("가입 요청이 지연됐습니다. 이미 인증 메일이 발송됐을 수 있으니 메일함을 먼저 확인해주세요.");
+        setSignupSuccess(true);
+        setResendCooldown(60);
+        toast({ title: "인증 메일 확인", description: friendlyError(message) });
+      } else if (/user already registered|already.*registered|database error saving new user/i.test(message) && !isLogin) {
+        setSignupEmail(normalizedEmail);
+        setSignupNotice("이미 생성된 계정일 수 있습니다. 인증 메일을 다시 보내거나 로그인해보세요.");
+        setSignupSuccess(true);
+        setResendCooldown(0);
+        toast({ title: "이미 가입된 이메일", description: "이미 가입된 계정일 수 있습니다. 인증 메일을 다시 보내거나 로그인해주세요." });
+      } else {
+        toast({ title: "오류", description: friendlyError(message), variant: "destructive" });
+      }
     } finally {
       setLoading(false);
     }
@@ -145,14 +176,14 @@ const AuthPage = () => {
           </div>
           <div className="space-y-2">
             <h1 className="text-xl font-bold text-foreground">인증 메일을 발송했습니다 📧</h1>
-            <p className="text-sm text-muted-foreground">이메일을 확인하고 인증 버튼을 눌러주세요.</p>
+            <p className="text-sm text-muted-foreground whitespace-pre-line">{signupNotice}</p>
             <p className="text-xs text-muted-foreground/70">{signupEmail}</p>
           </div>
           <button onClick={handleResendEmail} disabled={loading || resendCooldown > 0} className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50 disabled:opacity-50">
             <RefreshCw className="h-4 w-4" />
             {resendCooldown > 0 ? `인증 메일 재발송 (${resendCooldown}초)` : "인증 메일 재발송"}
           </button>
-          <button onClick={() => { setSignupSuccess(false); setIsLogin(true); setFieldErrors({}); }} className="text-sm font-medium text-primary hover:underline">로그인으로 돌아가기</button>
+          <button onClick={() => { setSignupSuccess(false); setIsLogin(true); setFieldErrors({}); setSignupNotice("이메일을 확인하고 인증 버튼을 눌러주세요."); }} className="text-sm font-medium text-primary hover:underline">로그인으로 돌아가기</button>
         </div>
       </div>
     );

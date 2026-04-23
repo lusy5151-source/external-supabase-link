@@ -25,23 +25,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    const applySession = (nextSession: Session | null) => {
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
       setLoading(false);
-      void logClientAuthDebug("auth-context:init", {
-        hasSession: Boolean(session),
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      applySession(nextSession);
+      void logClientAuthDebug(`auth-state:${event}`, {
+        hasSession: Boolean(nextSession),
       });
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-      void logClientAuthDebug(`auth-state:${event}`, {
-        hasSession: Boolean(session),
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        applySession(session);
+        void logClientAuthDebug("auth-context:init", {
+          hasSession: Boolean(session),
+        });
+      })
+      .catch(() => {
+        setLoading(false);
       });
-    });
 
     return () => subscription.unsubscribe();
   }, []);
