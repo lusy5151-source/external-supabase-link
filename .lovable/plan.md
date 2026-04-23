@@ -1,82 +1,87 @@
 
 목표
-- 카카오 로그인이 다시 동작하지 않는 원인을 현재 코드와 설정 기준으로 정확히 정리하고, 로그인 흐름을 안정적으로 복구합니다.
-- 프론트엔드에서 잘못된 환경변수 사용을 정리하고, Edge Function의 세션 발급 방식을 Supabase에 맞는 안전한 흐름으로 교체합니다.
+- 이메일 회원가입 실패 원인을 현재 코드와 로그 기준으로 정확히 분리합니다.
+- 504 타임아웃이 나는 실제 지점을 복구해 이메일 회원가입이 정상 완료되도록 합니다.
+- 재시도 시 “이미 가입된 이메일”로 막히는 2차 문제도 함께 정리합니다.
 
-문제 진단
-1. 클라이언트에서 잘못된 Supabase 키 이름을 사용하고 있습니다.
-   - `src/pages/KakaoCallback.tsx`는 `import.meta.env.VITE_SUPABASE_ANON_KEY`를 참조합니다.
-   - 이 프로젝트에 실제로 제공되는 값은 `VITE_SUPABASE_PUBLISHABLE_KEY`이며, 코드베이스와 연결 정보도 이 이름을 기준으로 동작합니다.
-   - 결과적으로 카카오 콜백에서 Edge Function 호출 시 `apikey` 헤더가 비어 있을 가능성이 높습니다.
+현재 진단
+1. 프론트 회원가입 코드 자체는 단순합니다.
+   - `src/pages/AuthPage.tsx`의 `supabase.auth.signUp()` 호출은 기본 형태이며, 회원가입 직후 `profiles`나 `privacy_settings`를 직접 쓰지 않습니다.
+   - 따라서 현재 실패의 1차 원인이 프론트의 즉시 DB insert일 가능성은 낮습니다.
 
-2. 카카오 로그인 시작 코드가 환경변수 누락에 취약합니다.
-   - `src/pages/AuthPage.tsx`는 `VITE_KAKAO_API_KEY`를 사용하지만, 현재 제공된 환경 정보에는 이 값이 보이지 않습니다.
-   - 카카오 JavaScript 키가 아니라 REST API 키를 공개 클라이언트에 넣는 구조도 관리가 불안정합니다.
-   - 키가 비어 있으면 인가 요청 URL 자체가 잘못되어 로그인 시작 단계부터 실패할 수 있습니다.
+2. 인증 로그상 핵심 증상은 `/signup` 504 타임아웃입니다.
+   - 로그에 `user_confirmation_requested`가 찍힌 뒤 약 10초 후 `request_timeout`으로 종료됩니다.
+   - 이 패턴은 “유저 생성 요청은 진행됐지만, 확인 메일 발송 단계 또는 그 직전/직후의 Auth 후처리”에서 막힐 때 가장 흔합니다.
 
-3. Edge Function의 세션 생성 방식이 취약합니다.
-   - `supabase/functions/kakao-auth/index.ts`는 `auth.admin.generateLink({ type: "magiclink" })` 후 `verifyOtp()`로 세션을 만들고 있습니다.
-   - 이 방식은 OAuth 소셜 로그인 세션 처리 용도로는 우회적이며, Supabase Auth 정책/메일 OTP 동작과 충돌할 수 있습니다.
-   - 특히 `hashed_token` 기반 검증은 안정성이 낮고, 향후 Supabase 동작 변경에도 취약합니다.
+3. 현재 코드베이스 기준으로 회원가입 후속 흐름 중 불안정 요소가 있습니다.
+   - `AuthContext`가 `onAuthStateChange`보다 `getSession()`을 먼저 호출합니다.
+   - `useProfileSync()`가 로그인 직후 `sync-profile` Edge Function을 호출하지만, 현재 `supabase/functions`에 해당 함수가 없습니다.
+   - 이건 가입 API 504의 직접 원인으로 보이지는 않지만, 인증 직후 상태를 혼란스럽게 만들 수 있어 같이 정리해야 합니다.
 
-4. 사용자 조회 방식도 비효율적입니다.
-   - 현재는 `listUsers()`로 전체 유저를 가져와 email/kakao_id를 탐색합니다.
-   - 데이터가 늘어나면 성능과 안정성 모두 나빠집니다.
+4. 가장 가능성 높은 실제 원인 후보
+   - Auth 이메일 발송 설정 문제
+   - 커스텀 Auth 이메일 훅/이메일 인프라 설정 불일치
+   - 회원가입은 일부 생성됐지만 응답이 타임아웃되어, 사용자는 실패로 보고 다시 시도하면서 “이미 가입됨” 상태가 되는 문제
 
 구현 계획
-1. 카카오 로그인 시작부 정리
-   - `src/pages/AuthPage.tsx`에서 카카오 로그인 URL 생성 로직을 점검합니다.
-   - `API_KEYS.kakao`가 비어 있을 때 즉시 사용자에게 설정 오류 메시지를 보여주도록 방어 로직을 추가합니다.
-   - 공개 클라이언트에서 사용하는 키 이름을 프로젝트 실제 환경과 일치하도록 정리합니다.
-   - 필요 시 `src/config/apiKeys.ts`를 수정해 카카오 클라이언트용 공개 키 참조 방식을 명확히 맞춥니다.
+1. 이메일 회원가입 실패 지점 확정
+   - Supabase Auth/이메일 설정 상태를 점검해, 현재 504가 “확인 메일 발송” 단계인지 “Auth 후처리” 단계인지 구분합니다.
+   - 특히 커스텀 Auth 이메일이 켜져 있는지, 이메일 도메인/전송 설정이 정상인지 확인합니다.
+   - 필요하면 커스텀 Auth 이메일 경로를 복구하거나, 우선 기본 인증 메일 경로로 되돌려 회원가입을 정상화합니다.
 
-2. 카카오 콜백 페이지 안정화
-   - `src/pages/KakaoCallback.tsx`에서 Edge Function 호출 헤더의 `apikey`를 실제 프로젝트 키(`VITE_SUPABASE_PUBLISHABLE_KEY`) 기준으로 수정합니다.
-   - 응답 파싱 전에 `response.ok`와 JSON 에러 구조를 더 엄격하게 검증합니다.
-   - 세션 설정 성공 시 `navigate("/", { replace: true })`로 정리해 히스토리 오염을 줄입니다.
-   - 에러 상황별 메시지를 분리해 “인가 코드 없음”, “토큰 교환 실패”, “세션 생성 실패”를 구분합니다.
+2. 회원가입 재시도 UX 보정
+   - `src/pages/AuthPage.tsx`에서 504/timeout 계열 에러를 별도로 처리합니다.
+   - 이미 유저가 생성됐을 가능성이 높은 경우에는 단순 실패로 끝내지 않고:
+     - “가입 요청은 접수됐을 수 있으니 메일함을 확인”
+     - “이미 생성된 계정이면 로그인/재발송으로 이동”
+     로 안내를 분기합니다.
+   - 중복 재시도 때문에 “이미 가입된 이메일” 상태가 되는 흐름을 줄입니다.
 
-3. Edge Function 재구성
-   - `supabase/functions/kakao-auth/index.ts`를 카카오 토큰 교환과 사용자 식별까지는 유지하되, 세션 발급 부분을 재설계합니다.
-   - 현재의 `generateLink + verifyOtp` 흐름을 제거하고, Supabase에서 지원되는 더 직접적이고 안정적인 사용자 연결 방식으로 바꿉니다.
-   - 구현 시 아래를 함께 정리합니다:
-     - 입력값 검증 추가 (`code`, `redirect_uri`)
-     - Kakao API 응답 실패 시 상세 에러 반환
-     - `listUsers()` 전수 탐색 최소화
-     - 모든 응답에 일관된 CORS 헤더 유지
+3. 이메일 인증 후 이동 경로 정리
+   - 이메일 회원가입도 OAuth와 동일하게 안정적인 콜백 흐름을 쓰도록 정리합니다.
+   - `emailRedirectTo`를 현재 단순 origin 기반에서 명시적 인증 복귀 경로로 맞추고, 인증 완료 후 홈 또는 로그인 완료 화면으로 자연스럽게 이동시키겠습니다.
+   - 기존 `/auth/callback` 동작과 충돌하지 않게 정리합니다.
 
-4. 사용자 프로필 동기화 영향 점검
-   - 카카오로 신규 가입/기존 로그인 시 `handle_new_auth_user`와 현재 프로필 구조가 정상적으로 이어지는지 확인합니다.
-   - `provider`, `full_name`, `avatar_url` 메타데이터 형식이 기존 Google/이메일 흐름과 충돌하지 않도록 맞춥니다.
+4. 인증 상태 초기화 순서 보정
+   - `src/contexts/AuthContext.tsx`를 Supabase 권장 순서에 맞게 정리합니다.
+   - `onAuthStateChange` 구독을 먼저 설치하고, 그 다음 초기 세션 복원을 읽도록 바꿔 인증 레이스 컨디션을 줄입니다.
+   - `onAuthStateChange` 안에서 무거운 await 작업은 피하고, 디버그 로그는 비동기 부수효과로 유지합니다.
 
-5. 라우팅 및 인증 흐름 검증
-   - `/auth` → 카카오 시작 → `/kakao/callback?code=...` → 세션 저장 → `/` 이동 흐름으로 검증합니다.
-   - 로그인 실패 시 `/auth`로 되돌아가되, 다시 카카오 로그인을 자동 시작하는 루프가 없는지 확인합니다.
-   - 기존 Google 콜백(`/auth/callback`)과 충돌하지 않는지도 함께 점검합니다.
+5. 회원가입 직후 불필요한 후속 호출 제거/수정
+   - `src/hooks/useProfileSync.ts`의 `sync-profile` 호출은 현재 함수가 없으므로 정리 대상입니다.
+   - 실제로 필요한 프로필 동기화 로직이면 함수를 추가하고,
+   - 필요 없거나 DB trigger가 이미 담당한다면 호출을 제거해 인증 직후 잡음을 없앱니다.
 
-6. 운영 설정 확인 항목 정리
-   - 코드 수정과 별개로, 실제 카카오 개발자 콘솔 설정값도 함께 맞춰야 합니다.
-   - 확인할 항목:
-     - 카카오 Redirect URI에 `https://www.wandeung.com/kakao/callback`
-     - `https://wandeung.com/kakao/callback`
-     - 필요 시 현재 preview URL의 `/kakao/callback`
-     - Edge Function secret `KAKAO_REST_API_KEY`가 최신 REST API 키인지
-   - preview에서만 실패하고 published/custom domain에서 성공한다면, 환경별 리다이렉트 등록 누락 가능성을 우선 확인합니다.
+6. 프로필 자동 생성 경로 검증
+   - `profiles` / `privacy_settings`가 실제로 언제 생성되는지 기준을 하나로 통일합니다.
+   - DB 함수 `handle_new_auth_user()`는 존재하지만, 현재 트리거 연결 여부가 코드상 명확하지 않으므로 실제 동작 경로를 확인합니다.
+   - 트리거가 없으면 마이그레이션으로 올바르게 연결하고,
+   - 이미 다른 방식으로 생성 중이면 중복 책임을 제거합니다.
+
+7. 완료 후 검증 범위
+   - 새 이메일로 회원가입
+   - 확인 메일 수신
+   - 메일 링크 클릭 후 세션 복원
+   - `/auth` 재진입 시 정상 리다이렉트
+   - 이미 생성된 계정으로 재시도 시 적절한 안내
+   - 로그인 후 `profiles` / `privacy_settings` 존재 확인
 
 수정 대상 파일
-- `src/config/apiKeys.ts`
 - `src/pages/AuthPage.tsx`
-- `src/pages/KakaoCallback.tsx`
-- `supabase/functions/kakao-auth/index.ts`
+- `src/contexts/AuthContext.tsx`
+- `src/hooks/useProfileSync.ts`
+- 필요 시 `src/pages/AuthCallbackPage.tsx`
+- 필요 시 Supabase migration 1건
+- 필요 시 이메일/Auth 설정 복구
 
 완료 기준
-- 카카오 로그인 버튼 클릭 시 정상적으로 카카오 인가 화면으로 이동
-- `/kakao/callback`에서 `code`를 받아 Edge Function 호출 성공
-- 세션이 생성되고 앱에 로그인 상태가 반영됨
-- 최종적으로 홈(`/`)으로 이동
-- 실패 시에도 재시도 가능한 상태로 `/auth`에 복귀하고 무한 루프가 없음
+- 이메일 회원가입 요청이 504 없이 완료됨
+- 확인 메일이 정상 발송됨
+- 인증 링크 클릭 후 세션이 정상 복원됨
+- 같은 이메일 재시도 시 사용자에게 혼란 없는 안내가 표시됨
+- 회원가입 후 앱의 프로필/개인설정 초기화가 안정적으로 동작함
 
 기술 세부사항
-- 현재 가장 의심되는 1차 원인은 `VITE_SUPABASE_ANON_KEY` 사용입니다. 이 프로젝트는 `VITE_SUPABASE_PUBLISHABLE_KEY` 기준으로 연결되어 있습니다.
-- 현재 Edge Function의 `generateLink`/`verifyOtp` 방식은 소셜 로그인 세션 생성 방식으로 부적절할 가능성이 높아, 로그인 불안정의 핵심 원인 후보입니다.
-- CORS 자체는 현재 함수 코드상 큰 문제는 없어 보이므로, 우선순위는 키 정합성 및 세션 발급 로직 교체입니다.
+- 현재 가장 강한 증거는 Auth 로그의 `user_confirmation_requested` 뒤 `504 request_timeout`입니다. 이건 프론트 입력값 검증 문제가 아니라 인증 백엔드 후속 단계 문제에 가깝습니다.
+- `signUp()` 자체 뒤에 프론트에서 `profiles`를 쓰지 않기 때문에, 지금 증상은 클라이언트 폼 코드보다 이메일/Auth 설정 쪽을 우선 복구해야 합니다.
+- `AuthContext`의 초기화 순서와 `sync-profile` 유령 호출은 1차 원인은 아니어도 인증 안정성에 악영향을 줄 수 있어 함께 정리하는 것이 맞습니다.
