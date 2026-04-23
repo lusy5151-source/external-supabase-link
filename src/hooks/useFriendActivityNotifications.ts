@@ -86,7 +86,7 @@ export function useFriendActivityNotifications({ onUnread }: UseFriendActivityNo
 
   // Helper: fetch nickname
   const fetchNickname = useCallback(async (userId: string): Promise<string> => {
-    const { data } = await supabase.from("profiles").select("nickname").eq("user_id", userId).single();
+    const { data } = await supabase.from("public_profiles").select("nickname").eq("user_id", userId).single();
     return data?.nickname || "친구";
   }, []);
 

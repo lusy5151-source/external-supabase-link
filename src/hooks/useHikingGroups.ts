@@ -169,7 +169,7 @@ export function useHikingGroups() {
     if (!members || members.length === 0) return [];
     const userIds = (members as any[]).map((m) => m.user_id);
     const { data: profiles } = await supabase
-      .from("profiles")
+      .from("public_profiles")
       .select("user_id, nickname, avatar_url")
       .in("user_id", userIds);
     const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
@@ -201,7 +201,7 @@ export function useHikingGroups() {
     if (!data || (data as any[]).length === 0) return [];
     const userIds = (data as any[]).map((d: any) => d.user_id);
     const { data: profiles } = await supabase
-      .from("profiles")
+      .from("public_profiles")
       .select("user_id, nickname, avatar_url")
       .in("user_id", userIds);
     const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
@@ -262,7 +262,7 @@ export function useHikingGroups() {
   const searchUsers = async (query: string) => {
     if (!query.trim()) return [];
     const { data } = await supabase
-      .from("profiles")
+      .from("public_profiles")
       .select("user_id, nickname, avatar_url")
       .ilike("nickname", `%${query}%`)
       .limit(10);

@@ -243,7 +243,7 @@ export function useHikingPlans() {
     if (!participants || participants.length === 0) return [];
     const userIds = participants.map((p: any) => p.user_id);
     const { data: profiles } = await supabase
-      .from("profiles")
+      .from("public_profiles")
       .select("user_id, nickname, avatar_url")
       .in("user_id", userIds);
     const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
@@ -263,7 +263,7 @@ export function useHikingPlans() {
     if (!data || data.length === 0) return [];
     const userIds = [...new Set((data as any[]).map((d) => d.user_id))];
     const { data: profiles } = await supabase
-      .from("profiles")
+      .from("public_profiles")
       .select("user_id, nickname")
       .in("user_id", userIds);
     const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
@@ -357,7 +357,7 @@ export function useHikingPlans() {
     if (planData) {
       // Get current user's nickname
       const { data: profile } = await supabase
-        .from("profiles")
+        .from("public_profiles")
         .select("nickname")
         .eq("user_id", user.id)
         .single();

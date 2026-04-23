@@ -14,7 +14,7 @@ export function useActivityFeed() {
       if (!data || data.length === 0) { setItems([]); setLoading(false); return; }
       const allUserIds = new Set<string>();
       (data as any[]).forEach((d) => { allUserIds.add(d.user_id); (d.participant_ids || []).forEach((pid: string) => allUserIds.add(pid)); });
-      const { data: profiles } = await supabase.from("profiles").select("user_id, nickname, avatar_url").in("user_id", [...allUserIds]);
+      const { data: profiles } = await supabase.from("public_profiles").select("user_id, nickname, avatar_url").in("user_id", [...allUserIds]);
       const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
       setItems((data as any[]).map((d) => ({ ...d, profile: profileMap.get(d.user_id) || null, participant_profiles: (d.participant_ids || []).map((pid: string) => profileMap.get(pid)).filter(Boolean) })));
     } catch { setItems([]); } finally { setLoading(false); }

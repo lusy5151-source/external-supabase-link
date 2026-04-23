@@ -86,7 +86,7 @@ export function useClubChatNotifications({
   // Fetch sender nickname
   const fetchNickname = useCallback(async (userId: string): Promise<string> => {
     const { data } = await supabase
-      .from("profiles")
+      .from("public_profiles")
       .select("nickname")
       .eq("user_id", userId)
       .single();

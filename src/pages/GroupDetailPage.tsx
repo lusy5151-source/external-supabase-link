@@ -124,7 +124,7 @@ const GroupDetailPage = () => {
       const userIds = [...new Set(recent.map((c: any) => c.user_id))];
       const summitIds = [...new Set(recent.map((c: any) => c.summit_id))];
       const [{ data: profiles }, { data: summits }] = await Promise.all([
-        supabase.from("profiles").select("user_id, nickname, avatar_url").in("user_id", userIds),
+        supabase.from("public_profiles").select("user_id, nickname, avatar_url").in("user_id", userIds),
         (supabase as any).from("summits").select("id, summit_name").in("id", summitIds),
       ]);
       const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));

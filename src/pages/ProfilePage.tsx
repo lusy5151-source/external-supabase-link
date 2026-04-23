@@ -87,7 +87,7 @@ const ProfilePage = () => {
   useEffect(() => {
     if (recentTaggedFriends.length === 0) return;
     supabase
-      .from("profiles")
+      .from("public_profiles")
       .select("user_id, nickname, avatar_url")
       .in("user_id", recentTaggedFriends)
       .then(({ data }) => {
