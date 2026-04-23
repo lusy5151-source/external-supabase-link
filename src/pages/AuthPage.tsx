@@ -18,6 +18,8 @@ const passwordSchema = z
   .min(1, "비밀번호를 입력해주세요.")
   .max(72, "비밀번호는 72자 이하로 입력해주세요.");
 
+const buildDisplayName = (email: string) => email.split("@")[0]?.slice(0, 50) || "user";
+
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
@@ -68,8 +70,9 @@ const AuthPage = () => {
         if (error) throw error;
         navigate("/");
       } else {
+        const normalizedEmail = email.trim().toLowerCase();
         const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
+          email: normalizedEmail,
           password,
           options: {
             emailRedirectTo: window.location.origin,
@@ -77,6 +80,28 @@ const AuthPage = () => {
         });
 
         if (error) throw error;
+
+        if (data.user) {
+          const { error: profileError } = await supabase.from("profiles").upsert(
+            {
+              id: data.user.id,
+              user_id: data.user.id,
+              email: data.user.email ?? normalizedEmail,
+              nickname: buildDisplayName(data.user.email ?? normalizedEmail),
+              provider: "email",
+            },
+            { onConflict: "user_id" }
+          );
+
+          if (profileError) {
+            console.error("Profile creation error after signup:", profileError);
+            setAuthSuccess("계정은 생성되었지만 프로필 설정 중 문제가 발생했습니다. 다시 로그인해 주세요.");
+            setIsLogin(true);
+            setPassword("");
+            setConfirmPassword("");
+            return;
+          }
+        }
 
         if (data.session) {
           navigate("/");
@@ -88,7 +113,11 @@ const AuthPage = () => {
         }
       }
     } catch (err: any) {
-      const message = err?.message || "Authentication error";
+      const message = typeof err?.message === "string" && err.message.trim()
+        ? err.message
+        : isLogin
+          ? "로그인 처리 중 오류가 발생했습니다."
+          : "회원가입 처리 중 오류가 발생했습니다.";
       if (!isLogin) {
         console.error("Supabase signup error:", err);
       }
