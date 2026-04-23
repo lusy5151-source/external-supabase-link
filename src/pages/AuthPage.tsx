@@ -89,7 +89,7 @@ const AuthPage = () => {
 
         if (error) throw error;
 
-        if (data.user) {
+        if (data.user?.id) {
           const { error: profileError } = await supabase.from("profiles").upsert(
             {
               id: data.user.id,
@@ -114,7 +114,7 @@ const AuthPage = () => {
         if (data.session) {
           navigate("/");
         } else {
-          setAuthSuccess("이메일로 발송된 인증 링크를 확인한 뒤 로그인해 주세요.");
+          setAuthSuccess("회원가입이 완료되었습니다. 이메일 인증 후 로그인해 주세요.");
           setIsLogin(true);
           setPassword("");
           setConfirmPassword("");
