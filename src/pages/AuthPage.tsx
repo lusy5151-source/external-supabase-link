@@ -1,26 +1,49 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useGuest } from "@/contexts/GuestContext";
+import { z } from "zod";
 import { Mountain, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+
+const emailSchema = z
+  .string()
+  .trim()
+  .min(1, "이메일을 입력해주세요.")
+  .email("올바른 이메일 주소를 입력해주세요.")
+  .max(255, "이메일은 255자 이하로 입력해주세요.");
+
+const passwordSchema = z
+  .string()
+  .min(1, "비밀번호를 입력해주세요.")
+  .max(72, "비밀번호는 72자 이하로 입력해주세요.");
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [authError, setAuthError] = useState("");
+  const [authSuccess, setAuthSuccess] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const validate = () => {
     const errors: Record<string, string> = {};
 
-    if (!email.trim()) errors.email = "이메일을 입력해주세요.";
-    if (!password) errors.password = "비밀번호를 입력해주세요.";
+    const emailResult = emailSchema.safeParse(email);
+    const passwordResult = passwordSchema.safeParse(password);
+
+    if (!emailResult.success) errors.email = emailResult.error.issues[0]?.message ?? "이메일을 확인해주세요.";
+    if (!passwordResult.success) errors.password = passwordResult.error.issues[0]?.message ?? "비밀번호를 확인해주세요.";
+    if (!isLogin) {
+      if (!confirmPassword) errors.confirmPassword = "비밀번호 확인을 입력해주세요.";
+      else if (password !== confirmPassword) errors.confirmPassword = "비밀번호가 일치하지 않습니다.";
+    }
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -29,6 +52,7 @@ const AuthPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError("");
+    setAuthSuccess("");
 
     if (!validate()) return;
 
@@ -44,21 +68,30 @@ const AuthPage = () => {
         if (error) throw error;
         navigate("/");
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
+          options: {
+            emailRedirectTo: window.location.origin,
+          },
         });
 
         if (error) throw error;
 
-        toast({
-          title: "회원가입 요청 완료",
-          description: "이메일을 확인해 계정을 활성화해주세요.",
-        });
-        setIsLogin(true);
+        if (data.session) {
+          navigate("/");
+        } else {
+          setAuthSuccess("회원가입이 완료되었습니다. 이메일 인증 후 로그인해 주세요.");
+          setIsLogin(true);
+          setPassword("");
+          setConfirmPassword("");
+        }
       }
     } catch (err: any) {
       const message = err?.message || "Authentication error";
+      if (!isLogin) {
+        console.error("Supabase signup error:", err);
+      }
       setAuthError(message);
       toast({
         title: "인증 오류",
@@ -72,6 +105,7 @@ const AuthPage = () => {
 
   const handleGoogleLogin = async () => {
     setAuthError("");
+    setAuthSuccess("");
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -94,6 +128,7 @@ const AuthPage = () => {
 
   const handleKakaoLogin = async () => {
     setAuthError("");
+    setAuthSuccess("");
     const redirectUri = `${window.location.origin}/kakao/callback`;
     const kakaoAuthUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/kakao-auth?redirect_uri=${encodeURIComponent(redirectUri)}`;
     window.location.assign(kakaoAuthUrl);
@@ -142,6 +177,7 @@ const AuthPage = () => {
                   setEmail(e.target.value);
                   setFieldErrors((prev) => ({ ...prev, email: "" }));
                   setAuthError("");
+                  setAuthSuccess("");
                 }}
                 placeholder="이메일"
                 className="w-full rounded-xl border border-border bg-card py-3 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -160,6 +196,7 @@ const AuthPage = () => {
                   setPassword(e.target.value);
                   setFieldErrors((prev) => ({ ...prev, password: "" }));
                   setAuthError("");
+                  setAuthSuccess("");
                 }}
                 placeholder="비밀번호"
                 className="w-full rounded-xl border border-border bg-card py-3 pl-10 pr-10 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -171,6 +208,31 @@ const AuthPage = () => {
             {fieldErrors.password && <p className="mt-1 text-xs text-destructive">{fieldErrors.password}</p>}
           </div>
 
+          {!isLogin && (
+            <div>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    setFieldErrors((prev) => ({ ...prev, confirmPassword: "" }));
+                    setAuthError("");
+                    setAuthSuccess("");
+                  }}
+                  placeholder="비밀번호 확인"
+                  className="w-full rounded-xl border border-border bg-card py-3 pl-10 pr-10 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {fieldErrors.confirmPassword && <p className="mt-1 text-xs text-destructive">{fieldErrors.confirmPassword}</p>}
+            </div>
+          )}
+
+          {authSuccess && <p className="text-sm text-primary">{authSuccess}</p>}
           {authError && <p className="text-sm text-destructive">{authError}</p>}
 
           <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50">
@@ -181,7 +243,7 @@ const AuthPage = () => {
 
         <p className="text-center text-sm text-muted-foreground">
           {isLogin ? "계정이 없으신가요?" : "이미 계정이 있으신가요?"}{" "}
-          <button onClick={() => { setIsLogin(!isLogin); setFieldErrors({}); setAuthError(""); }} className="font-medium text-primary hover:underline">
+          <button onClick={() => { setIsLogin(!isLogin); setFieldErrors({}); setAuthError(""); setAuthSuccess(""); setPassword(""); setConfirmPassword(""); }} className="font-medium text-primary hover:underline">
             {isLogin ? "회원가입" : "로그인"}
           </button>
         </p>
