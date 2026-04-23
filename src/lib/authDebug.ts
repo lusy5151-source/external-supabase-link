@@ -78,7 +78,7 @@ export function classifyAuthProbeResult({
 
   if (hasSession) return "success";
   if (/timed out|timeout|deadline exceeded|upstream request timeout|request timeout/.test(normalizedMessage)) {
-    return hasUser ? "timeout" : "failure";
+    return "timeout";
   }
   if (/email not confirmed|confirmation|verify/.test(normalizedMessage)) return "email_confirmation";
   if (hasUser) return "reachable";
