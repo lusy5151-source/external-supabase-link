@@ -135,38 +135,33 @@ export function useHikingPlans() {
     is_public?: boolean;
     max_participants?: number;
   }) => {
-    if (!user) return { error: { message: "Not authenticated" } };
-
     const {
-      data: { session: currentSession },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user: authUser },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    let activeSession = currentSession;
-
-    if (!activeSession?.user?.id) {
-      const {
-        data: { session: refreshedSession },
-        error: refreshError,
-      } = await supabase.auth.refreshSession();
-
-      if (refreshError) {
-        console.error("Failed to refresh auth session before plan creation:", refreshError);
-      }
-
-      activeSession = refreshedSession ?? null;
+    if (authError) {
+      console.error("Failed to fetch authenticated user before plan creation:", authError);
     }
 
-    if (sessionError) {
-      console.error("Failed to read auth session before plan creation:", sessionError);
+    if (!authUser?.id) {
+      return { error: { message: "로그인이 필요합니다." } };
     }
 
-    if (!activeSession?.user?.id) {
-      return { error: { message: "로그인이 만료되었습니다. 다시 로그인한 후 시도해 주세요." } };
-    }
+    const payload = {
+      creator_id: authUser.id,
+      mountain_id: plan.mountain_id,
+      trail_name: plan.trail_name ?? null,
+      planned_date: plan.planned_date,
+      start_time: plan.start_time ?? null,
+      notes: plan.notes ?? null,
+      meeting_location: plan.meeting_location ?? null,
+      is_public: plan.is_public ?? true,
+      max_participants: plan.max_participants ?? 10,
+    };
 
-    const payload = { ...plan, creator_id: activeSession.user.id };
-    console.log("Creating hiking plan with payload:", payload);
+    console.log("Creating hiking plan user.id:", authUser.id);
+    console.log("Creating hiking plan insert payload:", payload);
 
     const { data, error } = await supabase
       .from("hiking_plans")
@@ -185,7 +180,7 @@ export function useHikingPlans() {
       const mtName = mt?.nameKo || "등산";
       await (supabase as any).from("plan_messages").insert({
         plan_id: (data as any).id,
-        user_id: user.id,
+        user_id: authUser.id,
         message: `📅 ${mtName} 등산 계획 채팅방이 생성되었어요!\n참가자들과 자유롭게 이야기해보세요 🏔`,
       } as any);
     }
