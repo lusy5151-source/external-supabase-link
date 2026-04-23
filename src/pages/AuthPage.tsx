@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuest } from "@/contexts/GuestContext";
-import { API_KEYS } from "@/config/apiKeys";
 import { Mountain, Mail, Lock, Eye, EyeOff, ArrowRight, User, RefreshCw } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -128,9 +127,9 @@ const AuthPage = () => {
   };
 
   const handleKakaoLogin = () => {
-    const redirectUri = window.location.origin + "/kakao/callback";
-    const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${API_KEYS.kakao}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`;
-    window.location.href = kakaoAuthUrl;
+    const redirectUri = `${window.location.origin}/kakao/callback`;
+    const kakaoAuthUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/kakao-auth?redirect_uri=${encodeURIComponent(redirectUri)}`;
+    window.location.assign(kakaoAuthUrl);
   };
 
   if (signupSuccess) {

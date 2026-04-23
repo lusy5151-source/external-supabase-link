@@ -14,18 +14,18 @@ const KakaoCallback = () => {
 
     const handleKakaoLogin = async () => {
       const params = new URLSearchParams(window.location.search);
-      const code = new URLSearchParams(window.location.search).get("code");
+      const code = params.get("code");
       const errorParam = params.get("error");
 
       if (errorParam) {
         setError("카카오 로그인이 취소되었습니다.");
-        setTimeout(() => navigate("/auth"), 2000);
+        setTimeout(() => navigate("/auth", { replace: true }), 2000);
         return;
       }
 
       if (!code) {
         setError("인증 코드가 없습니다.");
-        setTimeout(() => navigate("/auth"), 2000);
+        setTimeout(() => navigate("/auth", { replace: true }), 2000);
         return;
       }
 
@@ -36,7 +36,7 @@ const KakaoCallback = () => {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             },
             body: JSON.stringify({
               code,
@@ -45,9 +45,13 @@ const KakaoCallback = () => {
           }
         );
 
-        const { session, error: responseError, details } = await response.json();
+        const payload = await response.json().catch(() => null);
+        const session = payload?.session;
+        const responseError = payload?.error;
+        const details = payload?.details;
 
         if (
+          !payload ||
           !response.ok ||
           responseError ||
           !session?.access_token ||
@@ -55,7 +59,7 @@ const KakaoCallback = () => {
         ) {
           console.error("Kakao auth error:", responseError, details);
           setError(responseError || "카카오 로그인 처리 중 오류가 발생했습니다.");
-          setTimeout(() => navigate("/auth"), 2000);
+          setTimeout(() => navigate("/auth", { replace: true }), 2000);
           return;
         }
 
@@ -64,15 +68,15 @@ const KakaoCallback = () => {
             access_token: session.access_token,
             refresh_token: session.refresh_token,
           });
-          navigate("/");
+          navigate("/", { replace: true });
         } else {
           setError("세션 생성에 실패했습니다.");
-          setTimeout(() => navigate("/auth"), 2000);
+          setTimeout(() => navigate("/auth", { replace: true }), 2000);
         }
       } catch (err) {
         console.error("Kakao callback error:", err);
         setError("카카오 로그인 처리 중 오류가 발생했습니다.");
-        setTimeout(() => navigate("/auth"), 2000);
+        setTimeout(() => navigate("/auth", { replace: true }), 2000);
       }
     };
 
