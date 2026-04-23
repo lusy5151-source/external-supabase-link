@@ -2773,6 +2773,14 @@ export type Database = {
       }
     }
     Functions: {
+      can_access_group: {
+        Args: { _group_id: string; _user_id?: string }
+        Returns: boolean
+      }
+      can_access_journal: {
+        Args: { _journal_id: string; _user_id?: string }
+        Returns: boolean
+      }
       can_access_plan: {
         Args: { _plan_id: string; _user_id?: string }
         Returns: boolean
