@@ -70,7 +70,7 @@ export default function AuthCallbackPage() {
       }
     };
 
-    let cleanup: void | (() => void);
+    let cleanup: (() => void) | undefined;
 
     handleCallback().then((result) => {
       cleanup = result;
@@ -79,7 +79,7 @@ export default function AuthCallbackPage() {
     return () => {
       isActive = false;
       if (timeoutId) clearTimeout(timeoutId);
-      cleanup?.();
+      if (cleanup) cleanup();
     };
   }, [navigate]);
 
