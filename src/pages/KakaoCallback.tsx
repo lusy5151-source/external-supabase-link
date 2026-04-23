@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Mountain, Loader2 } from "lucide-react";
-import { logClientAuthDebug } from "@/lib/authDebug";
 
 const KakaoCallback = () => {
   const navigate = useNavigate();
@@ -14,10 +13,6 @@ const KakaoCallback = () => {
     hasRun.current = true;
 
     const handleKakaoLogin = async () => {
-      await logClientAuthDebug("kakao-callback:start", {
-        currentUrl: window.location.href,
-      });
-
       const params = new URLSearchParams(window.location.search);
       const code = params.get("code");
       const errorParam = params.get("error");
@@ -35,10 +30,6 @@ const KakaoCallback = () => {
       }
 
       try {
-        await logClientAuthDebug("kakao-callback:before-request", {
-          hasCode: Boolean(code),
-        });
-
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/kakao-auth`,
           {
@@ -67,11 +58,6 @@ const KakaoCallback = () => {
           !session?.refresh_token
         ) {
           console.error("Kakao auth error:", responseError, details);
-          await logClientAuthDebug("kakao-callback:error", {
-            responseStatus: response.status,
-            responseError,
-            details,
-          });
           setError(responseError || "카카오 로그인 처리 중 오류가 발생했습니다.");
           setTimeout(() => navigate("/auth", { replace: true }), 2000);
           return;
@@ -81,9 +67,6 @@ const KakaoCallback = () => {
           await supabase.auth.setSession({
             access_token: session.access_token,
             refresh_token: session.refresh_token,
-          });
-          await logClientAuthDebug("kakao-callback:session-set", {
-            responseStatus: response.status,
           });
           navigate("/", { replace: true });
         } else {
