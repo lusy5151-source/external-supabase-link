@@ -53,7 +53,7 @@ export default function ClubChat({ clubId, onUnreadCount }: Props) {
     if (msgs.length === 0) return [];
     const userIds = [...new Set(msgs.map((m) => m.user_id))];
     const { data: profiles } = await supabase
-      .from("profiles")
+      .from("public_profiles" as any)
       .select("user_id, nickname, avatar_url")
       .in("user_id", userIds);
     const map = new Map((profiles || []).map((p: any) => [p.user_id, p]));

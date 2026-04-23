@@ -94,7 +94,7 @@ const PlanDetailPage = () => {
   useEffect(() => {
     if (!plan) return;
     supabase
-      .from("profiles")
+      .from("public_profiles" as any)
       .select("nickname, avatar_url")
       .eq("user_id", plan.creator_id)
       .single()

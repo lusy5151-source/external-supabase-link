@@ -59,7 +59,7 @@ const AdminMountainApprovalPage = () => {
     const creatorIds = [...new Set(mountainList.map((m) => m.created_by))];
     if (creatorIds.length > 0) {
       const { data: profs } = await supabase
-        .from("profiles")
+        .from("public_profiles" as any)
         .select("user_id, nickname")
         .in("user_id", creatorIds);
       if (profs) {

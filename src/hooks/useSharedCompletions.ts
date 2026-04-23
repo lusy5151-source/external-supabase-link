@@ -41,7 +41,7 @@ export function useSharedCompletions() {
 
       const userIds = [...new Set((participants || []).map((p: any) => p.user_id))];
       const { data: profiles } = userIds.length > 0
-        ? await supabase.from("profiles").select("user_id, nickname, avatar_url").in("user_id", userIds)
+        ? await supabase.from("public_profiles" as any).select("user_id, nickname, avatar_url").in("user_id", userIds)
         : { data: [] };
       const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
 

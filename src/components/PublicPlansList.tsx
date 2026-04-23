@@ -64,7 +64,7 @@ export default function PublicPlansList() {
 
     const creatorIds = [...new Set(planList.map((p) => p.creator_id))];
     const { data: profileData } = await supabase
-      .from("profiles")
+      .from("public_profiles" as any)
       .select("user_id, nickname, avatar_url")
       .in("user_id", creatorIds);
     const pMap = new Map<string, CreatorProfile>();
@@ -128,7 +128,7 @@ export default function PublicPlansList() {
     } else {
       const mt = mountains.find((m) => m.id === confirmPlan.mountain_id);
       const { data: profile } = await supabase
-        .from("profiles")
+        .from("public_profiles" as any)
         .select("nickname")
         .eq("user_id", user.id)
         .single();
