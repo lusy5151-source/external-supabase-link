@@ -58,4 +58,30 @@ export default defineConfig(({ mode }) => ({
     },
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          if (!id.includes("node_modules")) return undefined;
+          if (id.includes("react-dom") || id.includes("scheduler") || /[\\/]react[\\/]/.test(id)) {
+            return "vendor-react";
+          }
+          if (id.includes("react-router")) return "vendor-router";
+          if (id.includes("@supabase")) return "vendor-supabase";
+          if (id.includes("@tanstack")) return "vendor-query";
+          if (id.includes("@radix-ui")) return "vendor-radix";
+          if (id.includes("lucide-react")) return "vendor-icons";
+          if (
+            id.includes("date-fns") ||
+            id.includes("clsx") ||
+            id.includes("tailwind-merge") ||
+            id.includes("class-variance-authority")
+          ) {
+            return "vendor-utils";
+          }
+          return "vendor";
+        },
+      },
+    },
+  },
 }));
