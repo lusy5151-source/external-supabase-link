@@ -142,11 +142,14 @@ const AdminPage = () => {
     if (collecting) return;
     const VWORLD_KEY = "F41DD5DC-6774-33EA-8E02-68505ADAF394";
     setCollecting(true);
-    setCollectStatus("시작 중...");
+    setCollectStatus("수집 시작...");
     let page = 1;
     let totalSaved = 0;
+
     try {
       while (true) {
+        setCollectStatus(`페이지 ${page} 수집 중...`);
+
         const params = new URLSearchParams({
           service: "data",
           request: "GetFeature",
@@ -164,16 +167,25 @@ const AdminPage = () => {
         const res = await fetch(`https://api.vworld.kr/req/data?${params}`);
         const data = await res.json();
 
-        if (data?.response?.status !== "OK") break;
+        if (data?.response?.status !== "OK") {
+          setCollectStatus(`오류: ${data?.response?.status ?? "unknown"}`);
+          break;
+        }
 
-        const features = data.response.result?.featureCollection?.features ?? [];
+        const features =
+          data.response.result?.featureCollection?.features ?? [];
         const total = Number(data.response.record?.total ?? 0);
 
         for (const feature of features) {
           const props = feature.properties ?? {};
           const mntnNm = props.mntn_nm as string | undefined;
-          if (!mntnNm) continue;
+          const geometry = feature.geometry;
           const secLen = parseInt(props.sec_len) || 0;
+          const upMin = parseInt(props.up_min) || 0;
+          const downMin = parseInt(props.down_min) || 0;
+
+          if (!mntnNm) continue;
+          if (!geometry?.coordinates?.length) continue;
 
           const { data: mountain } = await supabase
             .from("mountains")
@@ -184,35 +196,58 @@ const AdminPage = () => {
 
           if (!mountain) continue;
 
-          const { error: upErr } = await supabase
+          // Find an existing trail without geometry to update; otherwise insert new
+          const { data: trail } = await supabase
             .from("trails")
-            .update({
-              geometry: feature.geometry,
-              vworld_id: String(props.ogc_fid ?? ""),
-              distance_m: secLen,
-              up_minutes_vw: parseInt(props.up_min) || 0,
-              down_minutes: parseInt(props.down_min) || 0,
-              vworld_synced_at: new Date().toISOString(),
-            })
+            .select("id")
             .eq("mountain_id", mountain.id)
-            .is("geometry", null);
+            .is("geometry", null)
+            .limit(1)
+            .maybeSingle();
 
-          if (!upErr) totalSaved++;
+          if (trail) {
+            const { error: upErr } = await supabase
+              .from("trails")
+              .update({
+                geometry,
+                distance_m: secLen,
+                up_minutes_vw: upMin,
+                down_minutes: downMin,
+                vworld_synced_at: new Date().toISOString(),
+              })
+              .eq("id", trail.id);
+            if (!upErr) totalSaved++;
+          } else {
+            const { error: insErr } = await supabase
+              .from("trails")
+              .insert({
+                mountain_id: mountain.id,
+                name: `${mntnNm} 등산로`,
+                geometry,
+                distance_m: secLen,
+                distance_km: Math.round(secLen / 100) / 10,
+                up_minutes_vw: upMin,
+                down_minutes: downMin,
+                duration_minutes: upMin + downMin,
+                vworld_synced_at: new Date().toISOString(),
+              });
+            if (!insErr) totalSaved++;
+          }
         }
 
-        const totalPages = total > 0 ? Math.ceil(total / 100) : page;
-        setCollectStatus(`페이지 ${page}/${totalPages} 완료: ${totalSaved}개 저장`);
+        setCollectStatus(`페이지 ${page} 완료 — 총 ${totalSaved}개 저장`);
 
         if (total === 0 || page * 100 >= total) break;
         page++;
         await new Promise((r) => setTimeout(r, 500));
       }
+
       toast.success(`총 ${totalSaved}개 등산로 좌표 수집 완료!`);
-      setCollectStatus(`완료 (총 ${totalSaved}개)`);
+      setCollectStatus(`✅ 완료! 총 ${totalSaved}개 등산로 좌표 수집`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "오류 발생";
       toast.error(`수집 실패: ${msg}`);
-      setCollectStatus(`실패: ${msg}`);
+      setCollectStatus(`❌ 오류: ${msg}`);
     } finally {
       setCollecting(false);
     }
