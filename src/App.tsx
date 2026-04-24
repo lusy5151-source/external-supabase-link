@@ -15,6 +15,7 @@ import Layout from "@/components/Layout";
 import SplashScreen from "@/components/SplashScreen";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import MagazinePopup from "@/components/MagazinePopup";
+import MigrationNoticeModal from "@/components/MigrationNoticeModal";
 import NotFound from "./pages/NotFound";
 import { useState, useCallback, lazy, Suspense, useEffect } from "react";
 import PageSkeleton from "@/components/PageSkeleton";
