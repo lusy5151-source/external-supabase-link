@@ -10,10 +10,14 @@ export function useMountainsData() {
   return useQuery<Mountain[]>({
     queryKey: ["mountains-all", "v2-np"],
     queryFn: async () => {
-      // Supabase default limit is 1000, our table has ~120 rows so no pagination needed
+      // Select only columns actually used in the mapping below to minimize
+      // payload size and shorten the critical request chain (LCP/perf).
+      // Supabase default limit is 1000, our table has ~120 rows so no pagination needed.
       const { data, error } = await supabase
         .from("mountains")
-        .select("*")
+        .select(
+          "id,name,name_ko,height,region,lat,lng,difficulty,description,is_bac100,bac100_label,popularity,overview,address,province,is_national_park,national_park_name"
+        )
         .order("id", { ascending: true });
 
       if (error) throw error;
