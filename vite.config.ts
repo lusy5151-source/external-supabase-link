@@ -64,22 +64,10 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks: (id) => {
           if (!id.includes("node_modules")) return undefined;
-          if (id.includes("react-dom") || id.includes("scheduler") || /[\\/]react[\\/]/.test(id)) {
-            return "vendor-react";
-          }
-          if (id.includes("react-router")) return "vendor-router";
+          // Bundle React + all libs that depend on React together to avoid
+          // "Cannot read properties of undefined (reading 'createContext')"
+          // caused by load-order issues across split chunks.
           if (id.includes("@supabase")) return "vendor-supabase";
-          if (id.includes("@tanstack")) return "vendor-query";
-          if (id.includes("@radix-ui")) return "vendor-radix";
-          if (id.includes("lucide-react")) return "vendor-icons";
-          if (
-            id.includes("date-fns") ||
-            id.includes("clsx") ||
-            id.includes("tailwind-merge") ||
-            id.includes("class-variance-authority")
-          ) {
-            return "vendor-utils";
-          }
           return "vendor";
         },
       },
