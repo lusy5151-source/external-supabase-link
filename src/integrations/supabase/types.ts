@@ -1856,6 +1856,7 @@ export type Database = {
           location: string | null
           nickname: string | null
           provider: string | null
+          role: string | null
           updated_at: string | null
           user_id: string
         }
@@ -1870,6 +1871,7 @@ export type Database = {
           location?: string | null
           nickname?: string | null
           provider?: string | null
+          role?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -1884,6 +1886,7 @@ export type Database = {
           location?: string | null
           nickname?: string | null
           provider?: string | null
+          role?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -2786,6 +2789,7 @@ export type Database = {
         Returns: boolean
       }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       challenge_list_type: "forestry_100" | "bac_100"

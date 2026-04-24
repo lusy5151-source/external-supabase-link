@@ -55,6 +55,8 @@ const MagazinePage = lazy(() => import("@/pages/MagazinePage"));
 const AdminMagazinePage = lazy(() => import("@/pages/AdminMagazinePage"));
 const AdminReportsPage = lazy(() => import("@/pages/AdminReportsPage"));
 const AdminMountainApprovalPage = lazy(() => import("@/pages/AdminMountainApprovalPage"));
+const AdminPage = lazy(() => import("@/pages/AdminPage"));
+const AdminUsersPage = lazy(() => import("@/pages/AdminUsersPage"));
 const SummitClaimPage = lazy(() => import("@/pages/SummitClaimPage"));
 const PrivacyPolicyPage = lazy(() => import("@/pages/PrivacyPolicyPage"));
 const DeleteAccountPage = lazy(() => import("@/pages/DeleteAccountPage"));
@@ -126,6 +128,8 @@ const AppRoutes = () => {
       <Route path="/profile/:userId" element={<ProtectedRoute><LazyPage><FriendProfilePage /></LazyPage></ProtectedRoute>} />
       <Route path="/my" element={<ProtectedRoute><LazyPage><MyPage /></LazyPage></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><LazyPage><ProfilePage /></LazyPage></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute><LazyPage><AdminPage /></LazyPage></ProtectedRoute>} />
+      <Route path="/admin/users" element={<ProtectedRoute><LazyPage><AdminUsersPage /></LazyPage></ProtectedRoute>} />
       <Route path="/admin/announcements" element={<ProtectedRoute><LazyPage><AdminAnnouncementsPage /></LazyPage></ProtectedRoute>} />
       <Route path="/leaderboard" element={<LazyPage><LeaderboardPage /></LazyPage>} />
       <Route path="/magazine" element={<LazyPage><MagazinePage /></LazyPage>} />
