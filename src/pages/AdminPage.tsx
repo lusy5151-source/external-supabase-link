@@ -353,7 +353,7 @@ const AdminPage = () => {
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            fetch-trail-coordinates Edge Function을 페이지네이션으로 반복 호출하여 등산로 좌표를 수집합니다.
+            VWorld API(LT_L_FRSTCLIMB)를 브라우저에서 직접 호출하여 등산로 geometry를 trails 테이블에 저장합니다.
           </p>
         </CardContent>
       </Card>
