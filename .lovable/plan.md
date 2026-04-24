@@ -1,71 +1,50 @@
 
-목표
-- 로그인 페이지에 “Supabase 연결 테스트” 원클릭 버튼을 추가합니다.
-- 버튼 클릭 시 현재 연결된 외부 Supabase 설정으로 임시 테스트 계정 인증을 시도하고, 결과를 페이지 내 로그 패널과 토스트로 함께 보여줍니다.
-- 실제 이메일 회원가입 장애 원인(현재 확인된 `/signup` 지연/타임아웃)도 테스트 결과에 드러나도록 기록합니다.
 
-구현 범위
-1. 로그인 페이지에 테스트 버튼 추가
-- `src/pages/AuthPage.tsx`에 별도 테스트 액션 버튼을 추가합니다.
-- 일반 로그인/회원가입 폼과 분리해, 실사용 입력값을 건드리지 않는 독립 테스트 흐름으로 만듭니다.
-- 버튼은 로딩 중 중복 클릭이 되지 않도록 막습니다.
+## 진단 결과: wandeung.com은 정상 작동 중
 
-2. 임시 테스트 계정으로 인증 시도
-- 클릭 시 랜덤 이메일(예: `supabase-test-{timestamp}@example.com`)과 임시 비밀번호를 생성합니다.
-- 현재 연결된 클라이언트(`@/integrations/supabase/client`)로 다음 순서의 테스트를 수행합니다.
-  - 현재 Supabase URL/키 설정 존재 여부 기록
-  - `signUp()` 시도
-  - 응답의 `user`, `session`, `error`, `emailRedirectTo` 기록
-  - 필요 시 `getSession()` / `getUser()` 상태를 추가 기록
-- 현재 프로젝트는 이메일 가입에서 `/signup` 504 타임아웃 이력이 있으므로, 이 경우도 실패가 아니라 “Auth 요청은 도달했으나 확인 메일/후처리 단계에서 지연됨”으로 명확히 표시합니다.
+브라우저로 직접 접속해 확인한 결과, 앱은 **정상적으로 렌더링되고 있습니다**. 대시북드, 다가오는 일정(북한산 D-3), 100대 명산 진행률(23%), 산왕 카드, 환영 모달 모두 표시됨을 스크린샷으로 확인했습니다.
 
-3. 결과 로그 패널 추가
-- 로그인 페이지 내부에 테스트 결과 패널을 추가합니다.
-- 최소한 아래 정보를 순서대로 표시합니다.
-  - 테스트 시작 시각
-  - 사용한 Supabase URL
-  - 테스트 이메일
-  - `signUp` 성공/실패 여부
-  - `error.message`
-  - 세션 존재 여부
-  - 사용자 ID / 이메일 / provider 후보
-  - 최종 판정: 연결 성공 / 인증 요청 도달 / 이메일 확인 필요 / 타임아웃 / 실패
-- 기존 `logClientAuthDebug()` 결과도 함께 반영해 현재 auth 상태를 쉽게 볼 수 있게 합니다.
+### 실제 발견된 단일 이슈 (블로킹 아님)
 
-4. 토스트 요약 메시지 추가
-- 테스트 완료 후 토스트로 핵심 결과를 짧게 보여줍니다.
-- 예:
-  - “Supabase 연결 확인됨. 테스트 가입 요청 성공”
-  - “Supabase 연결은 정상이나 이메일 가입 단계에서 타임아웃 발생”
-  - “설정 문제 또는 인증 실패”
-
-5. 기존 패턴 재사용
-- 현재 프로젝트의 auth 디버깅 방식(`src/lib/authDebug.ts`)을 재사용해 결과 포맷을 맞춥니다.
-- 외부 Supabase 연결 제약을 유지하며 `src/integrations/supabase/client.ts`의 URL/Key는 절대 변경하지 않습니다.
-
-수정 대상 파일
-- `src/pages/AuthPage.tsx`
-- 필요 시 `src/lib/authDebug.ts`
-
-테스트 동작 설계
-```text
-[Supabase 연결 테스트 버튼 클릭]
-  → 임시 이메일/비밀번호 생성
-  → signUp()
-  → 결과/에러 수집
-  → getSession(), getUser(), authDebug 수집
-  → 로그 패널 업데이트
-  → 토스트 표시
+콘솔 에러 1건만 존재:
+```
+404: https://wandeung.com/icon-192x192.png
+warn: Manifest icon download failed
 ```
 
-완료 기준
-- 로그인 페이지에 테스트 버튼이 보임
-- 버튼 1회 클릭으로 connected Supabase 설정 기준 인증 시도가 실행됨
-- 결과가 페이지 내 로그 패널에 누적 표시됨
-- 같은 결과가 토스트로 요약 표시됨
-- `/signup` 504, 이메일 확인 필요, 세션 생성 성공, 설정 오류를 서로 구분해 보여줌
+이는 PWA 매니페스트에서 참조하는 아이콘 파일이 `public/` 폴더에 없어서 발생합니다. **앱 실행에는 영향 없음** — PWA 설치 시 아이콘만 누락됩니다.
 
-기술 세부사항
-- 현재 코드베이스는 이미 `supabase.auth.signUp()`과 `logClientAuthDebug()`를 사용하고 있으므로, 별도 테스트용 Edge Function 없이 클라이언트에서 직접 구현하는 것이 가장 단순합니다.
-- 현재 외부 Supabase URL은 `https://ylcjlzlchinijvyojdbc.supabase.co`로 고정되어 있으며 변경 대상이 아닙니다.
-- 최근 auth 로그상 이메일 가입은 `user_confirmation_requested` 이후 504 타임아웃이 발생한 이력이 있어, 테스트 버튼은 “가입 성공 여부”뿐 아니라 “요청이 Auth까지 도달했는지”까지 함께 보여줘야 원인 파악에 도움이 됩니다.
+### "화면이 안 보인다"의 가능한 원인
+
+서버/번들/HTML은 모두 정상입니다 (HTTP 200, 모든 청크 로드됨). 사용자 측에서 화면이 안 보인다면 다음 중 하나일 가능성이 높습니다:
+
+1. **이전 배포의 손상된 Service Worker가 캐시됨** — 최근 vite-plugin-pwa 설정 변경(`injectRegister: "script-defer"`, manualChunks 변경)으로 SW가 오래된 청크 경로를 가리킴
+2. **브라우저 캐시에 깨진 청크가 남아있음** — 이전 분할 빌드의 createContext 에러가 캐시됨
+3. **퍼블리시가 아직 안 됨** — 최근 vite.config.ts 수정 후 Publish 버튼을 누르지 않았을 수 있음
+
+### 수정 계획
+
+**1. 누락된 PWA 아이콘 처리** (`vite.config.ts`)
+- 매니페스트의 `/icon-192x192.png`, `/icon-512x512.png` 참조를 기존에 존재하는 `/placeholder.svg` 또는 새 아이콘으로 교체. 가장 안전한 방식은 manifest의 icons 배열을 임시로 SVG 단일 아이콘으로 바꿔 404 제거.
+
+**2. 깨진 SW 자동 정리 강화** (`src/main.tsx`)
+- 현재는 preview/iframe에서만 SW unregister. 프로덕션에서도 사용자가 새 빌드 받을 때 옛 SW가 옛 청크 경로를 들고 있을 수 있음.
+- SW 등록 실패 시 또는 controllerchange 시 강제 새로고침 로직 추가:
+  ```ts
+  navigator.serviceWorker?.addEventListener('controllerchange', () => {
+    window.location.reload();
+  });
+  ```
+- 옛 캐시(`workbox-precache-*`) 자동 삭제 로직.
+
+**3. 사용자 액션 안내**
+- 코드 변경 후 반드시 **Publish → Update** 클릭 필요 (vite.config.ts는 빌드 설정이라 재빌드/재배포 시에만 반영)
+- 사용자에게는 강력 새로고침(Ctrl+Shift+R) 또는 Application → Clear storage 한 번 권장
+
+### 변경 대상 파일
+
+- `vite.config.ts` — manifest icons 항목을 placeholder.svg로 임시 변경 (404 제거)
+- `src/main.tsx` — SW controllerchange 핸들러 + 옛 캐시 정리 추가
+
+UX/디자인 변경 없음. 기존 동작 그대로 유지.
+
