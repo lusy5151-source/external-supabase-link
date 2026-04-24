@@ -137,26 +137,79 @@ const AdminPage = () => {
     setDataLoading(false);
   };
 
-  // Trail coordinate collection (paginated)
+  // Trail coordinate collection — calls VWorld API directly from browser
   const handleCollectTrails = async () => {
     if (collecting) return;
+    const VWORLD_KEY = import.meta.env.VITE_VWORLD_API_KEY as string | undefined;
+    if (!VWORLD_KEY) {
+      toast.error("VITE_VWORLD_API_KEY가 설정되지 않았습니다");
+      return;
+    }
     setCollecting(true);
     setCollectStatus("시작 중...");
     let page = 1;
     let totalSaved = 0;
     try {
       while (true) {
-        const { data, error } = await supabase.functions.invoke("fetch-trail-coordinates", {
-          body: { page, size: 1000 },
+        const params = new URLSearchParams({
+          service: "data",
+          request: "GetFeature",
+          data: "LT_L_FRSTCLIMB",
+          key: VWORLD_KEY,
+          domain: "https://wandeung.com",
+          format: "json",
+          crs: "EPSG:4326",
+          size: "100",
+          page: String(page),
+          geometry: "true",
+          attribute: "true",
         });
-        if (error) throw error;
-        const saved = Number((data as any)?.saved ?? 0);
-        const hasMore = Boolean((data as any)?.has_more);
-        totalSaved += saved;
-        setCollectStatus(`페이지 ${page} 완료: 총 ${totalSaved}개 저장`);
-        if (!hasMore) break;
+
+        const res = await fetch(`https://api.vworld.kr/req/data?${params}`);
+        const data = await res.json();
+
+        if (data?.response?.status !== "OK") break;
+
+        const features = data.response.result?.featureCollection?.features ?? [];
+        const total = Number(data.response.record?.total ?? 0);
+
+        for (const feature of features) {
+          const props = feature.properties ?? {};
+          const mntnNm = props.mntn_nm as string | undefined;
+          if (!mntnNm) continue;
+          const secLen = parseInt(props.sec_len) || 0;
+
+          const { data: mountain } = await supabase
+            .from("mountains")
+            .select("id")
+            .ilike("name_ko", `%${mntnNm}%`)
+            .limit(1)
+            .maybeSingle();
+
+          if (!mountain) continue;
+
+          const { error: upErr } = await supabase
+            .from("trails")
+            .update({
+              geometry: feature.geometry,
+              vworld_id: String(props.ogc_fid ?? ""),
+              distance_m: secLen,
+              up_minutes_vw: parseInt(props.up_min) || 0,
+              down_minutes: parseInt(props.down_min) || 0,
+              vworld_synced_at: new Date().toISOString(),
+            })
+            .eq("mountain_id", mountain.id)
+            .is("geometry", null);
+
+          if (!upErr) totalSaved++;
+        }
+
+        const totalPages = total > 0 ? Math.ceil(total / 100) : page;
+        setCollectStatus(`페이지 ${page}/${totalPages} 완료: ${totalSaved}개 저장`);
+
+        if (total === 0 || page * 100 >= total) break;
         page++;
-        await new Promise((r) => setTimeout(r, 1000));
+        await new Promise((r) => setTimeout(r, 500));
       }
       toast.success(`총 ${totalSaved}개 등산로 좌표 수집 완료!`);
       setCollectStatus(`완료 (총 ${totalSaved}개)`);
