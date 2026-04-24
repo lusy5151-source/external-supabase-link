@@ -15,6 +15,7 @@ import Layout from "@/components/Layout";
 import SplashScreen from "@/components/SplashScreen";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import MagazinePopup from "@/components/MagazinePopup";
+import MigrationNoticeModal from "@/components/MigrationNoticeModal";
 import NotFound from "./pages/NotFound";
 import { useState, useCallback, lazy, Suspense, useEffect } from "react";
 import PageSkeleton from "@/components/PageSkeleton";
@@ -181,6 +182,7 @@ const App = () => {
               <BrowserRouter>
                 <GuestProvider>
                 <UnreadChatProvider>
+                {!showSplash && <MigrationNoticeModal />}
                 <Layout>
                   <ErrorBoundary fallbackMessage="데이터를 불러오는 중 오류가 발생했습니다.">
                     <AppRoutes />
