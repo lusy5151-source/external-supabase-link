@@ -106,25 +106,6 @@ const MyPage = () => {
         ))}
       </div>
 
-      {/* Admin entry (only visible to admins) */}
-      {isAdmin && (
-        <Link
-          to="/admin"
-          className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4 transition-colors hover:bg-primary/10"
-        >
-          <div className="rounded-xl bg-primary/15 p-2.5">
-            <ShieldCheck className="h-5 w-5 text-primary" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground">관리자 페이지</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              {isSuperAdmin ? "최고 관리자" : "관리자"} · 공지/매거진/신고/회원 관리
-            </p>
-          </div>
-          <ChevronRight className="h-4 w-4 text-primary/60" />
-        </Link>
-      )}
-
       {/* Menu list */}
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
         {menuItems.map((item, idx) => (
@@ -149,6 +130,26 @@ const MyPage = () => {
             <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
           </Link>
         ))}
+
+        {/* Admin entry (only visible to admins) — separated by divider */}
+        {isAdmin && (
+          <>
+            <div className="h-px bg-border" />
+            <Link
+              to="/admin"
+              className="flex items-center gap-3 px-4 py-3.5 bg-primary/5 transition-colors hover:bg-primary/10"
+            >
+              <ShieldCheck className="h-4.5 w-4.5 text-primary" style={{ width: 18, height: 18 }} />
+              <span className="flex-1 text-sm font-semibold text-primary">
+                관리자 페이지
+              </span>
+              <span className="text-[10px] font-medium text-primary/70 mr-1">
+                {isSuperAdmin ? "최고 관리자" : "관리자"}
+              </span>
+              <ChevronRight className="h-4 w-4 text-primary/40" />
+            </Link>
+          </>
+        )}
       </div>
 
       {/* Extra menu rows */}
