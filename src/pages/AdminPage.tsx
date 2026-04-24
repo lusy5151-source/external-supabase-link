@@ -140,11 +140,7 @@ const AdminPage = () => {
   // Trail coordinate collection — calls VWorld API directly from browser
   const handleCollectTrails = async () => {
     if (collecting) return;
-    const VWORLD_KEY = import.meta.env.VITE_VWORLD_API_KEY as string | undefined;
-    if (!VWORLD_KEY) {
-      toast.error("VITE_VWORLD_API_KEY가 설정되지 않았습니다");
-      return;
-    }
+    const VWORLD_KEY = "F41DD5DC-6774-33EA-8E02-68505ADAF394";
     setCollecting(true);
     setCollectStatus("시작 중...");
     let page = 1;
