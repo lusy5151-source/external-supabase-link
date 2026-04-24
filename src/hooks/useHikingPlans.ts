@@ -163,28 +163,40 @@ export function useHikingPlans() {
     console.log("Creating hiking plan user.id:", authUser.id);
     console.log("Creating hiking plan insert payload:", payload);
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("hiking_plans")
-      .insert(payload as any)
-      .select()
-      .single();
+      .insert(payload as any);
 
     if (error) {
       console.error("Failed to create plan:", error);
+      return { data: null, error };
     }
 
-    if (!error && data) {
-      fetchPlans();
+    // Fetch the newly created plan separately (avoids RLS issues with INSERT...RETURNING)
+    const { data: newPlan } = await supabase
+      .from("hiking_plans")
+      .select("*")
+      .eq("creator_id", authUser.id)
+      .eq("mountain_id", plan.mountain_id)
+      .eq("planned_date", plan.planned_date)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    fetchPlans();
+
+    if (newPlan) {
       // Send auto welcome message for plan chat
       const mt = (await import("@/data/mountains")).mountains.find((m) => m.id === plan.mountain_id);
       const mtName = mt?.nameKo || "등산";
       await (supabase as any).from("plan_messages").insert({
-        plan_id: (data as any).id,
+        plan_id: (newPlan as any).id,
         user_id: authUser.id,
         message: `📅 ${mtName} 등산 계획 채팅방이 생성되었어요!\n참가자들과 자유롭게 이야기해보세요 🏔`,
       } as any);
     }
-    return { data: data as HikingPlan | null, error };
+
+    return { data: newPlan as HikingPlan | null, error: null };
   };
 
   const updatePlan = async (planId: string, updates: Partial<HikingPlan>) => {
