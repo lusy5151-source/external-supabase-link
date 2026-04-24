@@ -2,16 +2,21 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, X, UserCircle, Mountain, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTutorial } from "@/contexts/TutorialContext";
 
 const STORAGE_KEY = "migration_notice_v2";
+export const MIGRATION_DISMISSED_EVENT = "migration-notice-dismissed";
 
 const MigrationNoticeModal = () => {
   const navigate = useNavigate();
+  const { tutorialCompleted, isTutorialActive } = useTutorial();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const seen = localStorage.getItem(STORAGE_KEY);
     if (seen) return;
+    // Wait until the tutorial is finished before showing the migration notice
+    if (!tutorialCompleted || isTutorialActive) return;
     // Defer modal so it doesn't become the LCP element & block initial paint
     const show = () => setOpen(true);
     const idle = (window as any).requestIdleCallback;
@@ -25,11 +30,12 @@ const MigrationNoticeModal = () => {
         clearTimeout(handle as number);
       }
     };
-  }, []);
+  }, [tutorialCompleted, isTutorialActive]);
 
   const dismiss = () => {
     localStorage.setItem(STORAGE_KEY, "1");
     setOpen(false);
+    window.dispatchEvent(new Event(MIGRATION_DISMISSED_EVENT));
   };
 
   const handleSignup = () => {

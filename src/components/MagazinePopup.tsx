@@ -4,8 +4,10 @@ import MagazineSlideViewer from "@/components/MagazineSlideViewer";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useOnboarding } from "@/contexts/OnboardingContext";
+import { MIGRATION_DISMISSED_EVENT } from "@/components/MigrationNoticeModal";
 
 const POPUP_KEY = "magazine-popup-dismissed";
+const MIGRATION_KEY = "migration_notice_v2";
 
 const MagazinePopup = () => {
   const { fetchFeaturedPost, fetchSlides } = useMagazine();
@@ -14,10 +16,22 @@ const MagazinePopup = () => {
   const [firstSlide, setFirstSlide] = useState<MagazineSlide | null>(null);
   const [showPopup, setShowPopup] = useState(false);
   const [showViewer, setShowViewer] = useState(false);
+  const [migrationDismissed, setMigrationDismissed] = useState(
+    () => !!localStorage.getItem(MIGRATION_KEY)
+  );
+
+  // Listen for migration notice dismissal so we can show after it closes
+  useEffect(() => {
+    const handler = () => setMigrationDismissed(true);
+    window.addEventListener(MIGRATION_DISMISSED_EVENT, handler);
+    return () => window.removeEventListener(MIGRATION_DISMISSED_EVENT, handler);
+  }, []);
 
   useEffect(() => {
     // Wait until the onboarding tutorial is finished before showing the popup
     if (isOnboarding) return;
+    // Wait until the migration notice has been dismissed (or was already seen)
+    if (!migrationDismissed) return;
 
     // Check if dismissed today
     const dismissed = localStorage.getItem(POPUP_KEY);
@@ -34,7 +48,7 @@ const MagazinePopup = () => {
       if (slides.length > 0) setFirstSlide(slides[0]);
       setShowPopup(true);
     });
-  }, [isOnboarding]);
+  }, [isOnboarding, migrationDismissed]);
 
   const handleDismiss = () => {
     localStorage.setItem(POPUP_KEY, new Date().toISOString());
@@ -51,6 +65,7 @@ const MagazinePopup = () => {
   }
 
   if (isOnboarding) return null;
+  if (!migrationDismissed) return null;
   if (!showPopup || !post) return null;
 
   const imageUrl = firstSlide?.image_url || post.cover_image_url;
