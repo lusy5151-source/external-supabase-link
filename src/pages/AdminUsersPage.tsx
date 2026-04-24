@@ -265,7 +265,7 @@ const AdminUsersPage = () => {
                       </Badge>
                     )}
                     {u.role === "superadmin" && (
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-amber-400 text-amber-600">
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary text-primary">
                         superadmin
                       </Badge>
                     )}
@@ -279,7 +279,7 @@ const AdminUsersPage = () => {
                     {u.email || "이메일 없음"}
                   </p>
                   {u.report_count > 0 && (
-                    <p className="text-[11px] text-rose-600 flex items-center gap-1 mt-0.5">
+                    <p className="text-[11px] text-destructive flex items-center gap-1 mt-0.5">
                       <Flag className="h-3 w-3" />
                       신고 {u.report_count}건
                     </p>
