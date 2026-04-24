@@ -8,7 +8,8 @@ import { useAchievementStore } from "@/hooks/useAchievementStore";
 import { useGearStore } from "@/hooks/useGearStore";
 import { useSharedCompletionCounts } from "@/hooks/useSharedCompletionCounts";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ChevronRight, Users, Mountain, BookOpen, Settings, LogOut, HelpCircle, Bell } from "lucide-react";
+import { ChevronRight, Users, Mountain, BookOpen, Settings, LogOut, HelpCircle, Bell, ShieldCheck } from "lucide-react";
+import { useAdmin } from "@/hooks/useAdmin";
 import { Badge } from "@/components/ui/badge";
 import { useUnreadChat } from "@/contexts/UnreadChatContext";
 import { useTutorial } from "@/contexts/TutorialContext";
@@ -46,6 +47,7 @@ const MyPage = () => {
   const { restartTutorial } = useTutorial();
   const { isGranted, isDenied, requestPermission } = usePushNotification();
   const { isDdayEnabled, setDdayEnabled } = usePlanNotifications();
+  const { isAdmin, isSuperAdmin } = useAdmin();
   const nav = useNavigate();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showNotifSettings, setShowNotifSettings] = useState(false);
@@ -103,6 +105,25 @@ const MyPage = () => {
           </div>
         ))}
       </div>
+
+      {/* Admin entry (only visible to admins) */}
+      {isAdmin && (
+        <Link
+          to="/admin"
+          className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4 transition-colors hover:bg-primary/10"
+        >
+          <div className="rounded-xl bg-primary/15 p-2.5">
+            <ShieldCheck className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground">관리자 페이지</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              {isSuperAdmin ? "최고 관리자" : "관리자"} · 공지/매거진/신고/회원 관리
+            </p>
+          </div>
+          <ChevronRight className="h-4 w-4 text-primary/60" />
+        </Link>
+      )}
 
       {/* Menu list */}
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
