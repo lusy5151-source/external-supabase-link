@@ -11,9 +11,20 @@ const MigrationNoticeModal = () => {
 
   useEffect(() => {
     const seen = localStorage.getItem(STORAGE_KEY);
-    if (!seen) {
-      setOpen(true);
-    }
+    if (seen) return;
+    // Defer modal so it doesn't become the LCP element & block initial paint
+    const show = () => setOpen(true);
+    const idle = (window as any).requestIdleCallback;
+    const handle = idle
+      ? idle(show, { timeout: 1500 })
+      : window.setTimeout(show, 800);
+    return () => {
+      if (idle && (window as any).cancelIdleCallback) {
+        (window as any).cancelIdleCallback(handle);
+      } else {
+        clearTimeout(handle as number);
+      }
+    };
   }, []);
 
   const dismiss = () => {
