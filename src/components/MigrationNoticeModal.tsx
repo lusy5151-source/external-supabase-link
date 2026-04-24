@@ -12,9 +12,7 @@ const MigrationNoticeModal = () => {
   useEffect(() => {
     const seen = localStorage.getItem(STORAGE_KEY);
     if (!seen) {
-      // Slight delay so it doesn't fight the splash screen
-      const t = setTimeout(() => setOpen(true), 600);
-      return () => clearTimeout(t);
+      setOpen(true);
     }
   }, []);
 
