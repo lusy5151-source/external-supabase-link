@@ -20,6 +20,25 @@ if (isPreviewHost || isInIframe) {
   navigator.serviceWorker?.getRegistrations().then((registrations) => {
     registrations.forEach((r) => r.unregister());
   });
+} else if ("serviceWorker" in navigator) {
+  // In production: auto-reload when a new SW takes control to avoid stale chunks
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
+
+  // Best-effort cleanup of stale workbox precache entries from older builds
+  if ("caches" in window) {
+    caches.keys().then((keys) => {
+      keys.forEach((key) => {
+        if (key.startsWith("workbox-precache-") && !key.includes(location.host)) {
+          caches.delete(key);
+        }
+      });
+    }).catch(() => {});
+  }
 }
 
 createRoot(document.getElementById("root")!).render(
