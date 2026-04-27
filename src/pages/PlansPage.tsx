@@ -17,6 +17,8 @@ import { ko } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+type PlanRole = "creator" | "going" | "interested";
+
 interface MyPlan {
   id: string;
   creator_id: string;
@@ -30,7 +32,7 @@ interface MyPlan {
   group_id: string | null;
   mountain_name: string | null;
   group_name: string | null;
-  is_joined: boolean;
+  role: PlanRole;
 }
 
 const PlansPage = () => {
