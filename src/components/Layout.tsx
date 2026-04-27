@@ -3,6 +3,7 @@ import { Home, Compass, ClipboardList, User, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuest } from "@/contexts/GuestContext";
 import { useUnreadChat } from "@/contexts/UnreadChatContext";
+import { useNotifications } from "@/hooks/useNotifications";
 import NotificationCenter from "@/components/NotificationCenter";
 import MountainMascot from "@/components/MountainMascot";
 import TutorialOverlay from "@/components/tutorial/TutorialOverlay";
@@ -23,6 +24,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const { isGuest, showLoginPrompt } = useGuest();
   const { unreadChatCount, friendActivityUnread } = useUnreadChat();
+  const { unreadCount: notifUnread } = useNotifications();
 
   const restrictedTabs = new Set(["/records", "/my"]);
 
@@ -154,7 +156,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                         : "hsl(var(--color-text-tertiary))",
                     }}
                   />
-                  {label === "마이" && (unreadChatCount > 0 || friendActivityUnread > 0) && (
+                  {label === "마이" && (unreadChatCount > 0 || friendActivityUnread > 0 || notifUnread > 0) && (
                     <span
                       className="absolute top-0 right-0 rounded-full"
                       style={{ width: 8, height: 8, background: "#E24B4A" }}
