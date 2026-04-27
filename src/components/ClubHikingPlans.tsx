@@ -207,7 +207,7 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
     }
   };
 
-  const handleRsvp = async (planId: string, status: string) => {
+  const handleRsvp = async (planId: string, status: "going" | "interested" | "not_going") => {
     if (!user) return;
     const existing = participantMap[planId]?.find((p) => p.user_id === user.id);
     if (existing) {
@@ -220,13 +220,21 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
         plan_id: planId,
         user_id: user.id,
         rsvp_status: status,
+        invited_at: new Date().toISOString(),
+        responded_at: new Date().toISOString(),
       } as any);
     }
     fetchPlans();
-    toast({ title: status === "going" ? "참석으로 응답했습니다" : status === "interested" ? "관심으로 응답했습니다" : "불참으로 응답했습니다" });
+    const msg =
+      status === "going"
+        ? "계획에 참석해요! 🏔"
+        : status === "interested"
+        ? "관심 있는 계획으로 표시했어요 👀"
+        : "불참으로 변경했어요";
+    toast({ title: msg });
   };
 
-  const rsvpLabels: Record<string, string> = { going: "참석", interested: "관심", declined: "불참", pending: "대기" };
+  const rsvpLabels: Record<string, string> = { going: "참석", interested: "관심", not_going: "불참", declined: "불참", pending: "대기" };
 
   return (
     <section className="space-y-3">
