@@ -306,7 +306,26 @@ const Dashboard = () => {
 
             {/* Upcoming schedule card */}
             <div data-onboarding="upcoming-schedule" className="rounded-2xl bg-card/90 p-5 shadow-sm backdrop-blur-sm">
-              <p className="text-xs font-semibold text-muted-foreground mb-2">다가오는 일정</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-semibold text-muted-foreground">다가오는 일정</p>
+                <Link
+                  to={isDemo ? "/auth" : "/plans/create"}
+                  style={{
+                    background: "#639922",
+                    color: "#fff",
+                    fontSize: "12px",
+                    fontWeight: 500,
+                    borderRadius: "20px",
+                    padding: "5px 12px",
+                    border: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    lineHeight: 1,
+                  }}
+                >
+                  + 계획
+                </Link>
+              </div>
               {isDemo ? (
                 /* Demo upcoming plan */
                 <div className="flex items-center justify-between">
