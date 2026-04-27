@@ -262,7 +262,7 @@ const GroupDetailPage = () => {
     );
   }
 
-  const joinRequests = invitations.filter((i) => i.type === "request");
+  const joinRequests = invitations.filter((i) => i.inviter_id === i.invitee_id);
 
   return (
     <div className="space-y-6 pb-24 max-w-lg mx-auto">
