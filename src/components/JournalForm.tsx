@@ -108,7 +108,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
     setSaving(true);
 
     const journalData = {
-      mountain_id: mountainIds[0],
+      mountain_id: Number(mountainIds[0]),
       mountain_ids: mountainIds,
       hiked_at: hikedAt,
       course_name: courseName || undefined,
@@ -123,24 +123,71 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
       visibility,
     };
 
-    if (isEdit && editJournal) {
-      const { error } = await updateJournal(editJournal.id, journalData);
-      if (error) {
-        toast({ title: "수정 실패", variant: "destructive" });
-      } else {
-        toast({ title: "일지를 수정했습니다 ✏️" });
-        onSaved();
-      }
-    } else {
-      const { error } = await createJournal(journalData);
-      if (error) {
-        toast({ title: "작성 실패", variant: "destructive" });
-      } else {
-        toast({ title: "일지를 작성했습니다 🏔️" });
-        onSaved();
-      }
+    // Debug: log payload + auth state before submit
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const authUser = (await supabase.auth.getUser()).data.user;
+      console.log("Submitting journal:", {
+        user_id: authUser?.id,
+        user_id_from_context: user?.id,
+        mountain_id: journalData.mountain_id,
+        mountain_id_type: typeof journalData.mountain_id,
+        hiked_at: journalData.hiked_at,
+        visibility: journalData.visibility,
+        photos_count: photos.length,
+        tagged_friends_count: taggedFriends.length,
+        isEdit,
+      });
+    } catch (e) {
+      console.warn("Pre-submit debug log failed:", e);
     }
-    setSaving(false);
+
+    try {
+      if (isEdit && editJournal) {
+        const { error } = await updateJournal(editJournal.id, journalData);
+        if (error) {
+          console.error("Journal update error:", JSON.stringify(error));
+          const msg = (error as any).message || "알 수 없는 오류";
+          const code = (error as any).code || "n/a";
+          toast({
+            title: "수정 실패",
+            description: `${msg} (code: ${code})`,
+            variant: "destructive",
+          });
+          alert(`저장 실패: ${msg} / code: ${code}`);
+        } else {
+          toast({ title: "일지를 수정했습니다 ✏️" });
+          onSaved();
+        }
+      } else {
+        const { error } = await createJournal(journalData);
+        if (error) {
+          console.error("Journal insert error:", JSON.stringify(error));
+          const msg = (error as any).message || "알 수 없는 오류";
+          const code = (error as any).code || "n/a";
+          toast({
+            title: "작성 실패",
+            description: `${msg} (code: ${code})`,
+            variant: "destructive",
+          });
+          alert(`저장 실패: ${msg} / code: ${code}`);
+        } else {
+          toast({ title: "일지를 작성했습니다 🏔️" });
+          onSaved();
+        }
+      }
+    } catch (e: any) {
+      console.error("Unexpected error during journal submission:", e);
+      const msg = e?.message || String(e);
+      toast({
+        title: "예상치 못한 오류",
+        description: msg,
+        variant: "destructive",
+      });
+      alert(`예상치 못한 오류: ${msg}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const acceptedFriends = friends.filter((f) => f.status === "accepted");
