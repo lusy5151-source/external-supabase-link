@@ -191,12 +191,6 @@ const PlansPage = () => {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const upcoming = myPlans.filter(
-    (p) => p.status !== "cancelled" && new Date(p.planned_date) >= today
-  );
-  const past = myPlans.filter(
-    (p) => p.status === "cancelled" || new Date(p.planned_date) < today
-  );
 
   return (
     <div className="space-y-5 pb-24">
