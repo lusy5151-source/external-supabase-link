@@ -65,6 +65,7 @@ const TermsOfServicePage = lazy(() => import("@/pages/TermsOfServicePage"));
 const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
 const AuthCallbackPage = lazy(() => import("@/pages/AuthCallbackPage"));
+const NotificationsPage = lazy(() => import("@/pages/NotificationsPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -128,6 +129,7 @@ const AppRoutes = () => {
       <Route path="/groups/:id" element={<ProtectedRoute><LazyPage><GroupDetailPage /></LazyPage></ProtectedRoute>} />
       <Route path="/profile/:userId" element={<ProtectedRoute><LazyPage><FriendProfilePage /></LazyPage></ProtectedRoute>} />
       <Route path="/my" element={<ProtectedRoute><LazyPage><MyPage /></LazyPage></ProtectedRoute>} />
+      <Route path="/notifications" element={<ProtectedRoute><LazyPage><NotificationsPage /></LazyPage></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><LazyPage><ProfilePage /></LazyPage></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><LazyPage><AdminPage /></LazyPage></ProtectedRoute>} />
       <Route path="/admin/users" element={<ProtectedRoute><LazyPage><AdminUsersPage /></LazyPage></ProtectedRoute>} />
