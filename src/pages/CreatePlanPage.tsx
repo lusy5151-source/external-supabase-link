@@ -332,14 +332,32 @@ const CreatePlanPage = () => {
         </div>
       )}
 
-      <Button
-        onClick={handleSubmit}
-        disabled={!canSubmit}
-        className="w-full"
-        size="lg"
+      <div
+        className="sticky -mx-5"
+        style={{
+          bottom: "calc(64px + env(safe-area-inset-bottom, 0px))",
+          background: "hsl(var(--color-background-primary))",
+          borderTop: "0.5px solid hsl(var(--color-border-tertiary))",
+          padding: "16px 20px",
+          zIndex: 10,
+        }}
       >
-        {submitting ? "생성 중..." : "계획 만들기"}
-      </Button>
+        <Button
+          onClick={handleSubmit}
+          disabled={!canSubmit}
+          className="w-full"
+          style={{
+            background: "#639922",
+            color: "white",
+            height: 48,
+            borderRadius: "var(--border-radius-md, 12px)",
+            fontSize: 15,
+            fontWeight: 500,
+          }}
+        >
+          {submitting ? "생성 중..." : "계획 만들기"}
+        </Button>
+      </div>
     </div>
   );
 };
