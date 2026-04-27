@@ -17,6 +17,8 @@ import { ko } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+type PlanRole = "creator" | "going" | "interested";
+
 interface MyPlan {
   id: string;
   creator_id: string;
@@ -30,8 +32,31 @@ interface MyPlan {
   group_id: string | null;
   mountain_name: string | null;
   group_name: string | null;
-  is_joined: boolean;
+  role: PlanRole;
 }
+
+const RoleBadge = ({ role, compact = false }: { role: PlanRole; compact?: boolean }) => {
+  if (role === "creator") return null;
+  const styles =
+    role === "interested"
+      ? { background: "#FAEEDA", color: "#633806", label: "관심" }
+      : { background: "#EAF3DE", color: "#27500A", label: "참석" };
+  return (
+    <span
+      style={{
+        background: styles.background,
+        color: styles.color,
+        fontSize: 10,
+        borderRadius: 10,
+        padding: "1px 6px",
+        fontWeight: 500,
+        lineHeight: compact ? undefined : 1.4,
+      }}
+    >
+      {styles.label}
+    </span>
+  );
+};
 
 const PlansPage = () => {
   const { mountains } = useMountains();
@@ -65,12 +90,16 @@ const PlansPage = () => {
 
         const { data: parts, error: e2 } = await (supabase as any)
           .from("plan_participants")
-          .select("plan_id")
+          .select("plan_id, rsvp_status")
           .eq("user_id", user.id)
-          .eq("rsvp_status", "going");
+          .in("rsvp_status", ["going", "interested"]);
         if (e2) console.error("participants error:", JSON.stringify(e2));
 
-        const partIds = (parts || []).map((p: any) => p.plan_id);
+        const createdIds = new Set((created || []).map((r: any) => r.id));
+        const partFiltered = (parts || []).filter(
+          (p: any) => !createdIds.has(p.plan_id)
+        );
+        const partIds = partFiltered.map((p: any) => p.plan_id);
         let joined: any[] = [];
         if (partIds.length) {
           const { data: jd, error: e3 } = await (supabase as any)
@@ -78,32 +107,34 @@ const PlansPage = () => {
             .select(
               "id, creator_id, mountain_id, trail_name, planned_date, start_time, status, is_public, meeting_location, group_id, mountains:mountain_id (name_ko), hiking_group:group_id (name)"
             )
-            .in("id", partIds)
-            .neq("creator_id", user.id);
+            .in("id", partIds);
           if (e3) console.error("joinedPlans error:", JSON.stringify(e3));
           joined = jd || [];
         }
 
-        const merge = (rows: any[], isJoined: boolean): MyPlan[] =>
-          rows.map((r) => ({
-            id: r.id,
-            creator_id: r.creator_id,
-            mountain_id: r.mountain_id,
-            trail_name: r.trail_name,
-            planned_date: r.planned_date,
-            start_time: r.start_time,
-            status: r.status,
-            is_public: r.is_public,
-            meeting_location: r.meeting_location,
-            group_id: r.group_id,
-            mountain_name: r.mountains?.name_ko || null,
-            group_name: r.hiking_group?.name || null,
-            is_joined: isJoined,
-          }));
+        const mapRow = (r: any, role: PlanRole): MyPlan => ({
+          id: r.id,
+          creator_id: r.creator_id,
+          mountain_id: r.mountain_id,
+          trail_name: r.trail_name,
+          planned_date: r.planned_date,
+          start_time: r.start_time,
+          status: r.status,
+          is_public: r.is_public,
+          meeting_location: r.meeting_location,
+          group_id: r.group_id,
+          mountain_name: r.mountains?.name_ko || null,
+          group_name: r.hiking_group?.name || null,
+          role,
+        });
 
-        const all = [
-          ...merge(created || [], false),
-          ...merge(joined, true),
+        const all: MyPlan[] = [
+          ...(created || []).map((r: any) => mapRow(r, "creator")),
+          ...joined.map((r: any) => {
+            const rsvp = partFiltered.find((p: any) => p.plan_id === r.id)?.rsvp_status;
+            const role: PlanRole = rsvp === "interested" ? "interested" : "going";
+            return mapRow(r, role);
+          }),
         ];
         const unique = Array.from(new Map(all.map((p) => [p.id, p])).values()).sort(
           (a, b) => new Date(a.planned_date).getTime() - new Date(b.planned_date).getTime()
@@ -204,21 +235,7 @@ const PlansPage = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <p className="font-medium text-foreground">{mountainName}</p>
-                          {plan.is_joined && (
-                            <span
-                              style={{
-                                background: "#EAF3DE",
-                                color: "#27500A",
-                                fontSize: 10,
-                                borderRadius: 10,
-                                padding: "1px 6px",
-                                fontWeight: 500,
-                                lineHeight: 1.4,
-                              }}
-                            >
-                              산악회 참여
-                            </span>
-                          )}
+                          <RoleBadge role={plan.role} />
                         </div>
                         <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                           <span className="flex items-center gap-1">
@@ -272,20 +289,7 @@ const PlansPage = () => {
                     >
                       <Mountain className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm text-foreground flex-1">{mountainName}</span>
-                      {plan.is_joined && (
-                        <span
-                          style={{
-                            background: "#EAF3DE",
-                            color: "#27500A",
-                            fontSize: 10,
-                            borderRadius: 10,
-                            padding: "1px 6px",
-                            fontWeight: 500,
-                          }}
-                        >
-                          산악회 참여
-                        </span>
-                      )}
+                      <RoleBadge role={plan.role} compact />
                       <span className="text-xs text-muted-foreground">
                         {format(new Date(plan.planned_date), "M/d", { locale: ko })}
                       </span>
