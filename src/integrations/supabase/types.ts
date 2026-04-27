@@ -1685,6 +1685,44 @@ export type Database = {
           },
         ]
       }
+      plan_invitations: {
+        Row: {
+          created_at: string | null
+          id: string
+          invitee_id: string
+          inviter_id: string
+          plan_id: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          invitee_id: string
+          inviter_id: string
+          plan_id: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          invitee_id?: string
+          inviter_id?: string
+          plan_id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_invitations_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "hiking_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_messages: {
         Row: {
           created_at: string | null
@@ -1715,7 +1753,10 @@ export type Database = {
           id: string
           is_read: boolean | null
           message: string | null
+          notification_type: string | null
           plan_id: string
+          scheduled_at: string | null
+          sent: boolean | null
           type: string
           user_id: string
         }
@@ -1724,7 +1765,10 @@ export type Database = {
           id?: string
           is_read?: boolean | null
           message?: string | null
+          notification_type?: string | null
           plan_id: string
+          scheduled_at?: string | null
+          sent?: boolean | null
           type: string
           user_id: string
         }
@@ -1733,7 +1777,10 @@ export type Database = {
           id?: string
           is_read?: boolean | null
           message?: string | null
+          notification_type?: string | null
           plan_id?: string
+          scheduled_at?: string | null
+          sent?: boolean | null
           type?: string
           user_id?: string
         }

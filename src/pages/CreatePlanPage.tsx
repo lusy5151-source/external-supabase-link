@@ -6,19 +6,18 @@ import { useHikingPlans } from "@/hooks/useHikingPlans";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Mountain, CalendarIcon, Clock, Cloud, Sun, CloudRain, CloudSnow, CloudSun,
-  Wind, Droplets, ArrowLeft, MapPin, ChevronDown, Search, Globe,
+  Wind, Droplets, ArrowLeft, MapPin, ChevronDown, Search, Users, AlertCircle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 const conditionIcons: Record<string, any> = {
   "맑음": Sun, "구름": CloudSun, "흐림": Cloud, "비": CloudRain, "눈": CloudSnow,
@@ -29,7 +28,6 @@ const CreatePlanPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { createPlan } = useHikingPlans();
-  const { toast } = useToast();
 
   const [mountainId, setMountainId] = useState<number | null>(null);
   const [trailName, setTrailName] = useState("");
@@ -37,38 +35,63 @@ const CreatePlanPage = () => {
   const [startTime, setStartTime] = useState("");
   const [notes, setNotes] = useState("");
   const [meetingLocation, setMeetingLocation] = useState("");
-  const [isPublic, setIsPublic] = useState(false);
-  const [maxParticipants, setMaxParticipants] = useState(10);
+  const [maxParticipants, setMaxParticipants] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [mountainSearch, setMountainSearch] = useState("");
   const [showMountainList, setShowMountainList] = useState(false);
 
+  // Sort mountains by Korean name
+  const sortedMountains = useMemo(
+    () => [...mountains].sort((a, b) => a.nameKo.localeCompare(b.nameKo, "ko")),
+    [mountains]
+  );
+
   const selectedMountain = useMemo(
     () => mountains.find((m) => m.id === mountainId),
-    [mountainId]
+    [mountainId, mountains]
   );
 
   const weather = selectedMountain ? getMockWeather(selectedMountain.id) : null;
   const CondIcon = weather ? conditionIcons[weather.condition] || Cloud : Cloud;
 
   const filteredMountains = useMemo(() => {
-    if (!mountainSearch.trim()) return mountains.slice(0, 10);
+    if (!mountainSearch.trim()) return sortedMountains.slice(0, 20);
     const q = mountainSearch.toLowerCase();
-    return mountains.filter((m) =>
-      m.nameKo.includes(q) || m.name.toLowerCase().includes(q) || m.region.includes(q)
-    ).slice(0, 10);
-  }, [mountainSearch]);
+    return sortedMountains.filter((m) =>
+      m.nameKo.includes(q) || m.name.toLowerCase().includes(q) || (m.province || m.region).includes(q)
+    ).slice(0, 20);
+  }, [mountainSearch, sortedMountains]);
 
   if (!user) {
     navigate("/auth");
     return null;
   }
 
+  const canSubmit = !!mountainId && !!date && !submitting;
+
   const handleSubmit = async () => {
+    setErrorMsg(null);
     if (!mountainId || !date) {
-      toast({ title: "산과 날짜를 선택해주세요", variant: "destructive" });
+      const msg = "산과 등산 날짜를 선택해주세요";
+      setErrorMsg(msg);
+      toast.error(msg);
       return;
     }
+
+    // Validate max participants
+    let maxP: number | null = null;
+    if (maxParticipants.trim()) {
+      const n = Number(maxParticipants);
+      if (!Number.isFinite(n) || n < 2 || n > 50) {
+        const msg = "최대 참여 인원은 2~50명 사이여야 합니다";
+        setErrorMsg(msg);
+        toast.error(msg);
+        return;
+      }
+      maxP = Math.floor(n);
+    }
+
     setSubmitting(true);
     const { data, error } = await createPlan({
       mountain_id: mountainId,
@@ -77,16 +100,20 @@ const CreatePlanPage = () => {
       start_time: startTime || undefined,
       notes: notes || undefined,
       meeting_location: meetingLocation || undefined,
-      is_public: isPublic,
-      max_participants: isPublic ? maxParticipants : 10,
+      is_public: true,
+      max_participants: maxP as any,
     } as any);
     setSubmitting(false);
 
     if (error) {
-      toast({ title: "계획 생성 실패", description: error.message, variant: "destructive" });
-    } else if (data) {
-      toast({ title: "등산 계획이 생성되었습니다!" });
-      navigate(`/plans/${data.id}`);
+      console.error("Plan create error:", JSON.stringify(error));
+      const msg = `계획 생성 실패: ${error.message || "알 수 없는 오류"}`;
+      setErrorMsg(msg);
+      toast.error(msg);
+    } else {
+      toast.success("계획이 만들어졌어요! 🏔");
+      if (data) navigate(`/plans/${data.id}`);
+      else navigate("/plans");
     }
   };
 
@@ -109,13 +136,15 @@ const CreatePlanPage = () => {
           >
             <Mountain className="h-4 w-4 text-primary" />
             <span className={cn("flex-1 text-sm", selectedMountain ? "text-foreground" : "text-muted-foreground")}>
-              {selectedMountain ? `${selectedMountain.nameKo} (${selectedMountain.height}m)` : "산을 선택하세요"}
+              {selectedMountain
+                ? `${selectedMountain.nameKo} (${selectedMountain.height}m · ${selectedMountain.province || selectedMountain.region})`
+                : "산을 선택하세요"}
             </span>
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           </div>
 
           {showMountainList && (
-            <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-xl border border-border bg-card shadow-lg max-h-64 overflow-hidden">
+            <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-xl border border-border bg-card shadow-lg max-h-72 overflow-hidden">
               <div className="flex items-center gap-2 border-b border-border px-3 py-2">
                 <Search className="h-4 w-4 text-muted-foreground" />
                 <input
@@ -127,7 +156,7 @@ const CreatePlanPage = () => {
                   autoFocus
                 />
               </div>
-              <div className="overflow-y-auto max-h-48">
+              <div className="overflow-y-auto max-h-56">
                 {filteredMountains.map((m) => (
                   <button
                     key={m.id}
@@ -144,20 +173,27 @@ const CreatePlanPage = () => {
                   >
                     <div className="flex-1">
                       <p className="font-medium text-foreground">{m.nameKo}</p>
-                      <p className="text-[10px] text-muted-foreground">{m.region} · {m.height}m · {m.difficulty}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {m.height}m · {m.province || m.region}
+                      </p>
                     </div>
                   </button>
                 ))}
+                {filteredMountains.length === 0 && (
+                  <div className="px-3 py-4 text-center text-xs text-muted-foreground">
+                    검색 결과가 없습니다
+                  </div>
+                )}
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Trail Selection */}
-      {selectedMountain?.trails && selectedMountain.trails.length > 0 && (
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">등산 코스</label>
+      {/* Trail / Summit name */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">코스 / 정상</label>
+        {selectedMountain?.trails && selectedMountain.trails.length > 0 && (
           <div className="space-y-1.5">
             {selectedMountain.trails.map((trail) => (
               <button
@@ -177,12 +213,17 @@ const CreatePlanPage = () => {
               </button>
             ))}
           </div>
-        </div>
-      )}
+        )}
+        <Input
+          value={trailName}
+          onChange={(e) => setTrailName(e.target.value)}
+          placeholder="예: 백운대 코스 / 정상"
+        />
+      </div>
 
       {/* Date */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">날짜 *</label>
+        <label className="text-sm font-medium text-foreground">등산 날짜 *</label>
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
@@ -239,43 +280,6 @@ const CreatePlanPage = () => {
         </div>
       )}
 
-      {/* Mountain Info Preview */}
-      {selectedMountain && (
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-xs font-medium text-muted-foreground mb-2">⛰ 산 정보</p>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div>
-              <p className="text-muted-foreground text-xs">난이도</p>
-              <p className="font-medium text-foreground">{selectedMountain.difficulty}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground text-xs">높이</p>
-              <p className="font-medium text-foreground">{selectedMountain.height}m</p>
-            </div>
-            {trailName && selectedMountain.trails && (
-              <>
-                {(() => {
-                  const trail = selectedMountain.trails?.find((t) => t.name === trailName);
-                  if (!trail) return null;
-                  return (
-                    <>
-                      <div>
-                        <p className="text-muted-foreground text-xs">예상 소요시간</p>
-                        <p className="font-medium text-foreground">{trail.duration}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground text-xs">거리</p>
-                        <p className="font-medium text-foreground">{trail.distance}</p>
-                      </div>
-                    </>
-                  );
-                })()}
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Meeting Location */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-foreground">모임 장소 (선택)</label>
@@ -290,9 +294,28 @@ const CreatePlanPage = () => {
         </div>
       </div>
 
+      {/* Max participants */}
+      <div className="space-y-2">
+        <Label className="text-sm font-medium text-foreground">최대 참여 인원</Label>
+        <div className="flex items-center gap-2 rounded-xl border border-input bg-card px-3 py-2">
+          <Users className="h-4 w-4 text-muted-foreground" />
+          <Input
+            type="number"
+            min={2}
+            max={50}
+            value={maxParticipants}
+            onChange={(e) => setMaxParticipants(e.target.value)}
+            placeholder="제한 없음"
+            className="border-0 p-0 h-auto shadow-none focus-visible:ring-0"
+          />
+          <span className="text-xs text-muted-foreground">명</span>
+        </div>
+        <p className="text-[10px] text-muted-foreground">비워두면 인원 제한이 없습니다 (2~50명)</p>
+      </div>
+
       {/* Notes */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">메모 (선택)</label>
+        <label className="text-sm font-medium text-foreground">설명 / 메모 (선택)</label>
         <Textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
@@ -301,46 +324,17 @@ const CreatePlanPage = () => {
         />
       </div>
 
-      {/* Public toggle */}
-      <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Globe className="h-4 w-4 text-muted-foreground" />
-            <div>
-              <Label className="text-sm font-medium">공개 일정</Label>
-              <p className="text-[10px] text-muted-foreground">다른 사용자도 참여할 수 있습니다</p>
-            </div>
-          </div>
-          <Switch checked={isPublic} onCheckedChange={setIsPublic} />
+      {/* Visible error */}
+      {errorMsg && (
+        <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+          <p className="flex-1">{errorMsg}</p>
         </div>
-
-        {isPublic && (
-          <>
-            <div className="space-y-2 border-t border-border pt-3">
-              <Label className="text-xs">최대 참가 인원</Label>
-              <div className="flex items-center gap-3">
-                <Input
-                  type="number"
-                  min={2}
-                  max={50}
-                  value={maxParticipants}
-                  onChange={(e) => setMaxParticipants(Math.min(50, Math.max(2, Number(e.target.value))))}
-                  className="w-24 text-center"
-                />
-                <span className="text-xs text-muted-foreground">명 (2~50명)</span>
-              </div>
-            </div>
-            <p className="text-[10px] text-primary flex items-center gap-1">
-              <Globe className="h-3 w-3" />
-              공개 일정은 모든 이용자가 볼 수 있어요
-            </p>
-          </>
-        )}
-      </div>
+      )}
 
       <Button
         onClick={handleSubmit}
-        disabled={!mountainId || !date || submitting}
+        disabled={!canSubmit}
         className="w-full"
         size="lg"
       >

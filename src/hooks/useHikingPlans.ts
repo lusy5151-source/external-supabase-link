@@ -133,7 +133,7 @@ export function useHikingPlans() {
     notes?: string;
     meeting_location?: string;
     is_public?: boolean;
-    max_participants?: number;
+    max_participants?: number | null;
   }) => {
     const {
       data: { user: authUser },
@@ -157,7 +157,7 @@ export function useHikingPlans() {
       notes: plan.notes ?? null,
       meeting_location: plan.meeting_location ?? null,
       is_public: plan.is_public ?? true,
-      max_participants: plan.max_participants ?? 10,
+      max_participants: plan.max_participants === undefined ? 10 : plan.max_participants,
     };
 
     console.log("Creating hiking plan user.id:", authUser.id);
