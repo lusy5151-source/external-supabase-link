@@ -289,20 +289,7 @@ const PlansPage = () => {
                     >
                       <Mountain className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm text-foreground flex-1">{mountainName}</span>
-                      {plan.is_joined && (
-                        <span
-                          style={{
-                            background: "#EAF3DE",
-                            color: "#27500A",
-                            fontSize: 10,
-                            borderRadius: 10,
-                            padding: "1px 6px",
-                            fontWeight: 500,
-                          }}
-                        >
-                          산악회 참여
-                        </span>
-                      )}
+                      <RoleBadge role={plan.role} compact />
                       <span className="text-xs text-muted-foreground">
                         {format(new Date(plan.planned_date), "M/d", { locale: ko })}
                       </span>
