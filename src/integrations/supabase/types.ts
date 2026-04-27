@@ -746,7 +746,6 @@ export type Database = {
           creator_id: string
           group_id: string | null
           id: string
-          invite_code: string | null
           is_public: boolean | null
           max_participants: number | null
           meeting_location: string | null
@@ -763,7 +762,6 @@ export type Database = {
           creator_id?: string
           group_id?: string | null
           id?: string
-          invite_code?: string | null
           is_public?: boolean | null
           max_participants?: number | null
           meeting_location?: string | null
@@ -780,7 +778,6 @@ export type Database = {
           creator_id?: string
           group_id?: string | null
           id?: string
-          invite_code?: string | null
           is_public?: boolean | null
           max_participants?: number | null
           meeting_location?: string | null
