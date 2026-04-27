@@ -39,6 +39,7 @@ const NotificationCenter = () => {
     accept,
     reject,
     markRead,
+    markAllRead,
   } = useGroupNotifications();
   const navigate = useNavigate();
   const { toast } = useToast();
