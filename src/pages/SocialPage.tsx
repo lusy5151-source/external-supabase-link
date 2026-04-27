@@ -138,7 +138,37 @@ const SocialPage = () => {
     }
   };
 
-  const { isOnboarding } = useOnboarding();
+  const formatRelativeTime = (iso: string) => {
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const min = Math.floor(diffMs / 60000);
+    if (min < 1) return "방금 전";
+    if (min < 60) return `${min}분 전`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr}시간 전`;
+    const day = Math.floor(hr / 24);
+    return `${day}일 전`;
+  };
+
+  const handleAcceptInvite = async (invId: string, notifId?: string | null) => {
+    const { error } = await acceptInvitation(invId, notifId);
+    if (error) {
+      toast({ title: "수락 실패", description: (error as any).message, variant: "destructive" });
+    } else {
+      toast({ title: "산악회에 참여했어요! 🏔" });
+      fetchMyGroups();
+      fetchPublicGroups().then(setPublicGroups);
+    }
+  };
+
+  const handleRejectInvite = async (invId: string, notifId?: string | null) => {
+    const { error } = await rejectInvitation(invId, notifId);
+    if (error) {
+      toast({ title: "거절 실패", description: (error as any).message, variant: "destructive" });
+    } else {
+      toast({ title: "초대를 거절했어요" });
+    }
+  };
+
 
   if (!user || isOnboarding) {
     return <DemoSocialView />;
