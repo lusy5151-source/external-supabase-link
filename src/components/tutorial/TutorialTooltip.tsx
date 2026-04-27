@@ -94,7 +94,7 @@ const ShareCardPreview = () => (
 const PlanChecklist = () => (
   <div style={{ marginTop: 8, fontSize: 12, color: "#3B6D11", lineHeight: 1.8 }}>
     <p>✓ 산 선택 &amp; 날짜 설정</p>
-    <p>✓ 친구 초대 코드 생성</p>
+    <p>✓ 친구 초대해서 함께 등산</p>
     <p>✓ 공개 설정으로 새 동료 모집</p>
   </div>
 );
