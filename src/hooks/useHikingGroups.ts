@@ -316,11 +316,6 @@ export function useHikingGroups() {
     if (error) console.error("Search users error:", JSON.stringify(error));
     return (data as any[]) || [];
   };
-      .select("user_id, nickname, avatar_url")
-      .ilike("nickname", `%${query}%`)
-      .limit(10);
-    return (data as any[]) || [];
-  };
 
   return {
     myGroups, loading, fetchMyGroups, fetchPublicGroups, fetchGroupById,
