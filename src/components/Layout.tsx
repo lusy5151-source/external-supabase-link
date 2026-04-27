@@ -61,7 +61,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   <Users className="h-4 w-4" />
                 </Link>
                 <Link
-                  to="/social"
+                  to="/social?tab=clubs"
                   aria-label="산악회"
                   title="산악회"
                   className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:text-primary"
