@@ -189,15 +189,28 @@ const NotificationCenter = () => {
         <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-border bg-card shadow-xl overflow-hidden">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <p className="text-sm font-semibold text-foreground">알림</p>
-            <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
-              <X className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-3">
+              {totalBadge > 0 && (
+                <button
+                  onClick={handleMarkAllRead}
+                  className="text-[12px] font-medium text-primary hover:text-primary/80"
+                >
+                  모두 읽음
+                </button>
+              )}
+              <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           {isEmpty ? (
-            <div className="px-4 py-8 text-center">
-              <Bell className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">새 알림이 없습니다</p>
+            <div className="px-6 py-10 text-center">
+              <Bell className="h-10 w-10 text-muted-foreground/60 mx-auto mb-3" />
+              <p className="text-[14px] text-muted-foreground">아직 알림이 없어요</p>
+              <p className="text-[12px] text-muted-foreground/70 mt-1">
+                산악회 활동을 시작하면 알림이 와요
+              </p>
             </div>
           ) : (
             <div className="max-h-96 overflow-y-auto">
