@@ -89,7 +89,7 @@ const Dashboard = () => {
     [userHundredRows]
   );
   const hundredPercent = Math.min(Math.round((hundredCompleted / hundredTotal) * 100), 100);
-  const hundredLabel = activeHundredType === "forestry_100" ? "산림청 100대 명산" : "BAC 100대 명산";
+  const hundredLabel = activeHundredType === "forestry_100" ? "산림청 100대 명산" : "100대 명산";
 
   const baekduCount = baekduMountains.length;
   const baekduCompleted = isDemo ? demoProgress.baekduCompleted : baekduMountains.filter((m) => isCompleted(m.id)).length;
@@ -480,7 +480,7 @@ const Dashboard = () => {
                     onClick={() => handleHundredTypeSelect("bac_100")}
                     className={`rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors ${activeHundredType === "bac_100" ? "bg-coral text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
                   >
-                    BAC
+                    100대 명산
                   </button>
                 </div>
               )}
@@ -491,7 +491,7 @@ const Dashboard = () => {
                   <p className="text-[11px] text-muted-foreground mb-2 leading-snug">어떤 100대 명산을<br />추적할까요?</p>
                   <div className="flex flex-col gap-1.5 w-full">
                     <button onClick={() => handleHundredTypeSelect("forestry_100")} className="rounded-full bg-coral px-3 py-1.5 text-[10px] font-semibold text-primary-foreground">산림청 100대</button>
-                    <button onClick={() => handleHundredTypeSelect("bac_100")} className="rounded-full bg-secondary px-3 py-1.5 text-[10px] font-semibold text-secondary-foreground">BAC 100대</button>
+                    <button onClick={() => handleHundredTypeSelect("bac_100")} className="rounded-full bg-secondary px-3 py-1.5 text-[10px] font-semibold text-secondary-foreground">100대 명산</button>
                   </div>
                 </div>
               ) : (

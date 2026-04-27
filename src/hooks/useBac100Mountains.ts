@@ -35,7 +35,7 @@ export function useBac100Mountains() {
           overview: m.overview ?? "",
           address: m.address ?? row.address ?? "",
           province: m.province ?? "",
-          bac100_label: m.bac100_label ?? "BAC 100대 명산 리스트 기반",
+          bac100_label: m.bac100_label ?? "100대 명산 리스트 기반",
           bac100_rank: row.bac_rank ?? m.bac100_rank ?? null,
           image_url: m.image_url ?? "",
           feature: m.feature ?? "",
