@@ -2791,8 +2791,13 @@ export type Database = {
         Args: { _plan_id: string; _user_id?: string }
         Returns: boolean
       }
+      get_mountain_name_ko: { Args: { p_mountain_id: number }; Returns: string }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      schedule_plan_notifications: {
+        Args: { p_plan_id: string; p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       challenge_list_type: "forestry_100" | "bac_100"

@@ -47,8 +47,9 @@ export function useNotifications() {
       await fetchNotifications();
       if (cancelled || !userIdRef.current) return;
 
+      const uniq = Math.random().toString(36).slice(2, 10);
       channel = supabase
-        .channel(`notifications_realtime_${userIdRef.current}`)
+        .channel(`notifications_realtime_${userIdRef.current}_${uniq}`)
         .on(
           "postgres_changes",
           {

@@ -21,6 +21,7 @@ import { useState, useCallback, lazy, Suspense, useEffect } from "react";
 import PageSkeleton from "@/components/PageSkeleton";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
 import { useProfileSync } from "@/hooks/useProfileSync";
+import { useSchedulePlanAlerts } from "@/hooks/useSchedulePlanAlerts";
 import { supabase } from "@/integrations/supabase/client";
 
 // Eagerly loaded (auth only)
@@ -102,6 +103,7 @@ const LazyPage = ({ children, fallback }: { children: React.ReactNode; fallback?
 const AppRoutes = () => {
   const { user, loading } = useAuth();
   useProfileSync();
+  useSchedulePlanAlerts();
 
   return (
     <Routes>

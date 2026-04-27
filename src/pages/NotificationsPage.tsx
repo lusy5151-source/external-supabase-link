@@ -34,7 +34,11 @@ const typeStyle: Record<string, { emoji: string; bg: string }> = {
   club_chat: { emoji: "💬", bg: "#EEF2FF" },
   plan_created: { emoji: "📅", bg: "#FAEEDA" },
   plan_joined: { emoji: "✅", bg: "#EAF3DE" },
-  plan_status_changed: { emoji: "📢", bg: "#FCEBEB" },
+  plan_declined: { emoji: "😔", bg: "#FCEBEB" },
+  plan_updated: { emoji: "📝", bg: "#FAEEDA" },
+  plan_deleted: { emoji: "🗑", bg: "#FCEBEB" },
+  plan_cancelled: { emoji: "❌", bg: "#FCEBEB" },
+  plan_status_changed: { emoji: "🏔", bg: "#EAF3DE" },
 };
 
 const getStyle = (type: string) =>
@@ -137,9 +141,16 @@ const NotificationsPage = () => {
       navigate(`/groups/${n.related_id}`);
       return;
     }
+    if (n.type === "plan_deleted" || n.type === "plan_cancelled") {
+      // No navigation — plan is gone
+      fetchNotifications();
+      return;
+    }
     if (
       n.type === "plan_created" ||
       n.type === "plan_joined" ||
+      n.type === "plan_declined" ||
+      n.type === "plan_updated" ||
       n.type === "plan_status_changed"
     ) {
       navigate(`/plans/${n.related_id}`);
