@@ -129,6 +129,8 @@ const PlansPage = () => {
           mountain_name: r.mountains?.name_ko || null,
           group_name: r.hiking_group?.name || null,
           role,
+          participant_count: 0,
+          journal_id: null,
         });
 
         const all: MyPlan[] = [
@@ -142,6 +144,36 @@ const PlansPage = () => {
         const unique = Array.from(new Map(all.map((p) => [p.id, p])).values()).sort(
           (a, b) => new Date(a.planned_date).getTime() - new Date(b.planned_date).getTime()
         );
+
+        // Fetch participant counts (going only) and journals for these plans
+        const allIds = unique.map((p) => p.id);
+        if (allIds.length) {
+          const [{ data: allParts }, { data: journals }] = await Promise.all([
+            (supabase as any)
+              .from("plan_participants")
+              .select("plan_id, rsvp_status")
+              .in("plan_id", allIds)
+              .eq("rsvp_status", "going"),
+            (supabase as any)
+              .from("hiking_journals")
+              .select("id, plan_id")
+              .in("plan_id", allIds)
+              .eq("user_id", user.id),
+          ]);
+          const countMap = new Map<string, number>();
+          (allParts || []).forEach((p: any) => {
+            countMap.set(p.plan_id, (countMap.get(p.plan_id) || 0) + 1);
+          });
+          const journalMap = new Map<string, string>();
+          (journals || []).forEach((j: any) => {
+            if (j.plan_id) journalMap.set(j.plan_id, j.id);
+          });
+          unique.forEach((p) => {
+            p.participant_count = countMap.get(p.id) || 0;
+            p.journal_id = journalMap.get(p.id) || null;
+          });
+        }
+
         if (!cancelled) setMyPlans(unique);
       } catch (err) {
         console.error("PlansPage fetch error:", JSON.stringify(err));
