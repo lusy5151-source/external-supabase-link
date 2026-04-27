@@ -15,7 +15,7 @@ import { JournalCard, JournalGridCard } from "@/components/JournalCard";
 import { Link } from "react-router-dom";
 import {
   User, Trophy, Mountain, ChevronRight, Star, Camera, MapPin,
-  Settings, LogOut, Shield, Edit3, BookOpen, Users, Heart, Globe, Lock, Eye, Trash2, Flag,
+  Settings, LogOut, Shield, Edit3, BookOpen, Users, Globe, Lock, Eye, Trash2, Flag,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useMemo, useState, useRef, useEffect } from "react";
@@ -594,24 +594,6 @@ const ProfilePage = () => {
 
       {/* Actions */}
       <div className="space-y-2">
-        <Link
-          to="/feed"
-          className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card p-4 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-secondary/50"
-        >
-          <Heart className="h-4 w-4 text-primary" />
-          친구 피드 보기
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        </Link>
-
-        <Link
-          to="/achievements"
-          className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card p-4 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-secondary/50"
-        >
-          <Trophy className="h-4 w-4 text-primary" />
-          전체 업적 보기
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        </Link>
-
         {isAdmin && (
           <Link
             to="/admin/announcements"
