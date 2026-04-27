@@ -133,6 +133,29 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
     }
     setSaving(true);
 
+    // 1. Upload pending photos first
+    let uploadedUrls: string[] = [];
+    if (pendingPhotos.length > 0) {
+      setUploadProgress({ current: 0, total: pendingPhotos.length });
+      try {
+        for (let i = 0; i < pendingPhotos.length; i++) {
+          const url = await uploadPhoto(pendingPhotos[i].file);
+          if (!url) throw new Error("사진 업로드에 실패했어요");
+          uploadedUrls.push(url);
+          setUploadProgress({ current: i + 1, total: pendingPhotos.length });
+        }
+      } catch (err: any) {
+        console.error("Photo upload error:", err);
+        toast({ title: err.message || "사진 업로드 실패", variant: "destructive" });
+        setUploadProgress(null);
+        setSaving(false);
+        return;
+      }
+      setUploadProgress(null);
+    }
+
+    const allPhotos = [...photos, ...uploadedUrls];
+
     const journalData = {
       mountain_id: Number(mountainIds[0]),
       mountain_ids: mountainIds,
@@ -144,7 +167,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
       difficulty: difficulty || undefined,
       weather: weather || undefined,
       notes: notes || undefined,
-      photos,
+      photos: allPhotos,
       tagged_friends: taggedFriends,
       visibility,
     };
