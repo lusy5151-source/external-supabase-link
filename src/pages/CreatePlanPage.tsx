@@ -365,6 +365,17 @@ const CreatePlanPage = () => {
           {submitting ? "생성 중..." : "계획 만들기"}
         </Button>
       </div>
+
+      {createdPlanId && (
+        <InviteFriendsSheet
+          open={showInviteSheet}
+          onOpenChange={(open) => {
+            setShowInviteSheet(open);
+            if (!open) navigate(`/plans/${createdPlanId}`);
+          }}
+          planId={createdPlanId}
+        />
+      )}
     </div>
   );
 };
