@@ -26,12 +26,12 @@ export interface GroupMember {
 export interface GroupInvitation {
   id: string;
   group_id: string;
-  user_id: string;
-  invited_by: string | null;
-  type: string;
+  invitee_id: string;
+  inviter_id: string | null;
   status: string;
   created_at: string;
   profile?: { nickname: string | null; avatar_url: string | null };
+  group?: { id: string; name: string; description: string | null; avatar_url: string | null };
 }
 
 
