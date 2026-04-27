@@ -59,12 +59,15 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
     editJournal?.visibility || (isPrivateAccount ? (defaultJournalVisibility === "public" ? "friends" : defaultJournalVisibility) : defaultJournalVisibility)
   );
   const [photos, setPhotos] = useState<string[]>(editJournal?.photos || []);
+  const [pendingPhotos, setPendingPhotos] = useState<{ file: File; preview: string }[]>([]);
   const [taggedFriends, setTaggedFriends] = useState<string[]>(editJournal?.tagged_friends || []);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const [mountainSearch, setMountainSearch] = useState("");
   const [showMountainSearch, setShowMountainSearch] = useState(false);
   const [showOptional, setShowOptional] = useState(!!editJournal);
+
+  const MAX_PHOTOS = 5;
 
   const isEdit = !!editJournal;
 
@@ -77,21 +80,44 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
 
   const selectedMountains = mountainIds.map((id) => mountains.find((m) => m.id === id)).filter(Boolean) as typeof mountains;
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    setUploading(true);
-    const newPhotos: string[] = [];
-    for (const file of Array.from(files)) {
-      const url = await uploadPhoto(file);
-      if (url) newPhotos.push(url);
+    const remaining = MAX_PHOTOS - (photos.length + pendingPhotos.length);
+    if (remaining <= 0) {
+      toast({ title: `사진은 최대 ${MAX_PHOTOS}장까지 첨부할 수 있어요`, variant: "destructive" });
+      e.target.value = "";
+      return;
     }
-    setPhotos((prev) => [...prev, ...newPhotos]);
-    setUploading(false);
+    const incoming = Array.from(files).slice(0, remaining);
+    const newPending: { file: File; preview: string }[] = [];
+    for (const file of incoming) {
+      if (!allowedTypes.includes(file.type)) {
+        toast({ title: "JPG, PNG, WEBP 형식의 사진만 업로드 가능해요", variant: "destructive" });
+        continue;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast({ title: "사진 크기는 10MB 이하여야 해요", variant: "destructive" });
+        continue;
+      }
+      newPending.push({ file, preview: URL.createObjectURL(file) });
+    }
+    setPendingPhotos((prev) => [...prev, ...newPending]);
+    e.target.value = "";
   };
 
   const removePhoto = (index: number) => {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removePendingPhoto = (index: number) => {
+    setPendingPhotos((prev) => {
+      const item = prev[index];
+      if (item) URL.revokeObjectURL(item.preview);
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const toggleFriend = (friendId: string) => {
@@ -107,6 +133,29 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
     }
     setSaving(true);
 
+    // 1. Upload pending photos first
+    let uploadedUrls: string[] = [];
+    if (pendingPhotos.length > 0) {
+      setUploadProgress({ current: 0, total: pendingPhotos.length });
+      try {
+        for (let i = 0; i < pendingPhotos.length; i++) {
+          const url = await uploadPhoto(pendingPhotos[i].file);
+          if (!url) throw new Error("사진 업로드에 실패했어요");
+          uploadedUrls.push(url);
+          setUploadProgress({ current: i + 1, total: pendingPhotos.length });
+        }
+      } catch (err: any) {
+        console.error("Photo upload error:", err);
+        toast({ title: err.message || "사진 업로드 실패", variant: "destructive" });
+        setUploadProgress(null);
+        setSaving(false);
+        return;
+      }
+      setUploadProgress(null);
+    }
+
+    const allPhotos = [...photos, ...uploadedUrls];
+
     const journalData = {
       mountain_id: Number(mountainIds[0]),
       mountain_ids: mountainIds,
@@ -118,7 +167,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
       difficulty: difficulty || undefined,
       weather: weather || undefined,
       notes: notes || undefined,
-      photos,
+      photos: allPhotos,
       tagged_friends: taggedFriends,
       visibility,
     };
@@ -403,11 +452,16 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
               {/* Photos */}
               <div>
                 <label className="text-xs font-medium text-foreground mb-1 block">사진</label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex gap-2 overflow-x-auto pb-1">
                   {photos.map((url, i) => (
-                    <div key={i} className="relative h-16 w-16 rounded-lg overflow-hidden border border-border">
-                      <img src={url} alt="" className="h-full w-full object-cover" />
+                    <div
+                      key={`u-${i}`}
+                      className="relative shrink-0 overflow-hidden border border-border"
+                      style={{ width: 80, height: 80, borderRadius: 8 }}
+                    >
+                      <img src={url} alt="" className="h-full w-full" style={{ objectFit: "cover" }} />
                       <button
+                        type="button"
                         onClick={() => removePhoto(i)}
                         className="absolute top-0.5 right-0.5 bg-foreground/60 text-background rounded-full p-0.5"
                       >
@@ -415,18 +469,46 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
                       </button>
                     </div>
                   ))}
-                  <label className={cn(
-                    "flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-border cursor-pointer hover:border-primary/50 transition-colors",
-                    uploading && "pointer-events-none opacity-50"
-                  )}>
-                    {uploading ? (
-                      <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
-                    ) : (
-                      <Camera className="h-5 w-5 text-muted-foreground" />
-                    )}
-                    <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} disabled={uploading} />
-                  </label>
+                  {pendingPhotos.map((p, i) => (
+                    <div
+                      key={`p-${i}`}
+                      className="relative shrink-0 overflow-hidden border border-border"
+                      style={{ width: 80, height: 80, borderRadius: 8 }}
+                    >
+                      <img src={p.preview} alt="" className="h-full w-full" style={{ objectFit: "cover" }} />
+                      <button
+                        type="button"
+                        onClick={() => removePendingPhoto(i)}
+                        className="absolute top-0.5 right-0.5 bg-foreground/60 text-background rounded-full p-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {photos.length + pendingPhotos.length < MAX_PHOTOS && (
+                    <label
+                      className={cn(
+                        "flex shrink-0 flex-col items-center justify-center border-2 border-dashed border-border cursor-pointer hover:border-primary/50 transition-colors gap-1",
+                        saving && "pointer-events-none opacity-50"
+                      )}
+                      style={{ width: 80, height: 80, borderRadius: 8 }}
+                    >
+                      <Camera className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-[10px] text-muted-foreground">사진 추가</span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                        multiple
+                        className="hidden"
+                        onChange={handlePhotoSelect}
+                        disabled={saving}
+                      />
+                    </label>
+                  )}
                 </div>
+                <p className="mt-1" style={{ fontSize: 11, color: "hsl(var(--muted-foreground))" }}>
+                  (최대 {MAX_PHOTOS}장)
+                </p>
               </div>
 
               {/* Course Notes */}
@@ -481,7 +563,15 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
             style={{ background: "#639922" }}
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-            {isEdit ? "수정 완료" : showOptional ? "상세 기록 저장" : "빠른 기록 저장"}
+            {uploadProgress
+              ? `사진 업로드 중 (${uploadProgress.current}/${uploadProgress.total})...`
+              : saving
+                ? "저장 중..."
+                : isEdit
+                  ? "수정 완료"
+                  : showOptional
+                    ? "상세 기록 저장"
+                    : "빠른 기록 저장"}
           </Button>
         </div>
       </div>
