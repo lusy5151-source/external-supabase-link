@@ -452,11 +452,16 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
               {/* Photos */}
               <div>
                 <label className="text-xs font-medium text-foreground mb-1 block">사진</label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex gap-2 overflow-x-auto pb-1">
                   {photos.map((url, i) => (
-                    <div key={i} className="relative h-16 w-16 rounded-lg overflow-hidden border border-border">
-                      <img src={url} alt="" className="h-full w-full object-cover" />
+                    <div
+                      key={`u-${i}`}
+                      className="relative shrink-0 overflow-hidden border border-border"
+                      style={{ width: 80, height: 80, borderRadius: 8 }}
+                    >
+                      <img src={url} alt="" className="h-full w-full" style={{ objectFit: "cover" }} />
                       <button
+                        type="button"
                         onClick={() => removePhoto(i)}
                         className="absolute top-0.5 right-0.5 bg-foreground/60 text-background rounded-full p-0.5"
                       >
@@ -464,18 +469,46 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
                       </button>
                     </div>
                   ))}
-                  <label className={cn(
-                    "flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-border cursor-pointer hover:border-primary/50 transition-colors",
-                    uploading && "pointer-events-none opacity-50"
-                  )}>
-                    {uploading ? (
-                      <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
-                    ) : (
-                      <Camera className="h-5 w-5 text-muted-foreground" />
-                    )}
-                    <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} disabled={uploading} />
-                  </label>
+                  {pendingPhotos.map((p, i) => (
+                    <div
+                      key={`p-${i}`}
+                      className="relative shrink-0 overflow-hidden border border-border"
+                      style={{ width: 80, height: 80, borderRadius: 8 }}
+                    >
+                      <img src={p.preview} alt="" className="h-full w-full" style={{ objectFit: "cover" }} />
+                      <button
+                        type="button"
+                        onClick={() => removePendingPhoto(i)}
+                        className="absolute top-0.5 right-0.5 bg-foreground/60 text-background rounded-full p-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {photos.length + pendingPhotos.length < MAX_PHOTOS && (
+                    <label
+                      className={cn(
+                        "flex shrink-0 flex-col items-center justify-center border-2 border-dashed border-border cursor-pointer hover:border-primary/50 transition-colors gap-1",
+                        saving && "pointer-events-none opacity-50"
+                      )}
+                      style={{ width: 80, height: 80, borderRadius: 8 }}
+                    >
+                      <Camera className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-[10px] text-muted-foreground">사진 추가</span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                        multiple
+                        className="hidden"
+                        onChange={handlePhotoSelect}
+                        disabled={saving}
+                      />
+                    </label>
+                  )}
                 </div>
+                <p className="mt-1" style={{ fontSize: 11, color: "hsl(var(--muted-foreground))" }}>
+                  (최대 {MAX_PHOTOS}장)
+                </p>
               </div>
 
               {/* Course Notes */}
