@@ -35,6 +35,29 @@ interface MyPlan {
   role: PlanRole;
 }
 
+const RoleBadge = ({ role, compact = false }: { role: PlanRole; compact?: boolean }) => {
+  if (role === "creator") return null;
+  const styles =
+    role === "interested"
+      ? { background: "#FAEEDA", color: "#633806", label: "관심" }
+      : { background: "#EAF3DE", color: "#27500A", label: "참석" };
+  return (
+    <span
+      style={{
+        background: styles.background,
+        color: styles.color,
+        fontSize: 10,
+        borderRadius: 10,
+        padding: "1px 6px",
+        fontWeight: 500,
+        lineHeight: compact ? undefined : 1.4,
+      }}
+    >
+      {styles.label}
+    </span>
+  );
+};
+
 const PlansPage = () => {
   const { mountains } = useMountains();
   const navigate = useNavigate();
