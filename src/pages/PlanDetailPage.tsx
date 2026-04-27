@@ -446,6 +446,22 @@ const PlanDetailPage = () => {
               {completing ? "기록 중..." : "공동 완등 기록하기 🏔"}
             </Button>
           )}
+
+          <button
+            onClick={() => navigate("/plans")}
+            className="w-full inline-flex items-center justify-center gap-2 bg-transparent text-muted-foreground hover:bg-accent/30 transition-colors"
+            style={{
+              height: 48,
+              border: "0.5px solid hsl(var(--border))",
+              borderRadius: "var(--radius, 0.5rem)",
+              fontSize: 14,
+              marginTop: 16,
+              marginBottom: 20,
+            }}
+          >
+            <Calendar className="h-4 w-4" />
+            <span>나의 일정 보기</span>
+          </button>
         </TabsContent>
 
         <TabsContent value="participants" className="space-y-4 mt-4">
