@@ -69,6 +69,7 @@ const PlansPage = () => {
   const { notifications, markNotificationRead } = useHikingPlans();
   const { toast } = useToast();
   const [myPlans, setMyPlans] = useState<MyPlan[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const handlePlanCreate = () => {
     if (isTutorialActive && steps[currentStep]?.customContent === "plan-checklist") return;
