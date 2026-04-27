@@ -381,19 +381,15 @@ const PlanDetailPage = () => {
             )}
           </div>
 
-          <div className="rounded-2xl border border-border bg-card p-4">
-            <p className="text-xs font-medium text-muted-foreground mb-2">
-              <Share2 className="inline h-3 w-3 mr-1" />초대 코드
-            </p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 rounded-lg bg-secondary px-3 py-2 text-sm font-mono text-foreground tracking-widest">
-                {plan.invite_code}
-              </code>
-              <Button variant="outline" size="sm" onClick={handleCopyCode}>
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
+          {isCreator && (
+            <button
+              onClick={() => setShowInviteSheet(true)}
+              className="w-full flex items-center justify-center gap-2 rounded-2xl border border-border bg-card p-4 hover:bg-secondary/40 transition-colors"
+            >
+              <UserPlus className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-foreground">친구 초대하기</span>
+            </button>
+          )}
 
           <div className="rounded-2xl border border-border bg-card p-4">
             <p className="text-xs font-medium text-muted-foreground mb-2">👤 만든 사람</p>
