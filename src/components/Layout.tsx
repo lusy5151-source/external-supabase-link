@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Compass, ClipboardList, User, Users, UsersRound } from "lucide-react";
+import { Home, Compass, ClipboardList, User, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuest } from "@/contexts/GuestContext";
 import { useUnreadChat } from "@/contexts/UnreadChatContext";
