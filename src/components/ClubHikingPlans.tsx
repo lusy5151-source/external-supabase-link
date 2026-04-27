@@ -340,60 +340,73 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
         <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => { setShowCreate(false); resetForm(); }}>
           <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.4)" }} />
           <div
-            className="relative w-full max-w-lg bg-white dark:bg-card overflow-y-auto"
-            style={{ borderRadius: "20px 20px 0 0", padding: "20px 20px 40px", maxHeight: "85vh" }}
+            className="relative w-full max-w-lg bg-white dark:bg-card flex flex-col"
+            style={{ borderRadius: "20px 20px 0 0", maxHeight: "90vh" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-center mb-4">
-              <div style={{ width: 40, height: 4, borderRadius: 2, background: "hsl(var(--color-border-secondary))" }} />
+            {/* Header (fixed) */}
+            <div className="shrink-0 px-5 pt-5 pb-2 relative">
+              <div className="flex justify-center mb-4">
+                <div style={{ width: 40, height: 4, borderRadius: 2, background: "hsl(var(--color-border-secondary))" }} />
+              </div>
+
+              <button
+                onClick={() => { setShowCreate(false); resetForm(); }}
+                className="absolute top-4 right-4 rounded-full p-1 text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <h2 style={{ fontSize: 16, fontWeight: 500 }} className="text-foreground">
+                {editingId ? "등산 계획 수정" : "등산 계획 만들기"}
+              </h2>
             </div>
 
-            <button
-              onClick={() => { setShowCreate(false); resetForm(); }}
-              className="absolute top-4 right-4 rounded-full p-1 text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto px-5 pb-8" style={{ paddingBottom: 32 }}>
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-xs">산 선택</Label>
+                  <select
+                    value={mountainId}
+                    onChange={(e) => setMountainId(Number(e.target.value))}
+                    className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    {mountains.map((m) => (
+                      <option key={m.id} value={m.id}>{m.nameKo}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label className="text-xs">코스/정상</Label>
+                  <Input value={trailName} onChange={(e) => setTrailName(e.target.value)} placeholder="예: 백운대 코스" className="mt-1 rounded-xl" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">날짜</Label>
+                    <Input type="date" value={plannedDate} onChange={(e) => setPlannedDate(e.target.value)} className="mt-1 rounded-xl" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">시간</Label>
+                    <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="mt-1 rounded-xl" />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">모임 장소</Label>
+                  <Input value={meetingLocation} onChange={(e) => setMeetingLocation(e.target.value)} placeholder="예: 북한산성 입구" className="mt-1 rounded-xl" />
+                </div>
+                <div>
+                  <Label className="text-xs">설명</Label>
+                  <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="등산 계획 설명" className="mt-1 rounded-xl" rows={2} />
+                </div>
+              </div>
+            </div>
+
+            {/* Sticky bottom action */}
+            <div
+              className="shrink-0 border-t border-border bg-white dark:bg-card px-5 pt-3"
+              style={{ paddingBottom: "max(env(safe-area-inset-bottom, 20px), 20px)" }}
             >
-              <X className="h-5 w-5" />
-            </button>
-
-            <h2 style={{ fontSize: 16, fontWeight: 500 }} className="text-foreground mb-4">
-              {editingId ? "등산 계획 수정" : "등산 계획 만들기"}
-            </h2>
-
-            <div className="space-y-3">
-              <div>
-                <Label className="text-xs">산 선택</Label>
-                <select
-                  value={mountainId}
-                  onChange={(e) => setMountainId(Number(e.target.value))}
-                  className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm"
-                >
-                  {mountains.map((m) => (
-                    <option key={m.id} value={m.id}>{m.nameKo}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label className="text-xs">코스/정상</Label>
-                <Input value={trailName} onChange={(e) => setTrailName(e.target.value)} placeholder="예: 백운대 코스" className="mt-1 rounded-xl" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs">날짜</Label>
-                  <Input type="date" value={plannedDate} onChange={(e) => setPlannedDate(e.target.value)} className="mt-1 rounded-xl" />
-                </div>
-                <div>
-                  <Label className="text-xs">시간</Label>
-                  <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="mt-1 rounded-xl" />
-                </div>
-              </div>
-              <div>
-                <Label className="text-xs">모임 장소</Label>
-                <Input value={meetingLocation} onChange={(e) => setMeetingLocation(e.target.value)} placeholder="예: 북한산성 입구" className="mt-1 rounded-xl" />
-              </div>
-              <div>
-                <Label className="text-xs">설명</Label>
-                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="등산 계획 설명" className="mt-1 rounded-xl" rows={2} />
-              </div>
               <Button onClick={handleSubmit} disabled={creating || !plannedDate} className="w-full rounded-xl" style={{ background: "#639922" }}>
                 {creating ? (editingId ? "수정 중..." : "생성 중...") : (editingId ? "계획 수정하기" : "계획 만들기")}
               </Button>
