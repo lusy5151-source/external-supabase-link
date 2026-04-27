@@ -38,14 +38,14 @@ const PlansPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isTutorialActive, currentStep, steps } = useTutorial();
-  const { plans, loading, notifications, markNotificationRead, joinByCode } = useHikingPlans();
+  const { notifications, markNotificationRead, joinByCode } = useHikingPlans();
   const { toast } = useToast();
   const [inviteCode, setInviteCode] = useState("");
   const [joining, setJoining] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
+  const [myPlans, setMyPlans] = useState<MyPlan[]>([]);
 
   const handlePlanCreate = () => {
-    // During tutorial step 5, don't actually navigate — the overlay handles it
     if (isTutorialActive && steps[currentStep]?.customContent === "plan-checklist") return;
     navigate("/plans/create");
   };
@@ -65,12 +65,87 @@ const PlansPage = () => {
 
   const { isOnboarding } = useOnboarding();
 
+  // Fetch user's own + joined-via-rsvp plans (must be before any early return)
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: created, error: e1 } = await (supabase as any)
+          .from("hiking_plans")
+          .select(
+            "id, creator_id, mountain_id, trail_name, planned_date, start_time, status, is_public, meeting_location, group_id, mountains:mountain_id (name_ko), hiking_group:group_id (name)"
+          )
+          .eq("creator_id", user.id);
+        if (e1) console.error("createdPlans error:", JSON.stringify(e1));
+
+        const { data: parts, error: e2 } = await (supabase as any)
+          .from("plan_participants")
+          .select("plan_id")
+          .eq("user_id", user.id)
+          .eq("rsvp_status", "going");
+        if (e2) console.error("participants error:", JSON.stringify(e2));
+
+        const partIds = (parts || []).map((p: any) => p.plan_id);
+        let joined: any[] = [];
+        if (partIds.length) {
+          const { data: jd, error: e3 } = await (supabase as any)
+            .from("hiking_plans")
+            .select(
+              "id, creator_id, mountain_id, trail_name, planned_date, start_time, status, is_public, meeting_location, group_id, mountains:mountain_id (name_ko), hiking_group:group_id (name)"
+            )
+            .in("id", partIds)
+            .neq("creator_id", user.id);
+          if (e3) console.error("joinedPlans error:", JSON.stringify(e3));
+          joined = jd || [];
+        }
+
+        const merge = (rows: any[], isJoined: boolean): MyPlan[] =>
+          rows.map((r) => ({
+            id: r.id,
+            creator_id: r.creator_id,
+            mountain_id: r.mountain_id,
+            trail_name: r.trail_name,
+            planned_date: r.planned_date,
+            start_time: r.start_time,
+            status: r.status,
+            is_public: r.is_public,
+            meeting_location: r.meeting_location,
+            group_id: r.group_id,
+            mountain_name: r.mountains?.name_ko || null,
+            group_name: r.hiking_group?.name || null,
+            is_joined: isJoined,
+          }));
+
+        const all = [
+          ...merge(created || [], false),
+          ...merge(joined, true),
+        ];
+        const unique = Array.from(new Map(all.map((p) => [p.id, p])).values()).sort(
+          (a, b) => new Date(a.planned_date).getTime() - new Date(b.planned_date).getTime()
+        );
+        if (!cancelled) setMyPlans(unique);
+      } catch (err) {
+        console.error("PlansPage fetch error:", JSON.stringify(err));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
   if (!user || isOnboarding) {
     return <DemoPlansView />;
   }
 
-  const upcoming = plans.filter((p) => p.status === "upcoming" && new Date(p.planned_date) >= new Date());
-  const past = plans.filter((p) => p.status !== "upcoming" || new Date(p.planned_date) < new Date());
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const upcoming = myPlans.filter(
+    (p) => p.status !== "cancelled" && new Date(p.planned_date) >= today
+  );
+  const past = myPlans.filter(
+    (p) => p.status === "cancelled" || new Date(p.planned_date) < today
+  );
 
   return (
     <div className="space-y-5 pb-24">
