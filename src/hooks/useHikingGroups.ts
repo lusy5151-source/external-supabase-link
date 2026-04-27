@@ -191,19 +191,34 @@ export function useHikingGroups() {
     return (members as any[]).map((m) => ({ ...m, profile: profileMap.get(m.user_id) || null }));
   };
 
-  const sendInvite = async (groupId: string, userId: string) => {
-    if (!user) return { error: { message: "Not authenticated" } };
+  const sendInvite = async (groupId: string, inviteeUserId: string) => {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) return { error: { message: "로그인이 필요합니다" } };
     const { error } = await (supabase as any)
       .from("group_invitations")
-      .insert({ group_id: groupId, user_id: userId, invited_by: user.id, type: "invite", status: "pending" });
+      .insert({
+        group_id: groupId,
+        inviter_id: authUser.id,   // ← auth.uid()
+        invitee_id: inviteeUserId, // ← target user's auth ID
+        status: "pending",
+      });
+    if (error) console.error("Invite error:", JSON.stringify(error));
     return { error };
   };
 
   const requestJoin = async (groupId: string) => {
-    if (!user) return { error: { message: "Not authenticated" } };
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) return { error: { message: "로그인이 필요합니다" } };
+    // Self-invite: inviter_id == invitee_id signals a join request (no type column in new schema)
     const { error } = await (supabase as any)
       .from("group_invitations")
-      .insert({ group_id: groupId, user_id: user.id, type: "request", status: "pending" });
+      .insert({
+        group_id: groupId,
+        inviter_id: authUser.id,
+        invitee_id: authUser.id,
+        status: "pending",
+      });
+    if (error) console.error("Request join error:", JSON.stringify(error));
     return { error };
   };
 
@@ -214,55 +229,70 @@ export function useHikingGroups() {
       .eq("group_id", groupId)
       .eq("status", "pending");
     if (!data || (data as any[]).length === 0) return [];
-    const userIds = (data as any[]).map((d: any) => d.user_id);
+    const userIds = (data as any[]).map((d: any) => d.invitee_id);
     const { data: profiles } = await supabase
       .from("public_profiles")
       .select("user_id, nickname, avatar_url")
       .in("user_id", userIds);
     const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
-    return (data as any[]).map((inv: any) => ({ ...inv, profile: profileMap.get(inv.user_id) || null }));
+    return (data as any[]).map((inv: any) => ({ ...inv, profile: profileMap.get(inv.invitee_id) || null }));
   };
 
   const fetchMyInvitations = async (): Promise<GroupInvitation[]> => {
-    if (!user) return [];
-    const { data } = await (supabase as any)
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) return [];
+    const { data, error } = await (supabase as any)
       .from("group_invitations")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("type", "invite")
-      .eq("status", "pending");
-    return (data as any[]) || [];
+      .select("id, group_id, inviter_id, invitee_id, status, created_at")
+      .eq("invitee_id", authUser.id)
+      .neq("inviter_id", authUser.id) // exclude own join requests
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.error("Fetch invitations error:", JSON.stringify(error));
+      return [];
+    }
+    if (!data || (data as any[]).length === 0) return [];
+    const groupIds = (data as any[]).map((d: any) => d.group_id);
+    const inviterIds = (data as any[]).map((d: any) => d.inviter_id).filter(Boolean);
+    const [{ data: groups }, { data: profiles }] = await Promise.all([
+      supabase.from("hiking_group").select("id, name, description, avatar_url").in("id", groupIds),
+      supabase.from("public_profiles").select("user_id, nickname, avatar_url").in("user_id", inviterIds),
+    ]);
+    const groupMap = new Map((groups || []).map((g: any) => [g.id, g]));
+    const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+    return (data as any[]).map((inv: any) => ({
+      ...inv,
+      group: groupMap.get(inv.group_id) || null,
+      profile: profileMap.get(inv.inviter_id) || null,
+    }));
   };
 
   const respondToInvitation = async (invitationId: string, accept: boolean, groupId?: string) => {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) return { error: { message: "로그인이 필요합니다" } };
     const status = accept ? "accepted" : "rejected";
     const { error } = await (supabase as any)
       .from("group_invitations")
       .update({ status })
-      .eq("id", invitationId);
-    if (!error && accept && groupId && user) {
-      await supabase.from("group_members").insert({
-        group_id: groupId,
-        user_id: user.id,
-        role: "member",
-      } as any);
-      fetchMyGroups();
+      .eq("id", invitationId)
+      .eq("invitee_id", authUser.id);
+    if (error) {
+      console.error("Respond invitation error:", JSON.stringify(error));
+      return { error };
     }
-    return { error };
+    // DB trigger handle_invitation_accepted auto-adds the user to group_members on accept.
+    if (accept) fetchMyGroups();
+    return { error: null };
   };
 
-  const acceptJoinRequest = async (invitationId: string, groupId: string, userId: string) => {
+  const acceptJoinRequest = async (invitationId: string, _groupId: string, _userId: string) => {
     const { error } = await (supabase as any)
       .from("group_invitations")
       .update({ status: "accepted" })
       .eq("id", invitationId);
-    if (!error) {
-      await supabase.from("group_members").insert({
-        group_id: groupId,
-        user_id: userId,
-        role: "member",
-      } as any);
-    }
+    if (error) console.error("Accept join request error:", JSON.stringify(error));
+    // DB trigger inserts the user into group_members
     return { error };
   };
 
@@ -271,13 +301,21 @@ export function useHikingGroups() {
       .from("group_invitations")
       .update({ status: "rejected" })
       .eq("id", invitationId);
+    if (error) console.error("Reject join request error:", JSON.stringify(error));
     return { error };
   };
 
   const searchUsers = async (query: string) => {
     if (!query.trim()) return [];
-    const { data } = await supabase
-      .from("public_profiles")
+    // Use profiles.user_id (must match auth.uid() for invitee_id)
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("user_id, nickname, avatar_url")
+      .ilike("nickname", `%${query}%`)
+      .limit(10);
+    if (error) console.error("Search users error:", JSON.stringify(error));
+    return (data as any[]) || [];
+  };
       .select("user_id, nickname, avatar_url")
       .ilike("nickname", `%${query}%`)
       .limit(10);
