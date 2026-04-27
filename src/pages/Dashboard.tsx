@@ -274,6 +274,12 @@ const Dashboard = () => {
           )}
         </div>
         {!isDemo && <AchievementModal badge={newlyEarned} onDismiss={dismissNewBadge} />}
+        {showJournalForm && (
+          <JournalForm
+            onClose={() => setShowJournalForm(false)}
+            onSaved={() => { setShowJournalForm(false); }}
+          />
+        )}
         {/* OnboardingTutorial is now in Layout */}
 
         {/* ── Hero: Mountain illustration + Upcoming Hike ── */}
