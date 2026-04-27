@@ -21,6 +21,7 @@ import { useState, useCallback, lazy, Suspense, useEffect } from "react";
 import PageSkeleton from "@/components/PageSkeleton";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
 import { useProfileSync } from "@/hooks/useProfileSync";
+import { useSchedulePlanAlerts } from "@/hooks/useSchedulePlanAlerts";
 import { supabase } from "@/integrations/supabase/client";
 
 // Eagerly loaded (auth only)
