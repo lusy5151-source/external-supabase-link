@@ -17,6 +17,7 @@ import { useChallengeMountains, useUserMountainChallenges, type ChallengeListTyp
 import { useSharedCompletions, type SharedCompletion } from "@/hooks/useSharedCompletions";
 import { useLiveSummitFeed } from "@/hooks/useLiveSummitFeed";
 import { SharedCompletionCard } from "@/components/SharedCompletionCard";
+import { JournalForm } from "@/components/JournalForm";
 import AchievementModal from "@/components/AchievementModal";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { StackedAvatars } from "@/components/StackedAvatars";
