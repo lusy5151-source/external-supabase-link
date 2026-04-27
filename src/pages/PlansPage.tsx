@@ -221,8 +221,10 @@ const PlansPage = () => {
             ) : (
               <div className="space-y-2.5">
                 {upcoming.map((plan) => {
-                  const mountain = mountains.find((m) => m.id === plan.mountain_id);
-                  if (!mountain) return null;
+                  const mountainName =
+                    plan.mountain_name ||
+                    mountains.find((m) => m.id === plan.mountain_id)?.nameKo ||
+                    "산";
                   return (
                     <Link
                       key={plan.id}
@@ -233,7 +235,24 @@ const PlansPage = () => {
                         <Mountain className="h-5 w-5 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground">{mountain.nameKo}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="font-medium text-foreground">{mountainName}</p>
+                          {plan.is_joined && (
+                            <span
+                              style={{
+                                background: "#EAF3DE",
+                                color: "#27500A",
+                                fontSize: 10,
+                                borderRadius: 10,
+                                padding: "1px 6px",
+                                fontWeight: 500,
+                                lineHeight: 1.4,
+                              }}
+                            >
+                              산악회 참여
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
@@ -249,12 +268,12 @@ const PlansPage = () => {
                         {plan.trail_name && (
                           <p className="text-[10px] text-muted-foreground/70 mt-0.5">🥾 {plan.trail_name}</p>
                         )}
-                        {(plan as any).meeting_location && (
+                        {plan.meeting_location && (
                           <p className="text-[10px] text-muted-foreground/70 mt-0.5 flex items-center gap-0.5">
-                            <MapPin className="h-2.5 w-2.5" /> {(plan as any).meeting_location}
+                            <MapPin className="h-2.5 w-2.5" /> {plan.meeting_location}
                           </p>
                         )}
-                        {(plan as any).is_public && (
+                        {plan.is_public && (
                           <span className="inline-flex items-center gap-0.5 text-[9px] text-primary mt-0.5">
                             <Globe className="h-2.5 w-2.5" /> 공개
                           </span>
@@ -274,8 +293,10 @@ const PlansPage = () => {
               <p className="text-sm font-medium text-muted-foreground mb-2">지난 계획 ({past.length})</p>
               <div className="space-y-2 opacity-60">
                 {past.map((plan) => {
-                  const mountain = mountains.find((m) => m.id === plan.mountain_id);
-                  if (!mountain) return null;
+                  const mountainName =
+                    plan.mountain_name ||
+                    mountains.find((m) => m.id === plan.mountain_id)?.nameKo ||
+                    "산";
                   return (
                     <Link
                       key={plan.id}
@@ -283,7 +304,21 @@ const PlansPage = () => {
                       className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:bg-secondary/50 transition-colors"
                     >
                       <Mountain className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-foreground flex-1">{mountain.nameKo}</span>
+                      <span className="text-sm text-foreground flex-1">{mountainName}</span>
+                      {plan.is_joined && (
+                        <span
+                          style={{
+                            background: "#EAF3DE",
+                            color: "#27500A",
+                            fontSize: 10,
+                            borderRadius: 10,
+                            padding: "1px 6px",
+                            fontWeight: 500,
+                          }}
+                        >
+                          산악회 참여
+                        </span>
+                      )}
                       <span className="text-xs text-muted-foreground">
                         {format(new Date(plan.planned_date), "M/d", { locale: ko })}
                       </span>
