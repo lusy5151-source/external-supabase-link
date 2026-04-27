@@ -34,7 +34,11 @@ const typeStyle: Record<string, { emoji: string; bg: string }> = {
   club_chat: { emoji: "💬", bg: "#EEF2FF" },
   plan_created: { emoji: "📅", bg: "#FAEEDA" },
   plan_joined: { emoji: "✅", bg: "#EAF3DE" },
-  plan_status_changed: { emoji: "📢", bg: "#FCEBEB" },
+  plan_declined: { emoji: "😔", bg: "#FCEBEB" },
+  plan_updated: { emoji: "📝", bg: "#FAEEDA" },
+  plan_deleted: { emoji: "🗑", bg: "#FCEBEB" },
+  plan_cancelled: { emoji: "❌", bg: "#FCEBEB" },
+  plan_status_changed: { emoji: "🏔", bg: "#EAF3DE" },
 };
 
 const getStyle = (type: string) =>
