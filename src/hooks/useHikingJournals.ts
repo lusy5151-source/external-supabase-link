@@ -169,17 +169,38 @@ export function useHikingJournals() {
     visibility?: string;
     hiked_at?: string;
   }) => {
-    if (!user) return { error: { message: "Not authenticated" } };
-    console.log("createJournal payload:", {
-      user_id: user.id,
-      mountain_id: (journal as any).mountain_id,
-      mountain_id_type: typeof (journal as any).mountain_id,
-      hiked_at: (journal as any).hiked_at,
-      visibility: (journal as any).visibility,
-    });
+    // Always resolve user_id from supabase.auth (must equal auth.uid() for RLS)
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) {
+      const err = { message: "로그인이 필요합니다", code: "NOT_AUTHENTICATED" };
+      console.error("Journal insert aborted:", err);
+      const { toast } = await import("sonner");
+      toast.error(err.message);
+      return { error: err };
+    }
+
+    const insertPayload: Record<string, any> = {
+      ...journal,
+      user_id: authUser.id, // ← must be auth.uid()
+      mountain_id: Number(journal.mountain_id),
+      hiked_at: journal.hiked_at
+        ? new Date(journal.hiked_at).toISOString()
+        : new Date().toISOString(),
+      visibility: journal.visibility || "public",
+      course_name: journal.course_name || null,
+      notes: journal.notes || null,
+      difficulty: journal.difficulty || null,
+      weather: journal.weather || null,
+      duration: journal.duration || null,
+      photos: journal.photos || null,
+      tagged_friends: journal.tagged_friends || null,
+    };
+
+    console.log("Final insert payload:", insertPayload);
+
     const { data, error } = await supabase
       .from("hiking_journals")
-      .insert({ ...journal, user_id: user.id } as any)
+      .insert(insertPayload as any)
       .select()
       .single();
     if (error) {
