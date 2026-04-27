@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useOnboarding } from "@/contexts/OnboardingContext";
 import { useTutorial } from "@/contexts/TutorialContext";
@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  Plus, Mountain, Calendar, Clock, Bell, ChevronRight, Globe, MapPin,
+  Plus, Mountain, Calendar, Clock, Bell, ChevronRight, Globe, MapPin, Users,
 } from "lucide-react";
 import PublicPlansList from "@/components/PublicPlansList";
+import { MyPlansCalendar } from "@/components/MyPlansCalendar";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +34,8 @@ interface MyPlan {
   mountain_name: string | null;
   group_name: string | null;
   role: PlanRole;
+  participant_count: number;
+  journal_id: string | null;
 }
 
 const RoleBadge = ({ role, compact = false }: { role: PlanRole; compact?: boolean }) => {
@@ -58,6 +61,163 @@ const RoleBadge = ({ role, compact = false }: { role: PlanRole; compact?: boolea
   );
 };
 
+const STATUS_BADGE: Record<string, { label: string; bg: string; color: string }> = {
+  planned: { label: "예정", bg: "#EAF3DE", color: "#27500A" },
+  upcoming: { label: "예정", bg: "#EAF3DE", color: "#27500A" },
+  completed: { label: "완료", bg: "#E0E7FF", color: "#1E3A8A" },
+  cancelled: { label: "취소", bg: "#FEE2E2", color: "#7F1D1D" },
+};
+
+function PlanCard({
+  plan,
+  mountainNameFallback,
+  isPast,
+  onJournalCreate,
+}: {
+  plan: MyPlan;
+  mountainNameFallback: string;
+  isPast: boolean;
+  onJournalCreate: () => void;
+}) {
+  const mountainName = plan.mountain_name || mountainNameFallback;
+  const statusInfo = plan.status ? STATUS_BADGE[plan.status] : null;
+  const showJournalLink = isPast && plan.journal_id;
+  const showJournalCreate =
+    isPast && !plan.journal_id && (plan.status === "completed" || plan.status === "planned");
+
+  return (
+    <div
+      style={{
+        background: "hsl(var(--card))",
+        border: "0.5px solid hsl(var(--border))",
+        borderRadius: 12,
+        padding: "12px 14px",
+        marginBottom: 8,
+      }}
+    >
+      <Link to={`/plans/${plan.id}`} className="block">
+        {/* Top row: name + status badge */}
+        <div className="flex items-start justify-between gap-2">
+          <p
+            style={{
+              fontSize: 15,
+              fontWeight: 500,
+              color: "hsl(var(--foreground))",
+              lineHeight: 1.3,
+            }}
+          >
+            {mountainName}
+          </p>
+          {statusInfo && (
+            <span
+              style={{
+                background: statusInfo.bg,
+                color: statusInfo.color,
+                fontSize: 10,
+                borderRadius: 10,
+                padding: "1px 8px",
+                fontWeight: 500,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {statusInfo.label}
+            </span>
+          )}
+        </div>
+
+        {/* Row 2: date / time / location */}
+        <div
+          className="flex items-center flex-wrap gap-x-3 gap-y-0.5 mt-1"
+          style={{ fontSize: 12, color: "hsl(var(--muted-foreground))" }}
+        >
+          <span>📅 {format(new Date(plan.planned_date), "M/d (EEE)", { locale: ko })}</span>
+          {plan.start_time && <span>⏰ {plan.start_time.slice(0, 5)}</span>}
+          {plan.meeting_location && <span>📍 {plan.meeting_location}</span>}
+        </div>
+
+        {/* Row 3: group name */}
+        {plan.group_id && plan.group_name && (
+          <div className="mt-1.5">
+            <span
+              style={{
+                background: "#EAF3DE",
+                color: "#3B6D11",
+                fontSize: 12,
+                borderRadius: 10,
+                padding: "1px 6px",
+              }}
+            >
+              {plan.group_name}
+            </span>
+          </div>
+        )}
+      </Link>
+
+      {/* Row 4: journal link/button (past only) */}
+      {(showJournalLink || showJournalCreate) && (
+        <div className="mt-2">
+          {showJournalLink ? (
+            <Link
+              to={`/journals/${plan.journal_id}`}
+              style={{ fontSize: 12, color: "#3B6D11", fontWeight: 500 }}
+            >
+              📔 일지 보기
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                onJournalCreate();
+              }}
+              style={{
+                fontSize: 12,
+                border: "0.5px solid #639922",
+                color: "#3B6D11",
+                borderRadius: 20,
+                padding: "3px 10px",
+                background: "transparent",
+                fontWeight: 500,
+              }}
+            >
+              + 일지 남기기
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Bottom row: role badge + participant count */}
+      <div className="flex items-center justify-between mt-2">
+        <div className="flex items-center gap-1.5">
+          {plan.role === "creator" ? (
+            <span
+              style={{
+                background: "#EAF3DE",
+                color: "#27500A",
+                fontSize: 10,
+                borderRadius: 10,
+                padding: "1px 6px",
+                fontWeight: 500,
+              }}
+            >
+              주최자
+            </span>
+          ) : (
+            <RoleBadge role={plan.role} compact />
+          )}
+        </div>
+        <span
+          className="flex items-center gap-1"
+          style={{ fontSize: 12, color: "hsl(var(--muted-foreground))" }}
+        >
+          <Users className="h-3 w-3" />
+          {plan.participant_count}명
+        </span>
+      </div>
+    </div>
+  );
+}
+
 const PlansPage = () => {
   const { mountains } = useMountains();
   const navigate = useNavigate();
@@ -66,6 +226,7 @@ const PlansPage = () => {
   const { notifications, markNotificationRead } = useHikingPlans();
   const { toast } = useToast();
   const [myPlans, setMyPlans] = useState<MyPlan[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const handlePlanCreate = () => {
     if (isTutorialActive && steps[currentStep]?.customContent === "plan-checklist") return;
@@ -126,6 +287,8 @@ const PlansPage = () => {
           mountain_name: r.mountains?.name_ko || null,
           group_name: r.hiking_group?.name || null,
           role,
+          participant_count: 0,
+          journal_id: null,
         });
 
         const all: MyPlan[] = [
@@ -139,6 +302,36 @@ const PlansPage = () => {
         const unique = Array.from(new Map(all.map((p) => [p.id, p])).values()).sort(
           (a, b) => new Date(a.planned_date).getTime() - new Date(b.planned_date).getTime()
         );
+
+        // Fetch participant counts (going only) and journals for these plans
+        const allIds = unique.map((p) => p.id);
+        if (allIds.length) {
+          const [{ data: allParts }, { data: journals }] = await Promise.all([
+            (supabase as any)
+              .from("plan_participants")
+              .select("plan_id, rsvp_status")
+              .in("plan_id", allIds)
+              .eq("rsvp_status", "going"),
+            (supabase as any)
+              .from("hiking_journals")
+              .select("id, plan_id")
+              .in("plan_id", allIds)
+              .eq("user_id", user.id),
+          ]);
+          const countMap = new Map<string, number>();
+          (allParts || []).forEach((p: any) => {
+            countMap.set(p.plan_id, (countMap.get(p.plan_id) || 0) + 1);
+          });
+          const journalMap = new Map<string, string>();
+          (journals || []).forEach((j: any) => {
+            if (j.plan_id) journalMap.set(j.plan_id, j.id);
+          });
+          unique.forEach((p) => {
+            p.participant_count = countMap.get(p.id) || 0;
+            p.journal_id = journalMap.get(p.id) || null;
+          });
+        }
+
         if (!cancelled) setMyPlans(unique);
       } catch (err) {
         console.error("PlansPage fetch error:", JSON.stringify(err));
@@ -155,12 +348,6 @@ const PlansPage = () => {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const upcoming = myPlans.filter(
-    (p) => p.status !== "cancelled" && new Date(p.planned_date) >= today
-  );
-  const past = myPlans.filter(
-    (p) => p.status === "cancelled" || new Date(p.planned_date) < today
-  );
 
   return (
     <div className="space-y-5 pb-24">
@@ -204,101 +391,137 @@ const PlansPage = () => {
           <TabsTrigger value="public">공개 일정</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="my" className="space-y-5 mt-4">
-          {/* Upcoming Plans */}
-          <section>
-            <p className="text-sm font-medium text-muted-foreground mb-2">다가오는 계획 ({upcoming.length})</p>
-            {upcoming.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card p-8 text-center">
-                <Mountain className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">아직 계획이 없습니다</p>
-                <Button variant="outline" size="sm" className="mt-3" onClick={() => navigate("/plans/create")}>
-                  첫 계획 만들기
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-2.5">
-                {upcoming.map((plan) => {
-                  const mountainName =
-                    plan.mountain_name ||
-                    mountains.find((m) => m.id === plan.mountain_id)?.nameKo ||
-                    "산";
-                  return (
-                    <Link
-                      key={plan.id}
-                      to={`/plans/${plan.id}`}
-                      className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-sm hover:bg-secondary/50 transition-colors"
-                    >
-                      <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 shrink-0">
-                        <Mountain className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <p className="font-medium text-foreground">{mountainName}</p>
-                          <RoleBadge role={plan.role} />
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {format(new Date(plan.planned_date), "M/d (EEE)", { locale: ko })}
-                          </span>
-                          {plan.start_time && (
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {plan.start_time.slice(0, 5)}
-                            </span>
-                          )}
-                        </div>
-                        {plan.trail_name && (
-                          <p className="text-[10px] text-muted-foreground/70 mt-0.5">🥾 {plan.trail_name}</p>
-                        )}
-                        {plan.meeting_location && (
-                          <p className="text-[10px] text-muted-foreground/70 mt-0.5 flex items-center gap-0.5">
-                            <MapPin className="h-2.5 w-2.5" /> {plan.meeting_location}
-                          </p>
-                        )}
-                        {plan.is_public && (
-                          <span className="inline-flex items-center gap-0.5 text-[9px] text-primary mt-0.5">
-                            <Globe className="h-2.5 w-2.5" /> 공개
-                          </span>
-                        )}
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </section>
+        <TabsContent value="my" className="space-y-4 mt-4">
+          {/* Calendar */}
+          <MyPlansCalendar
+            plans={myPlans.map((p) => ({ id: p.id, planned_date: p.planned_date }))}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+          />
 
-          {/* Past Plans */}
-          {past.length > 0 && (
-            <section>
-              <p className="text-sm font-medium text-muted-foreground mb-2">지난 계획 ({past.length})</p>
-              <div className="space-y-2 opacity-60">
-                {past.map((plan) => {
-                  const mountainName =
-                    plan.mountain_name ||
-                    mountains.find((m) => m.id === plan.mountain_id)?.nameKo ||
-                    "산";
-                  return (
-                    <Link
-                      key={plan.id}
-                      to={`/plans/${plan.id}`}
-                      className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:bg-secondary/50 transition-colors"
+          {(() => {
+            const filteredAll = selectedDate
+              ? myPlans.filter((p) => p.planned_date === selectedDate)
+              : myPlans;
+            const filteredUpcoming = filteredAll.filter(
+              (p) => p.status !== "cancelled" && new Date(p.planned_date) >= today
+            );
+            const filteredPast = filteredAll.filter(
+              (p) => p.status === "cancelled" || new Date(p.planned_date) < today
+            );
+
+            if (selectedDate && filteredAll.length === 0) {
+              return (
+                <div className="rounded-xl border border-border bg-card p-8 text-center">
+                  <p className="text-[13px] text-muted-foreground mb-3">
+                    이 날은 등산 계획이 없어요
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/plans/create?date=${selectedDate}`)}
+                  >
+                    <Plus className="h-4 w-4 mr-1" /> 계획 만들기
+                  </Button>
+                </div>
+              );
+            }
+
+            return (
+              <>
+                {/* Upcoming */}
+                {filteredUpcoming.length > 0 && (
+                  <section>
+                    <p
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 500,
+                        color: "hsl(var(--muted-foreground))",
+                        padding: "12px 0 8px",
+                      }}
                     >
-                      <Mountain className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-foreground flex-1">{mountainName}</span>
-                      <RoleBadge role={plan.role} compact />
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(plan.planned_date), "M/d", { locale: ko })}
-                      </span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </section>
-          )}
+                      다가오는 일정 ({filteredUpcoming.length})
+                    </p>
+                    <div>
+                      {filteredUpcoming.map((plan) => (
+                        <PlanCard
+                          key={plan.id}
+                          plan={plan}
+                          mountainNameFallback={
+                            mountains.find((m) => m.id === plan.mountain_id)?.nameKo || "산"
+                          }
+                          isPast={false}
+                          onJournalCreate={() => {
+                            navigate("/records", {
+                              state: {
+                                openJournalForm: true,
+                                prefillMountainId: plan.mountain_id,
+                                prefillDate: plan.planned_date,
+                              },
+                            });
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* Past */}
+                {filteredPast.length > 0 && (
+                  <section>
+                    <p
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 500,
+                        color: "hsl(var(--muted-foreground))",
+                        padding: "12px 0 8px",
+                      }}
+                    >
+                      지난 일정 ({filteredPast.length})
+                    </p>
+                    <div>
+                      {filteredPast.map((plan) => (
+                        <PlanCard
+                          key={plan.id}
+                          plan={plan}
+                          mountainNameFallback={
+                            mountains.find((m) => m.id === plan.mountain_id)?.nameKo || "산"
+                          }
+                          isPast
+                          onJournalCreate={() => {
+                            navigate("/records", {
+                              state: {
+                                openJournalForm: true,
+                                prefillMountainId: plan.mountain_id,
+                                prefillDate: plan.planned_date,
+                              },
+                            });
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {!selectedDate &&
+                  filteredUpcoming.length === 0 &&
+                  filteredPast.length === 0 && (
+                    <div className="rounded-xl border border-border bg-card p-8 text-center">
+                      <Mountain className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">아직 계획이 없습니다</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                        onClick={() => navigate("/plans/create")}
+                      >
+                        첫 계획 만들기
+                      </Button>
+                    </div>
+                  )}
+              </>
+            );
+          })()}
         </TabsContent>
 
         <TabsContent value="public" className="mt-4">
