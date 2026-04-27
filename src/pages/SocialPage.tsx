@@ -434,9 +434,65 @@ const SocialPage = () => {
             </Dialog>
           </div>
 
+          {/* Received invitations */}
+          {receivedInvitations.length > 0 && (
+            <section>
+              <h2 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-1.5">
+                <Bell className="h-3.5 w-3.5 text-primary" /> 받은 초대 ({receivedInvitations.length})
+              </h2>
+              <div className="space-y-2">
+                {receivedInvitations.map((inv) => {
+                  const groupName = inv.hiking_group?.name || "산악회";
+                  const inviterName = inv.inviter?.nickname || "누군가";
+                  return (
+                    <div
+                      key={inv.id}
+                      className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-sm"
+                    >
+                      <div
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-primary"
+                        style={{ background: "#EAF3DE" }}
+                      >
+                        {inv.hiking_group?.avatar_url ? (
+                          <img src={inv.hiking_group.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+                        ) : (
+                          groupName.charAt(0)
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-medium text-foreground truncate">
+                          {inviterName}님이 {groupName}에 초대했어요.
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          {formatRelativeTime(inv.created_at)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          onClick={() => handleAcceptInvite(inv.id, inv.notification_id)}
+                          className="rounded-full px-2.5 py-1 text-[12px] font-medium text-white"
+                          style={{ background: "#639922" }}
+                        >
+                          수락
+                        </button>
+                        <button
+                          onClick={() => handleRejectInvite(inv.id, inv.notification_id)}
+                          className="rounded-full border px-2.5 py-1 text-[12px] text-muted-foreground border-border"
+                        >
+                          거절
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
           {/* My clubs */}
           <section>
             <h2 className="text-sm font-semibold text-muted-foreground mb-3">내 산악회</h2>
+
             {groupsLoading ? (
               <div className="text-center py-8 text-sm text-muted-foreground">불러오는 중...</div>
             ) : myGroups.length === 0 ? (
