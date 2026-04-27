@@ -311,7 +311,7 @@ const Dashboard = () => {
                 <Link
                   to={isDemo ? "/auth" : "/plans/create"}
                   style={{
-                    background: "#639922",
+                    background: "hsl(var(--lavender))",
                     color: "#fff",
                     fontSize: "12px",
                     fontWeight: 500,
