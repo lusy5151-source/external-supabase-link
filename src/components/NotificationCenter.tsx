@@ -315,6 +315,44 @@ const NotificationCenter = () => {
                   </div>
                 );
               })}
+
+              {/* Other group / plan notifications (invitation_accepted, new_member_joined, club_chat, plan_created, plan_joined, plan_status_changed) */}
+              {otherGroupNotifs.map((n) => {
+                const style = getOtherStyle(n);
+                const isUnread = !n.is_read;
+                return (
+                  <button
+                    key={n.id}
+                    onClick={() => handleOtherClick(n)}
+                    className={cn(
+                      "flex w-full items-start gap-3 border-b border-border/50 last:border-0 px-4 py-3 text-left transition-colors",
+                      isUnread ? "hover:opacity-90" : "hover:bg-secondary/50",
+                    )}
+                    style={isUnread ? { background: "#F8FFF4" } : { background: "white" }}
+                  >
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[16px]"
+                      style={{ background: style.bg }}
+                    >
+                      <span>{style.emoji}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] leading-[1.5] text-foreground line-clamp-3">
+                        {n.message}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-[3px]">
+                        {formatRelativeTime(n.created_at)}
+                      </p>
+                    </div>
+                    {isUnread && (
+                      <span
+                        className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
+                        style={{ background: "#3B82F6" }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
