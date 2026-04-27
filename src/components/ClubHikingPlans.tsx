@@ -337,11 +337,18 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
 
       {/* Create/Edit Plan Bottom Sheet */}
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => { setShowCreate(false); resetForm(); }}>
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          onClick={() => { setShowCreate(false); resetForm(); }}
+        >
           <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.4)" }} />
           <div
-            className="relative w-full max-w-lg bg-white dark:bg-card flex flex-col"
-            style={{ borderRadius: "20px 20px 0 0", maxHeight: "90vh" }}
+            className="relative w-full max-w-lg bg-white dark:bg-card flex flex-col overflow-hidden"
+            style={{
+              borderRadius: "20px 20px 0 0",
+              maxHeight: "calc(100dvh - 120px)",
+              marginBottom: "calc(64px + env(safe-area-inset-bottom, 0px))",
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header (fixed) */}
@@ -363,8 +370,14 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
             </div>
 
             {/* Scrollable body */}
-            <div className="flex-1 overflow-y-auto px-5 pb-8" style={{ paddingBottom: 32 }}>
-              <div className="space-y-3">
+            <div
+              className="flex-1 overflow-y-auto"
+              style={{
+                padding: "8px 20px 0 20px",
+                WebkitOverflowScrolling: "touch",
+              }}
+            >
+              <div className="space-y-3 pb-4">
                 <div>
                   <Label className="text-xs">산 선택</Label>
                   <select
@@ -402,12 +415,29 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
               </div>
             </div>
 
-            {/* Sticky bottom action */}
+            {/* Fixed bottom action footer */}
             <div
-              className="shrink-0 border-t border-border bg-white dark:bg-card px-5 pt-3"
-              style={{ paddingBottom: "max(env(safe-area-inset-bottom, 20px), 20px)" }}
+              className="shrink-0"
+              style={{
+                background: "hsl(var(--color-background-primary))",
+                borderTop: "0.5px solid hsl(var(--color-border-tertiary))",
+                padding: "16px 20px",
+                paddingBottom: "calc(16px + env(safe-area-inset-bottom, 0px))",
+              }}
             >
-              <Button onClick={handleSubmit} disabled={creating || !plannedDate} className="w-full rounded-xl" style={{ background: "#639922" }}>
+              <Button
+                onClick={handleSubmit}
+                disabled={creating || !plannedDate}
+                className="w-full"
+                style={{
+                  background: "#639922",
+                  color: "white",
+                  height: 48,
+                  borderRadius: "var(--border-radius-md, 12px)",
+                  fontSize: 15,
+                  fontWeight: 500,
+                }}
+              >
                 {creating ? (editingId ? "수정 중..." : "생성 중...") : (editingId ? "계획 수정하기" : "계획 만들기")}
               </Button>
             </div>
