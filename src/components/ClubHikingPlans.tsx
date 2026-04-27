@@ -85,10 +85,23 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
           .in("user_id", creatorIds),
       ]);
 
+      // Fetch participant profiles
+      const participantUserIds = [...new Set((parts as any[] || []).map((p) => p.user_id).filter(Boolean))];
+      const { data: partProfiles } = participantUserIds.length
+        ? await supabase
+            .from("public_profiles")
+            .select("user_id, nickname, avatar_url")
+            .in("user_id", participantUserIds)
+        : { data: [] as any[] };
+      const partProfileMap: Record<string, { nickname: string | null; avatar_url: string | null }> = {};
+      (partProfiles as any[] || []).forEach((p) => {
+        partProfileMap[p.user_id] = { nickname: p.nickname, avatar_url: p.avatar_url };
+      });
+
       const map: Record<string, PlanParticipant[]> = {};
       (parts as any[] || []).forEach((p) => {
         if (!map[p.plan_id]) map[p.plan_id] = [];
-        map[p.plan_id].push(p);
+        map[p.plan_id].push({ ...p, profile: partProfileMap[p.user_id] });
       });
       setParticipantMap(map);
 
