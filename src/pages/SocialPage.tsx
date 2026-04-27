@@ -17,7 +17,7 @@ import {
   Users, Mountain, Search, UserPlus, Check, X, ChevronRight, Bell, Trash2,
   Plus, Globe, Lock, Ban,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { BlockedUsersList } from "@/components/BlockedUsersList";
 
@@ -48,7 +48,17 @@ const SocialPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [searching, setSearching] = useState(false);
-  const [mainTab, setMainTab] = useState<"friends" | "clubs">("friends");
+  const [searchParams] = useSearchParams();
+  const [mainTab, setMainTab] = useState<"friends" | "clubs">(
+    searchParams.get("tab") === "clubs" ? "clubs" : "friends"
+  );
+
+  // React to URL ?tab= changes
+  useEffect(() => {
+    const t = searchParams.get("tab");
+    if (t === "clubs") setMainTab("clubs");
+    else if (t === "friends") setMainTab("friends");
+  }, [searchParams]);
   const { isTutorialActive, steps, currentStep } = useTutorial();
 
   // Auto-switch to clubs tab when tutorial step targets it

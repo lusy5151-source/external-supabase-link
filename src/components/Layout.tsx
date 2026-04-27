@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Compass, ClipboardList, User } from "lucide-react";
+import { Home, Compass, ClipboardList, User, Users, UsersRound } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuest } from "@/contexts/GuestContext";
 import { useUnreadChat } from "@/contexts/UnreadChatContext";
@@ -49,8 +49,28 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <MountainMascot size={32} />
             <span className="text-base font-bold text-foreground tracking-tight">완등</span>
           </Link>
-          <div className="flex items-center gap-1.5">
-            {user && <NotificationCenter />}
+          <div className="flex items-center gap-1">
+            {user && (
+              <>
+                <Link
+                  to="/social"
+                  aria-label="친구"
+                  title="친구"
+                  className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:text-primary"
+                >
+                  <Users className="h-4 w-4" />
+                </Link>
+                <Link
+                  to="/social?tab=clubs"
+                  aria-label="산악회"
+                  title="산악회"
+                  className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:text-primary"
+                >
+                  <UsersRound className="h-4 w-4" />
+                </Link>
+                <NotificationCenter />
+              </>
+            )}
             {!user && (
               <Link
                 to="/auth"
