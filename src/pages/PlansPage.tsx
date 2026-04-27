@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useOnboarding } from "@/contexts/OnboardingContext";
 import { useTutorial } from "@/contexts/TutorialContext";
@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  Plus, Mountain, Calendar, Clock, Bell, ChevronRight, Globe, MapPin,
+  Plus, Mountain, Calendar, Clock, Bell, ChevronRight, Globe, MapPin, Users,
 } from "lucide-react";
 import PublicPlansList from "@/components/PublicPlansList";
+import { MyPlansCalendar } from "@/components/MyPlansCalendar";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +34,8 @@ interface MyPlan {
   mountain_name: string | null;
   group_name: string | null;
   role: PlanRole;
+  participant_count: number;
+  journal_id: string | null;
 }
 
 const RoleBadge = ({ role, compact = false }: { role: PlanRole; compact?: boolean }) => {
