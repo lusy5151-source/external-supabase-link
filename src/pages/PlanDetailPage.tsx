@@ -310,15 +310,6 @@ const PlanDetailPage = () => {
                   )}
                 </button>
               )}
-              {/* TEST BUTTON — remove after confirming */}
-              {!isPastDate && (
-                <button
-                  onClick={() => testNotification(mountain?.nameKo || "테스트 산")}
-                  className="col-span-2 flex items-center justify-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent/50 transition-colors"
-                >
-                  🔔 알림 테스트
-                </button>
-              )}
               {editing ? (
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
