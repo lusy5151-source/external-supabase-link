@@ -599,12 +599,17 @@ const Dashboard = () => {
                 정상 인증하기
               </Button>
             </Link>
-            <Link to={isDemo ? "/auth" : "/records"}>
-              <Button variant="outline" className="w-full h-14 rounded-2xl text-sm font-bold gap-2 shadow-lg border-2 border-coral text-coral hover:bg-coral/10 transition-all hover:shadow-xl hover:scale-[1.01] active:scale-[0.99]">
-                <Plus className="h-5 w-5" />
-                등산 기록 추가
-              </Button>
-            </Link>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (isDemo) { navigate("/auth"); return; }
+                setShowJournalForm(true);
+              }}
+              className="w-full h-14 rounded-2xl text-sm font-bold gap-2 shadow-lg border-2 border-coral text-coral hover:bg-coral/10 transition-all hover:shadow-xl hover:scale-[1.01] active:scale-[0.99]"
+            >
+              <Plus className="h-5 w-5" />
+              등산 기록 추가
+            </Button>
           </section>
 
           {/* ── Search Bar ── */}
