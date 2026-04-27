@@ -61,6 +61,163 @@ const RoleBadge = ({ role, compact = false }: { role: PlanRole; compact?: boolea
   );
 };
 
+const STATUS_BADGE: Record<string, { label: string; bg: string; color: string }> = {
+  planned: { label: "예정", bg: "#EAF3DE", color: "#27500A" },
+  upcoming: { label: "예정", bg: "#EAF3DE", color: "#27500A" },
+  completed: { label: "완료", bg: "#E0E7FF", color: "#1E3A8A" },
+  cancelled: { label: "취소", bg: "#FEE2E2", color: "#7F1D1D" },
+};
+
+function PlanCard({
+  plan,
+  mountainNameFallback,
+  isPast,
+  onJournalCreate,
+}: {
+  plan: MyPlan;
+  mountainNameFallback: string;
+  isPast: boolean;
+  onJournalCreate: () => void;
+}) {
+  const mountainName = plan.mountain_name || mountainNameFallback;
+  const statusInfo = plan.status ? STATUS_BADGE[plan.status] : null;
+  const showJournalLink = isPast && plan.journal_id;
+  const showJournalCreate =
+    isPast && !plan.journal_id && (plan.status === "completed" || plan.status === "planned");
+
+  return (
+    <div
+      style={{
+        background: "hsl(var(--card))",
+        border: "0.5px solid hsl(var(--border))",
+        borderRadius: 12,
+        padding: "12px 14px",
+        marginBottom: 8,
+      }}
+    >
+      <Link to={`/plans/${plan.id}`} className="block">
+        {/* Top row: name + status badge */}
+        <div className="flex items-start justify-between gap-2">
+          <p
+            style={{
+              fontSize: 15,
+              fontWeight: 500,
+              color: "hsl(var(--foreground))",
+              lineHeight: 1.3,
+            }}
+          >
+            {mountainName}
+          </p>
+          {statusInfo && (
+            <span
+              style={{
+                background: statusInfo.bg,
+                color: statusInfo.color,
+                fontSize: 10,
+                borderRadius: 10,
+                padding: "1px 8px",
+                fontWeight: 500,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {statusInfo.label}
+            </span>
+          )}
+        </div>
+
+        {/* Row 2: date / time / location */}
+        <div
+          className="flex items-center flex-wrap gap-x-3 gap-y-0.5 mt-1"
+          style={{ fontSize: 12, color: "hsl(var(--muted-foreground))" }}
+        >
+          <span>📅 {format(new Date(plan.planned_date), "M/d (EEE)", { locale: ko })}</span>
+          {plan.start_time && <span>⏰ {plan.start_time.slice(0, 5)}</span>}
+          {plan.meeting_location && <span>📍 {plan.meeting_location}</span>}
+        </div>
+
+        {/* Row 3: group name */}
+        {plan.group_id && plan.group_name && (
+          <div className="mt-1.5">
+            <span
+              style={{
+                background: "#EAF3DE",
+                color: "#3B6D11",
+                fontSize: 12,
+                borderRadius: 10,
+                padding: "1px 6px",
+              }}
+            >
+              {plan.group_name}
+            </span>
+          </div>
+        )}
+      </Link>
+
+      {/* Row 4: journal link/button (past only) */}
+      {(showJournalLink || showJournalCreate) && (
+        <div className="mt-2">
+          {showJournalLink ? (
+            <Link
+              to={`/journals/${plan.journal_id}`}
+              style={{ fontSize: 12, color: "#3B6D11", fontWeight: 500 }}
+            >
+              📔 일지 보기
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                onJournalCreate();
+              }}
+              style={{
+                fontSize: 12,
+                border: "0.5px solid #639922",
+                color: "#3B6D11",
+                borderRadius: 20,
+                padding: "3px 10px",
+                background: "transparent",
+                fontWeight: 500,
+              }}
+            >
+              + 일지 남기기
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Bottom row: role badge + participant count */}
+      <div className="flex items-center justify-between mt-2">
+        <div className="flex items-center gap-1.5">
+          {plan.role === "creator" ? (
+            <span
+              style={{
+                background: "#EAF3DE",
+                color: "#27500A",
+                fontSize: 10,
+                borderRadius: 10,
+                padding: "1px 6px",
+                fontWeight: 500,
+              }}
+            >
+              주최자
+            </span>
+          ) : (
+            <RoleBadge role={plan.role} compact />
+          )}
+        </div>
+        <span
+          className="flex items-center gap-1"
+          style={{ fontSize: 12, color: "hsl(var(--muted-foreground))" }}
+        >
+          <Users className="h-3 w-3" />
+          {plan.participant_count}명
+        </span>
+      </div>
+    </div>
+  );
+}
+
 const PlansPage = () => {
   const { mountains } = useMountains();
   const navigate = useNavigate();
