@@ -4,6 +4,7 @@ import { useOnboarding } from "@/contexts/OnboardingContext";
 import { useTutorial } from "@/contexts/TutorialContext";
 import { useFriends } from "@/hooks/useFriends";
 import { useHikingGroups, type HikingGroup } from "@/hooks/useHikingGroups";
+import { useGroupNotifications } from "@/hooks/useGroupNotifications";
 import { demoFriends, demoGroups } from "@/data/demoFeed";
 import { useStore } from "@/context/StoreContext";
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,14 @@ const SocialPage = () => {
   } = useFriends();
   const {
     myGroups, loading: groupsLoading, createGroup, fetchPublicGroups, joinGroup, requestJoin,
+    fetchMyGroups,
   } = useHikingGroups();
+  const {
+    invitations: receivedInvitations,
+    accept: acceptInvitation,
+    reject: rejectInvitation,
+    refresh: refreshInvitations,
+  } = useGroupNotifications();
   const { toast } = useToast();
 
   const [searchQuery, setSearchQuery] = useState("");
