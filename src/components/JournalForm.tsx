@@ -59,12 +59,15 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
     editJournal?.visibility || (isPrivateAccount ? (defaultJournalVisibility === "public" ? "friends" : defaultJournalVisibility) : defaultJournalVisibility)
   );
   const [photos, setPhotos] = useState<string[]>(editJournal?.photos || []);
+  const [pendingPhotos, setPendingPhotos] = useState<{ file: File; preview: string }[]>([]);
   const [taggedFriends, setTaggedFriends] = useState<string[]>(editJournal?.tagged_friends || []);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const [mountainSearch, setMountainSearch] = useState("");
   const [showMountainSearch, setShowMountainSearch] = useState(false);
   const [showOptional, setShowOptional] = useState(!!editJournal);
+
+  const MAX_PHOTOS = 5;
 
   const isEdit = !!editJournal;
 
