@@ -351,20 +351,141 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
 
                 {plan.notes && <p className="text-xs text-muted-foreground">{plan.notes}</p>}
 
+                {/* Participants summary (tappable, expands) */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpandedParticipants((prev) => ({ ...prev, [plan.id]: !prev[plan.id] }))
+                  }
+                  className="flex w-full items-center justify-between gap-2 rounded-lg py-1 text-left transition-colors hover:bg-secondary/40"
+                  style={{ fontSize: 12, color: "hsl(var(--color-text-secondary))" }}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    {stackAvatars.length > 0 ? (
+                      <div className="flex items-center">
+                        {stackAvatars.map((p, i) => (
+                          <Avatar
+                            key={p.id}
+                            className="h-6 w-6 border-2 border-card"
+                            style={{ marginLeft: i === 0 ? 0 : -8, zIndex: stackAvatars.length - i }}
+                          >
+                            {p.profile?.avatar_url && (
+                              <AvatarImage src={p.profile.avatar_url} alt={p.profile?.nickname || ""} />
+                            )}
+                            <AvatarFallback className="bg-primary/10 text-primary text-[9px]">
+                              {(p.profile?.nickname || "?").charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                        ))}
+                      </div>
+                    ) : null}
+                    <span className="truncate">
+                      {goingCount}명 참석 · {interestedCount}명 관심
+                    </span>
+                  </div>
+                  {expanded ? (
+                    <ChevronUp className="h-3.5 w-3.5 shrink-0" />
+                  ) : (
+                    <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+                  )}
+                </button>
+
+                {expanded && (goingList.length + interestedList.length + notGoingList.length > 0) && (
+                  <div
+                    style={{
+                      background: "hsl(var(--color-background-secondary))",
+                      borderRadius: "var(--border-radius-md)",
+                      padding: "8px 12px",
+                      marginTop: 8,
+                    }}
+                  >
+                    {[
+                      { label: "✅ 참석", color: "#27500A", bg: "#EAF3DE", list: goingList },
+                      { label: "👀 관심", color: "#633806", bg: "#FAEEDA", list: interestedList },
+                      { label: "❌ 불참", color: "#A32D2D", bg: "#FCEBEB", list: notGoingList },
+                    ].map((section) =>
+                      section.list.length === 0 ? null : (
+                        <div key={section.label}>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 500,
+                              color: section.color,
+                              padding: "8px 0 4px",
+                            }}
+                          >
+                            {section.label} ({section.list.length}명)
+                          </div>
+                          <div className="space-y-1.5">
+                            {section.list.map((p) => (
+                              <div key={p.id} className="flex items-center gap-2">
+                                <Avatar className="h-7 w-7" style={{ background: section.bg }}>
+                                  {p.profile?.avatar_url && (
+                                    <AvatarImage
+                                      src={p.profile.avatar_url}
+                                      alt={p.profile?.nickname || ""}
+                                    />
+                                  )}
+                                  <AvatarFallback
+                                    style={{ background: section.bg, color: section.color, fontSize: 11 }}
+                                  >
+                                    {(p.profile?.nickname || "?").charAt(0)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span style={{ fontSize: 13 }} className="text-foreground">
+                                  {p.profile?.nickname || "사용자"}
+                                </span>
+                                {p.user_id === user?.id && (
+                                  <span style={{ fontSize: 11 }} className="text-muted-foreground">
+                                    (나)
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
+
                 {/* RSVP buttons */}
                 {isMember && (
                   <div className="flex gap-2">
-                    {(["going", "interested", "declined"] as const).map((s) => (
-                      <Button
-                        key={s}
-                        size="sm"
-                        variant={myRsvp === s ? "default" : "outline"}
-                        className="rounded-full text-[10px] h-7 px-3"
-                        onClick={() => handleRsvp(plan.id, s)}
-                      >
-                        {rsvpLabels[s]}
-                      </Button>
-                    ))}
+                    {(["going", "interested", "not_going"] as const).map((s) => {
+                      const active = myRsvpKey === s;
+                      const baseStyle: React.CSSProperties = { fontSize: 11, height: 28, padding: "0 12px" };
+                      let activeStyle: React.CSSProperties = {};
+                      if (active) {
+                        if (s === "going") {
+                          activeStyle = { background: "#639922", color: "#fff", borderColor: "#639922" };
+                        } else if (s === "interested") {
+                          activeStyle = {
+                            background: "#FAEEDA",
+                            color: "#633806",
+                            border: "0.5px solid #EF9F27",
+                          };
+                        } else {
+                          activeStyle = {
+                            background: "#FCEBEB",
+                            color: "#A32D2D",
+                            border: "0.5px solid #E24B4A",
+                          };
+                        }
+                      }
+                      return (
+                        <Button
+                          key={s}
+                          size="sm"
+                          variant={active ? "default" : "outline"}
+                          className="rounded-full"
+                          style={{ ...baseStyle, ...activeStyle }}
+                          onClick={() => handleRsvp(plan.id, s)}
+                        >
+                          {rsvpLabels[s]}
+                        </Button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
