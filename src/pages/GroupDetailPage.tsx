@@ -201,7 +201,7 @@ const GroupDetailPage = () => {
   };
 
   const handleAcceptRequest = async (inv: GroupInvitation) => {
-    const { error } = await acceptJoinRequest(inv.id, inv.group_id, inv.user_id);
+    const { error } = await acceptJoinRequest(inv.id, inv.group_id, inv.invitee_id);
     if (!error) { toast({ title: "가입 요청을 승인했습니다" }); setInvitations((p) => p.filter((i) => i.id !== inv.id)); loadData(); }
   };
 
