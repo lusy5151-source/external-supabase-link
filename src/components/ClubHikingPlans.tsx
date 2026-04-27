@@ -268,10 +268,26 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
           {plans.map((plan) => {
             const mt = mountains.find((m) => m.id === plan.mountain_id);
             const participants = participantMap[plan.id] || [];
-            const goingCount = participants.filter((p) => p.rsvp_status === "going").length;
+            const goingList = participants.filter((p) => p.rsvp_status === "going");
+            const interestedList = participants.filter((p) => p.rsvp_status === "interested");
+            const notGoingList = participants.filter(
+              (p) => p.rsvp_status === "not_going" || p.rsvp_status === "declined"
+            );
+            const goingCount = goingList.length;
+            const interestedCount = interestedList.length;
             const myRsvp = participants.find((p) => p.user_id === user?.id)?.rsvp_status;
+            const myRsvpKey: "going" | "interested" | "not_going" | undefined =
+              myRsvp === "going"
+                ? "going"
+                : myRsvp === "interested"
+                ? "interested"
+                : myRsvp === "not_going" || myRsvp === "declined"
+                ? "not_going"
+                : undefined;
             const creator = creatorMap[(plan as any).creator_id];
             const canManage = !!user && user.id === (plan as any).creator_id;
+            const expanded = !!expandedParticipants[plan.id];
+            const stackAvatars = [...goingList, ...interestedList].slice(0, 3);
 
             return (
               <div key={plan.id} className="rounded-2xl border border-border bg-card p-4 shadow-sm space-y-3">
