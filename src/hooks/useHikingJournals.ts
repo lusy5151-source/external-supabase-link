@@ -170,15 +170,22 @@ export function useHikingJournals() {
     hiked_at?: string;
   }) => {
     if (!user) return { error: { message: "Not authenticated" } };
+    console.log("createJournal payload:", {
+      user_id: user.id,
+      mountain_id: (journal as any).mountain_id,
+      mountain_id_type: typeof (journal as any).mountain_id,
+      hiked_at: (journal as any).hiked_at,
+      visibility: (journal as any).visibility,
+    });
     const { data, error } = await supabase
       .from("hiking_journals")
       .insert({ ...journal, user_id: user.id } as any)
       .select()
       .single();
     if (error) {
-      console.error("Failed to create journal:", error);
+      console.error("Journal insert error:", JSON.stringify(error));
       const { toast } = await import("sonner");
-      toast.error("저장에 실패했습니다. 다시 시도해주세요.");
+      toast.error(`저장 실패: ${error.message} (code: ${(error as any).code ?? "n/a"})`);
     }
 
     // Notify tagged friends
