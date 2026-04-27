@@ -694,6 +694,7 @@ export type Database = {
           mountain_ids: number[] | null
           notes: string | null
           photos: string[] | null
+          plan_id: string | null
           tagged_friends: string[] | null
           updated_at: string | null
           user_id: string | null
@@ -713,6 +714,7 @@ export type Database = {
           mountain_ids?: number[] | null
           notes?: string | null
           photos?: string[] | null
+          plan_id?: string | null
           tagged_friends?: string[] | null
           updated_at?: string | null
           user_id?: string | null
@@ -732,13 +734,22 @@ export type Database = {
           mountain_ids?: number[] | null
           notes?: string | null
           photos?: string[] | null
+          plan_id?: string | null
           tagged_friends?: string[] | null
           updated_at?: string | null
           user_id?: string | null
           visibility?: string | null
           weather?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "hiking_journals_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "hiking_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       hiking_plans: {
         Row: {
