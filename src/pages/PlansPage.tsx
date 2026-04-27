@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useOnboarding } from "@/contexts/OnboardingContext";
 import { useTutorial } from "@/contexts/TutorialContext";
@@ -15,6 +15,23 @@ import PublicPlansList from "@/components/PublicPlansList";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+interface MyPlan {
+  id: string;
+  creator_id: string;
+  mountain_id: number;
+  trail_name: string | null;
+  planned_date: string;
+  start_time: string | null;
+  status: string | null;
+  is_public: boolean | null;
+  meeting_location: string | null;
+  group_id: string | null;
+  mountain_name: string | null;
+  group_name: string | null;
+  is_joined: boolean;
+}
 
 const PlansPage = () => {
   const { mountains } = useMountains();
