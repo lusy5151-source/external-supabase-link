@@ -141,9 +141,16 @@ const NotificationsPage = () => {
       navigate(`/groups/${n.related_id}`);
       return;
     }
+    if (n.type === "plan_deleted" || n.type === "plan_cancelled") {
+      // No navigation — plan is gone
+      fetchNotifications();
+      return;
+    }
     if (
       n.type === "plan_created" ||
       n.type === "plan_joined" ||
+      n.type === "plan_declined" ||
+      n.type === "plan_updated" ||
       n.type === "plan_status_changed"
     ) {
       navigate(`/plans/${n.related_id}`);
