@@ -68,6 +68,7 @@ const Dashboard = () => {
     return saved ? parseInt(saved) : 100;
   });
   const [showGoalEdit, setShowGoalEdit] = useState(false);
+  const [showJournalForm, setShowJournalForm] = useState(false);
   const [hundredType, setHundredType] = useState<ChallengeListType | null>(() => {
     const saved = localStorage.getItem(HUNDRED_TYPE_KEY);
     return saved === "forestry_100" || saved === "bac_100" ? saved : null;
