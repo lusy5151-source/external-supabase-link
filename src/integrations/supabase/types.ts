@@ -1792,13 +1792,6 @@ export type Database = {
             referencedRelation: "hiking_plans"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "fk_plan_notification_user"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       plan_participants: {
