@@ -563,7 +563,15 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
             style={{ background: "#639922" }}
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-            {isEdit ? "수정 완료" : showOptional ? "상세 기록 저장" : "빠른 기록 저장"}
+            {uploadProgress
+              ? `사진 업로드 중 (${uploadProgress.current}/${uploadProgress.total})...`
+              : saving
+                ? "저장 중..."
+                : isEdit
+                  ? "수정 완료"
+                  : showOptional
+                    ? "상세 기록 저장"
+                    : "빠른 기록 저장"}
           </Button>
         </div>
       </div>
