@@ -100,6 +100,77 @@ const NotificationCenter = () => {
     groupInvitationNotifs.length === 0 &&
     otherGroupNotifs.length === 0;
 
+  // Style/icon config for the new notification types
+  const otherTypeStyle: Record<string, { emoji: string; bg: string }> = {
+    invitation_accepted: { emoji: "👥", bg: "#EAF3DE" },
+    new_member_joined: { emoji: "🙋", bg: "#EAF3DE" },
+    club_chat: { emoji: "💬", bg: "#EEF2FF" },
+    plan_created: { emoji: "📅", bg: "#FAEEDA" },
+    plan_joined: { emoji: "✅", bg: "#EAF3DE" },
+    plan_status_changed_cancelled: { emoji: "❌", bg: "#FCEBEB" },
+    plan_status_changed_completed: { emoji: "🏔", bg: "#EAF3DE" },
+  };
+
+  const getOtherStyle = (n: GroupNotification) => {
+    if (n.type === "plan_status_changed") {
+      const isCancelled = (n.message || "").includes("취소");
+      return otherTypeStyle[
+        isCancelled ? "plan_status_changed_cancelled" : "plan_status_changed_completed"
+      ];
+    }
+    return otherTypeStyle[n.type] || { emoji: "🔔", bg: "#F1F5F9" };
+  };
+
+  const handleOtherClick = async (n: GroupNotification) => {
+    if (!n.is_read) {
+      await supabase.from("notifications").update({ is_read: true }).eq("id", n.id);
+    }
+    setOpen(false);
+
+    if (!n.related_id) {
+      await markRead(n.id);
+      return;
+    }
+
+    if (n.type === "club_chat") {
+      // related_id is club_messages.id → fetch club_id (= group_id)
+      const { data } = await (supabase as any)
+        .from("club_messages")
+        .select("club_id")
+        .eq("id", n.related_id)
+        .maybeSingle();
+      if (data?.club_id) {
+        navigate(`/club/${data.club_id}/chat`);
+      } else {
+        await markRead(n.id);
+      }
+      return;
+    }
+
+    if (n.type === "invitation_accepted" || n.type === "new_member_joined") {
+      navigate(`/group/${n.related_id}`);
+      await markRead(n.id);
+      return;
+    }
+
+    if (
+      n.type === "plan_created" ||
+      n.type === "plan_joined" ||
+      n.type === "plan_status_changed"
+    ) {
+      navigate(`/plans/${n.related_id}`);
+      await markRead(n.id);
+      return;
+    }
+
+    await markRead(n.id);
+  };
+
+  const handleMarkAllRead = async () => {
+    await markAllRead();
+    toast({ title: "모든 알림을 읽음 처리했어요" });
+  };
+
   return (
     <div className="relative" ref={ref}>
       <button
