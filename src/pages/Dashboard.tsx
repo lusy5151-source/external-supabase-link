@@ -17,6 +17,7 @@ import { useChallengeMountains, useUserMountainChallenges, type ChallengeListTyp
 import { useSharedCompletions, type SharedCompletion } from "@/hooks/useSharedCompletions";
 import { useLiveSummitFeed } from "@/hooks/useLiveSummitFeed";
 import { SharedCompletionCard } from "@/components/SharedCompletionCard";
+import { JournalForm } from "@/components/JournalForm";
 import AchievementModal from "@/components/AchievementModal";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { StackedAvatars } from "@/components/StackedAvatars";
@@ -68,6 +69,7 @@ const Dashboard = () => {
     return saved ? parseInt(saved) : 100;
   });
   const [showGoalEdit, setShowGoalEdit] = useState(false);
+  const [showJournalForm, setShowJournalForm] = useState(false);
   const [hundredType, setHundredType] = useState<ChallengeListType | null>(() => {
     const saved = localStorage.getItem(HUNDRED_TYPE_KEY);
     return saved === "forestry_100" || saved === "bac_100" ? saved : null;
@@ -272,6 +274,12 @@ const Dashboard = () => {
           )}
         </div>
         {!isDemo && <AchievementModal badge={newlyEarned} onDismiss={dismissNewBadge} />}
+        {showJournalForm && (
+          <JournalForm
+            onClose={() => setShowJournalForm(false)}
+            onSaved={() => { setShowJournalForm(false); }}
+          />
+        )}
         {/* OnboardingTutorial is now in Layout */}
 
         {/* ── Hero: Mountain illustration + Upcoming Hike ── */}
@@ -599,12 +607,17 @@ const Dashboard = () => {
                 정상 인증하기
               </Button>
             </Link>
-            <Link to={isDemo ? "/auth" : "/records"}>
-              <Button variant="outline" className="w-full h-14 rounded-2xl text-sm font-bold gap-2 shadow-lg border-2 border-coral text-coral hover:bg-coral/10 transition-all hover:shadow-xl hover:scale-[1.01] active:scale-[0.99]">
-                <Plus className="h-5 w-5" />
-                등산 기록 추가
-              </Button>
-            </Link>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (isDemo) { navigate("/auth"); return; }
+                setShowJournalForm(true);
+              }}
+              className="w-full h-14 rounded-2xl text-sm font-bold gap-2 shadow-lg border-2 border-coral text-coral hover:bg-coral/10 transition-all hover:shadow-xl hover:scale-[1.01] active:scale-[0.99]"
+            >
+              <Plus className="h-5 w-5" />
+              등산 기록 추가
+            </Button>
           </section>
 
           {/* ── Search Bar ── */}
@@ -634,28 +647,6 @@ const Dashboard = () => {
           </section>
           )}
 
-          {/* ── Shared Completion Link ── */}
-          <section>
-            <Link
-              to={isDemo ? "/auth" : "/shared-completions"}
-              className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-primary bg-nature-50 px-4 py-4 transition-colors hover:bg-primary/10"
-            >
-              <Users className="h-5 w-5 text-primary" />
-              <span className="text-xs font-bold text-primary">공동 완등 기록</span>
-            </Link>
-          </section>
-
-          {/* ── Recent Shared Completions (logged-in only) ── */}
-          {user && recentSharedCompletions.length > 0 && (
-            <section>
-              <SectionHeader title="최근 공동 완등" linkTo="/shared-completions" linkLabel="전체 보기" />
-              <div className="space-y-3">
-                {recentSharedCompletions.map((sc) => (
-                  <SharedCompletionCard key={sc.id} completion={sc} />
-                ))}
-              </div>
-            </section>
-          )}
 
           {/* ── Community Feed ── */}
           <section>
