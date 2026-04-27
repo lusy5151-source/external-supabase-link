@@ -241,7 +241,7 @@ const MountainCard = React.memo(function MountainCard({ m, isCompleted: complete
         <div className="min-w-0 space-y-0.5">
           <div className="flex items-center gap-1.5 flex-wrap">
             <p className="font-medium truncate text-foreground">{m.nameKo}</p>
-            {(m.is_bac100 ?? m.is_baekdu) && (<Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-blue-300 text-blue-600 dark:border-blue-700 dark:text-blue-400">BAC 100대 명산</Badge>)}
+            {(m.is_bac100 ?? m.is_baekdu) && (<Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-blue-300 text-blue-600 dark:border-blue-700 dark:text-blue-400">100대 명산</Badge>)}
             {m.bac100_label?.includes("산림청") && (<Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-emerald-300 text-emerald-600 dark:border-emerald-700 dark:text-emerald-400">산림청 100대 명산</Badge>)}
             {m.is_national_park && (<Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-green-400 text-green-700 dark:border-green-700 dark:text-green-400">🌲 {m.national_park_name || "국립공원"}</Badge>)}
             {isUserCreated && m.status === "pending" && (<Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 gap-0.5 border-amber-300 text-amber-600"><Clock className="h-2.5 w-2.5" />승인 대기</Badge>)}
