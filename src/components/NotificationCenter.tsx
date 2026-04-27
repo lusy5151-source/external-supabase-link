@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useHikingPlans, type PlanNotification } from "@/hooks/useHikingPlans";
-import { useGroupNotifications } from "@/hooks/useGroupNotifications";
+import { useGroupNotifications, type GroupNotification } from "@/hooks/useGroupNotifications";
 import { Bell, Calendar, UserCheck, AlertTriangle, Cloud, X, Trash2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { useUnreadChat } from "@/contexts/UnreadChatContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const typeConfig: Record<string, { icon: any; color: string }> = {
   invitation: { icon: Calendar, color: "text-primary" },
