@@ -639,28 +639,6 @@ const Dashboard = () => {
           </section>
           )}
 
-          {/* ── Shared Completion Link ── */}
-          <section>
-            <Link
-              to={isDemo ? "/auth" : "/shared-completions"}
-              className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-primary bg-nature-50 px-4 py-4 transition-colors hover:bg-primary/10"
-            >
-              <Users className="h-5 w-5 text-primary" />
-              <span className="text-xs font-bold text-primary">공동 완등 기록</span>
-            </Link>
-          </section>
-
-          {/* ── Recent Shared Completions (logged-in only) ── */}
-          {user && recentSharedCompletions.length > 0 && (
-            <section>
-              <SectionHeader title="최근 공동 완등" linkTo="/shared-completions" linkLabel="전체 보기" />
-              <div className="space-y-3">
-                {recentSharedCompletions.map((sc) => (
-                  <SharedCompletionCard key={sc.id} completion={sc} />
-                ))}
-              </div>
-            </section>
-          )}
 
           {/* ── Community Feed ── */}
           <section>
