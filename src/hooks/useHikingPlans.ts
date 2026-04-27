@@ -74,11 +74,12 @@ export function useHikingPlans() {
   const fetchMyUpcomingPlans = useCallback(async () => {
     if (!user) return;
     const today = new Date().toISOString().split("T")[0];
-    // Get plan IDs the user participates in
+    // Get plan IDs the user participates in (going or interested only)
     const { data: participations } = await supabase
       .from("plan_participants")
       .select("plan_id")
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .in("rsvp_status", ["going", "interested"]);
     const participatedPlanIds = (participations || []).map((p: any) => p.plan_id);
     // Also include plans the user created
     const { data: createdPlans } = await supabase
