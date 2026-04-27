@@ -122,16 +122,8 @@ export function useHikingGroups() {
       return { data: null, error };
     }
 
-    if (data) {
-      // Note: no DB trigger exists yet to auto-add the creator as admin,
-      // so we still insert into group_members manually here.
-      await supabase.from("group_members").insert({
-        group_id: (data as any).id,
-        user_id: authUser.id,
-        role: "admin",
-      } as any);
-      fetchMyGroups();
-    }
+    // DB trigger auto_add_creator_to_group adds the creator as admin automatically.
+    fetchMyGroups();
     return { data: data as HikingGroup | null, error: null };
   };
 
