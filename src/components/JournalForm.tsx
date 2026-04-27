@@ -80,21 +80,44 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
 
   const selectedMountains = mountainIds.map((id) => mountains.find((m) => m.id === id)).filter(Boolean) as typeof mountains;
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    setUploading(true);
-    const newPhotos: string[] = [];
-    for (const file of Array.from(files)) {
-      const url = await uploadPhoto(file);
-      if (url) newPhotos.push(url);
+    const remaining = MAX_PHOTOS - (photos.length + pendingPhotos.length);
+    if (remaining <= 0) {
+      toast({ title: `사진은 최대 ${MAX_PHOTOS}장까지 첨부할 수 있어요`, variant: "destructive" });
+      e.target.value = "";
+      return;
     }
-    setPhotos((prev) => [...prev, ...newPhotos]);
-    setUploading(false);
+    const incoming = Array.from(files).slice(0, remaining);
+    const newPending: { file: File; preview: string }[] = [];
+    for (const file of incoming) {
+      if (!allowedTypes.includes(file.type)) {
+        toast({ title: "JPG, PNG, WEBP 형식의 사진만 업로드 가능해요", variant: "destructive" });
+        continue;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast({ title: "사진 크기는 10MB 이하여야 해요", variant: "destructive" });
+        continue;
+      }
+      newPending.push({ file, preview: URL.createObjectURL(file) });
+    }
+    setPendingPhotos((prev) => [...prev, ...newPending]);
+    e.target.value = "";
   };
 
   const removePhoto = (index: number) => {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removePendingPhoto = (index: number) => {
+    setPendingPhotos((prev) => {
+      const item = prev[index];
+      if (item) URL.revokeObjectURL(item.preview);
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const toggleFriend = (friendId: string) => {
