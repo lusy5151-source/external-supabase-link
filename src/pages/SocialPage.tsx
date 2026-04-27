@@ -377,7 +377,7 @@ const SocialPage = () => {
                 <div className="space-y-4 mt-2">
                   <div>
                     <Label className="text-xs">산악회 이름</Label>
-                    <Input value={clubName} onChange={(e) => setClubName(e.target.value)} placeholder="완등 산악회" className="mt-1 rounded-xl" />
+                    <Input value={clubName} onChange={(e) => setClubName(e.target.value)} maxLength={50} placeholder="완등 산악회" className="mt-1 rounded-xl" />
                   </div>
                   <div>
                     <Label className="text-xs">설명</Label>
