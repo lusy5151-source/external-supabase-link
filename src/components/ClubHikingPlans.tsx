@@ -39,6 +39,7 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
   const [showCreate, setShowCreate] = useState(false);
   const [participantMap, setParticipantMap] = useState<Record<string, PlanParticipant[]>>({});
   const [creatorMap, setCreatorMap] = useState<Record<string, CreatorProfile>>({});
+  const [expandedParticipants, setExpandedParticipants] = useState<Record<string, boolean>>({});
 
   // Form
   const [editingId, setEditingId] = useState<string | null>(null);
