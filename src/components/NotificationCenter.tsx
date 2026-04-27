@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useHikingPlans, type PlanNotification } from "@/hooks/useHikingPlans";
-import { useGroupNotifications } from "@/hooks/useGroupNotifications";
+import { useGroupNotifications, type GroupNotification } from "@/hooks/useGroupNotifications";
 import { Bell, Calendar, UserCheck, AlertTriangle, Cloud, X, Trash2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { useUnreadChat } from "@/contexts/UnreadChatContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const typeConfig: Record<string, { icon: any; color: string }> = {
   invitation: { icon: Calendar, color: "text-primary" },
@@ -38,6 +39,7 @@ const NotificationCenter = () => {
     accept,
     reject,
     markRead,
+    markAllRead,
   } = useGroupNotifications();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -98,6 +100,77 @@ const NotificationCenter = () => {
     groupInvitationNotifs.length === 0 &&
     otherGroupNotifs.length === 0;
 
+  // Style/icon config for the new notification types
+  const otherTypeStyle: Record<string, { emoji: string; bg: string }> = {
+    invitation_accepted: { emoji: "👥", bg: "#EAF3DE" },
+    new_member_joined: { emoji: "🙋", bg: "#EAF3DE" },
+    club_chat: { emoji: "💬", bg: "#EEF2FF" },
+    plan_created: { emoji: "📅", bg: "#FAEEDA" },
+    plan_joined: { emoji: "✅", bg: "#EAF3DE" },
+    plan_status_changed_cancelled: { emoji: "❌", bg: "#FCEBEB" },
+    plan_status_changed_completed: { emoji: "🏔", bg: "#EAF3DE" },
+  };
+
+  const getOtherStyle = (n: GroupNotification) => {
+    if (n.type === "plan_status_changed") {
+      const isCancelled = (n.message || "").includes("취소");
+      return otherTypeStyle[
+        isCancelled ? "plan_status_changed_cancelled" : "plan_status_changed_completed"
+      ];
+    }
+    return otherTypeStyle[n.type] || { emoji: "🔔", bg: "#F1F5F9" };
+  };
+
+  const handleOtherClick = async (n: GroupNotification) => {
+    if (!n.is_read) {
+      await supabase.from("notifications").update({ is_read: true }).eq("id", n.id);
+    }
+    setOpen(false);
+
+    if (!n.related_id) {
+      await markRead(n.id);
+      return;
+    }
+
+    if (n.type === "club_chat") {
+      // related_id is club_messages.id → fetch club_id (= group_id)
+      const { data } = await (supabase as any)
+        .from("club_messages")
+        .select("club_id")
+        .eq("id", n.related_id)
+        .maybeSingle();
+      if (data?.club_id) {
+        navigate(`/club/${data.club_id}/chat`);
+      } else {
+        await markRead(n.id);
+      }
+      return;
+    }
+
+    if (n.type === "invitation_accepted" || n.type === "new_member_joined") {
+      navigate(`/group/${n.related_id}`);
+      await markRead(n.id);
+      return;
+    }
+
+    if (
+      n.type === "plan_created" ||
+      n.type === "plan_joined" ||
+      n.type === "plan_status_changed"
+    ) {
+      navigate(`/plans/${n.related_id}`);
+      await markRead(n.id);
+      return;
+    }
+
+    await markRead(n.id);
+  };
+
+  const handleMarkAllRead = async () => {
+    await markAllRead();
+    toast({ title: "모든 알림을 읽음 처리했어요" });
+  };
+
   return (
     <div className="relative" ref={ref}>
       <button
@@ -116,15 +189,28 @@ const NotificationCenter = () => {
         <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-border bg-card shadow-xl overflow-hidden">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <p className="text-sm font-semibold text-foreground">알림</p>
-            <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
-              <X className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-3">
+              {totalBadge > 0 && (
+                <button
+                  onClick={handleMarkAllRead}
+                  className="text-[12px] font-medium text-primary hover:text-primary/80"
+                >
+                  모두 읽음
+                </button>
+              )}
+              <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           {isEmpty ? (
-            <div className="px-4 py-8 text-center">
-              <Bell className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">새 알림이 없습니다</p>
+            <div className="px-6 py-10 text-center">
+              <Bell className="h-10 w-10 text-muted-foreground/60 mx-auto mb-3" />
+              <p className="text-[14px] text-muted-foreground">아직 알림이 없어요</p>
+              <p className="text-[12px] text-muted-foreground/70 mt-1">
+                산악회 활동을 시작하면 알림이 와요
+              </p>
             </div>
           ) : (
             <div className="max-h-96 overflow-y-auto">
@@ -227,6 +313,44 @@ const NotificationCenter = () => {
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
+                );
+              })}
+
+              {/* Other group / plan notifications (invitation_accepted, new_member_joined, club_chat, plan_created, plan_joined, plan_status_changed) */}
+              {otherGroupNotifs.map((n) => {
+                const style = getOtherStyle(n);
+                const isUnread = !n.is_read;
+                return (
+                  <button
+                    key={n.id}
+                    onClick={() => handleOtherClick(n)}
+                    className={cn(
+                      "flex w-full items-start gap-3 border-b border-border/50 last:border-0 px-4 py-3 text-left transition-colors",
+                      isUnread ? "hover:opacity-90" : "hover:bg-secondary/50",
+                    )}
+                    style={isUnread ? { background: "#F8FFF4" } : { background: "white" }}
+                  >
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[16px]"
+                      style={{ background: style.bg }}
+                    >
+                      <span>{style.emoji}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] leading-[1.5] text-foreground line-clamp-3">
+                        {n.message}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-[3px]">
+                        {formatRelativeTime(n.created_at)}
+                      </p>
+                    </div>
+                    {isUnread && (
+                      <span
+                        className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
+                        style={{ background: "#3B82F6" }}
+                      />
+                    )}
+                  </button>
                 );
               })}
             </div>
