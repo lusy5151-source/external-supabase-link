@@ -240,101 +240,137 @@ const PlansPage = () => {
           <TabsTrigger value="public">공개 일정</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="my" className="space-y-5 mt-4">
-          {/* Upcoming Plans */}
-          <section>
-            <p className="text-sm font-medium text-muted-foreground mb-2">다가오는 계획 ({upcoming.length})</p>
-            {upcoming.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card p-8 text-center">
-                <Mountain className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">아직 계획이 없습니다</p>
-                <Button variant="outline" size="sm" className="mt-3" onClick={() => navigate("/plans/create")}>
-                  첫 계획 만들기
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-2.5">
-                {upcoming.map((plan) => {
-                  const mountainName =
-                    plan.mountain_name ||
-                    mountains.find((m) => m.id === plan.mountain_id)?.nameKo ||
-                    "산";
-                  return (
-                    <Link
-                      key={plan.id}
-                      to={`/plans/${plan.id}`}
-                      className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-sm hover:bg-secondary/50 transition-colors"
-                    >
-                      <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 shrink-0">
-                        <Mountain className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <p className="font-medium text-foreground">{mountainName}</p>
-                          <RoleBadge role={plan.role} />
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {format(new Date(plan.planned_date), "M/d (EEE)", { locale: ko })}
-                          </span>
-                          {plan.start_time && (
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {plan.start_time.slice(0, 5)}
-                            </span>
-                          )}
-                        </div>
-                        {plan.trail_name && (
-                          <p className="text-[10px] text-muted-foreground/70 mt-0.5">🥾 {plan.trail_name}</p>
-                        )}
-                        {plan.meeting_location && (
-                          <p className="text-[10px] text-muted-foreground/70 mt-0.5 flex items-center gap-0.5">
-                            <MapPin className="h-2.5 w-2.5" /> {plan.meeting_location}
-                          </p>
-                        )}
-                        {plan.is_public && (
-                          <span className="inline-flex items-center gap-0.5 text-[9px] text-primary mt-0.5">
-                            <Globe className="h-2.5 w-2.5" /> 공개
-                          </span>
-                        )}
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </section>
+        <TabsContent value="my" className="space-y-4 mt-4">
+          {/* Calendar */}
+          <MyPlansCalendar
+            plans={myPlans.map((p) => ({ id: p.id, planned_date: p.planned_date }))}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+          />
 
-          {/* Past Plans */}
-          {past.length > 0 && (
-            <section>
-              <p className="text-sm font-medium text-muted-foreground mb-2">지난 계획 ({past.length})</p>
-              <div className="space-y-2 opacity-60">
-                {past.map((plan) => {
-                  const mountainName =
-                    plan.mountain_name ||
-                    mountains.find((m) => m.id === plan.mountain_id)?.nameKo ||
-                    "산";
-                  return (
-                    <Link
-                      key={plan.id}
-                      to={`/plans/${plan.id}`}
-                      className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:bg-secondary/50 transition-colors"
+          {(() => {
+            const filteredAll = selectedDate
+              ? myPlans.filter((p) => p.planned_date === selectedDate)
+              : myPlans;
+            const filteredUpcoming = filteredAll.filter(
+              (p) => p.status !== "cancelled" && new Date(p.planned_date) >= today
+            );
+            const filteredPast = filteredAll.filter(
+              (p) => p.status === "cancelled" || new Date(p.planned_date) < today
+            );
+
+            if (selectedDate && filteredAll.length === 0) {
+              return (
+                <div className="rounded-xl border border-border bg-card p-8 text-center">
+                  <p className="text-[13px] text-muted-foreground mb-3">
+                    이 날은 등산 계획이 없어요
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/plans/create?date=${selectedDate}`)}
+                  >
+                    <Plus className="h-4 w-4 mr-1" /> 계획 만들기
+                  </Button>
+                </div>
+              );
+            }
+
+            return (
+              <>
+                {/* Upcoming */}
+                {filteredUpcoming.length > 0 && (
+                  <section>
+                    <p
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 500,
+                        color: "hsl(var(--muted-foreground))",
+                        padding: "12px 0 8px",
+                      }}
                     >
-                      <Mountain className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-foreground flex-1">{mountainName}</span>
-                      <RoleBadge role={plan.role} compact />
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(plan.planned_date), "M/d", { locale: ko })}
-                      </span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </section>
-          )}
+                      다가오는 일정 ({filteredUpcoming.length})
+                    </p>
+                    <div>
+                      {filteredUpcoming.map((plan) => (
+                        <PlanCard
+                          key={plan.id}
+                          plan={plan}
+                          mountainNameFallback={
+                            mountains.find((m) => m.id === plan.mountain_id)?.nameKo || "산"
+                          }
+                          isPast={false}
+                          onJournalCreate={() => {
+                            navigate("/records", {
+                              state: {
+                                openJournalForm: true,
+                                prefillMountainId: plan.mountain_id,
+                                prefillDate: plan.planned_date,
+                              },
+                            });
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* Past */}
+                {filteredPast.length > 0 && (
+                  <section>
+                    <p
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 500,
+                        color: "hsl(var(--muted-foreground))",
+                        padding: "12px 0 8px",
+                      }}
+                    >
+                      지난 일정 ({filteredPast.length})
+                    </p>
+                    <div>
+                      {filteredPast.map((plan) => (
+                        <PlanCard
+                          key={plan.id}
+                          plan={plan}
+                          mountainNameFallback={
+                            mountains.find((m) => m.id === plan.mountain_id)?.nameKo || "산"
+                          }
+                          isPast
+                          onJournalCreate={() => {
+                            navigate("/records", {
+                              state: {
+                                openJournalForm: true,
+                                prefillMountainId: plan.mountain_id,
+                                prefillDate: plan.planned_date,
+                              },
+                            });
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {!selectedDate &&
+                  filteredUpcoming.length === 0 &&
+                  filteredPast.length === 0 && (
+                    <div className="rounded-xl border border-border bg-card p-8 text-center">
+                      <Mountain className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">아직 계획이 없습니다</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                        onClick={() => navigate("/plans/create")}
+                      >
+                        첫 계획 만들기
+                      </Button>
+                    </div>
+                  )}
+              </>
+            );
+          })()}
         </TabsContent>
 
         <TabsContent value="public" className="mt-4">
