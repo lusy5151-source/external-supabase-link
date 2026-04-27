@@ -249,7 +249,7 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
             const goingCount = participants.filter((p) => p.rsvp_status === "going").length;
             const myRsvp = participants.find((p) => p.user_id === user?.id)?.rsvp_status;
             const creator = creatorMap[(plan as any).creator_id];
-            const canManage = user?.id === (plan as any).creator_id || isLeader;
+            const canManage = !!user && user.id === (plan as any).creator_id;
 
             return (
               <div key={plan.id} className="rounded-2xl border border-border bg-card p-4 shadow-sm space-y-3">
