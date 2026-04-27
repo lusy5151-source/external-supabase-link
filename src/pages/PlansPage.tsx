@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  Plus, Mountain, Calendar, Clock, Bell, ChevronRight, Link2, Globe, MapPin,
+  Plus, Mountain, Calendar, Clock, Bell, ChevronRight, Globe, MapPin,
 } from "lucide-react";
 import PublicPlansList from "@/components/PublicPlansList";
 import { format } from "date-fns";
@@ -38,29 +38,13 @@ const PlansPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isTutorialActive, currentStep, steps } = useTutorial();
-  const { notifications, markNotificationRead, joinByCode } = useHikingPlans();
+  const { notifications, markNotificationRead } = useHikingPlans();
   const { toast } = useToast();
-  const [inviteCode, setInviteCode] = useState("");
-  const [joining, setJoining] = useState(false);
-  const [showJoin, setShowJoin] = useState(false);
   const [myPlans, setMyPlans] = useState<MyPlan[]>([]);
 
   const handlePlanCreate = () => {
     if (isTutorialActive && steps[currentStep]?.customContent === "plan-checklist") return;
     navigate("/plans/create");
-  };
-
-  const handleJoinByCode = async () => {
-    if (!inviteCode.trim()) return;
-    setJoining(true);
-    const { data, error } = await joinByCode(inviteCode.trim());
-    setJoining(false);
-    if (error) {
-      toast({ title: error.message || "참여 실패", variant: "destructive" });
-    } else if (data) {
-      toast({ title: "계획에 참여했습니다!" });
-      navigate(`/plans/${data.id}`);
-    }
   };
 
   const { isOnboarding } = useOnboarding();
@@ -152,29 +136,12 @@ const PlansPage = () => {
       <div className="flex items-center justify-between">
         <h1 className="font-bold text-foreground text-base">등산 계획</h1>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setShowJoin(!showJoin)}>
-            <Link2 className="h-4 w-4 mr-1" /> 코드 참여
-          </Button>
           <Button data-onboarding="plan-create" size="sm" onClick={handlePlanCreate}>
             <Plus className="h-4 w-4 mr-1" /> 새 계획
           </Button>
         </div>
       </div>
 
-      {/* Join by code */}
-      {showJoin && (
-        <div className="rounded-xl border border-border bg-card p-4 flex gap-2">
-          <Input
-            value={inviteCode}
-            onChange={(e) => setInviteCode(e.target.value)}
-            placeholder="초대 코드 입력..."
-            className="font-mono tracking-widest"
-          />
-          <Button onClick={handleJoinByCode} disabled={joining}>
-            {joining ? "참여 중..." : "참여"}
-          </Button>
-        </div>
-      )}
 
       {/* Notifications */}
       {notifications.length > 0 && (

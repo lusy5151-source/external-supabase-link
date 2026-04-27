@@ -10,7 +10,6 @@ export interface HikingPlan {
   planned_date: string;
   start_time: string | null;
   notes: string | null;
-  invite_code: string;
   status: string;
   group_id: string | null;
   is_public: boolean;
@@ -449,20 +448,6 @@ export function useHikingPlans() {
     setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
   };
 
-  const joinByCode = async (code: string) => {
-    if (!user) return { error: { message: "Not authenticated" } };
-    const { data: plan } = await supabase
-      .from("hiking_plans")
-      .select("*")
-      .eq("invite_code", code)
-      .single();
-    if (!plan) return { error: { message: "유효하지 않은 초대 코드입니다" } };
-    const { error } = await supabase
-      .from("plan_participants")
-      .insert({ plan_id: (plan as any).id, user_id: user.id } as any);
-    if (!error) fetchPlans();
-    return { data: plan as HikingPlan, error };
-  };
 
   return {
     plans,
@@ -482,7 +467,6 @@ export function useHikingPlans() {
     declineInvitation,
     markNotificationRead,
     deleteNotification,
-    joinByCode,
     refetch: fetchPlans,
   };
 }

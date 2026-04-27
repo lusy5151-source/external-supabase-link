@@ -12,9 +12,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import {
-  ArrowLeft, Calendar, Clock, Mountain, Users, Copy, Check,
+  ArrowLeft, Calendar, Clock, Mountain, Users,
   Cloud, Sun, CloudRain, CloudSnow, CloudSun, Wind, Droplets,
-  Share2, Edit3, History, Save, X, MessageCircle, Trophy,
+  Edit3, History, Save, X, MessageCircle, Trophy, UserPlus,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import PlanChat from "@/components/PlanChat";
 import PlanApplicationManager from "@/components/PlanApplicationManager";
+import InviteFriendsSheet from "@/components/InviteFriendsSheet";
 import { usePlanNotifications } from "@/hooks/usePlanNotifications";
 
 const conditionIcons: Record<string, any> = {
@@ -57,11 +58,11 @@ const PlanDetailPage = () => {
   const [participants, setParticipants] = useState<PlanParticipant[]>([]);
   const [editHistory, setEditHistory] = useState<PlanEditHistory[]>([]);
   const [showHistory, setShowHistory] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [creatorProfile, setCreatorProfile] = useState<{ nickname: string | null; avatar_url: string | null } | null>(null);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [completionDone, setCompletionDone] = useState(false);
   const [completing, setCompleting] = useState(false);
+  const [showInviteSheet, setShowInviteSheet] = useState(false);
 
   const [editing, setEditing] = useState(false);
   const [editNotes, setEditNotes] = useState("");
@@ -136,13 +137,6 @@ const PlanDetailPage = () => {
     }
   };
 
-  const handleCopyCode = () => {
-    if (!plan) return;
-    navigator.clipboard.writeText(plan.invite_code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast({ title: "초대 코드가 복사되었습니다" });
-  };
 
   const handleDelete = async () => {
     if (!id) return;
@@ -387,19 +381,15 @@ const PlanDetailPage = () => {
             )}
           </div>
 
-          <div className="rounded-2xl border border-border bg-card p-4">
-            <p className="text-xs font-medium text-muted-foreground mb-2">
-              <Share2 className="inline h-3 w-3 mr-1" />초대 코드
-            </p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 rounded-lg bg-secondary px-3 py-2 text-sm font-mono text-foreground tracking-widest">
-                {plan.invite_code}
-              </code>
-              <Button variant="outline" size="sm" onClick={handleCopyCode}>
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
+          {isCreator && (
+            <button
+              onClick={() => setShowInviteSheet(true)}
+              className="w-full flex items-center justify-center gap-2 rounded-2xl border border-border bg-card p-4 hover:bg-secondary/40 transition-colors"
+            >
+              <UserPlus className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-foreground">친구 초대하기</span>
+            </button>
+          )}
 
           <div className="rounded-2xl border border-border bg-card p-4">
             <p className="text-xs font-medium text-muted-foreground mb-2">👤 만든 사람</p>
@@ -554,6 +544,14 @@ const PlanDetailPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {plan && (
+        <InviteFriendsSheet
+          open={showInviteSheet}
+          onOpenChange={setShowInviteSheet}
+          planId={plan.id}
+        />
+      )}
     </div>
   );
 };
