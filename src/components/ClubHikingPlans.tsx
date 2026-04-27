@@ -12,7 +12,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Calendar, MapPin, Plus, UserCheck, Clock, Mountain, X, Pencil, Trash2 } from "lucide-react";
+import { Calendar, MapPin, Plus, UserCheck, Clock, Mountain, X, Pencil, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -39,6 +39,7 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
   const [showCreate, setShowCreate] = useState(false);
   const [participantMap, setParticipantMap] = useState<Record<string, PlanParticipant[]>>({});
   const [creatorMap, setCreatorMap] = useState<Record<string, CreatorProfile>>({});
+  const [expandedParticipants, setExpandedParticipants] = useState<Record<string, boolean>>({});
 
   // Form
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -84,10 +85,23 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
           .in("user_id", creatorIds),
       ]);
 
+      // Fetch participant profiles
+      const participantUserIds = [...new Set((parts as any[] || []).map((p) => p.user_id).filter(Boolean))];
+      const { data: partProfiles } = participantUserIds.length
+        ? await supabase
+            .from("public_profiles")
+            .select("user_id, nickname, avatar_url")
+            .in("user_id", participantUserIds)
+        : { data: [] as any[] };
+      const partProfileMap: Record<string, { nickname: string | null; avatar_url: string | null }> = {};
+      (partProfiles as any[] || []).forEach((p) => {
+        partProfileMap[p.user_id] = { nickname: p.nickname, avatar_url: p.avatar_url };
+      });
+
       const map: Record<string, PlanParticipant[]> = {};
       (parts as any[] || []).forEach((p) => {
         if (!map[p.plan_id]) map[p.plan_id] = [];
-        map[p.plan_id].push(p);
+        map[p.plan_id].push({ ...p, profile: partProfileMap[p.user_id] });
       });
       setParticipantMap(map);
 
@@ -193,7 +207,7 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
     }
   };
 
-  const handleRsvp = async (planId: string, status: string) => {
+  const handleRsvp = async (planId: string, status: "going" | "interested" | "not_going") => {
     if (!user) return;
     const existing = participantMap[planId]?.find((p) => p.user_id === user.id);
     if (existing) {
@@ -206,13 +220,21 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
         plan_id: planId,
         user_id: user.id,
         rsvp_status: status,
+        invited_at: new Date().toISOString(),
+        responded_at: new Date().toISOString(),
       } as any);
     }
     fetchPlans();
-    toast({ title: status === "going" ? "참석으로 응답했습니다" : status === "interested" ? "관심으로 응답했습니다" : "불참으로 응답했습니다" });
+    const msg =
+      status === "going"
+        ? "계획에 참석해요! 🏔"
+        : status === "interested"
+        ? "관심 있는 계획으로 표시했어요 👀"
+        : "불참으로 변경했어요";
+    toast({ title: msg });
   };
 
-  const rsvpLabels: Record<string, string> = { going: "참석", interested: "관심", declined: "불참", pending: "대기" };
+  const rsvpLabels: Record<string, string> = { going: "참석", interested: "관심", not_going: "불참", declined: "불참", pending: "대기" };
 
   return (
     <section className="space-y-3">
@@ -246,10 +268,26 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
           {plans.map((plan) => {
             const mt = mountains.find((m) => m.id === plan.mountain_id);
             const participants = participantMap[plan.id] || [];
-            const goingCount = participants.filter((p) => p.rsvp_status === "going").length;
+            const goingList = participants.filter((p) => p.rsvp_status === "going");
+            const interestedList = participants.filter((p) => p.rsvp_status === "interested");
+            const notGoingList = participants.filter(
+              (p) => p.rsvp_status === "not_going" || p.rsvp_status === "declined"
+            );
+            const goingCount = goingList.length;
+            const interestedCount = interestedList.length;
             const myRsvp = participants.find((p) => p.user_id === user?.id)?.rsvp_status;
+            const myRsvpKey: "going" | "interested" | "not_going" | undefined =
+              myRsvp === "going"
+                ? "going"
+                : myRsvp === "interested"
+                ? "interested"
+                : myRsvp === "not_going" || myRsvp === "declined"
+                ? "not_going"
+                : undefined;
             const creator = creatorMap[(plan as any).creator_id];
             const canManage = !!user && user.id === (plan as any).creator_id;
+            const expanded = !!expandedParticipants[plan.id];
+            const stackAvatars = [...goingList, ...interestedList].slice(0, 3);
 
             return (
               <div key={plan.id} className="rounded-2xl border border-border bg-card p-4 shadow-sm space-y-3">
@@ -313,20 +351,141 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
 
                 {plan.notes && <p className="text-xs text-muted-foreground">{plan.notes}</p>}
 
+                {/* Participants summary (tappable, expands) */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpandedParticipants((prev) => ({ ...prev, [plan.id]: !prev[plan.id] }))
+                  }
+                  className="flex w-full items-center justify-between gap-2 rounded-lg py-1 text-left transition-colors hover:bg-secondary/40"
+                  style={{ fontSize: 12, color: "hsl(var(--color-text-secondary))" }}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    {stackAvatars.length > 0 ? (
+                      <div className="flex items-center">
+                        {stackAvatars.map((p, i) => (
+                          <Avatar
+                            key={p.id}
+                            className="h-6 w-6 border-2 border-card"
+                            style={{ marginLeft: i === 0 ? 0 : -8, zIndex: stackAvatars.length - i }}
+                          >
+                            {p.profile?.avatar_url && (
+                              <AvatarImage src={p.profile.avatar_url} alt={p.profile?.nickname || ""} />
+                            )}
+                            <AvatarFallback className="bg-primary/10 text-primary text-[9px]">
+                              {(p.profile?.nickname || "?").charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                        ))}
+                      </div>
+                    ) : null}
+                    <span className="truncate">
+                      {goingCount}명 참석 · {interestedCount}명 관심
+                    </span>
+                  </div>
+                  {expanded ? (
+                    <ChevronUp className="h-3.5 w-3.5 shrink-0" />
+                  ) : (
+                    <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+                  )}
+                </button>
+
+                {expanded && (goingList.length + interestedList.length + notGoingList.length > 0) && (
+                  <div
+                    style={{
+                      background: "hsl(var(--color-background-secondary))",
+                      borderRadius: "var(--border-radius-md)",
+                      padding: "8px 12px",
+                      marginTop: 8,
+                    }}
+                  >
+                    {[
+                      { label: "✅ 참석", color: "#27500A", bg: "#EAF3DE", list: goingList },
+                      { label: "👀 관심", color: "#633806", bg: "#FAEEDA", list: interestedList },
+                      { label: "❌ 불참", color: "#A32D2D", bg: "#FCEBEB", list: notGoingList },
+                    ].map((section) =>
+                      section.list.length === 0 ? null : (
+                        <div key={section.label}>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 500,
+                              color: section.color,
+                              padding: "8px 0 4px",
+                            }}
+                          >
+                            {section.label} ({section.list.length}명)
+                          </div>
+                          <div className="space-y-1.5">
+                            {section.list.map((p) => (
+                              <div key={p.id} className="flex items-center gap-2">
+                                <Avatar className="h-7 w-7" style={{ background: section.bg }}>
+                                  {p.profile?.avatar_url && (
+                                    <AvatarImage
+                                      src={p.profile.avatar_url}
+                                      alt={p.profile?.nickname || ""}
+                                    />
+                                  )}
+                                  <AvatarFallback
+                                    style={{ background: section.bg, color: section.color, fontSize: 11 }}
+                                  >
+                                    {(p.profile?.nickname || "?").charAt(0)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span style={{ fontSize: 13 }} className="text-foreground">
+                                  {p.profile?.nickname || "사용자"}
+                                </span>
+                                {p.user_id === user?.id && (
+                                  <span style={{ fontSize: 11 }} className="text-muted-foreground">
+                                    (나)
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
+
                 {/* RSVP buttons */}
                 {isMember && (
                   <div className="flex gap-2">
-                    {(["going", "interested", "declined"] as const).map((s) => (
-                      <Button
-                        key={s}
-                        size="sm"
-                        variant={myRsvp === s ? "default" : "outline"}
-                        className="rounded-full text-[10px] h-7 px-3"
-                        onClick={() => handleRsvp(plan.id, s)}
-                      >
-                        {rsvpLabels[s]}
-                      </Button>
-                    ))}
+                    {(["going", "interested", "not_going"] as const).map((s) => {
+                      const active = myRsvpKey === s;
+                      const baseStyle: React.CSSProperties = { fontSize: 11, height: 28, padding: "0 12px" };
+                      let activeStyle: React.CSSProperties = {};
+                      if (active) {
+                        if (s === "going") {
+                          activeStyle = { background: "#639922", color: "#fff", borderColor: "#639922" };
+                        } else if (s === "interested") {
+                          activeStyle = {
+                            background: "#FAEEDA",
+                            color: "#633806",
+                            border: "0.5px solid #EF9F27",
+                          };
+                        } else {
+                          activeStyle = {
+                            background: "#FCEBEB",
+                            color: "#A32D2D",
+                            border: "0.5px solid #E24B4A",
+                          };
+                        }
+                      }
+                      return (
+                        <Button
+                          key={s}
+                          size="sm"
+                          variant={active ? "default" : "outline"}
+                          className="rounded-full"
+                          style={{ ...baseStyle, ...activeStyle }}
+                          onClick={() => handleRsvp(plan.id, s)}
+                        >
+                          {rsvpLabels[s]}
+                        </Button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
