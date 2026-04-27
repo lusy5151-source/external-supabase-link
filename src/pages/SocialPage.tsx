@@ -85,17 +85,37 @@ const SocialPage = () => {
   };
 
   const handleCreateClub = async () => {
-    if (!clubName.trim()) return;
+    const trimmedName = clubName.trim();
+    if (!trimmedName) {
+      toast({ title: "산악회 이름을 입력해주세요", variant: "destructive" });
+      return;
+    }
+    if (trimmedName.length > 50) {
+      toast({ title: "산악회 이름은 최대 50자까지 입력할 수 있어요", variant: "destructive" });
+      return;
+    }
     setCreating(true);
-    const { error } = await createGroup({ name: clubName.trim(), description: clubDesc.trim() || undefined, is_public: clubPublic });
+    const { data, error } = await createGroup({
+      name: trimmedName,
+      description: clubDesc.trim() || undefined,
+      is_public: clubPublic,
+    });
     setCreating(false);
     if (error) {
-      toast({ title: "오류", description: "산악회 생성에 실패했습니다", variant: "destructive" });
+      toast({
+        title: "산악회 생성 실패",
+        description: (error as any).message || "다시 시도해주세요",
+        variant: "destructive",
+      });
+      return;
+    }
+    toast({ title: "산악회가 생성되었어요! 🏔" });
+    setShowCreate(false);
+    setClubName("");
+    setClubDesc("");
+    if (data?.id) {
+      navigate(`/groups/${data.id}`);
     } else {
-      toast({ title: "산악회 생성 완료!" });
-      setShowCreate(false);
-      setClubName("");
-      setClubDesc("");
       fetchPublicGroups().then(setPublicGroups);
     }
   };
@@ -357,7 +377,7 @@ const SocialPage = () => {
                 <div className="space-y-4 mt-2">
                   <div>
                     <Label className="text-xs">산악회 이름</Label>
-                    <Input value={clubName} onChange={(e) => setClubName(e.target.value)} placeholder="완등 산악회" className="mt-1 rounded-xl" />
+                    <Input value={clubName} onChange={(e) => setClubName(e.target.value)} maxLength={50} placeholder="완등 산악회" className="mt-1 rounded-xl" />
                   </div>
                   <div>
                     <Label className="text-xs">설명</Label>
