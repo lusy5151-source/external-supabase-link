@@ -140,54 +140,79 @@ export function AnnouncementSection() {
 }
 
 function AnnouncementDetail({ announcement, onClose }: { announcement: Announcement; onClose: () => void }) {
-  const Icon = alertIcons[announcement.alert_type as AlertType] || Info;
+  const body = announcement.description || announcement.full_description || announcement.content || announcement.summary || "";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm"
+      onClick={onClose}
+    >
       <div
-        className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl bg-card border border-border shadow-2xl"
+        className="w-full max-w-lg max-h-[80vh] overflow-y-auto bg-background shadow-2xl rounded-t-[20px] sm:rounded-[20px] relative"
+        style={{ padding: "16px 20px" }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className={`rounded-t-3xl sm:rounded-t-3xl p-5 ${severityStyles[announcement.severity] || severityStyles.info}`}>
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${severityIconBg[announcement.severity] || severityIconBg.info}`}>
-                <Icon className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold">{announcement.title}</h3>
-                <div className="flex items-center gap-2 mt-0.5 text-xs opacity-70">
-                  {announcement.mountain_name && (
-                    <span className="flex items-center gap-0.5">
-                      <TreePine className="h-3 w-3" /> {announcement.mountain_name}
-                    </span>
-                  )}
-                  <span>{announcement.date}</span>
-                </div>
-              </div>
-            </div>
-            <button onClick={onClose} className="rounded-full p-1.5 hover:bg-black/10 transition-colors">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+        {/* Handle bar */}
+        <div
+          className="mx-auto bg-border"
+          style={{ width: 40, height: 4, borderRadius: 9999, marginBottom: 16 }}
+        />
+
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute right-3 top-3 rounded-full p-1.5 hover:bg-muted transition-colors text-muted-foreground"
+          aria-label="닫기"
+        >
+          <X style={{ width: 20, height: 20 }} />
+        </button>
+
+        {/* Category badge */}
+        {announcement.category && (
+          <span
+            className="inline-block font-medium"
+            style={{
+              backgroundColor: "#EAF3DE",
+              color: "#27500A",
+              fontSize: 11,
+              borderRadius: 20,
+              padding: "2px 8px",
+            }}
+          >
+            {announcement.category}
+          </span>
+        )}
+
+        {/* Title */}
+        <h3
+          className="text-foreground"
+          style={{ fontSize: 17, fontWeight: 500, marginTop: 8 }}
+        >
+          {announcement.title}
+        </h3>
+
+        {/* Date */}
+        {announcement.date && (
+          <p className="text-muted-foreground" style={{ fontSize: 12, marginTop: 4 }}>
+            {announcement.date}
+          </p>
+        )}
+
+        {/* Divider */}
+        <div className="bg-border" style={{ height: "0.5px", margin: "12px 0" }} />
 
         {/* Body */}
-        <div className="p-5 space-y-4">
-          {announcement.source && (
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">출처: {announcement.source}</span>
-            </div>
-          )}
-          <p className="text-sm leading-relaxed text-foreground whitespace-pre-line">
-            {announcement.full_description}
-          </p>
-          <Button className="w-full rounded-xl" onClick={onClose}>
-            확인
-          </Button>
-        </div>
+        <p
+          className="text-muted-foreground"
+          style={{
+            fontSize: 14,
+            lineHeight: 1.8,
+            whiteSpace: "pre-wrap",
+            paddingBottom: 32,
+          }}
+        >
+          {body}
+        </p>
       </div>
     </div>
   );
