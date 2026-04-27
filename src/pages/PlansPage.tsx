@@ -67,12 +67,16 @@ const PlansPage = () => {
 
         const { data: parts, error: e2 } = await (supabase as any)
           .from("plan_participants")
-          .select("plan_id")
+          .select("plan_id, rsvp_status")
           .eq("user_id", user.id)
-          .eq("rsvp_status", "going");
+          .in("rsvp_status", ["going", "interested"]);
         if (e2) console.error("participants error:", JSON.stringify(e2));
 
-        const partIds = (parts || []).map((p: any) => p.plan_id);
+        const createdIds = new Set((created || []).map((r: any) => r.id));
+        const partFiltered = (parts || []).filter(
+          (p: any) => !createdIds.has(p.plan_id)
+        );
+        const partIds = partFiltered.map((p: any) => p.plan_id);
         let joined: any[] = [];
         if (partIds.length) {
           const { data: jd, error: e3 } = await (supabase as any)
@@ -80,32 +84,34 @@ const PlansPage = () => {
             .select(
               "id, creator_id, mountain_id, trail_name, planned_date, start_time, status, is_public, meeting_location, group_id, mountains:mountain_id (name_ko), hiking_group:group_id (name)"
             )
-            .in("id", partIds)
-            .neq("creator_id", user.id);
+            .in("id", partIds);
           if (e3) console.error("joinedPlans error:", JSON.stringify(e3));
           joined = jd || [];
         }
 
-        const merge = (rows: any[], isJoined: boolean): MyPlan[] =>
-          rows.map((r) => ({
-            id: r.id,
-            creator_id: r.creator_id,
-            mountain_id: r.mountain_id,
-            trail_name: r.trail_name,
-            planned_date: r.planned_date,
-            start_time: r.start_time,
-            status: r.status,
-            is_public: r.is_public,
-            meeting_location: r.meeting_location,
-            group_id: r.group_id,
-            mountain_name: r.mountains?.name_ko || null,
-            group_name: r.hiking_group?.name || null,
-            is_joined: isJoined,
-          }));
+        const mapRow = (r: any, role: PlanRole): MyPlan => ({
+          id: r.id,
+          creator_id: r.creator_id,
+          mountain_id: r.mountain_id,
+          trail_name: r.trail_name,
+          planned_date: r.planned_date,
+          start_time: r.start_time,
+          status: r.status,
+          is_public: r.is_public,
+          meeting_location: r.meeting_location,
+          group_id: r.group_id,
+          mountain_name: r.mountains?.name_ko || null,
+          group_name: r.hiking_group?.name || null,
+          role,
+        });
 
-        const all = [
-          ...merge(created || [], false),
-          ...merge(joined, true),
+        const all: MyPlan[] = [
+          ...(created || []).map((r: any) => mapRow(r, "creator")),
+          ...joined.map((r: any) => {
+            const rsvp = partFiltered.find((p: any) => p.plan_id === r.id)?.rsvp_status;
+            const role: PlanRole = rsvp === "interested" ? "interested" : "going";
+            return mapRow(r, role);
+          }),
         ];
         const unique = Array.from(new Map(all.map((p) => [p.id, p])).values()).sort(
           (a, b) => new Date(a.planned_date).getTime() - new Date(b.planned_date).getTime()
