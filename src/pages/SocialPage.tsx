@@ -169,6 +169,7 @@ const SocialPage = () => {
     }
   };
 
+  const { isOnboarding } = useOnboarding();
 
   if (!user || isOnboarding) {
     return <DemoSocialView />;
