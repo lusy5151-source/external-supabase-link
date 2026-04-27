@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import InviteFriendsSheet from "@/components/InviteFriendsSheet";
 
 const conditionIcons: Record<string, any> = {
   "맑음": Sun, "구름": CloudSun, "흐림": Cloud, "비": CloudRain, "눈": CloudSnow,
@@ -40,6 +41,8 @@ const CreatePlanPage = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [mountainSearch, setMountainSearch] = useState("");
   const [showMountainList, setShowMountainList] = useState(false);
+  const [showInviteSheet, setShowInviteSheet] = useState(false);
+  const [createdPlanId, setCreatedPlanId] = useState<string | null>(null);
 
   // Sort mountains by Korean name
   const sortedMountains = useMemo(
@@ -111,9 +114,13 @@ const CreatePlanPage = () => {
       setErrorMsg(msg);
       toast.error(msg);
     } else {
-      toast.success("계획이 만들어졌어요! 🏔");
-      if (data) navigate(`/plans/${data.id}`);
-      else navigate("/plans");
+      toast.success("등산 계획이 생성됐어요! 🏔");
+      if (data) {
+        setCreatedPlanId(data.id);
+        setShowInviteSheet(true);
+      } else {
+        navigate("/plans");
+      }
     }
   };
 
