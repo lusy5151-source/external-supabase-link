@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  Plus, Mountain, Calendar, Clock, Bell, ChevronRight, Link2, Globe, MapPin,
+  Plus, Mountain, Calendar, Clock, Bell, ChevronRight, Globe, MapPin,
 } from "lucide-react";
 import PublicPlansList from "@/components/PublicPlansList";
 import { format } from "date-fns";
@@ -38,11 +38,8 @@ const PlansPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isTutorialActive, currentStep, steps } = useTutorial();
-  const { notifications, markNotificationRead, joinByCode } = useHikingPlans();
+  const { notifications, markNotificationRead } = useHikingPlans();
   const { toast } = useToast();
-  const [inviteCode, setInviteCode] = useState("");
-  const [joining, setJoining] = useState(false);
-  const [showJoin, setShowJoin] = useState(false);
   const [myPlans, setMyPlans] = useState<MyPlan[]>([]);
 
   const handlePlanCreate = () => {

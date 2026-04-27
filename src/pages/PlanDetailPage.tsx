@@ -544,6 +544,14 @@ const PlanDetailPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {plan && (
+        <InviteFriendsSheet
+          open={showInviteSheet}
+          onOpenChange={setShowInviteSheet}
+          planId={plan.id}
+        />
+      )}
     </div>
   );
 };
