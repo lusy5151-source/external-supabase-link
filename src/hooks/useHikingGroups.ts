@@ -94,22 +94,45 @@ export function useHikingGroups() {
     return (data as any) || null;
   };
 
-  const createGroup = async (params: { name: string; description?: string; is_public?: boolean }) => {
-    if (!user) return { error: { message: "Not authenticated" } };
+  const createGroup = async (params: { name: string; description?: string; is_public?: boolean; avatar_url?: string }) => {
+    // Always resolve creator_id from supabase.auth (must equal auth.uid() for RLS)
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) {
+      const err = { message: "로그인이 필요합니다", code: "NOT_AUTHENTICATED" };
+      console.error("Group create aborted:", err);
+      return { data: null, error: err };
+    }
+
+    const insertPayload = {
+      name: params.name,
+      description: params.description || null,
+      creator_id: authUser.id, // ← must be auth.uid()
+      avatar_url: params.avatar_url || null,
+      is_public: params.is_public ?? true,
+    };
+
     const { data, error } = await supabase
       .from("hiking_group")
-      .insert({ ...params, creator_id: user.id } as any)
+      .insert(insertPayload as any)
       .select()
       .single();
-    if (!error && data) {
+
+    if (error) {
+      console.error("Group create error:", JSON.stringify(error));
+      return { data: null, error };
+    }
+
+    if (data) {
+      // Note: no DB trigger exists yet to auto-add the creator as admin,
+      // so we still insert into group_members manually here.
       await supabase.from("group_members").insert({
         group_id: (data as any).id,
-        user_id: user.id,
+        user_id: authUser.id,
         role: "admin",
       } as any);
       fetchMyGroups();
     }
-    return { data: data as HikingGroup | null, error };
+    return { data: data as HikingGroup | null, error: null };
   };
 
   const deleteGroup = async (groupId: string) => {
