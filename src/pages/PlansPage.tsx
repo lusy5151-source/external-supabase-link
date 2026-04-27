@@ -235,21 +235,7 @@ const PlansPage = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <p className="font-medium text-foreground">{mountainName}</p>
-                          {plan.is_joined && (
-                            <span
-                              style={{
-                                background: "#EAF3DE",
-                                color: "#27500A",
-                                fontSize: 10,
-                                borderRadius: 10,
-                                padding: "1px 6px",
-                                fontWeight: 500,
-                                lineHeight: 1.4,
-                              }}
-                            >
-                              산악회 참여
-                            </span>
-                          )}
+                          <RoleBadge role={plan.role} />
                         </div>
                         <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                           <span className="flex items-center gap-1">
