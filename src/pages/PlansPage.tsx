@@ -241,11 +241,12 @@ const PlansPage = () => {
     let cancelled = false;
     (async () => {
       try {
+        const PLAN_COLS =
+          "id, creator_id, mountain_id, trail_name, planned_date, start_time, status, is_public, meeting_location, group_id, hiking_group:group_id (name)";
+
         const { data: created, error: e1 } = await (supabase as any)
           .from("hiking_plans")
-          .select(
-            "id, creator_id, mountain_id, trail_name, planned_date, start_time, status, is_public, meeting_location, group_id, mountains:mountain_id (name_ko), hiking_group:group_id (name)"
-          )
+          .select(PLAN_COLS)
           .eq("creator_id", user.id);
         if (e1) console.error("createdPlans error:", JSON.stringify(e1));
 
@@ -265,12 +266,27 @@ const PlansPage = () => {
         if (partIds.length) {
           const { data: jd, error: e3 } = await (supabase as any)
             .from("hiking_plans")
-            .select(
-              "id, creator_id, mountain_id, trail_name, planned_date, start_time, status, is_public, meeting_location, group_id, mountains:mountain_id (name_ko), hiking_group:group_id (name)"
-            )
+            .select(PLAN_COLS)
             .in("id", partIds);
           if (e3) console.error("joinedPlans error:", JSON.stringify(e3));
           joined = jd || [];
+        }
+
+        // Resolve mountain names separately (no FK between hiking_plans and mountains)
+        const mountainIds = Array.from(
+          new Set(
+            [...(created || []), ...joined]
+              .map((r: any) => r.mountain_id)
+              .filter((id: any) => id != null)
+          )
+        );
+        const mountainNameMap = new Map<number, string>();
+        if (mountainIds.length) {
+          const { data: mtns } = await (supabase as any)
+            .from("mountains")
+            .select("id, name_ko")
+            .in("id", mountainIds);
+          (mtns || []).forEach((m: any) => mountainNameMap.set(m.id, m.name_ko));
         }
 
         const mapRow = (r: any, role: PlanRole): MyPlan => ({
@@ -284,7 +300,7 @@ const PlansPage = () => {
           is_public: r.is_public,
           meeting_location: r.meeting_location,
           group_id: r.group_id,
-          mountain_name: r.mountains?.name_ko || null,
+          mountain_name: mountainNameMap.get(r.mountain_id) || null,
           group_name: r.hiking_group?.name || null,
           role,
           participant_count: 0,
