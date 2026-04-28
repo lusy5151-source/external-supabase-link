@@ -48,6 +48,9 @@ interface TrailDetail {
     preparation?: string[];
     caution?: string[];
   } | null;
+  transport_public: string | null;
+  transport_car: string | null;
+  hiking_tips: string | null;
 }
 
 function formatDuration(minutes: number): string {
