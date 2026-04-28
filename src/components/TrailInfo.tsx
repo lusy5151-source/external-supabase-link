@@ -198,3 +198,18 @@ function TrailStat({ icon: Icon, label, value }: { icon: any; label: string; val
     </div>
   );
 }
+
+function DetailRow({ icon, label, value }: { icon: string; label: string; value: string | null | undefined }) {
+  const hasValue = value != null && String(value).trim() !== "";
+  return (
+    <div className="flex items-start gap-1.5">
+      <span className="shrink-0">{icon}</span>
+      <div className="flex-1 min-w-0">
+        <span className="font-medium text-foreground">{label}: </span>
+        <span className={hasValue ? "text-muted-foreground" : "text-muted-foreground/60 italic"}>
+          {hasValue ? value : "아직 정보가 등록되지 않았습니다."}
+        </span>
+      </div>
+    </div>
+  );
+}
