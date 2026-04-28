@@ -585,6 +585,50 @@ export type Database = {
         }
         Relationships: []
       }
+      gpx_sync_log: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: number
+          mountain_id: number | null
+          point_count: number | null
+          raw_response: Json | null
+          source: string
+          status: string
+          trail_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: number
+          mountain_id?: number | null
+          point_count?: number | null
+          raw_response?: Json | null
+          source: string
+          status: string
+          trail_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: number
+          mountain_id?: number | null
+          point_count?: number | null
+          raw_response?: Json | null
+          source?: string
+          status?: string
+          trail_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gpx_sync_log_trail_id_fkey"
+            columns: ["trail_id"]
+            isOneToOne: false
+            referencedRelation: "trails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_invitations: {
         Row: {
           created_at: string | null
@@ -1190,10 +1234,14 @@ export type Database = {
           name_ko: string | null
           national_park_name: string | null
           overview: string | null
+          parking_info: string | null
           popularity: number | null
           province: string | null
           region: string | null
           total_area_ha: number | null
+          transport_car: string | null
+          transport_public: string | null
+          transport_synced_at: string | null
         }
         Insert: {
           address?: string | null
@@ -1219,10 +1267,14 @@ export type Database = {
           name_ko?: string | null
           national_park_name?: string | null
           overview?: string | null
+          parking_info?: string | null
           popularity?: number | null
           province?: string | null
           region?: string | null
           total_area_ha?: number | null
+          transport_car?: string | null
+          transport_public?: string | null
+          transport_synced_at?: string | null
         }
         Update: {
           address?: string | null
@@ -1248,10 +1300,14 @@ export type Database = {
           name_ko?: string | null
           national_park_name?: string | null
           overview?: string | null
+          parking_info?: string | null
           popularity?: number | null
           province?: string | null
           region?: string | null
           total_area_ha?: number | null
+          transport_car?: string | null
+          transport_public?: string | null
+          transport_synced_at?: string | null
         }
         Relationships: []
       }
@@ -2325,6 +2381,9 @@ export type Database = {
           forestry_course_code: string | null
           forestry_synced_at: string | null
           geometry: Json | null
+          gpx_point_count: number | null
+          gpx_quality: string | null
+          gpx_source: string | null
           gpx_synced_at: string | null
           hiking_tips: string | null
           id: string
@@ -2352,6 +2411,9 @@ export type Database = {
           forestry_course_code?: string | null
           forestry_synced_at?: string | null
           geometry?: Json | null
+          gpx_point_count?: number | null
+          gpx_quality?: string | null
+          gpx_source?: string | null
           gpx_synced_at?: string | null
           hiking_tips?: string | null
           id?: string
@@ -2379,6 +2441,9 @@ export type Database = {
           forestry_course_code?: string | null
           forestry_synced_at?: string | null
           geometry?: Json | null
+          gpx_point_count?: number | null
+          gpx_quality?: string | null
+          gpx_source?: string | null
           gpx_synced_at?: string | null
           hiking_tips?: string | null
           id?: string
