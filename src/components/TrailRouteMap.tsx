@@ -1,24 +1,82 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Map as MapIcon, Info } from "lucide-react";
 import type { Trail } from "@/hooks/useTrails";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TrailRouteMapProps {
   mountainName: string;
+  mountainId?: number;
   lat: number;
   lng: number;
   selectedTrail: Trail | null;
 }
 
+type VworldFeature = {
+  type: "Feature";
+  geometry: {
+    type: "MultiLineString";
+    coordinates: number[][][];
+  };
+  properties: {
+    mntn_nm?: string;
+    sec_len?: string;
+    up_min?: string;
+    down_min?: string;
+    cat_nam?: string;
+  };
+};
+
+function getColorByDifficulty(catNam: string | undefined): string {
+  switch (catNam) {
+    case "하": return "#22c55e";
+    case "중": return "#f59e0b";
+    case "상": return "#ef4444";
+    default:   return "#3b82f6";
+  }
+}
+
+function getDifficultyLabel(catNam: string | undefined): string {
+  switch (catNam) {
+    case "하": return "쉬움 🟢";
+    case "중": return "보통 🟡";
+    case "상": return "어려움 🔴";
+    default:   return "정보 없음";
+  }
+}
+
 /**
- * Naver map that shows a polyline route for the selected trail.
- * Falls back to summit marker only when geometry is missing.
+ * Naver map: shows VWorld hiking trail polylines for the mountain,
+ * plus an emphasized polyline for the selected trail.
  */
-export function TrailRouteMap({ mountainName, lat, lng, selectedTrail }: TrailRouteMapProps) {
+export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrail }: TrailRouteMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const polylineRef = useRef<any>(null);
   const overlaysRef = useRef<any[]>([]);
+  const trailPolylinesRef = useRef<any[]>([]);
   const summitMarkerRef = useRef<any>(null);
+
+  const [features, setFeatures] = useState<VworldFeature[]>([]);
+  const [isLoadingTrails, setIsLoadingTrails] = useState(false);
+
+  // Fetch VWorld trail features for this mountain
+  useEffect(() => {
+    if (!mountainId) return;
+    let cancelled = false;
+    setIsLoadingTrails(true);
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("mountain_trail_features")
+        .select("vworld_features")
+        .eq("mountain_id", mountainId)
+        .maybeSingle();
+      if (cancelled) return;
+      const fs = (data?.vworld_features as VworldFeature[]) || [];
+      setFeatures(Array.isArray(fs) ? fs : []);
+      setIsLoadingTrails(false);
+    })();
+    return () => { cancelled = true; };
+  }, [mountainId]);
 
   // Init map once per mountain
   useEffect(() => {
@@ -49,6 +107,7 @@ export function TrailRouteMap({ mountainName, lat, lng, selectedTrail }: TrailRo
 
     return () => {
       clearRoute();
+      clearTrailPolylines();
       summitMarkerRef.current?.setMap(null);
       summitMarkerRef.current = null;
       mapInstanceRef.current = null;
@@ -65,7 +124,79 @@ export function TrailRouteMap({ mountainName, lat, lng, selectedTrail }: TrailRo
     overlaysRef.current = [];
   };
 
-  // Draw route when selected trail changes
+  const clearTrailPolylines = () => {
+    trailPolylinesRef.current.forEach((p) => p.setMap?.(null));
+    trailPolylinesRef.current = [];
+  };
+
+  // Draw VWorld trail polylines when features arrive
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !window.naver?.maps) return;
+    const naver = window.naver;
+
+    clearTrailPolylines();
+    if (!features || features.length === 0) return;
+
+    const polylines: any[] = [];
+    features.forEach((feature) => {
+      if (feature.geometry?.type !== "MultiLineString") return;
+      const props = feature.properties || {};
+      const color = getColorByDifficulty(props.cat_nam);
+
+      feature.geometry.coordinates.forEach((lineString) => {
+        const path = lineString.map(
+          ([lng_, lat_]: number[]) => new naver.maps.LatLng(lat_, lng_)
+        );
+        const polyline = new naver.maps.Polyline({
+          map,
+          path,
+          strokeColor: color,
+          strokeWeight: 3,
+          strokeOpacity: 0.75,
+          strokeStyle: "solid",
+          clickable: true,
+        });
+
+        naver.maps.Event.addListener(polyline, "click", (e: any) => {
+          const lengthKm = (parseInt(props.sec_len || "0") / 1000).toFixed(2);
+          const infoWindow = new naver.maps.InfoWindow({
+            content: `
+              <div style="padding:10px 14px;font-size:13px;line-height:1.6;min-width:140px;">
+                <div style="font-weight:600;margin-bottom:4px;">${props.mntn_nm || "등산로"}</div>
+                <div>📏 거리: ${lengthKm}km</div>
+                <div>⬆️ 상행: ${props.up_min || "-"}분</div>
+                <div>⬇️ 하행: ${props.down_min || "-"}분</div>
+                <div>난이도: ${getDifficultyLabel(props.cat_nam)}</div>
+              </div>
+            `,
+            borderColor: color,
+            borderWidth: 2,
+            anchorSize: new naver.maps.Size(10, 10),
+          });
+          infoWindow.open(map, e.coord);
+        });
+
+        polylines.push(polyline);
+      });
+    });
+
+    trailPolylinesRef.current = polylines;
+
+    // Auto-fit bounds to all trails (only if no selected trail to override)
+    if (polylines.length > 0 && !selectedTrail) {
+      const bounds = new naver.maps.LatLngBounds(
+        new naver.maps.LatLng(lat, lng),
+        new naver.maps.LatLng(lat, lng)
+      );
+      polylines.forEach((p) => {
+        p.getPath().forEach((latlng: any) => bounds.extend(latlng));
+      });
+      map.fitBounds(bounds, { top: 60, right: 40, bottom: 40, left: 40 });
+    }
+  }, [features, selectedTrail, lat, lng]);
+
+  // Draw selected trail (emphasized) when it changes
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !window.naver?.maps) return;
@@ -77,9 +208,7 @@ export function TrailRouteMap({ mountainName, lat, lng, selectedTrail }: TrailRo
 
     const coords = extractFirstLine(selectedTrail.geometry);
     if (!coords || coords.length === 0) {
-      // No geometry: keep summit marker only, recenter on summit
       map.setCenter(new naver.maps.LatLng(lat, lng));
-      map.setZoom(13);
       return;
     }
 
@@ -91,9 +220,9 @@ export function TrailRouteMap({ mountainName, lat, lng, selectedTrail }: TrailRo
       strokeColor: "#4a8f3f",
       strokeWeight: 5,
       strokeOpacity: 0.9,
+      zIndex: 100,
     });
 
-    // Start marker
     const startMarker = new naver.maps.Marker({
       position: path[0],
       map,
@@ -104,7 +233,6 @@ export function TrailRouteMap({ mountainName, lat, lng, selectedTrail }: TrailRo
     });
     overlaysRef.current.push(startMarker);
 
-    // Summit marker (end)
     const endMarker = new naver.maps.Marker({
       position: path[path.length - 1],
       map,
@@ -115,7 +243,6 @@ export function TrailRouteMap({ mountainName, lat, lng, selectedTrail }: TrailRo
     });
     overlaysRef.current.push(endMarker);
 
-    // Fit bounds
     const bounds = new naver.maps.LatLngBounds(path[0], path[0]);
     path.forEach((p) => bounds.extend(p));
     map.fitBounds(bounds, { top: 60, right: 40, bottom: 60, left: 40 });
@@ -141,10 +268,42 @@ export function TrailRouteMap({ mountainName, lat, lng, selectedTrail }: TrailRo
         </div>
       )}
 
-      <div
-        ref={mapRef}
-        className="naver-map-container h-[350px] rounded-xl border border-border overflow-hidden"
-      />
+      <div className="relative">
+        <div
+          ref={mapRef}
+          className="naver-map-container h-[350px] rounded-xl border border-border overflow-hidden"
+        />
+
+        {isLoadingTrails && (
+          <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm rounded-lg shadow-md px-3 py-2 text-xs z-10">
+            🥾 등산로 불러오는 중...
+          </div>
+        )}
+
+        {!isLoadingTrails && features.length === 0 && mountainId && (
+          <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm rounded-lg shadow-md px-3 py-2 text-xs z-10">
+            🚧 등산로 데이터 준비 중
+          </div>
+        )}
+
+        {features.length > 0 && (
+          <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm rounded-lg shadow-md p-2.5 text-xs space-y-1 z-10">
+            <div className="font-semibold mb-1 text-gray-800">난이도</div>
+            <div className="flex items-center gap-2 text-gray-700">
+              <span className="inline-block w-3 h-1 bg-green-500 rounded-full"></span>
+              <span>쉬움</span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-700">
+              <span className="inline-block w-3 h-1 bg-amber-500 rounded-full"></span>
+              <span>보통</span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-700">
+              <span className="inline-block w-3 h-1 bg-red-500 rounded-full"></span>
+              <span>어려움</span>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -156,7 +315,6 @@ function extractFirstLine(geometry?: { type?: string; coordinates?: any } | null
   if (geometry.type === "MultiLineString" && Array.isArray(c) && Array.isArray(c[0])) {
     return (c as number[][][])[0];
   }
-  // Fallback: bare array of [lng,lat]
   if (Array.isArray(c) && Array.isArray(c[0]) && typeof c[0][0] === "number") {
     return c as number[][];
   }
