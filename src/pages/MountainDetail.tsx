@@ -22,7 +22,7 @@ import type { Trail } from "@/hooks/useTrails";
 import { ParkRestrictions } from "@/components/ParkRestrictions";
 import { MountainFacilities } from "@/components/MountainFacilities";
 import WalkingPathsSection from "@/components/WalkingPathsSection";
-import { MountainClubs } from "@/components/MountainClubs";
+
 import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingJournals } from "@/hooks/useHikingJournals";
@@ -249,9 +249,6 @@ const MountainDetail = () => {
 
       {/* Connected walking paths */}
       <WalkingPathsSection mountainId={mountain.id} />
-
-      {/* Mountain clubs */}
-      <MountainClubs mountainId={mountain.id} />
 
       {/* Hiking Journal */}
       {completed && record && (
