@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Bell, X } from "lucide-react";
+import { ArrowLeft, Bell, X, ChevronRight } from "lucide-react";
 import { useNotifications, type AppNotification } from "@/hooks/useNotifications";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -123,27 +123,39 @@ const NotificationsPage = () => {
       navigate("/my?tab=invitations");
       return;
     }
+    if (n.type === "plan_deleted") {
+      toast({ title: "삭제된 계획이에요" });
+      fetchNotifications();
+      return;
+    }
     if (!n.related_id) {
       fetchNotifications();
       return;
     }
+    if (n.type === "plan_invitation") {
+      // related_id refers to plan_invitations.id — resolve to plan_id
+      const { data } = await (supabase as any)
+        .from("plan_invitations")
+        .select("plan_id")
+        .eq("id", n.related_id)
+        .maybeSingle();
+      if (data?.plan_id) navigate(`/plans/${data.plan_id}`);
+      else navigate("/plans");
+      return;
+    }
     if (n.type === "club_chat") {
+      // related_id is sometimes the message id, sometimes the club id
       const { data } = await (supabase as any)
         .from("club_messages")
         .select("club_id")
         .eq("id", n.related_id)
         .maybeSingle();
       if (data?.club_id) navigate(`/groups/${data.club_id}`);
-      else navigate("/social");
+      else navigate(`/groups/${n.related_id}`);
       return;
     }
     if (n.type === "invitation_accepted" || n.type === "new_member_joined") {
       navigate(`/groups/${n.related_id}`);
-      return;
-    }
-    if (n.type === "plan_deleted" || n.type === "plan_cancelled") {
-      // No navigation — plan is gone
-      fetchNotifications();
       return;
     }
     if (
@@ -151,7 +163,9 @@ const NotificationsPage = () => {
       n.type === "plan_joined" ||
       n.type === "plan_declined" ||
       n.type === "plan_updated" ||
-      n.type === "plan_status_changed"
+      n.type === "plan_status_changed" ||
+      n.type === "plan_cancelled" ||
+      n.type === "plan_participant_joined"
     ) {
       navigate(`/plans/${n.related_id}`);
       return;
@@ -263,7 +277,7 @@ const NotificationsPage = () => {
                     <button
                       key={n.id}
                       onClick={() => handleCardClick(n)}
-                      className="w-full text-left transition-colors"
+                      className="w-full text-left transition-colors duration-150 cursor-pointer active:bg-[hsl(var(--color-background-secondary))]"
                       style={{
                         display: "flex",
                         alignItems: "flex-start",
@@ -355,17 +369,32 @@ const NotificationsPage = () => {
                           </button>
                         </div>
                       ) : (
-                        <button
-                          onClick={(e) => handleDeleteOne(e, n.id)}
+                        <div
                           style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
                             flexShrink: 0,
-                            padding: 4,
-                            color: "hsl(var(--color-text-tertiary))",
                           }}
-                          aria-label="삭제"
                         >
-                          <X style={{ width: 14, height: 14 }} />
-                        </button>
+                          <ChevronRight
+                            style={{
+                              width: 14,
+                              height: 14,
+                              color: "hsl(var(--color-text-tertiary))",
+                            }}
+                          />
+                          <button
+                            onClick={(e) => handleDeleteOne(e, n.id)}
+                            style={{
+                              padding: 4,
+                              color: "hsl(var(--color-text-tertiary))",
+                            }}
+                            aria-label="삭제"
+                          >
+                            <X style={{ width: 14, height: 14 }} />
+                          </button>
+                        </div>
                       )}
                     </button>
                   );
