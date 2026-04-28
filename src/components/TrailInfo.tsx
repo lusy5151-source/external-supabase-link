@@ -126,6 +126,19 @@ export function TrailInfoSection({ mountainId, fallbackTrails = [], selectedTrai
                     )}
                   </div>
 
+                  {/* Detailed info */}
+                  <div className="mt-3 space-y-1.5 text-xs">
+                    <DetailRow icon="📍" label="출발지점" value={trail.starting_point} />
+                    <DetailRow
+                      icon="⛰️"
+                      label="고도차"
+                      value={trail.elevation_gain_m != null ? `${trail.elevation_gain_m}m` : null}
+                    />
+                    <DetailRow icon="🚌" label="대중교통" value={trail.transport_public} />
+                    <DetailRow icon="🚗" label="자가용" value={trail.transport_car} />
+                    <DetailRow icon="💡" label="등산 팁" value={trail.hiking_tips} />
+                  </div>
+
                   {/* Action row */}
                   <div className="mt-3 flex items-center gap-2">
                     {onSelectTrail && (
