@@ -236,6 +236,7 @@ const MountainDetail = () => {
 
       <TrailRouteMap
         mountainName={mountain.nameKo}
+        mountainId={mountain.id}
         lat={mountain.lat}
         lng={mountain.lng}
         selectedTrail={selectedTrail}
