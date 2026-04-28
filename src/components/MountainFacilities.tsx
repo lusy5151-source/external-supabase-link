@@ -72,15 +72,15 @@ export function MountainFacilities({ mountainId }: { mountainId: number }) {
               <div className="space-y-1.5">
                 {list.map((f) => {
                   const query = encodeURIComponent(f.name || meta.label);
-                  const kakaoUrl = `https://map.kakao.com/link/search/${query}`;
+                  const naverUrl = `https://map.naver.com/v5/search/${query}`;
                   return (
                     <a
                       key={f.id}
-                      href={kakaoUrl}
+                      href={naverUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className={`group flex items-start justify-between gap-2 rounded-lg border px-2.5 py-1.5 transition-all hover:shadow-sm hover:scale-[1.01] active:scale-[0.99] cursor-pointer ${meta.color}`}
-                      aria-label={`${f.name || meta.label} 카카오맵에서 보기`}
+                      aria-label={`${f.name || meta.label} 네이버 지도에서 보기`}
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium truncate">{f.name || meta.label}</p>
