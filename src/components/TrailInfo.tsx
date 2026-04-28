@@ -126,6 +126,19 @@ export function TrailInfoSection({ mountainId, fallbackTrails = [], selectedTrai
                     )}
                   </div>
 
+                  {/* Detailed info */}
+                  <div className="mt-3 space-y-1.5 text-xs">
+                    <DetailRow icon="📍" label="출발지점" value={trail.starting_point} />
+                    <DetailRow
+                      icon="⛰️"
+                      label="고도차"
+                      value={trail.elevation_gain_m != null ? `${trail.elevation_gain_m}m` : null}
+                    />
+                    <DetailRow icon="🚌" label="대중교통" value={trail.transport_public} />
+                    <DetailRow icon="🚗" label="자가용" value={trail.transport_car} />
+                    <DetailRow icon="💡" label="등산 팁" value={trail.hiking_tips} />
+                  </div>
+
                   {/* Action row */}
                   <div className="mt-3 flex items-center gap-2">
                     {onSelectTrail && (
@@ -182,6 +195,21 @@ function TrailStat({ icon: Icon, label, value }: { icon: any; label: string; val
         <span className="text-[10px]">{label}</span>
       </div>
       <p className="mt-0.5 text-xs font-medium text-foreground">{value}</p>
+    </div>
+  );
+}
+
+function DetailRow({ icon, label, value }: { icon: string; label: string; value: string | null | undefined }) {
+  const hasValue = value != null && String(value).trim() !== "";
+  return (
+    <div className="flex items-start gap-1.5">
+      <span className="shrink-0">{icon}</span>
+      <div className="flex-1 min-w-0">
+        <span className="font-medium text-foreground">{label}: </span>
+        <span className={hasValue ? "text-muted-foreground" : "text-muted-foreground/60 italic"}>
+          {hasValue ? value : "아직 정보가 등록되지 않았습니다."}
+        </span>
+      </div>
     </div>
   );
 }

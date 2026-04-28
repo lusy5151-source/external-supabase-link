@@ -19,6 +19,9 @@ export interface Trail {
   description: string | null;
   is_popular: boolean | null;
   course_type: string | null;
+  transport_public?: string | null;
+  transport_car?: string | null;
+  hiking_tips?: string | null;
 }
 
 export function useTrails(mountainId: number) {

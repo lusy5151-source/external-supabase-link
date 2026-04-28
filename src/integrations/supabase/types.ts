@@ -2325,6 +2325,7 @@ export type Database = {
           forestry_course_code: string | null
           forestry_synced_at: string | null
           geometry: Json | null
+          gpx_synced_at: string | null
           hiking_tips: string | null
           id: string
           is_popular: boolean | null
@@ -2351,6 +2352,7 @@ export type Database = {
           forestry_course_code?: string | null
           forestry_synced_at?: string | null
           geometry?: Json | null
+          gpx_synced_at?: string | null
           hiking_tips?: string | null
           id?: string
           is_popular?: boolean | null
@@ -2377,6 +2379,7 @@ export type Database = {
           forestry_course_code?: string | null
           forestry_synced_at?: string | null
           geometry?: Json | null
+          gpx_synced_at?: string | null
           hiking_tips?: string | null
           id?: string
           is_popular?: boolean | null
