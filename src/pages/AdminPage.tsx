@@ -537,21 +537,6 @@ const AdminPage = () => {
             <code>sync-trail-details</code> Edge Function을 호출합니다.
           </p>
 
-          {/* GPX 동기화 페이지 링크 (소유자 전용) */}
-          <div className="mt-4 rounded-lg border border-dashed border-border bg-muted/20 p-3">
-            <p className="text-sm font-medium text-foreground">🗺️ GPX 데이터 동기화 (VWorld)</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              VWorld API로 등산로 geometry(폴리라인)를 일괄 동기화합니다. (소유자 전용)
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-2"
-              onClick={() => navigate("/admin/gpx-sync")}
-            >
-              GPX 동기화 페이지 열기 →
-            </Button>
-          </div>
         </CardContent>
       </Card>
 
