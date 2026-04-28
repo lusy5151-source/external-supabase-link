@@ -19,41 +19,15 @@ interface TrailDetail {
   difficulty: string;
   duration_minutes: number;
   starting_point: string;
-  starting_point_description: string | null;
   elevation_gain_m: number | null;
   description: string | null;
   is_popular: boolean;
   course_type: string;
-  end_point: string | null;
-  parking_info: {
-    name?: string;
-    available?: boolean;
-    fee?: string;
-    notes?: string;
-  } | null;
-  public_transit: Array<{
-    type?: string;
-    name?: string;
-    description?: string;
-    walk_minutes?: number;
-  }> | null;
-  car_access: {
-    navigation_query?: string;
-    parking_name?: string;
-    notes?: string;
-  } | null;
-  tips: {
-    best_season?: string;
-    beginner_friendly?: boolean;
-    preparation?: string[];
-    caution?: string[];
-  } | null;
+  parking_info: string | null;
   transport_public: string | null;
   transport_car: string | null;
   hiking_tips: string | null;
 }
-
-function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   if (h === 0) return `${m}분`;
