@@ -80,6 +80,7 @@ const MountainDetail = () => {
   // Fetch creator profile for user-created mountains
   const [creatorName, setCreatorName] = useState<string | null>(null);
   const [showDuplicateReport, setShowDuplicateReport] = useState(false);
+  const [selectedTrail, setSelectedTrail] = useState<Trail | null>(null);
   const { pioneerBadges } = usePioneerBadges(createdBy);
 
   useEffect(() => {
