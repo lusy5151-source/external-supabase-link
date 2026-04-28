@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import { Route, Loader2, AlertCircle, Info } from "lucide-react";
+import { Route, Loader2, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface TrailFeature {
@@ -26,53 +24,60 @@ const TRAIL_COLORS = [
 
 export function TrailMap({ mountainName, lat, lng }: TrailMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<L.Map | null>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const overlaysRef = useRef<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [trailCount, setTrailCount] = useState(0);
   const [noData, setNoData] = useState(false);
 
   useEffect(() => {
     if (!mapRef.current) return;
+    if (!window.naver?.maps) {
+      console.warn("Naver Maps SDK not loaded yet");
+      return;
+    }
+    const naver = window.naver;
 
+    // Cleanup previous
+    overlaysRef.current.forEach((o) => o.setMap?.(null));
+    overlaysRef.current = [];
     if (mapInstanceRef.current) {
-      mapInstanceRef.current.remove();
       mapInstanceRef.current = null;
     }
 
-    const map = L.map(mapRef.current, {
-      center: [lat, lng],
+    const map = new naver.maps.Map(mapRef.current, {
+      center: new naver.maps.LatLng(lat, lng),
       zoom: 13,
-      zoomControl: false,
+      mapTypeId: naver.maps.MapTypeId.TERRAIN,
+      zoomControl: true,
+      zoomControlOptions: { position: naver.maps.Position.BOTTOM_RIGHT },
     });
-    L.control.zoom({ position: "bottomright" }).addTo(map);
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxZoom: 18,
-    }).addTo(map);
 
     // Mountain marker
-    const mountainIcon = L.divIcon({
-      className: "custom-marker",
-      html: `<div style="width:14px;height:14px;background:hsl(var(--primary));border:2px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
-      iconSize: [14, 14],
-      iconAnchor: [7, 7],
+    const mountainMarker = new naver.maps.Marker({
+      position: new naver.maps.LatLng(lat, lng),
+      map,
+      title: mountainName,
+      icon: {
+        content: `<div style="width:14px;height:14px;background:hsl(var(--primary));border:2px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
+        anchor: new naver.maps.Point(7, 7),
+      },
     });
-    L.marker([lat, lng], { icon: mountainIcon })
-      .addTo(map)
-      .bindTooltip(mountainName, { direction: "top", offset: [0, -10] });
+    overlaysRef.current.push(mountainMarker);
 
     mapInstanceRef.current = map;
 
-    fetchTrails(mountainName, map);
+    fetchTrails(mountainName, map, naver);
 
     return () => {
-      map.remove();
+      overlaysRef.current.forEach((o) => o.setMap?.(null));
+      overlaysRef.current = [];
       mapInstanceRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mountainName, lat, lng]);
 
-  const fetchTrails = async (name: string, map: L.Map) => {
+  const fetchTrails = async (name: string, map: any, naver: any) => {
     setLoading(true);
     setTrailCount(0);
     setNoData(false);
@@ -89,7 +94,6 @@ export function TrailMap({ mountainName, lat, lng }: TrailMapProps) {
       }
 
       const features: TrailFeature[] = data.features || [];
-
       if (features.length === 0) {
         setNoData(true);
         setLoading(false);
@@ -97,7 +101,8 @@ export function TrailMap({ mountainName, lat, lng }: TrailMapProps) {
       }
 
       setTrailCount(features.length);
-      const allBounds: L.LatLng[] = [];
+      const bounds = new naver.maps.LatLngBounds();
+      let hasPoints = false;
 
       features.forEach((feature, idx) => {
         const color = TRAIL_COLORS[idx % TRAIL_COLORS.length];
@@ -105,22 +110,32 @@ export function TrailMap({ mountainName, lat, lng }: TrailMapProps) {
         if (coords.length === 0) return;
 
         coords.forEach((lineCoords) => {
-          const latLngs = lineCoords.map(([lng, lat]) => {
-            const ll = L.latLng(lat, lng);
-            allBounds.push(ll);
+          const path = lineCoords.map(([lng, lat]) => {
+            const ll = new naver.maps.LatLng(lat, lng);
+            bounds.extend(ll);
+            hasPoints = true;
             return ll;
           });
 
-          L.polyline(latLngs, { color, weight: 4, opacity: 0.8 }).addTo(map);
+          const polyline = new naver.maps.Polyline({
+            map,
+            path,
+            strokeColor: color,
+            strokeWeight: 4,
+            strokeOpacity: 0.8,
+          });
+          overlaysRef.current.push(polyline);
 
-          if (latLngs.length > 0) {
-            const startIcon = L.divIcon({
-              className: "trail-marker",
-              html: `<div style="width:10px;height:10px;background:${color};border:2px solid white;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>`,
-              iconSize: [10, 10],
-              iconAnchor: [5, 5],
+          if (path.length > 0) {
+            const startMarker = new naver.maps.Marker({
+              position: path[0],
+              map,
+              icon: {
+                content: `<div style="width:10px;height:10px;background:${color};border:2px solid white;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>`,
+                anchor: new naver.maps.Point(5, 5),
+              },
             });
-            L.marker(latLngs[0], { icon: startIcon }).addTo(map);
+            overlaysRef.current.push(startMarker);
           }
         });
 
@@ -132,16 +147,28 @@ export function TrailMap({ mountainName, lat, lng }: TrailMapProps) {
         const firstCoords = coords[0];
         if (firstCoords && firstCoords.length > 0) {
           const mid = firstCoords[Math.floor(firstCoords.length / 2)];
-          L.marker([mid[1], mid[0]], {
-            icon: L.divIcon({ className: "invisible-marker", html: "", iconSize: [0, 0] }),
-          })
-            .addTo(map)
-            .bindTooltip(tooltipText, { permanent: false, direction: "top" });
+          const midLatLng = new naver.maps.LatLng(mid[1], mid[0]);
+          const infoWindow = new naver.maps.InfoWindow({
+            content: `<div style="padding:6px 10px;font-size:12px;">${tooltipText}</div>`,
+            borderWidth: 0,
+            disableAnchor: true,
+            backgroundColor: "rgba(255,255,255,0.95)",
+          });
+          const labelMarker = new naver.maps.Marker({
+            position: midLatLng,
+            map,
+            icon: {
+              content: `<div style="width:1px;height:1px;"></div>`,
+              anchor: new naver.maps.Point(0, 0),
+            },
+          });
+          naver.maps.Event.addListener(labelMarker, "click", () => infoWindow.open(map, labelMarker));
+          overlaysRef.current.push(labelMarker);
         }
       });
 
-      if (allBounds.length > 0) {
-        map.fitBounds(L.latLngBounds(allBounds), { padding: [30, 30] });
+      if (hasPoints) {
+        map.fitBounds(bounds);
       }
     } catch (e) {
       console.error("Trail fetch error:", e);
@@ -175,7 +202,7 @@ export function TrailMap({ mountainName, lat, lng }: TrailMapProps) {
 
       <div
         ref={mapRef}
-        className="h-[350px] rounded-xl border border-border overflow-hidden"
+        className="naver-map-container h-[350px] rounded-xl border border-border overflow-hidden"
       />
 
       {trailCount > 0 && (

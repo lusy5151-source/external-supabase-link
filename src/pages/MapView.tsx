@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { useMountains } from "@/contexts/MountainsContext";
 import { useStore } from "@/context/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,7 +8,8 @@ import { Progress } from "@/components/ui/progress";
 
 const MapView = () => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<L.Map | null>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const markersRef = useRef<any[]>([]);
   const navigate = useNavigate();
   const { mountains } = useMountains();
   const { isCompleted, completedCount } = useStore();
@@ -33,10 +32,34 @@ const MapView = () => {
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
-    const koreaBounds = L.latLngBounds(L.latLng(33.0, 124.5), L.latLng(38.7, 131.9));
-    const map = L.map(mapRef.current, { center: [36.0, 127.8], zoom: 7, zoomControl: false, maxBounds: koreaBounds, maxBoundsViscosity: 1.0, minZoom: 6 });
-    L.control.zoom({ position: "bottomright" }).addTo(map);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 18 }).addTo(map);
+    if (!window.naver?.maps) {
+      console.warn("Naver Maps SDK not loaded yet");
+      return;
+    }
+    const naver = window.naver;
+    const map = new naver.maps.Map(mapRef.current, {
+      center: new naver.maps.LatLng(36.0, 127.8),
+      zoom: 7,
+      mapTypeId: naver.maps.MapTypeId.TERRAIN,
+      minZoom: 6,
+      zoomControl: true,
+      zoomControlOptions: { position: naver.maps.Position.BOTTOM_RIGHT },
+    });
+    mapInstanceRef.current = map;
+    return () => {
+      markersRef.current.forEach((m) => m.setMap(null));
+      markersRef.current = [];
+      mapInstanceRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !window.naver?.maps) return;
+    const naver = window.naver;
+
+    markersRef.current.forEach((m) => m.setMap(null));
+    markersRef.current = [];
 
     mountains.forEach((m) => {
       const completed = isCompleted(m.id);
@@ -45,23 +68,34 @@ const MapView = () => {
       if (shared) { color = "#6366f1"; size = 16; }
       else if (completed) { color = "#4a9d6e"; }
 
-      const icon = L.divIcon({
-        className: "custom-marker",
-        html: `<div style="width:${size}px;height:${size}px;background:${color};border:2px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
-        iconSize: [size, size], iconAnchor: [size / 2, size / 2],
-      });
-
-      const marker = L.marker([m.lat, m.lng], { icon }).addTo(map);
       let tooltipHtml = `<strong>${m.nameKo}</strong><br/>${m.height}m · ${m.difficulty}`;
       if (shared) tooltipHtml += `<br/>👥 공동 완등`;
       else if (completed) tooltipHtml += `<br/>👤 완등`;
-      marker.bindTooltip(tooltipHtml, { direction: "top", offset: [0, -8] });
-      marker.on("click", () => navigate(`/mountains/${m.id}`));
-    });
 
-    mapInstanceRef.current = map;
-    return () => { map.remove(); mapInstanceRef.current = null; };
-  }, [isCompleted, navigate, sharedMountains, sharedCompletionMap]);
+      const marker = new naver.maps.Marker({
+        position: new naver.maps.LatLng(m.lat, m.lng),
+        map,
+        title: m.nameKo,
+        icon: {
+          content: `<div style="width:${size}px;height:${size}px;background:${color};border:2px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
+          anchor: new naver.maps.Point(size / 2, size / 2),
+        },
+      });
+
+      const infoWindow = new naver.maps.InfoWindow({
+        content: `<div style="padding:6px 10px;font-size:12px;line-height:1.4;">${tooltipHtml}</div>`,
+        borderWidth: 0,
+        disableAnchor: true,
+        backgroundColor: "rgba(255,255,255,0.95)",
+      });
+
+      naver.maps.Event.addListener(marker, "mouseover", () => infoWindow.open(map, marker));
+      naver.maps.Event.addListener(marker, "mouseout", () => infoWindow.close());
+      naver.maps.Event.addListener(marker, "click", () => navigate(`/mountains/${m.id}`));
+
+      markersRef.current.push(marker);
+    });
+  }, [mountains, isCompleted, sharedMountains, navigate]);
 
   const totalMountains = mountains.length;
   const progressPercent = Math.round((completedCount / totalMountains) * 100);
@@ -81,7 +115,7 @@ const MapView = () => {
         <Progress value={progressPercent} className="h-3 rounded-full" />
         <p className="text-[10px] text-muted-foreground mt-1">{progressPercent}% 완료</p>
       </div>
-      <div ref={mapRef} className="h-[calc(100vh-300px)] min-h-[400px] rounded-2xl border border-border overflow-hidden shadow-sm" />
+      <div ref={mapRef} className="naver-map-container h-[calc(100vh-300px)] min-h-[400px] rounded-2xl border border-border overflow-hidden shadow-sm" />
     </div>
   );
 };
