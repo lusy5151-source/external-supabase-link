@@ -5,8 +5,7 @@ import { useMountains } from "@/contexts/MountainsContext";
 import MountainMascot from "@/components/MountainMascot";
 import {
   ArrowLeft, Route, Clock, MapPin, Ruler, TrendingUp, Star, Car, Bus,
-  ParkingCircle, Copy, Navigation, ExternalLink, Info, Lightbulb, AlertTriangle,
-  CheckCircle2, Mountain, Footprints,
+  ParkingCircle, Copy, Navigation, ExternalLink, Info, Lightbulb, Mountain,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -19,35 +18,14 @@ interface TrailDetail {
   difficulty: string;
   duration_minutes: number;
   starting_point: string;
-  starting_point_description: string | null;
   elevation_gain_m: number | null;
   description: string | null;
   is_popular: boolean;
   course_type: string;
-  end_point: string | null;
-  parking_info: {
-    name?: string;
-    available?: boolean;
-    fee?: string;
-    notes?: string;
-  } | null;
-  public_transit: Array<{
-    type?: string;
-    name?: string;
-    description?: string;
-    walk_minutes?: number;
-  }> | null;
-  car_access: {
-    navigation_query?: string;
-    parking_name?: string;
-    notes?: string;
-  } | null;
-  tips: {
-    best_season?: string;
-    beginner_friendly?: boolean;
-    preparation?: string[];
-    caution?: string[];
-  } | null;
+  parking_info: string | null;
+  transport_public: string | null;
+  transport_car: string | null;
+  hiking_tips: string | null;
 }
 
 function formatDuration(minutes: number): string {
@@ -111,10 +89,6 @@ export default function TrailDetailPage() {
   }
 
   const mountain = mountains.find((m) => m.id === trail.mountain_id);
-  const transitSteps = Array.isArray(trail.public_transit) ? trail.public_transit : [];
-  const parking = trail.parking_info && typeof trail.parking_info === "object" ? trail.parking_info : null;
-  const carAccess = trail.car_access && typeof trail.car_access === "object" ? trail.car_access : null;
-  const tips = trail.tips && typeof trail.tips === "object" ? trail.tips : null;
 
   const handleCopyAddress = () => {
     const address = trail.starting_point;
@@ -129,8 +103,7 @@ export default function TrailDetailPage() {
   };
 
   const handleNavigate = () => {
-    const navQuery = carAccess?.navigation_query || trail.starting_point;
-    const query = encodeURIComponent(navQuery);
+    const query = encodeURIComponent(trail.starting_point);
     window.open(`https://map.kakao.com/?q=${query}`, "_blank");
   };
 
@@ -183,9 +156,6 @@ export default function TrailDetailPage() {
           {trail.elevation_gain_m && (
             <StatCard icon={TrendingUp} label="고도차" value={`${trail.elevation_gain_m}m`} />
           )}
-          {trail.end_point && (
-            <StatCard icon={Footprints} label="종착점" value={trail.end_point} />
-          )}
           <StatCard icon={Route} label="코스유형" value={trail.course_type === "summit" ? "정상" : trail.course_type === "traverse" ? "종주" : trail.course_type === "loop" ? "순환" : trail.course_type} />
         </div>
       </div>
@@ -205,137 +175,42 @@ export default function TrailDetailPage() {
 
       {/* Starting Point Section */}
       <SectionCard title="출발 지점" icon={MapPin}>
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-foreground">{trail.starting_point}</p>
-          {trail.starting_point_description && (
-            <p className="text-sm text-muted-foreground">{trail.starting_point_description}</p>
-          )}
-          {parking && (parking.name || parking.available !== undefined) && (
-            <div className="mt-3 flex items-start gap-2 rounded-lg bg-secondary/50 p-3">
-              <ParkingCircle className="mt-0.5 h-4 w-4 text-primary shrink-0" />
-              <div className="text-sm space-y-0.5">
-                {parking.name && <p className="font-medium text-foreground">{parking.name}</p>}
-                {parking.available !== undefined && (
-                  <p className="text-muted-foreground">
-                    주차 {parking.available ? "가능" : "불가"}
-                    {parking.fee && ` · ${parking.fee}`}
-                  </p>
-                )}
-                {parking.notes && <p className="text-muted-foreground">{parking.notes}</p>}
-              </div>
-            </div>
-          )}
-          {!trail.starting_point_description && (!parking || !parking.name) && (
-            <p className="text-xs text-muted-foreground/60 italic">아직 상세 정보가 등록되지 않았습니다.</p>
-          )}
-        </div>
+        <p className="text-sm font-medium text-foreground">{trail.starting_point}</p>
       </SectionCard>
 
       {/* Public Transportation */}
       <SectionCard title="대중교통 안내" icon={Bus}>
-        {transitSteps.length > 0 ? (
-          <div className="space-y-3">
-            {transitSteps.map((step, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                  {i + 1}
-                </div>
-                <div className="text-sm">
-                  {step.type && (
-                    <span className="mr-1.5 rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                      {step.type}
-                    </span>
-                  )}
-                  <span className="text-foreground font-medium">{step.name}</span>
-                  {step.description && <p className="text-muted-foreground mt-0.5">{step.description}</p>}
-                  {step.walk_minutes && (
-                    <p className="text-xs text-muted-foreground/70 mt-0.5">
-                      🚶 도보 약 {step.walk_minutes}분
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+        {trail.transport_public ? (
+          <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">{trail.transport_public}</p>
         ) : (
-          <EmptyInfo text="대중교통 정보가 아직 등록되지 않았습니다." />
+          <EmptyInfo text="아직 정보가 등록되지 않았습니다." />
         )}
       </SectionCard>
 
       {/* Car Access */}
       <SectionCard title="자가용 안내" icon={Car}>
-        {carAccess && (carAccess.navigation_query || carAccess.parking_name) ? (
-          <div className="space-y-2 text-sm">
-            {carAccess.navigation_query && (
-              <div className="flex items-center gap-2">
-                <Navigation className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="text-foreground">
-                  네비 검색: <span className="font-medium">{carAccess.navigation_query}</span>
-                </span>
-              </div>
-            )}
-            {carAccess.parking_name && (
-              <div className="flex items-center gap-2">
-                <ParkingCircle className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="text-muted-foreground">{carAccess.parking_name}</span>
-              </div>
-            )}
-            {carAccess.notes && (
-              <p className="text-muted-foreground">{carAccess.notes}</p>
-            )}
-          </div>
+        {trail.transport_car ? (
+          <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">{trail.transport_car}</p>
         ) : (
-          <EmptyInfo text="자가용 안내 정보가 아직 등록되지 않았습니다." />
+          <EmptyInfo text="아직 정보가 등록되지 않았습니다." />
+        )}
+      </SectionCard>
+
+      {/* Parking Info */}
+      <SectionCard title="주차장 정보" icon={ParkingCircle}>
+        {trail.parking_info ? (
+          <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">{trail.parking_info}</p>
+        ) : (
+          <EmptyInfo text="아직 정보가 등록되지 않았습니다." />
         )}
       </SectionCard>
 
       {/* Hiking Tips */}
       <SectionCard title="등산 팁" icon={Lightbulb}>
-        {tips && (tips.best_season || tips.preparation?.length || tips.caution?.length) ? (
-          <div className="space-y-3 text-sm">
-            {tips.best_season && (
-              <div className="flex items-center gap-2">
-                <Info className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="text-foreground">추천 시기: <span className="font-medium">{tips.best_season}</span></span>
-              </div>
-            )}
-            {tips.beginner_friendly !== undefined && (
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="text-foreground">
-                  초보자 {tips.beginner_friendly ? "추천 ✅" : "비추천 ⚠️"}
-                </span>
-              </div>
-            )}
-            {tips.preparation && tips.preparation.length > 0 && (
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-1.5">🎒 준비물</p>
-                <ul className="space-y-1 pl-1">
-                  {tips.preparation.map((item, i) => (
-                    <li key={i} className="flex items-center gap-1.5 text-foreground">
-                      <span className="h-1 w-1 rounded-full bg-primary shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {tips.caution && tips.caution.length > 0 && (
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-1.5">⚠️ 주의사항</p>
-                <ul className="space-y-1 pl-1">
-                  {tips.caution.map((item, i) => (
-                    <li key={i} className="flex items-start gap-1.5 text-foreground">
-                      <AlertTriangle className="mt-0.5 h-3 w-3 text-destructive shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
+        {trail.hiking_tips ? (
+          <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">{trail.hiking_tips}</p>
         ) : (
-          <EmptyInfo text="등산 팁이 아직 등록되지 않았습니다." />
+          <EmptyInfo text="아직 정보가 등록되지 않았습니다." />
         )}
       </SectionCard>
     </div>
