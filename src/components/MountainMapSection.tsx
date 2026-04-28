@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { useMountains } from "@/contexts/MountainsContext";
 import type { Mountain } from "@/data/mountains";
 import { useStore } from "@/context/StoreContext";
@@ -25,8 +23,9 @@ interface InfoCardData {
 const MountainMapSection = () => {
   const { mountains } = useMountains();
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<L.Map | null>(null);
-  const markersRef = useRef<L.Marker[]>([]);
+  const mapInstanceRef = useRef<any>(null);
+  const markersRef = useRef<any[]>([]);
+  const myLocationMarkerRef = useRef<any>(null);
   const navigate = useNavigate();
   const { isCompleted, completedCount, getRecord } = useStore();
   const { user } = useAuth();
@@ -50,7 +49,6 @@ const MountainMapSection = () => {
     }
   }, [user]);
 
-  // Stable refs to avoid re-creating the map when these change
   const isCompletedRef = useRef(isCompleted);
   const getRecordRef = useRef(getRecord);
   const sharedCompletionMapRef = useRef(sharedCompletionMap);
@@ -58,42 +56,43 @@ const MountainMapSection = () => {
   useEffect(() => { getRecordRef.current = getRecord; }, [getRecord]);
   useEffect(() => { sharedCompletionMapRef.current = sharedCompletionMap; }, [sharedCompletionMap]);
 
-  // Initialize map ONCE on mount
+  // Initialize Naver map ONCE
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
+    if (!window.naver?.maps) {
+      console.warn("Naver Maps SDK not loaded yet");
+      return;
+    }
+    const naver = window.naver;
 
-    const koreaBounds = L.latLngBounds(L.latLng(33.0, 124.5), L.latLng(38.7, 131.9));
-    const map = L.map(mapRef.current, {
-      center: [36.0, 127.8],
+    const map = new naver.maps.Map(mapRef.current, {
+      center: new naver.maps.LatLng(36.0, 127.8),
       zoom: 7,
-      zoomControl: false,
-      maxBounds: koreaBounds,
-      maxBoundsViscosity: 1.0,
+      mapTypeId: naver.maps.MapTypeId.TERRAIN,
       minZoom: 6,
+      zoomControl: false,
     });
-
-    L.control.zoom({ position: "bottomright" }).addTo(map);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
-      maxZoom: 18,
-    }).addTo(map);
 
     mapInstanceRef.current = map;
 
     return () => {
-      map.remove();
-      mapInstanceRef.current = null;
+      markersRef.current.forEach((m) => m.setMap(null));
       markersRef.current = [];
+      if (myLocationMarkerRef.current) {
+        myLocationMarkerRef.current.setMap(null);
+        myLocationMarkerRef.current = null;
+      }
+      mapInstanceRef.current = null;
     };
   }, []);
 
-  // Update markers when filter or data changes — without recreating the map
+  // Update markers when filter/data changes
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map) return;
+    if (!map || !window.naver?.maps) return;
+    const naver = window.naver;
 
-    // Clear previous markers
-    markersRef.current.forEach((m) => m.remove());
+    markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
 
     const filtered = mountains.filter((m) => {
@@ -105,7 +104,6 @@ const MountainMapSection = () => {
       return true;
     });
 
-    const markers: L.Marker[] = [];
     filtered.forEach((m) => {
       const completed = isCompletedRef.current(m.id);
       const shared = sharedMountains.has(m.id);
@@ -122,15 +120,17 @@ const MountainMapSection = () => {
         markerHtml = `<div style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;background:hsl(200 8% 60%);border:2px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.2);font-size:11px;">⛰</div>`;
       }
 
-      const icon = L.divIcon({
-        className: "custom-marker",
-        html: markerHtml,
-        iconSize: [size, size],
-        iconAnchor: [size / 2, size / 2],
+      const marker = new naver.maps.Marker({
+        position: new naver.maps.LatLng(m.lat, m.lng),
+        map,
+        title: m.nameKo,
+        icon: {
+          content: markerHtml,
+          anchor: new naver.maps.Point(size / 2, size / 2),
+        },
       });
 
-      const marker = L.marker([m.lat, m.lng], { icon }).addTo(map);
-      marker.on("click", () => {
+      naver.maps.Event.addListener(marker, "click", () => {
         const record = getRecordRef.current(m.id);
         const sc = sharedCompletionMapRef.current.get(m.id);
         setSelectedInfo({
@@ -141,28 +141,33 @@ const MountainMapSection = () => {
           completedAt: record?.completedAt || sc?.completed_at,
         });
       });
-      markers.push(marker);
-    });
 
-    markersRef.current = markers;
+      markersRef.current.push(marker);
+    });
   }, [mountains, filter, sharedMountains]);
 
   const handleShowMyLocation = () => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation || !window.naver?.maps) return;
+    const naver = window.naver;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.setView([latitude, longitude], 11);
-          L.marker([latitude, longitude], {
-            icon: L.divIcon({
-              className: "custom-marker",
-              html: `<div style="width:16px;height:16px;background:hsl(205 60% 50%);border:3px solid white;border-radius:50%;box-shadow:0 0 12px rgba(59,130,246,0.5);"></div>`,
-              iconSize: [16, 16],
-              iconAnchor: [8, 8],
-            }),
-          }).addTo(mapInstanceRef.current);
+        const map = mapInstanceRef.current;
+        if (!map) return;
+        const center = new naver.maps.LatLng(latitude, longitude);
+        map.setCenter(center);
+        map.setZoom(11);
+        if (myLocationMarkerRef.current) {
+          myLocationMarkerRef.current.setMap(null);
         }
+        myLocationMarkerRef.current = new naver.maps.Marker({
+          position: center,
+          map,
+          icon: {
+            content: `<div style="width:16px;height:16px;background:hsl(205 60% 50%);border:3px solid white;border-radius:50%;box-shadow:0 0 12px rgba(59,130,246,0.5);"></div>`,
+            anchor: new naver.maps.Point(8, 8),
+          },
+        });
       },
       () => {},
       { enableHighAccuracy: true }
@@ -181,15 +186,13 @@ const MountainMapSection = () => {
 
   return (
     <div className="space-y-4">
-      {/* Map container */}
       <div className="relative" style={{ zIndex: 1, isolation: 'isolate' }}>
         <div
           ref={mapRef}
-          className="h-[200px] sm:h-[200px] rounded-xl border border-border overflow-hidden shadow-sm"
+          className="naver-map-container h-[200px] sm:h-[200px] rounded-xl border border-border overflow-hidden shadow-sm"
           style={{ zIndex: 1 }}
         />
 
-        {/* Map filters overlay */}
         <div className="absolute top-3 left-3 z-[1000] flex gap-1.5">
           {filters.map(({ key, label }) => (
             <button
@@ -206,7 +209,6 @@ const MountainMapSection = () => {
           ))}
         </div>
 
-        {/* My Location button */}
         <Button
           size="sm"
           variant="secondary"
@@ -217,7 +219,6 @@ const MountainMapSection = () => {
           내 위치
         </Button>
 
-        {/* Legend */}
         <div className="absolute bottom-3 right-3 z-[1000] flex flex-col gap-1 rounded-xl bg-card/90 backdrop-blur-sm p-2 shadow-md">
           <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
             <span className="inline-block h-2.5 w-2.5 rounded-full bg-primary" /> 👤 완등
@@ -230,7 +231,6 @@ const MountainMapSection = () => {
           </span>
         </div>
 
-        {/* Info card overlay */}
         {selectedInfo && (
           <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-[1000] w-[90%] max-w-[320px]">
             <Card className="shadow-xl border-border/50 bg-card/95 backdrop-blur-md">
@@ -248,7 +248,6 @@ const MountainMapSection = () => {
                   </button>
                 </div>
 
-                {/* Completion type */}
                 <div className="flex items-center gap-2">
                   {selectedInfo.shared ? (
                     <Badge className="bg-[hsl(239_84%_67%)] text-white text-[10px] gap-1">
@@ -266,7 +265,6 @@ const MountainMapSection = () => {
                   )}
                 </div>
 
-                {/* Date */}
                 {selectedInfo.completedAt && (
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Calendar className="h-3 w-3" />
@@ -274,7 +272,6 @@ const MountainMapSection = () => {
                   </div>
                 )}
 
-                {/* Participants */}
                 {selectedInfo.sharedCompletion?.participants && selectedInfo.sharedCompletion.participants.length > 0 && (
                   <div className="space-y-1">
                     <p className="text-[10px] font-medium text-muted-foreground">👥 함께한 사람들</p>
@@ -302,7 +299,6 @@ const MountainMapSection = () => {
         )}
       </div>
 
-      {/* Progress bar */}
       <Card className="border-border shadow-sm">
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">
