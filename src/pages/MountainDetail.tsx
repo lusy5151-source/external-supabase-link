@@ -250,9 +250,6 @@ const MountainDetail = () => {
       {/* Connected walking paths */}
       <WalkingPathsSection mountainId={mountain.id} />
 
-      {/* Mountain clubs */}
-      <MountainClubs mountainId={mountain.id} />
-
       {/* Hiking Journal */}
       {completed && record && (
         <JournalSection
