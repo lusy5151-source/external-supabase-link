@@ -94,6 +94,78 @@ const AdminPage = () => {
   const [collecting, setCollecting] = useState(false);
   const [collectStatus, setCollectStatus] = useState("");
 
+  // Trail details sync (sync-trail-details edge function)
+  const [syncTesting, setSyncTesting] = useState(false);
+  const [syncMountainLoading, setSyncMountainLoading] = useState(false);
+  const [syncAllLoading, setSyncAllLoading] = useState(false);
+  const [syncMountainName, setSyncMountainName] = useState("");
+  const [syncResult, setSyncResult] = useState<string>("");
+  const [syncAllStatus, setSyncAllStatus] = useState<string>("");
+
+  const callSyncTrailDetails = async (body: Record<string, any>) => {
+    const { data, error } = await supabase.functions.invoke("sync-trail-details", { body });
+    if (error) throw error;
+    return data;
+  };
+
+  const handleSyncTest = async () => {
+    setSyncTesting(true);
+    setSyncResult("API 테스트 중...");
+    try {
+      const data = await callSyncTrailDetails({ mode: "test" });
+      setSyncResult(JSON.stringify(data, null, 2));
+      toast.success("API 테스트 완료");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "오류";
+      setSyncResult(`❌ ${msg}`);
+      toast.error(`테스트 실패: ${msg}`);
+    } finally {
+      setSyncTesting(false);
+    }
+  };
+
+  const handleSyncMountain = async () => {
+    if (!syncMountainName.trim()) {
+      toast.error("산 이름을 입력해주세요.");
+      return;
+    }
+    setSyncMountainLoading(true);
+    setSyncResult(`'${syncMountainName}' 동기화 중...`);
+    try {
+      const data = await callSyncTrailDetails({
+        mode: "sync_mountain",
+        mountain_name: syncMountainName.trim(),
+      });
+      setSyncResult(JSON.stringify(data, null, 2));
+      toast.success(`'${syncMountainName}' 동기화 완료`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "오류";
+      setSyncResult(`❌ ${msg}`);
+      toast.error(`동기화 실패: ${msg}`);
+    } finally {
+      setSyncMountainLoading(false);
+    }
+  };
+
+  const handleSyncAll = async () => {
+    if (!confirm("전체 산 동기화를 시작하시겠습니까? (limit: 50)")) return;
+    setSyncAllLoading(true);
+    setSyncAllStatus("전체 산 동기화 중... (최대 50개)");
+    setSyncResult("");
+    try {
+      const data = await callSyncTrailDetails({ mode: "sync_all", limit: 50 });
+      setSyncAllStatus(`✅ 완료`);
+      setSyncResult(JSON.stringify(data, null, 2));
+      toast.success("전체 동기화 완료");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "오류";
+      setSyncAllStatus(`❌ ${msg}`);
+      toast.error(`동기화 실패: ${msg}`);
+    } finally {
+      setSyncAllLoading(false);
+    }
+  };
+
   // Data
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [magazines, setMagazines] = useState<MagazinePost[]>([]);
@@ -385,6 +457,68 @@ const AdminPage = () => {
           </div>
           <p className="text-xs text-muted-foreground">
             VWorld API(LT_L_FRSTCLIMB)를 브라우저에서 직접 호출하여 등산로 geometry를 trails 테이블에 저장합니다.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* 1-2. Trail details sync */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Database className="h-4 w-4 text-primary" /> 등산로 상세정보 수집
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* API 테스트 */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-foreground">1. API 테스트</p>
+            <Button onClick={handleSyncTest} disabled={syncTesting} variant="outline">
+              {syncTesting ? (<><Loader2 className="h-4 w-4 animate-spin" /> 테스트 중...</>) : "API 테스트"}
+            </Button>
+          </div>
+
+          {/* 특정 산 동기화 */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-foreground">2. 특정 산 동기화</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Input
+                placeholder="산 이름 입력 (예: 북한산)"
+                value={syncMountainName}
+                onChange={(e) => setSyncMountainName(e.target.value)}
+                className="max-w-xs"
+                disabled={syncMountainLoading}
+              />
+              <Button onClick={handleSyncMountain} disabled={syncMountainLoading}>
+                {syncMountainLoading ? (<><Loader2 className="h-4 w-4 animate-spin" /> 실행 중...</>) : "실행"}
+              </Button>
+            </div>
+          </div>
+
+          {/* 전체 산 동기화 */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-foreground">3. 전체 산 동기화 (limit: 50)</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button onClick={handleSyncAll} disabled={syncAllLoading} variant="default">
+                {syncAllLoading ? (<><Loader2 className="h-4 w-4 animate-spin" /> 동기화 중...</>) : "전체 산 동기화"}
+              </Button>
+              {syncAllStatus && (
+                <span className="text-xs text-muted-foreground">{syncAllStatus}</span>
+              )}
+            </div>
+          </div>
+
+          {/* 결과 */}
+          {syncResult && (
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">응답</p>
+              <pre className="max-h-80 overflow-auto rounded-lg border border-border bg-muted/30 p-3 text-xs text-foreground whitespace-pre-wrap break-all">
+{syncResult}
+              </pre>
+            </div>
+          )}
+
+          <p className="text-xs text-muted-foreground">
+            <code>sync-trail-details</code> Edge Function을 호출합니다.
           </p>
         </CardContent>
       </Card>

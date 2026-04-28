@@ -2322,15 +2322,21 @@ export type Database = {
           down_minutes: number | null
           duration_minutes: number | null
           elevation_gain_m: number | null
+          forestry_course_code: string | null
+          forestry_synced_at: string | null
           geometry: Json | null
+          hiking_tips: string | null
           id: string
           is_popular: boolean | null
           mountain_id: number
           name: string
           starting_point: string | null
+          transport_car: string | null
+          transport_public: string | null
           up_minutes_vw: number | null
           vworld_id: string | null
           vworld_synced_at: string | null
+          waypoints: string | null
         }
         Insert: {
           course_type?: string | null
@@ -2342,15 +2348,21 @@ export type Database = {
           down_minutes?: number | null
           duration_minutes?: number | null
           elevation_gain_m?: number | null
+          forestry_course_code?: string | null
+          forestry_synced_at?: string | null
           geometry?: Json | null
+          hiking_tips?: string | null
           id?: string
           is_popular?: boolean | null
           mountain_id: number
           name: string
           starting_point?: string | null
+          transport_car?: string | null
+          transport_public?: string | null
           up_minutes_vw?: number | null
           vworld_id?: string | null
           vworld_synced_at?: string | null
+          waypoints?: string | null
         }
         Update: {
           course_type?: string | null
@@ -2362,15 +2374,21 @@ export type Database = {
           down_minutes?: number | null
           duration_minutes?: number | null
           elevation_gain_m?: number | null
+          forestry_course_code?: string | null
+          forestry_synced_at?: string | null
           geometry?: Json | null
+          hiking_tips?: string | null
           id?: string
           is_popular?: boolean | null
           mountain_id?: number
           name?: string
           starting_point?: string | null
+          transport_car?: string | null
+          transport_public?: string | null
           up_minutes_vw?: number | null
           vworld_id?: string | null
           vworld_synced_at?: string | null
+          waypoints?: string | null
         }
         Relationships: [
           {
