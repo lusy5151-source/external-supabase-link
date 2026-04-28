@@ -1242,6 +1242,10 @@ export type Database = {
           transport_car: string | null
           transport_public: string | null
           transport_synced_at: string | null
+          vworld_feature_count: number | null
+          vworld_features: Json | null
+          vworld_synced_at: string | null
+          vworld_total_length_m: number | null
         }
         Insert: {
           address?: string | null
@@ -1275,6 +1279,10 @@ export type Database = {
           transport_car?: string | null
           transport_public?: string | null
           transport_synced_at?: string | null
+          vworld_feature_count?: number | null
+          vworld_features?: Json | null
+          vworld_synced_at?: string | null
+          vworld_total_length_m?: number | null
         }
         Update: {
           address?: string | null
@@ -1308,6 +1316,10 @@ export type Database = {
           transport_car?: string | null
           transport_public?: string | null
           transport_synced_at?: string | null
+          vworld_feature_count?: number | null
+          vworld_features?: Json | null
+          vworld_synced_at?: string | null
+          vworld_total_length_m?: number | null
         }
         Relationships: []
       }
@@ -2390,11 +2402,14 @@ export type Database = {
           is_popular: boolean | null
           mountain_id: number
           name: string
+          parking_info: string | null
           starting_point: string | null
           transport_car: string | null
           transport_public: string | null
           up_minutes_vw: number | null
           vworld_id: string | null
+          vworld_match_confidence: string | null
+          vworld_matched_feature_id: string | null
           vworld_synced_at: string | null
           waypoints: string | null
         }
@@ -2420,11 +2435,14 @@ export type Database = {
           is_popular?: boolean | null
           mountain_id: number
           name: string
+          parking_info?: string | null
           starting_point?: string | null
           transport_car?: string | null
           transport_public?: string | null
           up_minutes_vw?: number | null
           vworld_id?: string | null
+          vworld_match_confidence?: string | null
+          vworld_matched_feature_id?: string | null
           vworld_synced_at?: string | null
           waypoints?: string | null
         }
@@ -2450,11 +2468,14 @@ export type Database = {
           is_popular?: boolean | null
           mountain_id?: number
           name?: string
+          parking_info?: string | null
           starting_point?: string | null
           transport_car?: string | null
           transport_public?: string | null
           up_minutes_vw?: number | null
           vworld_id?: string | null
+          vworld_match_confidence?: string | null
+          vworld_matched_feature_id?: string | null
           vworld_synced_at?: string | null
           waypoints?: string | null
         }
