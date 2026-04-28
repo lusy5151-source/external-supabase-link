@@ -461,6 +461,68 @@ const AdminPage = () => {
         </CardContent>
       </Card>
 
+      {/* 1-2. Trail details sync */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Database className="h-4 w-4 text-primary" /> 등산로 상세정보 수집
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* API 테스트 */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-foreground">1. API 테스트</p>
+            <Button onClick={handleSyncTest} disabled={syncTesting} variant="outline">
+              {syncTesting ? (<><Loader2 className="h-4 w-4 animate-spin" /> 테스트 중...</>) : "API 테스트"}
+            </Button>
+          </div>
+
+          {/* 특정 산 동기화 */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-foreground">2. 특정 산 동기화</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Input
+                placeholder="산 이름 입력 (예: 북한산)"
+                value={syncMountainName}
+                onChange={(e) => setSyncMountainName(e.target.value)}
+                className="max-w-xs"
+                disabled={syncMountainLoading}
+              />
+              <Button onClick={handleSyncMountain} disabled={syncMountainLoading}>
+                {syncMountainLoading ? (<><Loader2 className="h-4 w-4 animate-spin" /> 실행 중...</>) : "실행"}
+              </Button>
+            </div>
+          </div>
+
+          {/* 전체 산 동기화 */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-foreground">3. 전체 산 동기화 (limit: 50)</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button onClick={handleSyncAll} disabled={syncAllLoading} variant="default">
+                {syncAllLoading ? (<><Loader2 className="h-4 w-4 animate-spin" /> 동기화 중...</>) : "전체 산 동기화"}
+              </Button>
+              {syncAllStatus && (
+                <span className="text-xs text-muted-foreground">{syncAllStatus}</span>
+              )}
+            </div>
+          </div>
+
+          {/* 결과 */}
+          {syncResult && (
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">응답</p>
+              <pre className="max-h-80 overflow-auto rounded-lg border border-border bg-muted/30 p-3 text-xs text-foreground whitespace-pre-wrap break-all">
+{syncResult}
+              </pre>
+            </div>
+          )}
+
+          <p className="text-xs text-muted-foreground">
+            <code>sync-trail-details</code> Edge Function을 호출합니다.
+          </p>
+        </CardContent>
+      </Card>
+
       {/* 2. Announcements */}
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">
