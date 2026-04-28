@@ -1209,6 +1209,44 @@ export type Database = {
           },
         ]
       }
+      mountain_trail_features: {
+        Row: {
+          created_at: string | null
+          feature_count: number | null
+          mountain_id: number
+          synced_at: string | null
+          total_length_m: number | null
+          updated_at: string | null
+          vworld_features: Json
+        }
+        Insert: {
+          created_at?: string | null
+          feature_count?: number | null
+          mountain_id: number
+          synced_at?: string | null
+          total_length_m?: number | null
+          updated_at?: string | null
+          vworld_features?: Json
+        }
+        Update: {
+          created_at?: string | null
+          feature_count?: number | null
+          mountain_id?: number
+          synced_at?: string | null
+          total_length_m?: number | null
+          updated_at?: string | null
+          vworld_features?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mountain_trail_features_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: true
+            referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mountains: {
         Row: {
           address: string | null
@@ -1243,7 +1281,6 @@ export type Database = {
           transport_public: string | null
           transport_synced_at: string | null
           vworld_feature_count: number | null
-          vworld_features: Json | null
           vworld_synced_at: string | null
           vworld_total_length_m: number | null
         }
@@ -1280,7 +1317,6 @@ export type Database = {
           transport_public?: string | null
           transport_synced_at?: string | null
           vworld_feature_count?: number | null
-          vworld_features?: Json | null
           vworld_synced_at?: string | null
           vworld_total_length_m?: number | null
         }
@@ -1317,7 +1353,6 @@ export type Database = {
           transport_public?: string | null
           transport_synced_at?: string | null
           vworld_feature_count?: number | null
-          vworld_features?: Json | null
           vworld_synced_at?: string | null
           vworld_total_length_m?: number | null
         }
