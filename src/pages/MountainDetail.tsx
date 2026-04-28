@@ -17,7 +17,8 @@ import type { WeatherCondition, CompletionRecord } from "@/hooks/useMountainStor
 import { WeatherCard } from "@/components/WeatherCard";
 import { TrailInfoSection } from "@/components/TrailInfo";
 import { NearbyPlaces } from "@/components/NearbyPlaces";
-import { TrailMap } from "@/components/TrailMap";
+import { TrailRouteMap } from "@/components/TrailRouteMap";
+import type { Trail } from "@/hooks/useTrails";
 import { ParkRestrictions } from "@/components/ParkRestrictions";
 import { MountainFacilities } from "@/components/MountainFacilities";
 import WalkingPathsSection from "@/components/WalkingPathsSection";
@@ -79,6 +80,7 @@ const MountainDetail = () => {
   // Fetch creator profile for user-created mountains
   const [creatorName, setCreatorName] = useState<string | null>(null);
   const [showDuplicateReport, setShowDuplicateReport] = useState(false);
+  const [selectedTrail, setSelectedTrail] = useState<Trail | null>(null);
   const { pioneerBadges } = usePioneerBadges(createdBy);
 
   useEffect(() => {
@@ -224,11 +226,20 @@ const MountainDetail = () => {
       {/* Mountain facilities (탐방안내소/대피소/주차장 등) */}
       <MountainFacilities mountainId={mountain.id} />
 
-      {/* Trail info */}
-      <TrailInfoSection mountainId={mountain.id} fallbackTrails={mountain.trails} />
+      {/* Trail info + interactive route map */}
+      <TrailInfoSection
+        mountainId={mountain.id}
+        fallbackTrails={mountain.trails}
+        selectedTrailId={selectedTrail?.id ?? null}
+        onSelectTrail={setSelectedTrail}
+      />
 
-      {/* Trail GPS Map */}
-      <TrailMap mountainName={mountain.nameKo} lat={mountain.lat} lng={mountain.lng} />
+      <TrailRouteMap
+        mountainName={mountain.nameKo}
+        lat={mountain.lat}
+        lng={mountain.lng}
+        selectedTrail={selectedTrail}
+      />
 
       {/* Weather & outfit */}
       <WeatherCard mountainId={mountain.id} />

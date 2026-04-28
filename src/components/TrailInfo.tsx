@@ -1,12 +1,15 @@
 import { Link } from "react-router-dom";
-import { useTrails } from "@/hooks/useTrails";
+import { useTrails, type Trail } from "@/hooks/useTrails";
 import type { TrailInfo as TrailInfoType } from "@/data/mountains";
-import { Route, Clock, MapPin, Ruler, TrendingUp, Star, AlertCircle, ChevronRight } from "lucide-react";
+import { Route, Clock, MapPin, Ruler, TrendingUp, Star, AlertCircle, ChevronRight, MapPinned } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface TrailInfoSectionProps {
   mountainId: number;
   fallbackTrails?: TrailInfoType[];
+  selectedTrailId?: string | null;
+  onSelectTrail?: (trail: Trail) => void;
 }
 
 function formatDuration(minutes: number): string {
@@ -17,7 +20,12 @@ function formatDuration(minutes: number): string {
   return `${h}시간 ${m}분`;
 }
 
-export function TrailInfoSection({ mountainId, fallbackTrails = [] }: TrailInfoSectionProps) {
+function hasRouteGeometry(t: Trail): boolean {
+  const c = t.geometry?.coordinates as any;
+  return Array.isArray(c) && c.length > 0;
+}
+
+export function TrailInfoSection({ mountainId, fallbackTrails = [], selectedTrailId, onSelectTrail }: TrailInfoSectionProps) {
   const { trails, loading, error } = useTrails(mountainId);
 
   const hasDbTrails = trails.length > 0;
@@ -56,58 +64,98 @@ export function TrailInfoSection({ mountainId, fallbackTrails = [] }: TrailInfoS
         <div>
           <h2 className="text-lg font-semibold text-foreground">등산 코스</h2>
           <p className="text-xs text-muted-foreground">
-            {hasDbTrails ? `${trails.length}개 코스` : "주요 등산로 정보"}
+            {hasDbTrails ? `${trails.length}개 코스 · 선택하면 지도에 루트가 표시됩니다` : "주요 등산로 정보"}
           </p>
         </div>
       </div>
 
       <div className="space-y-3">
         {hasDbTrails
-          ? trails.map((trail) => (
-              <Link
-                key={trail.id}
-                to={`/trails/${trail.id}`}
-                className="block rounded-xl border border-border bg-secondary/30 p-4 transition-all hover:bg-secondary/60 hover:shadow-sm"
-              >
-                {/* Header row */}
-                <div className="flex items-center gap-2 mb-2">
-                  <Route className="h-4 w-4 text-primary shrink-0" />
-                  <p className="font-medium text-foreground truncate">{trail.name}</p>
-                  {trail.is_popular && (
-                    <Badge variant="default" className="text-[10px] px-1.5 py-0 h-5 gap-0.5 shrink-0">
-                      <Star className="h-2.5 w-2.5" /> 인기
-                    </Badge>
+          ? trails.map((trail) => {
+              const hasRoute = hasRouteGeometry(trail);
+              const isSelected = selectedTrailId === trail.id;
+              return (
+                <div
+                  key={trail.id}
+                  className={cn(
+                    "rounded-xl border p-4 transition-all",
+                    isSelected
+                      ? "border-primary bg-primary/5 shadow-sm"
+                      : "border-border bg-secondary/30 hover:bg-secondary/60"
                   )}
-                  {trail.difficulty && (
-                    <span className="ml-auto rounded-md bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground shrink-0">
-                      {trail.difficulty}
-                    </span>
-                  )}
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
-                </div>
+                >
+                  {/* Header row */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <Route className="h-4 w-4 text-primary shrink-0" />
+                    <p className="font-medium text-foreground truncate">{trail.name}</p>
+                    {trail.is_popular && (
+                      <Badge variant="default" className="text-[10px] px-1.5 py-0 h-5 gap-0.5 shrink-0">
+                        <Star className="h-2.5 w-2.5" /> 인기
+                      </Badge>
+                    )}
+                    {!hasRoute && (
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 shrink-0 text-muted-foreground">
+                        루트 준비중
+                      </Badge>
+                    )}
+                    {trail.difficulty && (
+                      <span className="ml-auto rounded-md bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground shrink-0">
+                        {trail.difficulty}
+                      </span>
+                    )}
+                  </div>
 
-                {/* Description */}
-                {trail.description && (
-                  <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{trail.description}</p>
-                )}
+                  {/* Description */}
+                  {trail.description && (
+                    <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{trail.description}</p>
+                  )}
 
-                {/* Stats grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {trail.distance_km != null && (
-                    <TrailStat icon={Ruler} label="거리" value={`${trail.distance_km}km`} />
-                  )}
-                  {trail.duration_minutes != null && (
-                    <TrailStat icon={Clock} label="소요시간" value={formatDuration(trail.duration_minutes)} />
-                  )}
-                  {trail.starting_point && (
-                    <TrailStat icon={MapPin} label="출발점" value={trail.starting_point} />
-                  )}
-                  {trail.elevation_gain_m != null && (
-                    <TrailStat icon={TrendingUp} label="고도차" value={`${trail.elevation_gain_m}m`} />
-                  )}
+                  {/* Stats grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {trail.distance_km != null && (
+                      <TrailStat icon={Ruler} label="거리" value={`${trail.distance_km}km`} />
+                    )}
+                    {trail.duration_minutes != null && (
+                      <TrailStat icon={Clock} label="소요시간" value={formatDuration(trail.duration_minutes)} />
+                    )}
+                    {trail.starting_point && (
+                      <TrailStat icon={MapPin} label="출발점" value={trail.starting_point} />
+                    )}
+                    {trail.elevation_gain_m != null && (
+                      <TrailStat icon={TrendingUp} label="고도차" value={`${trail.elevation_gain_m}m`} />
+                    )}
+                  </div>
+
+                  {/* Action row */}
+                  <div className="mt-3 flex items-center gap-2">
+                    {onSelectTrail && (
+                      <button
+                        type="button"
+                        onClick={() => onSelectTrail(trail)}
+                        disabled={!hasRoute}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                          isSelected
+                            ? "bg-primary text-primary-foreground"
+                            : hasRoute
+                              ? "bg-primary/10 text-primary hover:bg-primary/20"
+                              : "bg-muted text-muted-foreground cursor-not-allowed"
+                        )}
+                      >
+                        <MapPinned className="h-3.5 w-3.5" />
+                        {isSelected ? "지도에 표시됨" : hasRoute ? "지도에서 보기" : "루트 준비중"}
+                      </button>
+                    )}
+                    <Link
+                      to={`/trails/${trail.id}`}
+                      className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      상세 <ChevronRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
                 </div>
-              </Link>
-            ))
+              );
+            })
           : fallbackTrails.map((trail, i) => (
               <div key={i} className="rounded-xl border border-border bg-secondary/30 p-4">
                 <div className="flex items-center gap-2 mb-3">

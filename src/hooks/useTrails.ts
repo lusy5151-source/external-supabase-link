@@ -1,6 +1,11 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+export interface TrailGeometry {
+  type?: string;
+  coordinates?: number[][] | number[][][];
+}
+
 export interface Trail {
   id: string;
   mountain_id: number;
@@ -8,6 +13,7 @@ export interface Trail {
   distance_km: number | null;
   difficulty: string | null;
   duration_minutes: number | null;
+  geometry?: TrailGeometry | null;
   starting_point: string | null;
   elevation_gain_m: number | null;
   description: string | null;
