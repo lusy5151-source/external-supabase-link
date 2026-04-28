@@ -97,14 +97,14 @@ export default function TrailDetailPage() {
     });
   };
 
-  const handleOpenKakaoMap = () => {
+  const handleOpenNaverMap = () => {
     const query = encodeURIComponent(trail.starting_point);
-    window.open(`https://map.kakao.com/?q=${query}`, "_blank");
+    window.open(`https://map.naver.com/v5/search/${query}`, "_blank");
   };
 
   const handleNavigate = () => {
     const query = encodeURIComponent(trail.starting_point);
-    window.open(`https://map.kakao.com/?q=${query}`, "_blank");
+    window.open(`https://map.naver.com/v5/search/${query}`, "_blank");
   };
 
   return (
