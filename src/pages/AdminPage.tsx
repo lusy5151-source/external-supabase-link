@@ -94,6 +94,78 @@ const AdminPage = () => {
   const [collecting, setCollecting] = useState(false);
   const [collectStatus, setCollectStatus] = useState("");
 
+  // Trail details sync (sync-trail-details edge function)
+  const [syncTesting, setSyncTesting] = useState(false);
+  const [syncMountainLoading, setSyncMountainLoading] = useState(false);
+  const [syncAllLoading, setSyncAllLoading] = useState(false);
+  const [syncMountainName, setSyncMountainName] = useState("");
+  const [syncResult, setSyncResult] = useState<string>("");
+  const [syncAllStatus, setSyncAllStatus] = useState<string>("");
+
+  const callSyncTrailDetails = async (body: Record<string, any>) => {
+    const { data, error } = await supabase.functions.invoke("sync-trail-details", { body });
+    if (error) throw error;
+    return data;
+  };
+
+  const handleSyncTest = async () => {
+    setSyncTesting(true);
+    setSyncResult("API 테스트 중...");
+    try {
+      const data = await callSyncTrailDetails({ mode: "test" });
+      setSyncResult(JSON.stringify(data, null, 2));
+      toast.success("API 테스트 완료");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "오류";
+      setSyncResult(`❌ ${msg}`);
+      toast.error(`테스트 실패: ${msg}`);
+    } finally {
+      setSyncTesting(false);
+    }
+  };
+
+  const handleSyncMountain = async () => {
+    if (!syncMountainName.trim()) {
+      toast.error("산 이름을 입력해주세요.");
+      return;
+    }
+    setSyncMountainLoading(true);
+    setSyncResult(`'${syncMountainName}' 동기화 중...`);
+    try {
+      const data = await callSyncTrailDetails({
+        mode: "sync_mountain",
+        mountain_name: syncMountainName.trim(),
+      });
+      setSyncResult(JSON.stringify(data, null, 2));
+      toast.success(`'${syncMountainName}' 동기화 완료`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "오류";
+      setSyncResult(`❌ ${msg}`);
+      toast.error(`동기화 실패: ${msg}`);
+    } finally {
+      setSyncMountainLoading(false);
+    }
+  };
+
+  const handleSyncAll = async () => {
+    if (!confirm("전체 산 동기화를 시작하시겠습니까? (limit: 50)")) return;
+    setSyncAllLoading(true);
+    setSyncAllStatus("전체 산 동기화 중... (최대 50개)");
+    setSyncResult("");
+    try {
+      const data = await callSyncTrailDetails({ mode: "sync_all", limit: 50 });
+      setSyncAllStatus(`✅ 완료`);
+      setSyncResult(JSON.stringify(data, null, 2));
+      toast.success("전체 동기화 완료");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "오류";
+      setSyncAllStatus(`❌ ${msg}`);
+      toast.error(`동기화 실패: ${msg}`);
+    } finally {
+      setSyncAllLoading(false);
+    }
+  };
+
   // Data
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [magazines, setMagazines] = useState<MagazinePost[]>([]);
