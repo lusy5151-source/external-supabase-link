@@ -162,8 +162,8 @@ export default function TrailDetailPage() {
 
       {/* Quick Action Buttons */}
       <div className="flex gap-2">
-        <Button variant="outline" size="sm" className="flex-1 gap-1.5" onClick={handleOpenKakaoMap}>
-          <ExternalLink className="h-3.5 w-3.5" /> 카카오맵
+        <Button variant="outline" size="sm" className="flex-1 gap-1.5" onClick={handleOpenNaverMap}>
+          <ExternalLink className="h-3.5 w-3.5" /> 네이버 지도
         </Button>
         <Button variant="outline" size="sm" className="flex-1 gap-1.5" onClick={handleNavigate}>
           <Navigation className="h-3.5 w-3.5" /> 길찾기
