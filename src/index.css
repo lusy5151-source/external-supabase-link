@@ -169,9 +169,8 @@
 .animate-mascot-flag { animation: mascot-flag 0.5s ease-in-out infinite; }
 .animate-mascot-hand { animation: mascot-hand 0.8s ease-in-out infinite; }
 
-.leaflet-container { z-index: 0 !important; }
-.leaflet-top, .leaflet-bottom { z-index: 500 !important; }
-.leaflet-pane { z-index: 400 !important; }
+/* Naver Maps container */
+.naver-map-container { position: relative; z-index: 0; }
 
 @keyframes fab-shimmer {
   0%   { transform: translateX(-100%) rotate(25deg); }
