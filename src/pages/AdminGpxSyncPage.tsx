@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
-const ADMIN_EMAIL = "lusy5151@gmail.com";
+const ADMIN_EMAIL = "wandeung1@gmail.com";
 const VWORLD_KEY = "F41DD5DC-6774-33EA-8E02-68505ADAF394";
 const VWORLD_DOMAIN = "https://wandeung.com";
 
