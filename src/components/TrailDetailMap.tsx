@@ -47,6 +47,13 @@ export function TrailDetailMap({ geometry, difficulty, waypoints }: TrailDetailM
   const mapInstanceRef = useRef<any>(null);
   const overlaysRef = useRef<any[]>([]);
   const [mapReady, setMapReady] = useState(false);
+  const [mapType, setMapType] = useState<"NORMAL" | "TERRAIN">("TERRAIN");
+
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !window.naver?.maps) return;
+    map.setMapTypeId(window.naver.maps.MapTypeId[mapType]);
+  }, [mapType]);
 
   const path = extractFirstLine(geometry)?.filter(
     (pt) => Array.isArray(pt) && pt.length >= 2
