@@ -130,8 +130,11 @@ export default function TrailDetailPage() {
         trailName={trail.name}
         mountainName={mountain?.nameKo}
         distanceKm={trail.distance_km}
+        gpxSource={(trail as any).gpx_source ?? null}
         onGeometryFetched={(geom) =>
-          setTrail((prev) => (prev ? { ...prev, geometry: geom as any } : prev))
+          setTrail((prev) =>
+            prev ? { ...prev, geometry: geom as any, ...( { gpx_source: "vworld" } as any) } : prev
+          )
         }
       />
 
