@@ -47,7 +47,15 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
   const selectedOverlaysRef = useRef<any[]>([]);
 
   const [mapReady, setMapReady] = useState(false);
+  const [mapType, setMapType] = useState<"NORMAL" | "TERRAIN">("TERRAIN");
   const { trails } = useTrails(mountainId ?? 0);
+
+  // Toggle map type when user clicks the buttons
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !window.naver?.maps) return;
+    map.setMapTypeId(window.naver.maps.MapTypeId[mapType]);
+  }, [mapType]);
 
   // Init map once — wait for `init` event before signaling ready
   useEffect(() => {
