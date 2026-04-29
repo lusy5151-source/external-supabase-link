@@ -1,8 +1,5 @@
 // VWorld trail fetcher + matcher
-// Public API key (domain-restricted to wandeung.com).
-
-const VWORLD_KEY = "F41DD5DC-6774-33EA-8E02-68505ADAF394";
-const VWORLD_DOMAIN = "wandeung.com";
+// Calls the `vworld-proxy` Edge Function to bypass CORS and hide the API key.
 
 export interface VWorldFeature {
   id?: string;
@@ -10,52 +7,27 @@ export interface VWorldFeature {
   geometry: { type: string; coordinates: any };
 }
 
-// JSONP-based call to bypass browser CORS restrictions on api.vworld.kr.
-export function fetchVWorldTrail(mountainName: string): Promise<VWorldFeature[]> {
-  return new Promise((resolve) => {
-    const callbackName = `vworldCallback_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
-    const script = document.createElement("script");
+export async function fetchVWorldTrail(mountainName: string): Promise<VWorldFeature[]> {
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-    const params = new URLSearchParams({
-      service: "data",
-      request: "GetFeature",
-      data: "LT_L_FRSTCLIMB",
-      key: VWORLD_KEY,
-      domain: VWORLD_DOMAIN,
-      attrFilter: `mntn_nm:LIKE:${mountainName}`,
-      crs: "EPSG:4326",
-      format: "json",
-      size: "1000",
-      geometry: "true",
-      callback: callbackName,
-    });
-
-    const cleanup = () => {
-      try { delete (window as any)[callbackName]; } catch {}
-      try { if (script.parentNode) script.parentNode.removeChild(script); } catch {}
-    };
-
-    (window as any)[callbackName] = (data: any) => {
-      const features = data?.response?.result?.featureCollection?.features || [];
-      cleanup();
-      resolve(features);
-    };
-
-    script.src = `https://api.vworld.kr/req/data?${params.toString()}`;
-    script.onerror = () => {
-      cleanup();
-      resolve([]);
-    };
-    document.head.appendChild(script);
-
-    // 5s timeout
-    setTimeout(() => {
-      if ((window as any)[callbackName]) {
-        cleanup();
-        resolve([]);
+    const response = await fetch(
+      `${supabaseUrl}/functions/v1/vworld-proxy?mountain_name=${encodeURIComponent(mountainName)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${anonKey}`,
+          apikey: anonKey,
+        },
       }
-    }, 5000);
-  });
+    );
+
+    if (!response.ok) return [];
+    const data = await response.json();
+    return (data?.trails as VWorldFeature[]) || [];
+  } catch {
+    return [];
+  }
 }
 
 const STOPWORDS = new Set(["코스", "구간", "탐방로", "등산로", "등산코스", "루트", "길"]);
