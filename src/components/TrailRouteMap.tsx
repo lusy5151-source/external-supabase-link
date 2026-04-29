@@ -120,7 +120,8 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
     startMarkersRef.current.forEach((m) => m.setMap?.(null));
     startMarkersRef.current = [];
 
-    const bounds = new naver.maps.LatLngBounds();
+    const summit = new naver.maps.LatLng(lat, lng);
+    const bounds = new naver.maps.LatLngBounds(summit, summit);
 
     trails.forEach((trail, idx) => {
       const coords = extractFirstLine(trail.geometry);
@@ -172,10 +173,7 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
       coursePolylinesRef.current.push(polyline);
     });
 
-    // 봉우리 좌표도 bounds에 포함시켜 항상 보이게
-    bounds.extend(new naver.maps.LatLng(lat, lng));
-
-    if (!bounds.isEmpty() && !selectedTrail) {
+    if (!selectedTrail) {
       map.fitBounds(bounds, { top: 60, right: 50, bottom: 50, left: 50 });
     }
   }, [mapReady, trails, selectedTrail, lat, lng]);
@@ -225,11 +223,9 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
     });
     selectedOverlaysRef.current.push(endMarker);
 
-    const bounds = new naver.maps.LatLngBounds();
+    const bounds = new naver.maps.LatLngBounds(path[0], path[0]);
     path.forEach((p) => bounds.extend(p));
-    if (!bounds.isEmpty()) {
-      map.fitBounds(bounds, { top: 60, right: 50, bottom: 60, left: 50 });
-    }
+    map.fitBounds(bounds, { top: 60, right: 50, bottom: 60, left: 50 });
   }, [mapReady, selectedTrail, lat, lng]);
 
   const noGeometry = !!selectedTrail && !extractFirstLine(selectedTrail.geometry)?.length;

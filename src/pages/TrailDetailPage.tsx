@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { TrailDetailMap } from "@/components/TrailDetailMap";
 
 interface TrailDetail {
   id: string;
@@ -26,6 +27,8 @@ interface TrailDetail {
   transport_public: string | null;
   transport_car: string | null;
   hiking_tips: string | null;
+  geometry: { type?: string; coordinates?: any } | null;
+  waypoints: string | null;
 }
 
 function formatDuration(minutes: number): string {
@@ -117,6 +120,13 @@ export default function TrailDetailPage() {
         <ArrowLeft className="h-4 w-4" />
         {mountain?.nameKo || "산 상세"} 으로 돌아가기
       </Link>
+
+      {/* Course Route Map */}
+      <TrailDetailMap
+        geometry={trail.geometry}
+        difficulty={trail.difficulty}
+        waypoints={trail.waypoints}
+      />
 
       {/* Course Overview Card */}
       <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
