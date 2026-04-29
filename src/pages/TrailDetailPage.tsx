@@ -126,16 +126,8 @@ export default function TrailDetailPage() {
         geometry={trail.geometry}
         difficulty={trail.difficulty}
         waypoints={trail.waypoints}
-        trailId={trail.id}
-        trailName={trail.name}
-        mountainName={mountain?.nameKo}
-        distanceKm={trail.distance_km}
-        gpxSource={(trail as any).gpx_source ?? null}
-        onGeometryFetched={(geom) =>
-          setTrail((prev) =>
-            prev ? { ...prev, geometry: geom as any, ...( { gpx_source: "vworld" } as any) } : prev
-          )
-        }
+        mountainLat={mountain?.lat ?? null}
+        mountainLng={mountain?.lng ?? null}
       />
 
       {/* Course Overview Card */}
