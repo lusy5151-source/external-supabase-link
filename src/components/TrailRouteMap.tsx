@@ -10,16 +10,19 @@ interface TrailRouteMapProps {
   selectedTrail: Trail | null;
 }
 
-const COURSE_COLORS = [
-  "#2D6A4F", // 초록
-  "#E76F51", // 주황
-  "#457B9D", // 파랑
-  "#9B2226", // 빨강
-  "#6A4C93", // 보라
+const ROUTE_COLORS = [
+  "#2D6A4F", // 1번째 - 진초록
+  "#E76F51", // 2번째 - 주황
+  "#457B9D", // 3번째 - 파랑
+  "#9B2226", // 4번째 - 빨강
+  "#6A4C93", // 5번째 - 보라
+  "#F4A261", // 6번째 - 연주황
 ];
 
+const NO_GEOMETRY_COLOR = "#AAAAAA";
+
 function getCourseColor(index: number): string {
-  return COURSE_COLORS[index % COURSE_COLORS.length];
+  return ROUTE_COLORS[index % ROUTE_COLORS.length];
 }
 
 function extractFirstLine(geometry?: { type?: string; coordinates?: any } | null): number[][] | null {
@@ -261,26 +264,29 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
         <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-1.5">
           <div className="text-xs font-semibold text-foreground mb-1.5">코스 범례</div>
           {trails.map((trail, idx) => {
-            const color = getCourseColor(idx);
             const hasGeo = !!extractFirstLine(trail.geometry)?.length;
+            const color = hasGeo ? getCourseColor(idx) : NO_GEOMETRY_COLOR;
             return (
               <div
                 key={trail.id}
                 className="flex items-center gap-2 text-xs text-foreground"
               >
                 <span
-                  className="inline-block w-4 h-1 rounded-full shrink-0"
-                  style={{ background: color, opacity: hasGeo ? 1 : 0.3 }}
+                  className="inline-block w-3 h-3 rounded-sm shrink-0"
+                  style={{ background: color }}
                 />
                 <span className="font-medium truncate">{trail.name}</span>
-                {trail.distance_km != null && (
-                  <span className="text-muted-foreground">· {trail.distance_km}km</span>
-                )}
-                {trail.difficulty && (
-                  <span className="text-muted-foreground">· {trail.difficulty}</span>
-                )}
-                {!hasGeo && (
-                  <span className="text-[10px] text-muted-foreground ml-auto">경로 준비 중 🔜</span>
+                {hasGeo ? (
+                  <>
+                    {trail.distance_km != null && (
+                      <span className="text-muted-foreground">· {trail.distance_km}km</span>
+                    )}
+                    {trail.difficulty && (
+                      <span className="text-muted-foreground">· {trail.difficulty}</span>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-[11px] text-muted-foreground ml-auto">경로 준비 중</span>
                 )}
               </div>
             );
