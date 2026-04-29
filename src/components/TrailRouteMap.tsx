@@ -173,10 +173,7 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
       coursePolylinesRef.current.push(polyline);
     });
 
-    // 봉우리 좌표도 bounds에 포함시켜 항상 보이게
-    bounds.extend(new naver.maps.LatLng(lat, lng));
-
-    if (!bounds.isEmpty() && !selectedTrail) {
+    if (!selectedTrail) {
       map.fitBounds(bounds, { top: 60, right: 50, bottom: 50, left: 50 });
     }
   }, [mapReady, trails, selectedTrail, lat, lng]);
