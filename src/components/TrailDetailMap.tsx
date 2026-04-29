@@ -75,6 +75,51 @@ export function TrailDetailMap({
   const hasPath = !!path && path.length >= 2;
   const wpList = parseWaypoints(waypoints);
 
+  // Sync map type toggle
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !window.naver?.maps) return;
+    map.setMapTypeId(window.naver.maps.MapTypeId[mapType]);
+  }, [mapType]);
+
+  // Auto-fetch from VWorld when geometry missing
+  useEffect(() => {
+    if (hasPath) return;
+    if (!trailId || !mountainName) return;
+    if (fetchAttemptedRef.current) return;
+    fetchAttemptedRef.current = true;
+
+    let cancelled = false;
+    (async () => {
+      setFetching(true);
+      setFetchFailed(false);
+      try {
+        const features = await fetchVWorldTrail(mountainName);
+        const match = matchBestFeature(features, trailName || "", distanceKm ?? null);
+        if (cancelled) return;
+        if (!match || !match.feature?.geometry) {
+          setFetchFailed(true);
+          return;
+        }
+        const geom = match.feature.geometry as TrailGeometry;
+        onGeometryFetched?.(geom);
+        saveTrailGeometry({
+          trailId,
+          geometry: geom,
+          matchedFeatureId: match.feature.id?.toString(),
+          matchConfidence: match.confidence,
+        }).catch(() => {});
+      } catch {
+        if (!cancelled) setFetchFailed(true);
+      } finally {
+        if (!cancelled) setFetching(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [hasPath, trailId, mountainName, trailName, distanceKm, onGeometryFetched]);
+
   // Init map
   useEffect(() => {
     if (!hasPath) return;
