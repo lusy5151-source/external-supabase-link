@@ -10,16 +10,19 @@ interface TrailRouteMapProps {
   selectedTrail: Trail | null;
 }
 
-const COURSE_COLORS = [
-  "#2D6A4F", // 초록
-  "#E76F51", // 주황
-  "#457B9D", // 파랑
-  "#9B2226", // 빨강
-  "#6A4C93", // 보라
+const ROUTE_COLORS = [
+  "#2D6A4F", // 1번째 - 진초록
+  "#E76F51", // 2번째 - 주황
+  "#457B9D", // 3번째 - 파랑
+  "#9B2226", // 4번째 - 빨강
+  "#6A4C93", // 5번째 - 보라
+  "#F4A261", // 6번째 - 연주황
 ];
 
+const NO_GEOMETRY_COLOR = "#AAAAAA";
+
 function getCourseColor(index: number): string {
-  return COURSE_COLORS[index % COURSE_COLORS.length];
+  return ROUTE_COLORS[index % ROUTE_COLORS.length];
 }
 
 function extractFirstLine(geometry?: { type?: string; coordinates?: any } | null): number[][] | null {
