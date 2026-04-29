@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Map as MapIcon, Info } from "lucide-react";
+import { Map as MapIcon, Info, Loader2 } from "lucide-react";
+import { fetchVWorldTrail, matchBestFeature, saveTrailGeometry } from "@/lib/vworldTrails";
 
 interface TrailGeometry {
   type?: string;
@@ -10,6 +11,11 @@ interface TrailDetailMapProps {
   geometry: TrailGeometry | null | undefined;
   difficulty: string | null | undefined;
   waypoints?: string | null;
+  trailId?: string;
+  trailName?: string;
+  mountainName?: string;
+  distanceKm?: number | null;
+  onGeometryFetched?: (geometry: TrailGeometry) => void;
 }
 
 function getColorByDifficulty(difficulty: string | null | undefined): string {
@@ -42,24 +48,77 @@ function parseWaypoints(raw?: string | null): string[] {
     .filter(Boolean);
 }
 
-export function TrailDetailMap({ geometry, difficulty, waypoints }: TrailDetailMapProps) {
+export function TrailDetailMap({
+  geometry,
+  difficulty,
+  waypoints,
+  trailId,
+  trailName,
+  mountainName,
+  distanceKm,
+  onGeometryFetched,
+}: TrailDetailMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const overlaysRef = useRef<any[]>([]);
   const [mapReady, setMapReady] = useState(false);
   const [mapType, setMapType] = useState<"NORMAL" | "TERRAIN">("TERRAIN");
 
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map || !window.naver?.maps) return;
-    map.setMapTypeId(window.naver.maps.MapTypeId[mapType]);
-  }, [mapType]);
+  // VWorld auto-fetch state
+  const [fetching, setFetching] = useState(false);
+  const [fetchFailed, setFetchFailed] = useState(false);
+  const fetchAttemptedRef = useRef(false);
 
   const path = extractFirstLine(geometry)?.filter(
     (pt) => Array.isArray(pt) && pt.length >= 2
   );
   const hasPath = !!path && path.length >= 2;
   const wpList = parseWaypoints(waypoints);
+
+  // Sync map type toggle
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !window.naver?.maps) return;
+    map.setMapTypeId(window.naver.maps.MapTypeId[mapType]);
+  }, [mapType]);
+
+  // Auto-fetch from VWorld when geometry missing
+  useEffect(() => {
+    if (hasPath) return;
+    if (!trailId || !mountainName) return;
+    if (fetchAttemptedRef.current) return;
+    fetchAttemptedRef.current = true;
+
+    let cancelled = false;
+    (async () => {
+      setFetching(true);
+      setFetchFailed(false);
+      try {
+        const features = await fetchVWorldTrail(mountainName);
+        const match = matchBestFeature(features, trailName || "", distanceKm ?? null);
+        if (cancelled) return;
+        if (!match || !match.feature?.geometry) {
+          setFetchFailed(true);
+          return;
+        }
+        const geom = match.feature.geometry as TrailGeometry;
+        onGeometryFetched?.(geom);
+        saveTrailGeometry({
+          trailId,
+          geometry: geom,
+          matchedFeatureId: match.feature.id?.toString(),
+          matchConfidence: match.confidence,
+        }).catch(() => {});
+      } catch {
+        if (!cancelled) setFetchFailed(true);
+      } finally {
+        if (!cancelled) setFetching(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [hasPath, trailId, mountainName, trailName, distanceKm, onGeometryFetched]);
 
   // Init map
   useEffect(() => {
@@ -185,9 +244,19 @@ export function TrailDetailMap({ geometry, difficulty, waypoints }: TrailDetailM
           <MapIcon className="h-5 w-5 text-primary" />
           <h2 className="text-base font-bold text-foreground">코스 경로</h2>
         </div>
-        <div className="flex items-center justify-center gap-2 rounded-xl bg-muted/40 px-4 py-10 text-sm text-muted-foreground">
-          <Info className="h-4 w-4" /> 코스 경로 데이터 준비 중
-        </div>
+        {fetching ? (
+          <div className="flex items-center justify-center gap-2 rounded-xl bg-muted/40 px-4 py-10 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> 경로 불러오는 중...
+          </div>
+        ) : fetchFailed ? (
+          <div className="flex items-center justify-center gap-2 rounded-xl bg-muted/40 px-4 py-10 text-sm text-muted-foreground">
+            <Info className="h-4 w-4" /> 경로 데이터 준비 중 🗺️
+          </div>
+        ) : (
+          <div className="flex items-center justify-center gap-2 rounded-xl bg-muted/40 px-4 py-10 text-sm text-muted-foreground">
+            <Info className="h-4 w-4" /> 코스 경로 데이터 준비 중
+          </div>
+        )}
         {wpList.length > 0 && (
           <div className="rounded-xl bg-muted/30 p-3 space-y-1">
             <div className="text-xs font-semibold text-foreground mb-1">분기점</div>
