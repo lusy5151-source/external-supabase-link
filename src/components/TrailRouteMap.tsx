@@ -47,7 +47,15 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
   const selectedOverlaysRef = useRef<any[]>([]);
 
   const [mapReady, setMapReady] = useState(false);
+  const [mapType, setMapType] = useState<"NORMAL" | "TERRAIN">("TERRAIN");
   const { trails } = useTrails(mountainId ?? 0);
+
+  // Toggle map type when user clicks the buttons
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !window.naver?.maps) return;
+    map.setMapTypeId(window.naver.maps.MapTypeId[mapType]);
+  }, [mapType]);
 
   // Init map once — wait for `init` event before signaling ready
   useEffect(() => {
@@ -257,6 +265,23 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
           ref={mapRef}
           className="naver-map-container h-[350px] rounded-xl border border-border overflow-hidden"
         />
+        {/* Map type toggle */}
+        <div className="absolute top-2 right-2 z-10 flex rounded-lg overflow-hidden shadow-md border border-border bg-background">
+          {(["NORMAL", "TERRAIN"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setMapType(t)}
+              className={`px-2.5 py-1 text-xs font-semibold transition-colors ${
+                mapType === t
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-background text-foreground hover:bg-muted"
+              }`}
+            >
+              {t === "NORMAL" ? "일반" : "지형도"}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 코스 범례 */}
