@@ -15,6 +15,7 @@ interface TrailDetailMapProps {
   trailName?: string;
   mountainName?: string;
   distanceKm?: number | null;
+  gpxSource?: string | null;
   onGeometryFetched?: (geometry: TrailGeometry) => void;
 }
 
@@ -56,6 +57,7 @@ export function TrailDetailMap({
   trailName,
   mountainName,
   distanceKm,
+  gpxSource,
   onGeometryFetched,
 }: TrailDetailMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -69,7 +71,10 @@ export function TrailDetailMap({
   const [fetchFailed, setFetchFailed] = useState(false);
   const fetchAttemptedRef = useRef(false);
 
-  const path = extractFirstLine(geometry)?.filter(
+  // Treat synthetic geometry as missing — force VWorld retry
+  const isSynthetic = gpxSource === "synthetic";
+  const effectiveGeometry = isSynthetic ? null : geometry;
+  const path = extractFirstLine(effectiveGeometry)?.filter(
     (pt) => Array.isArray(pt) && pt.length >= 2
   );
   const hasPath = !!path && path.length >= 2;

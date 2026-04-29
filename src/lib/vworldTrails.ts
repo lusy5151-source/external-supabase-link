@@ -10,23 +10,52 @@ export interface VWorldFeature {
   geometry: { type: string; coordinates: any };
 }
 
-export async function fetchVWorldTrail(mountainName: string): Promise<VWorldFeature[]> {
-  const url = new URL("https://api.vworld.kr/req/data");
-  url.searchParams.set("service", "data");
-  url.searchParams.set("request", "GetFeature");
-  url.searchParams.set("data", "LT_L_FRSTCLIMB");
-  url.searchParams.set("key", VWORLD_KEY);
-  url.searchParams.set("domain", VWORLD_DOMAIN);
-  url.searchParams.set("attrFilter", `mntn_nm:LIKE:${mountainName}`);
-  url.searchParams.set("crs", "EPSG:4326");
-  url.searchParams.set("format", "json");
-  url.searchParams.set("size", "1000");
-  url.searchParams.set("geometry", "true");
+// JSONP-based call to bypass browser CORS restrictions on api.vworld.kr.
+export function fetchVWorldTrail(mountainName: string): Promise<VWorldFeature[]> {
+  return new Promise((resolve) => {
+    const callbackName = `vworldCallback_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
+    const script = document.createElement("script");
 
-  const res = await fetch(url.toString());
-  if (!res.ok) throw new Error(`VWorld HTTP ${res.status}`);
-  const data = await res.json();
-  return data?.response?.result?.featureCollection?.features || [];
+    const params = new URLSearchParams({
+      service: "data",
+      request: "GetFeature",
+      data: "LT_L_FRSTCLIMB",
+      key: VWORLD_KEY,
+      domain: VWORLD_DOMAIN,
+      attrFilter: `mntn_nm:LIKE:${mountainName}`,
+      crs: "EPSG:4326",
+      format: "json",
+      size: "1000",
+      geometry: "true",
+      callback: callbackName,
+    });
+
+    const cleanup = () => {
+      try { delete (window as any)[callbackName]; } catch {}
+      try { if (script.parentNode) script.parentNode.removeChild(script); } catch {}
+    };
+
+    (window as any)[callbackName] = (data: any) => {
+      const features = data?.response?.result?.featureCollection?.features || [];
+      cleanup();
+      resolve(features);
+    };
+
+    script.src = `https://api.vworld.kr/req/data?${params.toString()}`;
+    script.onerror = () => {
+      cleanup();
+      resolve([]);
+    };
+    document.head.appendChild(script);
+
+    // 5s timeout
+    setTimeout(() => {
+      if ((window as any)[callbackName]) {
+        cleanup();
+        resolve([]);
+      }
+    }, 5000);
+  });
 }
 
 const STOPWORDS = new Set(["코스", "구간", "탐방로", "등산로", "등산코스", "루트", "길"]);
