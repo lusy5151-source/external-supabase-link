@@ -15,6 +15,7 @@ interface TrailDetailMapProps {
   trailName?: string;
   mountainName?: string;
   distanceKm?: number | null;
+  gpxSource?: string | null;
   onGeometryFetched?: (geometry: TrailGeometry) => void;
 }
 
