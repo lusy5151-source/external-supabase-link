@@ -244,9 +244,19 @@ export function TrailDetailMap({
           <MapIcon className="h-5 w-5 text-primary" />
           <h2 className="text-base font-bold text-foreground">코스 경로</h2>
         </div>
-        <div className="flex items-center justify-center gap-2 rounded-xl bg-muted/40 px-4 py-10 text-sm text-muted-foreground">
-          <Info className="h-4 w-4" /> 코스 경로 데이터 준비 중
-        </div>
+        {fetching ? (
+          <div className="flex items-center justify-center gap-2 rounded-xl bg-muted/40 px-4 py-10 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> 경로 불러오는 중...
+          </div>
+        ) : fetchFailed ? (
+          <div className="flex items-center justify-center gap-2 rounded-xl bg-muted/40 px-4 py-10 text-sm text-muted-foreground">
+            <Info className="h-4 w-4" /> 경로 데이터 준비 중 🗺️
+          </div>
+        ) : (
+          <div className="flex items-center justify-center gap-2 rounded-xl bg-muted/40 px-4 py-10 text-sm text-muted-foreground">
+            <Info className="h-4 w-4" /> 코스 경로 데이터 준비 중
+          </div>
+        )}
         {wpList.length > 0 && (
           <div className="rounded-xl bg-muted/30 p-3 space-y-1">
             <div className="text-xs font-semibold text-foreground mb-1">분기점</div>
