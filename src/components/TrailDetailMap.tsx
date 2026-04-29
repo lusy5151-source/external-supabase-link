@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Map as MapIcon, Info } from "lucide-react";
+import { Map as MapIcon, Info, Loader2 } from "lucide-react";
+import { fetchVWorldTrail, matchBestFeature, saveTrailGeometry } from "@/lib/vworldTrails";
 
 interface TrailGeometry {
   type?: string;
@@ -10,6 +11,11 @@ interface TrailDetailMapProps {
   geometry: TrailGeometry | null | undefined;
   difficulty: string | null | undefined;
   waypoints?: string | null;
+  trailId?: string;
+  trailName?: string;
+  mountainName?: string;
+  distanceKm?: number | null;
+  onGeometryFetched?: (geometry: TrailGeometry) => void;
 }
 
 function getColorByDifficulty(difficulty: string | null | undefined): string {
