@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Map as MapIcon, Info, Loader2 } from "lucide-react";
-import { fetchVWorldTrail, matchBestFeature, saveTrailGeometry } from "@/lib/vworldTrails";
+import { Map as MapIcon } from "lucide-react";
 
 interface TrailGeometry {
   type?: string;
@@ -11,12 +10,8 @@ interface TrailDetailMapProps {
   geometry: TrailGeometry | null | undefined;
   difficulty: string | null | undefined;
   waypoints?: string | null;
-  trailId?: string;
-  trailName?: string;
-  mountainName?: string;
-  distanceKm?: number | null;
-  gpxSource?: string | null;
-  onGeometryFetched?: (geometry: TrailGeometry) => void;
+  mountainLat?: number | null;
+  mountainLng?: number | null;
 }
 
 function getColorByDifficulty(difficulty: string | null | undefined): string {
@@ -53,28 +48,18 @@ export function TrailDetailMap({
   geometry,
   difficulty,
   waypoints,
-  trailId,
-  trailName,
-  mountainName,
-  distanceKm,
-  gpxSource,
-  onGeometryFetched,
+  mountainLat,
+  mountainLng,
 }: TrailDetailMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
+  const placeholderMapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
+  const placeholderMapInstanceRef = useRef<any>(null);
   const overlaysRef = useRef<any[]>([]);
   const [mapReady, setMapReady] = useState(false);
   const [mapType, setMapType] = useState<"NORMAL" | "TERRAIN">("TERRAIN");
 
-  // VWorld auto-fetch state
-  const [fetching, setFetching] = useState(false);
-  const [fetchFailed, setFetchFailed] = useState(false);
-  const fetchAttemptedRef = useRef(false);
-
-  // Treat synthetic geometry as missing — force VWorld retry
-  const isSynthetic = gpxSource === "synthetic";
-  const effectiveGeometry = isSynthetic ? null : geometry;
-  const path = extractFirstLine(effectiveGeometry)?.filter(
+  const path = extractFirstLine(geometry)?.filter(
     (pt) => Array.isArray(pt) && pt.length >= 2
   );
   const hasPath = !!path && path.length >= 2;
@@ -82,50 +67,12 @@ export function TrailDetailMap({
 
   // Sync map type toggle
   useEffect(() => {
-    const map = mapInstanceRef.current;
+    const map = mapInstanceRef.current || placeholderMapInstanceRef.current;
     if (!map || !window.naver?.maps) return;
     map.setMapTypeId(window.naver.maps.MapTypeId[mapType]);
   }, [mapType]);
 
-  // Auto-fetch from VWorld when geometry missing
-  useEffect(() => {
-    if (hasPath) return;
-    if (!trailId || !mountainName) return;
-    if (fetchAttemptedRef.current) return;
-    fetchAttemptedRef.current = true;
-
-    let cancelled = false;
-    (async () => {
-      setFetching(true);
-      setFetchFailed(false);
-      try {
-        const features = await fetchVWorldTrail(mountainName);
-        const match = matchBestFeature(features, trailName || "", distanceKm ?? null);
-        if (cancelled) return;
-        if (!match || !match.feature?.geometry) {
-          setFetchFailed(true);
-          return;
-        }
-        const geom = match.feature.geometry as TrailGeometry;
-        onGeometryFetched?.(geom);
-        saveTrailGeometry({
-          trailId,
-          geometry: geom,
-          matchedFeatureId: match.feature.id?.toString(),
-          matchConfidence: match.confidence,
-        }).catch(() => {});
-      } catch {
-        if (!cancelled) setFetchFailed(true);
-      } finally {
-        if (!cancelled) setFetching(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [hasPath, trailId, mountainName, trailName, distanceKm, onGeometryFetched]);
-
-  // Init map
+  // Init map (with path)
   useEffect(() => {
     if (!hasPath) return;
     if (!mapRef.current) return;
@@ -158,6 +105,28 @@ export function TrailDetailMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasPath]);
 
+  // Init placeholder map (no path) — TERRAIN centered on mountain
+  useEffect(() => {
+    if (hasPath) return;
+    if (!placeholderMapRef.current) return;
+    if (!window.naver?.maps) return;
+    if (typeof mountainLat !== "number" || typeof mountainLng !== "number") return;
+    const naver = window.naver;
+
+    const map = new naver.maps.Map(placeholderMapRef.current, {
+      center: new naver.maps.LatLng(mountainLat, mountainLng),
+      zoom: 13,
+      mapTypeId: naver.maps.MapTypeId.TERRAIN,
+      zoomControl: true,
+      zoomControlOptions: { position: naver.maps.Position.BOTTOM_RIGHT },
+    });
+    placeholderMapInstanceRef.current = map;
+
+    return () => {
+      placeholderMapInstanceRef.current = null;
+    };
+  }, [hasPath, mountainLat, mountainLng]);
+
   // Draw polyline + markers + waypoints
   useEffect(() => {
     if (!mapReady) return;
@@ -172,7 +141,6 @@ export function TrailDetailMap({
     const color = getColorByDifficulty(difficulty);
     const naverPath = path!.map(([lng, lat]) => new naver.maps.LatLng(lat, lng));
 
-    // Polyline
     const polyline = new naver.maps.Polyline({
       map,
       path: naverPath,
@@ -184,7 +152,6 @@ export function TrailDetailMap({
     });
     overlaysRef.current.push(polyline);
 
-    // Start marker ▶ 출발
     const startMarker = new naver.maps.Marker({
       position: naverPath[0],
       map,
@@ -196,7 +163,6 @@ export function TrailDetailMap({
     });
     overlaysRef.current.push(startMarker);
 
-    // End marker 🏁 도착
     const endMarker = new naver.maps.Marker({
       position: naverPath[naverPath.length - 1],
       map,
@@ -208,7 +174,6 @@ export function TrailDetailMap({
     });
     overlaysRef.current.push(endMarker);
 
-    // Waypoints — distribute evenly along the path (no coords available)
     if (wpList.length > 0 && naverPath.length > 2) {
       const step = naverPath.length / (wpList.length + 1);
       wpList.forEach((label, i) => {
@@ -235,13 +200,12 @@ export function TrailDetailMap({
       });
     }
 
-    // fitBounds — track manually to avoid LatLngBounds.isEmpty()
     const bounds = new naver.maps.LatLngBounds(naverPath[0], naverPath[0]);
     naverPath.forEach((p) => bounds.extend(p));
     map.fitBounds(bounds, { top: 50, right: 40, bottom: 50, left: 40 });
   }, [mapReady, difficulty, waypoints, path?.length]);
 
-  // No geometry — show placeholder
+  // No geometry — show TERRAIN map centered on mountain with guidance text
   if (!hasPath) {
     return (
       <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-3">
@@ -249,19 +213,31 @@ export function TrailDetailMap({
           <MapIcon className="h-5 w-5 text-primary" />
           <h2 className="text-base font-bold text-foreground">코스 경로</h2>
         </div>
-        {fetching ? (
-          <div className="flex items-center justify-center gap-2 rounded-xl bg-muted/40 px-4 py-10 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> 경로 불러오는 중...
+        <div className="relative">
+          <div
+            ref={placeholderMapRef}
+            className="naver-map-container h-[280px] rounded-xl border border-border overflow-hidden"
+          />
+          <div className="absolute top-2 right-2 z-10 flex rounded-lg overflow-hidden shadow-md border border-border bg-background">
+            {(["NORMAL", "TERRAIN"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setMapType(t)}
+                className={`px-2.5 py-1 text-xs font-semibold transition-colors ${
+                  mapType === t
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background text-foreground hover:bg-muted"
+                }`}
+              >
+                {t === "NORMAL" ? "일반" : "지형도"}
+              </button>
+            ))}
           </div>
-        ) : fetchFailed ? (
-          <div className="flex items-center justify-center gap-2 rounded-xl bg-muted/40 px-4 py-10 text-sm text-muted-foreground">
-            <Info className="h-4 w-4" /> 경로 데이터 준비 중 🗺️
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 rounded-full bg-background/90 backdrop-blur px-3 py-1.5 text-xs font-medium text-foreground shadow-md border border-border">
+            등산로는 지형도에서 확인하세요 🗺️
           </div>
-        ) : (
-          <div className="flex items-center justify-center gap-2 rounded-xl bg-muted/40 px-4 py-10 text-sm text-muted-foreground">
-            <Info className="h-4 w-4" /> 코스 경로 데이터 준비 중
-          </div>
-        )}
+        </div>
         {wpList.length > 0 && (
           <div className="rounded-xl bg-muted/30 p-3 space-y-1">
             <div className="text-xs font-semibold text-foreground mb-1">분기점</div>
