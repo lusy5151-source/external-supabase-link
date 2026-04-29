@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { TrailDetailMap } from "@/components/TrailDetailMap";
 
 interface TrailDetail {
   id: string;
@@ -26,6 +27,8 @@ interface TrailDetail {
   transport_public: string | null;
   transport_car: string | null;
   hiking_tips: string | null;
+  geometry: { type?: string; coordinates?: any } | null;
+  waypoints: string | null;
 }
 
 function formatDuration(minutes: number): string {
