@@ -48,18 +48,26 @@ function parseWaypoints(raw?: string | null): string[] {
     .filter(Boolean);
 }
 
-export function TrailDetailMap({ geometry, difficulty, waypoints }: TrailDetailMapProps) {
+export function TrailDetailMap({
+  geometry,
+  difficulty,
+  waypoints,
+  trailId,
+  trailName,
+  mountainName,
+  distanceKm,
+  onGeometryFetched,
+}: TrailDetailMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const overlaysRef = useRef<any[]>([]);
   const [mapReady, setMapReady] = useState(false);
   const [mapType, setMapType] = useState<"NORMAL" | "TERRAIN">("TERRAIN");
 
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map || !window.naver?.maps) return;
-    map.setMapTypeId(window.naver.maps.MapTypeId[mapType]);
-  }, [mapType]);
+  // VWorld auto-fetch state
+  const [fetching, setFetching] = useState(false);
+  const [fetchFailed, setFetchFailed] = useState(false);
+  const fetchAttemptedRef = useRef(false);
 
   const path = extractFirstLine(geometry)?.filter(
     (pt) => Array.isArray(pt) && pt.length >= 2
