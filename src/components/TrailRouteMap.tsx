@@ -120,7 +120,8 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
     startMarkersRef.current.forEach((m) => m.setMap?.(null));
     startMarkersRef.current = [];
 
-    const bounds = new naver.maps.LatLngBounds();
+    const summit = new naver.maps.LatLng(lat, lng);
+    const bounds = new naver.maps.LatLngBounds(summit, summit);
 
     trails.forEach((trail, idx) => {
       const coords = extractFirstLine(trail.geometry);
