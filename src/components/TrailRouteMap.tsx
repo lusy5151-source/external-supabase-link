@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Map as MapIcon, Info } from "lucide-react";
 import { useTrails, type Trail } from "@/hooks/useTrails";
 
@@ -40,11 +40,13 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
   const mapInstanceRef = useRef<any>(null);
   const summitMarkerRef = useRef<any>(null);
   const coursePolylinesRef = useRef<any[]>([]);
+  const startMarkersRef = useRef<any[]>([]);
   const selectedOverlaysRef = useRef<any[]>([]);
 
+  const [mapReady, setMapReady] = useState(false);
   const { trails } = useTrails(mountainId ?? 0);
 
-  // Init map once
+  // Init map once — wait for `init` event before signaling ready
   useEffect(() => {
     if (!mapRef.current) return;
     if (!window.naver?.maps) {
@@ -61,7 +63,7 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
     });
     mapInstanceRef.current = map;
 
-    // 봉우리 마커 — ⛰️ 이모지 + 산 이름 레이블
+    // 봉우리 마커
     summitMarkerRef.current = new naver.maps.Marker({
       position: new naver.maps.LatLng(lat, lng),
       map,
@@ -80,20 +82,34 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
       zIndex: 200,
     });
 
+    // 지도 init 완료 후에만 폴리라인 그리기 시작
+    const initListener = naver.maps.Event.addListener(map, "init", () => {
+      setMapReady(true);
+    });
+
+    // Safety net: 일부 환경에서 init 이벤트가 누락될 수 있어 다음 tick에 fallback
+    const fallbackTimer = window.setTimeout(() => setMapReady(true), 300);
+
     return () => {
+      window.clearTimeout(fallbackTimer);
+      try { naver.maps.Event.removeListener(initListener); } catch {}
       coursePolylinesRef.current.forEach((p) => p.setMap?.(null));
       coursePolylinesRef.current = [];
+      startMarkersRef.current.forEach((m) => m.setMap?.(null));
+      startMarkersRef.current = [];
       selectedOverlaysRef.current.forEach((o) => o.setMap?.(null));
       selectedOverlaysRef.current = [];
       summitMarkerRef.current?.setMap(null);
       summitMarkerRef.current = null;
       mapInstanceRef.current = null;
+      setMapReady(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mountainName, lat, lng]);
 
-  // Draw all course polylines from trails
+  // Draw all course polylines — only after map is fully ready
   useEffect(() => {
+    if (!mapReady) return;
     const map = mapInstanceRef.current;
     if (!map || !window.naver?.maps) return;
     const naver = window.naver;
@@ -101,23 +117,29 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
     // clear previous
     coursePolylinesRef.current.forEach((p) => p.setMap?.(null));
     coursePolylinesRef.current = [];
+    startMarkersRef.current.forEach((m) => m.setMap?.(null));
+    startMarkersRef.current = [];
 
-    const bounds = new naver.maps.LatLngBounds(
-      new naver.maps.LatLng(lat, lng),
-      new naver.maps.LatLng(lat, lng)
-    );
-    let drawnAny = false;
+    const bounds = new naver.maps.LatLngBounds();
 
     trails.forEach((trail, idx) => {
       const coords = extractFirstLine(trail.geometry);
-      if (!coords || coords.length === 0) return;
-
-      const path = coords
-        .filter((pt) => Array.isArray(pt) && pt.length >= 2)
-        .map(([lng_, lat_]) => new naver.maps.LatLng(lat_, lng_));
-      if (path.length < 2) return;
-
       const color = getCourseColor(idx);
+
+      if (!coords || coords.length < 2) {
+        // geometry 없음 → 폴리라인 생략, 범례에만 표시
+        return;
+      }
+
+      const validPts = coords.filter((pt) => Array.isArray(pt) && pt.length >= 2);
+      if (validPts.length < 2) return;
+
+      // bounds: 모든 좌표를 직접 extend
+      validPts.forEach(([lng_, lat_]) => {
+        bounds.extend(new naver.maps.LatLng(lat_, lng_));
+      });
+
+      const path = validPts.map(([lng_, lat_]) => new naver.maps.LatLng(lat_, lng_));
       const polyline = new naver.maps.Polyline({
         map,
         path,
@@ -148,17 +170,19 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
       });
 
       coursePolylinesRef.current.push(polyline);
-      path.forEach((p) => bounds.extend(p));
-      drawnAny = true;
     });
 
-    if (drawnAny && !selectedTrail) {
-      map.fitBounds(bounds, { top: 60, right: 40, bottom: 40, left: 40 });
+    // 봉우리 좌표도 bounds에 포함시켜 항상 보이게
+    bounds.extend(new naver.maps.LatLng(lat, lng));
+
+    if (!bounds.isEmpty() && !selectedTrail) {
+      map.fitBounds(bounds, { top: 60, right: 50, bottom: 50, left: 50 });
     }
-  }, [trails, selectedTrail, lat, lng]);
+  }, [mapReady, trails, selectedTrail, lat, lng]);
 
   // Emphasize selected trail with start/end markers + zoom
   useEffect(() => {
+    if (!mapReady) return;
     const map = mapInstanceRef.current;
     if (!map || !window.naver?.maps) return;
     const naver = window.naver;
@@ -201,10 +225,12 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
     });
     selectedOverlaysRef.current.push(endMarker);
 
-    const bounds = new naver.maps.LatLngBounds(path[0], path[0]);
+    const bounds = new naver.maps.LatLngBounds();
     path.forEach((p) => bounds.extend(p));
-    map.fitBounds(bounds, { top: 60, right: 40, bottom: 60, left: 40 });
-  }, [selectedTrail, lat, lng]);
+    if (!bounds.isEmpty()) {
+      map.fitBounds(bounds, { top: 60, right: 50, bottom: 60, left: 50 });
+    }
+  }, [mapReady, selectedTrail, lat, lng]);
 
   const noGeometry = !!selectedTrail && !extractFirstLine(selectedTrail.geometry)?.length;
   const hasAnyTrail = trails.length > 0;
@@ -248,7 +274,7 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
               >
                 <span
                   className="inline-block w-4 h-1 rounded-full shrink-0"
-                  style={{ background: color, opacity: hasGeo ? 1 : 0.35 }}
+                  style={{ background: color, opacity: hasGeo ? 1 : 0.3 }}
                 />
                 <span className="font-medium truncate">{trail.name}</span>
                 {trail.distance_km != null && (
@@ -258,7 +284,7 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
                   <span className="text-muted-foreground">· {trail.difficulty}</span>
                 )}
                 {!hasGeo && (
-                  <span className="text-[10px] text-muted-foreground ml-auto">GPS 준비 중</span>
+                  <span className="text-[10px] text-muted-foreground ml-auto">경로 준비 중 🔜</span>
                 )}
               </div>
             );
