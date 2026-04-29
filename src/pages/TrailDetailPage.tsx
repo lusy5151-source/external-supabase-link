@@ -121,6 +121,13 @@ export default function TrailDetailPage() {
         {mountain?.nameKo || "산 상세"} 으로 돌아가기
       </Link>
 
+      {/* Course Route Map */}
+      <TrailDetailMap
+        geometry={trail.geometry}
+        difficulty={trail.difficulty}
+        waypoints={trail.waypoints}
+      />
+
       {/* Course Overview Card */}
       <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
         <div className="flex items-start justify-between">
