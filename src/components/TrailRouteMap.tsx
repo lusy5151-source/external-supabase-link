@@ -223,11 +223,9 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
     });
     selectedOverlaysRef.current.push(endMarker);
 
-    const bounds = new naver.maps.LatLngBounds();
+    const bounds = new naver.maps.LatLngBounds(path[0], path[0]);
     path.forEach((p) => bounds.extend(p));
-    if (!bounds.isEmpty()) {
-      map.fitBounds(bounds, { top: 60, right: 50, bottom: 60, left: 50 });
-    }
+    map.fitBounds(bounds, { top: 60, right: 50, bottom: 60, left: 50 });
   }, [mapReady, selectedTrail, lat, lng]);
 
   const noGeometry = !!selectedTrail && !extractFirstLine(selectedTrail.geometry)?.length;
