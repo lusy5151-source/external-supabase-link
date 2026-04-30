@@ -22,6 +22,7 @@ import type { Trail } from "@/hooks/useTrails";
 import { ParkRestrictions } from "@/components/ParkRestrictions";
 import { MountainFacilities } from "@/components/MountainFacilities";
 import WalkingPathsSection from "@/components/WalkingPathsSection";
+import NationalParkCoursesSection from "@/components/NationalParkCoursesSection";
 
 import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
@@ -236,6 +237,12 @@ const MountainDetail = () => {
         fallbackTrails={mountain.trails}
         selectedTrailId={selectedTrail?.id ?? null}
         onSelectTrail={setSelectedTrail}
+      />
+
+      {/* Official national park courses */}
+      <NationalParkCoursesSection
+        mountainId={mountain.id}
+        isNationalPark={mountain.is_national_park}
       />
 
       <TrailRouteMap
