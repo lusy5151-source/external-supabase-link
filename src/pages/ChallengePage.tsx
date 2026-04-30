@@ -55,6 +55,9 @@ const CATEGORY_META: Record<string, { icon: any; color: string; bg: string; labe
   season: { icon: Leaf, label: "계절", color: "text-rose-600 dark:text-rose-400", bg: "bg-rose-100 dark:bg-rose-900/30" },
   special: { icon: Sparkles, label: "특별", color: "text-fuchsia-600 dark:text-fuchsia-400", bg: "bg-fuchsia-100 dark:bg-fuchsia-900/30" },
   social: { icon: Users, label: "소셜", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-900/30" },
+  bukhansan_4: { icon: Mountain, label: "북한산 4산", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
+  jirisan_cheonwang: { icon: Mountain, label: "지리산 천왕봉", color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-100 dark:bg-orange-900/30" },
+  national_park_10: { icon: Trees, label: "국립공원 탐방", color: "text-green-700 dark:text-green-400", bg: "bg-green-100 dark:bg-green-900/30" },
   // legacy fallbacks
   distance: { icon: TrendingUp, label: "거리", color: "text-coral", bg: "bg-coral/15" },
   weather: { icon: CloudRain, label: "날씨", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-900/30" },
@@ -77,6 +80,9 @@ const GROUP_ORDER: string[] = [
   "season",
   "special",
   "social",
+  "bukhansan_4",
+  "jirisan_cheonwang",
+  "national_park_10",
 ];
 
 const groupKey = (c: Challenge) => c.category_group ?? c.category ?? "other";
