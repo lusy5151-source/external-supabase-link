@@ -1358,6 +1358,92 @@ export type Database = {
         }
         Relationships: []
       }
+      national_park_courses: {
+        Row: {
+          cos_kor_nm: string
+          cos_schdul: string | null
+          created_at: string | null
+          detail_cos: string | null
+          detail_cos_no: number | null
+          difficulty: string | null
+          forward_minutes: number | null
+          forward_tm: string | null
+          id: number
+          latitude: number | null
+          leng: string | null
+          leng_meters: number | null
+          longitude: number | null
+          mng_tel: string | null
+          mountain_id: number | null
+          nrprk_cd: string
+          objt_id: string
+          park_name: string
+          raw_x: string | null
+          raw_y: string | null
+          shape_leng: number | null
+          source: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cos_kor_nm: string
+          cos_schdul?: string | null
+          created_at?: string | null
+          detail_cos?: string | null
+          detail_cos_no?: number | null
+          difficulty?: string | null
+          forward_minutes?: number | null
+          forward_tm?: string | null
+          id?: number
+          latitude?: number | null
+          leng?: string | null
+          leng_meters?: number | null
+          longitude?: number | null
+          mng_tel?: string | null
+          mountain_id?: number | null
+          nrprk_cd: string
+          objt_id: string
+          park_name: string
+          raw_x?: string | null
+          raw_y?: string | null
+          shape_leng?: number | null
+          source?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cos_kor_nm?: string
+          cos_schdul?: string | null
+          created_at?: string | null
+          detail_cos?: string | null
+          detail_cos_no?: number | null
+          difficulty?: string | null
+          forward_minutes?: number | null
+          forward_tm?: string | null
+          id?: number
+          latitude?: number | null
+          leng?: string | null
+          leng_meters?: number | null
+          longitude?: number | null
+          mng_tel?: string | null
+          mountain_id?: number | null
+          nrprk_cd?: string
+          objt_id?: string
+          park_name?: string
+          raw_x?: string | null
+          raw_y?: string | null
+          shape_leng?: number | null
+          source?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "national_park_courses_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       national_parks: {
         Row: {
           area_km2: number | null
