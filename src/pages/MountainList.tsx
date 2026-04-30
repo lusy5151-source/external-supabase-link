@@ -154,10 +154,7 @@ const MountainList = () => {
         </div>
       ) : (
         <>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input type="text" placeholder="산 이름으로 검색..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full rounded-xl border border-input bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
+          <RecentSearchInput search={search} setSearch={setSearch} />
 
           <RegisterMountainModal />
 
