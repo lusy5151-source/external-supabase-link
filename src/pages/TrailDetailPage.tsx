@@ -29,6 +29,9 @@ interface TrailDetail {
   hiking_tips: string | null;
   geometry: { type?: string; coordinates?: any } | null;
   waypoints: string | null;
+  ending_point: string | null;
+  waypoints_json: any | null;
+  route_segments: any | null;
 }
 
 function formatDuration(minutes: number): string {
