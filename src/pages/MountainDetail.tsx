@@ -31,6 +31,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { addRecentSearch } from "@/lib/recentSearches";
 
 const weatherOptions: { value: WeatherCondition; label: string; icon: any }[] = [
   { value: "맑음", label: "맑음", icon: Sun },
