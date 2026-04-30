@@ -5,11 +5,16 @@ import { useStore } from "@/context/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSharedCompletions, type SharedCompletion } from "@/hooks/useSharedCompletions";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { Layers } from "lucide-react";
+
+const SAFEMAP_PROXY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/safemap-wms`;
 
 const MapView = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
+  const safemapLayerRef = useRef<any>(null);
   const navigate = useNavigate();
   const { mountains } = useMountains();
   const { isCompleted, completedCount } = useStore();
@@ -17,6 +22,7 @@ const MapView = () => {
   const { fetchSharedCompletions } = useSharedCompletions();
   const [sharedMountains, setSharedMountains] = useState<Set<number>>(new Set());
   const [sharedCompletionMap, setSharedCompletionMap] = useState<Map<number, SharedCompletion>>(new Map());
+  const [showSafemap, setShowSafemap] = useState(false);
 
   useEffect(() => {
     if (user) {
