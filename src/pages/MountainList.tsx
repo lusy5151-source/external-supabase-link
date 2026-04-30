@@ -1,4 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { getRecentSearches, removeRecentSearch, clearRecentSearches, addRecentSearch, type RecentSearch } from "@/lib/recentSearches";
+import { X as XIcon } from "lucide-react";
 import { regions } from "@/data/mountains";
 import type { Mountain } from "@/data/mountains";
 import { useMountains } from "@/contexts/MountainsContext";
@@ -152,10 +154,7 @@ const MountainList = () => {
         </div>
       ) : (
         <>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input type="text" placeholder="산 이름으로 검색..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full rounded-xl border border-input bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
+          <RecentSearchInput search={search} setSearch={setSearch} />
 
           <RegisterMountainModal />
 
@@ -237,7 +236,7 @@ const MountainCard = React.memo(function MountainCard({ m, isCompleted: complete
       <button onClick={() => toggleComplete(m.id)} className="shrink-0" aria-label={completed ? "완등 취소" : "완등 표시"}>
         {completed ? <CheckCircle2 className="h-5 w-5 text-primary" /> : <Circle className="h-5 w-5 text-muted-foreground/40" />}
       </button>
-      <Link to={`/mountains/${m.id}`} className="flex flex-1 items-center justify-between min-w-0">
+      <Link to={`/mountains/${m.id}`} onClick={() => addRecentSearch({ id: m.id, name: m.nameKo })} className="flex flex-1 items-center justify-between min-w-0">
         <div className="min-w-0 space-y-0.5">
           <div className="flex items-center gap-1.5 flex-wrap">
             <p className="font-medium truncate text-foreground">{m.nameKo}</p>
@@ -303,6 +302,85 @@ function WalkingPathsList({ paths }: { paths: any[] }) {
         })}
       </div>
     </>
+  );
+}
+
+function RecentSearchInput({ search, setSearch }: { search: string; setSearch: (v: string) => void }) {
+  const [focused, setFocused] = useState(false);
+  const [recents, setRecents] = useState<RecentSearch[]>(() => getRecentSearches());
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const update = () => setRecents(getRecentSearches());
+    window.addEventListener("wandeung_recent_searches_updated", update);
+    window.addEventListener("storage", update);
+    return () => {
+      window.removeEventListener("wandeung_recent_searches_updated", update);
+      window.removeEventListener("storage", update);
+    };
+  }, []);
+
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setFocused(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
+
+  const showDropdown = focused && search.trim() === "" && recents.length > 0;
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <input
+        type="text"
+        placeholder="산 이름으로 검색..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        onFocus={() => setFocused(true)}
+        className="w-full rounded-xl border border-input bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+      />
+      {showDropdown && (
+        <div className="absolute left-0 right-0 top-full mt-1 z-30 rounded-xl border border-border bg-card shadow-lg overflow-hidden">
+          <div className="px-3 py-2 text-[11px] font-medium text-muted-foreground border-b border-border">최근 검색</div>
+          <ul className="max-h-72 overflow-y-auto">
+            {recents.map((r) => (
+              <li key={r.id} className="flex items-center hover:bg-primary/5 transition-colors">
+                <Link
+                  to={`/mountains/${r.id}`}
+                  onClick={() => {
+                    addRecentSearch(r);
+                    setFocused(false);
+                  }}
+                  className="flex-1 px-3 py-2.5 text-sm text-foreground truncate"
+                >
+                  {r.name}
+                </Link>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeRecentSearch(r.id);
+                  }}
+                  className="px-3 py-2.5 text-muted-foreground hover:text-foreground"
+                  aria-label="기록 삭제"
+                >
+                  <XIcon className="h-3.5 w-3.5" />
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="border-t border-border px-3 py-2 text-right">
+            <button
+              onClick={() => clearRecentSearches()}
+              className="text-[11px] text-muted-foreground hover:text-foreground"
+            >
+              전체 삭제
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

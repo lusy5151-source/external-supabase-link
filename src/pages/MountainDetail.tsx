@@ -31,6 +31,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { addRecentSearch } from "@/lib/recentSearches";
 
 const weatherOptions: { value: WeatherCondition; label: string; icon: any }[] = [
   { value: "맑음", label: "맑음", icon: Sun },
@@ -68,6 +69,9 @@ const MountainDetail = () => {
   const staticMountain = mountains.find((m) => m.id === mountainId);
   const userMountainRow = !staticMountain ? userMountains.find((m) => m.mountain_id === mountainId) : null;
   const mountain = staticMountain || (userMountainRow ? toMountain(userMountainRow) : null);
+  useEffect(() => {
+    if (mountain) addRecentSearch({ id: mountain.id, name: mountain.nameKo });
+  }, [mountain?.id]);
   const isUserCreated = !!(mountain as any)?.isUserCreated;
   const createdBy = (mountain as any)?.createdBy as string | undefined;
 
