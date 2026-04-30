@@ -5,11 +5,16 @@ import { useStore } from "@/context/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSharedCompletions, type SharedCompletion } from "@/hooks/useSharedCompletions";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { Layers } from "lucide-react";
+
+const SAFEMAP_PROXY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/safemap-wms`;
 
 const MapView = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
+  const safemapLayerRef = useRef<any>(null);
   const navigate = useNavigate();
   const { mountains } = useMountains();
   const { isCompleted, completedCount } = useStore();
@@ -17,6 +22,7 @@ const MapView = () => {
   const { fetchSharedCompletions } = useSharedCompletions();
   const [sharedMountains, setSharedMountains] = useState<Set<number>>(new Set());
   const [sharedCompletionMap, setSharedCompletionMap] = useState<Map<number, SharedCompletion>>(new Map());
+  const [showSafemap, setShowSafemap] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -97,6 +103,70 @@ const MapView = () => {
     });
   }, [mountains, isCompleted, sharedMountains, navigate]);
 
+  // SafeMap WMS overlay (산사태 위험지도 IF_0017) — EPSG:4326 BBOX 변환
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !window.naver?.maps) return;
+    const naver = window.naver;
+
+    if (!showSafemap) {
+      if (safemapLayerRef.current) {
+        map.overlayMapTypes?.removeAt?.(0);
+        safemapLayerRef.current = null;
+      }
+      return;
+    }
+
+    const TILE_SIZE = 256;
+    // Web Mercator 타일 (x,y,z) -> EPSG:4326 lon/lat BBOX
+    const tileToLonLatBBox = (x: number, y: number, z: number) => {
+      const n = Math.pow(2, z);
+      const lon1 = (x / n) * 360 - 180;
+      const lon2 = ((x + 1) / n) * 360 - 180;
+      const latRad1 = Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n)));
+      const latRad2 = Math.atan(Math.sinh(Math.PI * (1 - (2 * (y + 1)) / n)));
+      const lat1 = (latRad1 * 180) / Math.PI;
+      const lat2 = (latRad2 * 180) / Math.PI;
+      // WMS 1.1.1 EPSG:4326 BBOX 순서: minLon,minLat,maxLon,maxLat
+      const minLon = Math.min(lon1, lon2);
+      const maxLon = Math.max(lon1, lon2);
+      const minLat = Math.min(lat1, lat2);
+      const maxLat = Math.max(lat1, lat2);
+      return `${minLon},${minLat},${maxLon},${maxLat}`;
+    };
+
+    const safemapType = new naver.maps.ImageMapType({
+      name: "SafeMap_IF_0017",
+      tileSize: new naver.maps.Size(TILE_SIZE, TILE_SIZE),
+      minZoom: 6,
+      maxZoom: 18,
+      opacity: 0.55,
+      getTileUrl: (x: number, y: number, z: number) => {
+        const bbox = tileToLonLatBBox(x, y, z);
+        const params = new URLSearchParams({
+          bbox,
+          width: String(TILE_SIZE),
+          height: String(TILE_SIZE),
+          layers: "IF_0017",
+          format: "image/png",
+          srs: "EPSG:4326",
+          version: "1.1.1",
+        });
+        return `${SAFEMAP_PROXY_URL}?${params.toString()}`;
+      },
+    });
+
+    map.overlayMapTypes.insertAt(0, safemapType);
+    safemapLayerRef.current = safemapType;
+
+    return () => {
+      if (safemapLayerRef.current) {
+        try { map.overlayMapTypes.removeAt(0); } catch {}
+        safemapLayerRef.current = null;
+      }
+    };
+  }, [showSafemap]);
+
   const totalMountains = mountains.length;
   const progressPercent = Math.round((completedCount / totalMountains) * 100);
 
@@ -115,7 +185,20 @@ const MapView = () => {
         <Progress value={progressPercent} className="h-3 rounded-full" />
         <p className="text-[10px] text-muted-foreground mt-1">{progressPercent}% 완료</p>
       </div>
-      <div ref={mapRef} className="naver-map-container h-[calc(100vh-300px)] min-h-[400px] rounded-2xl border border-border overflow-hidden shadow-sm" />
+      <div className="relative">
+        <div ref={mapRef} className="naver-map-container h-[calc(100vh-300px)] min-h-[400px] rounded-2xl border border-border overflow-hidden shadow-sm" />
+        <div className="absolute top-3 left-3 z-10">
+          <Button
+            size="sm"
+            variant={showSafemap ? "default" : "secondary"}
+            className="gap-1.5 shadow-md"
+            onClick={() => setShowSafemap((v) => !v)}
+          >
+            <Layers className="h-3.5 w-3.5" />
+            산사태 위험지도 {showSafemap ? "ON" : "OFF"}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
