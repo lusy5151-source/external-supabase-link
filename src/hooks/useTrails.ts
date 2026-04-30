@@ -22,6 +22,9 @@ export interface Trail {
   transport_public?: string | null;
   transport_car?: string | null;
   hiking_tips?: string | null;
+  ending_point?: string | null;
+  waypoints_json?: any | null;
+  route_segments?: any | null;
 }
 
 export function useTrails(mountainId: number) {
