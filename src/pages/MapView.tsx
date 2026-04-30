@@ -185,7 +185,20 @@ const MapView = () => {
         <Progress value={progressPercent} className="h-3 rounded-full" />
         <p className="text-[10px] text-muted-foreground mt-1">{progressPercent}% 완료</p>
       </div>
-      <div ref={mapRef} className="naver-map-container h-[calc(100vh-300px)] min-h-[400px] rounded-2xl border border-border overflow-hidden shadow-sm" />
+      <div className="relative">
+        <div ref={mapRef} className="naver-map-container h-[calc(100vh-300px)] min-h-[400px] rounded-2xl border border-border overflow-hidden shadow-sm" />
+        <div className="absolute top-3 left-3 z-10">
+          <Button
+            size="sm"
+            variant={showSafemap ? "default" : "secondary"}
+            className="gap-1.5 shadow-md"
+            onClick={() => setShowSafemap((v) => !v)}
+          >
+            <Layers className="h-3.5 w-3.5" />
+            산사태 위험지도 {showSafemap ? "ON" : "OFF"}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
