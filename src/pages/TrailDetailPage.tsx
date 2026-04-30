@@ -131,6 +131,8 @@ export default function TrailDetailPage() {
         waypoints={trail.waypoints}
         mountainLat={mountain?.lat ?? null}
         mountainLng={mountain?.lng ?? null}
+        waypointsJson={(trail as any).waypoints_json ?? null}
+        routeSegments={(trail as any).route_segments ?? null}
       />
 
       {/* Course Overview Card */}
@@ -185,9 +187,64 @@ export default function TrailDetailPage() {
         </Button>
       </div>
 
-      {/* Starting Point Section */}
-      <SectionCard title="출발 지점" icon={MapPin}>
-        <p className="text-sm font-medium text-foreground">{trail.starting_point}</p>
+      {/* Start / End Points */}
+      <SectionCard title="출발지 · 도착지" icon={MapPin}>
+        <div className="divide-y divide-border">
+          <div className="flex items-start justify-between gap-3 pb-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                  출발
+                </span>
+              </div>
+              <p className="text-sm font-medium text-foreground break-words">
+                {trail.starting_point || "정보 없음"}
+              </p>
+            </div>
+            {trail.starting_point && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0 gap-1.5"
+                onClick={() =>
+                  window.open(
+                    `https://map.naver.com/v5/search/${encodeURIComponent(trail.starting_point)}`,
+                    "_blank"
+                  )
+                }
+              >
+                <Navigation className="h-3.5 w-3.5" /> 길찾기
+              </Button>
+            )}
+          </div>
+          <div className="flex items-start justify-between gap-3 pt-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                  도착
+                </span>
+              </div>
+              <p className="text-sm font-medium text-foreground break-words">
+                {(trail as any).ending_point || "정보 없음"}
+              </p>
+            </div>
+            {(trail as any).ending_point && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0 gap-1.5"
+                onClick={() =>
+                  window.open(
+                    `https://map.naver.com/v5/search/${encodeURIComponent((trail as any).ending_point)}`,
+                    "_blank"
+                  )
+                }
+              >
+                <Navigation className="h-3.5 w-3.5" /> 길찾기
+              </Button>
+            )}
+          </div>
+        </div>
       </SectionCard>
 
       {/* Public Transportation */}
