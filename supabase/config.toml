@@ -1,1 +1,4 @@
 project_id = "ylcjlzlchinijvyojdbc"
+
+[functions.safemap-wms]
+verify_jwt = false
