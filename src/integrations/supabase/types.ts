@@ -2425,6 +2425,7 @@ export type Database = {
           down_minutes: number | null
           duration_minutes: number | null
           elevation_gain_m: number | null
+          ending_point: string | null
           forestry_course_code: string | null
           forestry_synced_at: string | null
           geometry: Json | null
@@ -2438,6 +2439,7 @@ export type Database = {
           mountain_id: number
           name: string
           parking_info: string | null
+          route_segments: Json | null
           starting_point: string | null
           transport_car: string | null
           transport_public: string | null
@@ -2447,6 +2449,7 @@ export type Database = {
           vworld_matched_feature_id: string | null
           vworld_synced_at: string | null
           waypoints: string | null
+          waypoints_json: Json | null
         }
         Insert: {
           course_type?: string | null
@@ -2458,6 +2461,7 @@ export type Database = {
           down_minutes?: number | null
           duration_minutes?: number | null
           elevation_gain_m?: number | null
+          ending_point?: string | null
           forestry_course_code?: string | null
           forestry_synced_at?: string | null
           geometry?: Json | null
@@ -2471,6 +2475,7 @@ export type Database = {
           mountain_id: number
           name: string
           parking_info?: string | null
+          route_segments?: Json | null
           starting_point?: string | null
           transport_car?: string | null
           transport_public?: string | null
@@ -2480,6 +2485,7 @@ export type Database = {
           vworld_matched_feature_id?: string | null
           vworld_synced_at?: string | null
           waypoints?: string | null
+          waypoints_json?: Json | null
         }
         Update: {
           course_type?: string | null
@@ -2491,6 +2497,7 @@ export type Database = {
           down_minutes?: number | null
           duration_minutes?: number | null
           elevation_gain_m?: number | null
+          ending_point?: string | null
           forestry_course_code?: string | null
           forestry_synced_at?: string | null
           geometry?: Json | null
@@ -2504,6 +2511,7 @@ export type Database = {
           mountain_id?: number
           name?: string
           parking_info?: string | null
+          route_segments?: Json | null
           starting_point?: string | null
           transport_car?: string | null
           transport_public?: string | null
@@ -2513,6 +2521,7 @@ export type Database = {
           vworld_matched_feature_id?: string | null
           vworld_synced_at?: string | null
           waypoints?: string | null
+          waypoints_json?: Json | null
         }
         Relationships: [
           {
