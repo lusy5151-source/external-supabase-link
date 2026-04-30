@@ -131,6 +131,8 @@ export default function TrailDetailPage() {
         waypoints={trail.waypoints}
         mountainLat={mountain?.lat ?? null}
         mountainLng={mountain?.lng ?? null}
+        waypointsJson={(trail as any).waypoints_json ?? null}
+        routeSegments={(trail as any).route_segments ?? null}
       />
 
       {/* Course Overview Card */}
