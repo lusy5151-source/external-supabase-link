@@ -18,6 +18,7 @@ import { useAllWalkingPaths, pathTypeLabel } from "@/hooks/useWalkingPaths";
 import RegisterMountainModal from "@/components/RegisterMountainModal";
 import { NearbyClubs } from "@/components/NearbyClubs";
 import StickySearchBar from "@/components/StickySearchBar";
+import MountainFilterBar, { DEFAULT_FILTERS, type MountainFilterState } from "@/components/MountainFilterBar";
 
 const MountainMapSection = lazy(() => import("@/components/MountainMapSection"));
 
