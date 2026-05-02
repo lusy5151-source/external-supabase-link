@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useMountains } from "@/contexts/MountainsContext";
 import type { Mountain } from "@/data/mountains";
 import { useUserMountains, toMountain } from "@/hooks/useUserMountains";
@@ -8,7 +8,7 @@ import HikingShareCard from "@/components/HikingShareCard";
 import { useStore } from "@/context/StoreContext";
 import { SummitClaimSection } from "@/components/SummitClaimSection";
 import {
-  ArrowLeft, Mountain as MountainIcon, MapPin, TrendingUp, CheckCircle2, Circle, Calendar,
+  ArrowLeft, ChevronLeft, Heart, Share2, Mountain as MountainIcon, MapPin, TrendingUp, CheckCircle2, Circle, Calendar,
   Sun, Cloud, CloudRain, CloudSnow, CloudFog, CloudSun, ImagePlus, X, Users,
   Clock, Route, Flag, Save, UserPlus, UserMinus, Globe, Lock, Upload, User,
 } from "lucide-react";
@@ -62,6 +62,8 @@ async function resizeImage(file: File): Promise<string> {
 
 const MountainDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { toast: toastFn } = useToast();
   const { mountains } = useMountains();
   const { userMountains } = useUserMountains();
 
