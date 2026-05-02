@@ -432,6 +432,7 @@ export function SummitClaimSection({ mountainId, mountainName, hideList, trigger
           })}
         </div>
       </div>
+      </>)}
 
       {/* Claim Dialog */}
       <Dialog open={showClaimDialog} onOpenChange={setShowClaimDialog}>
