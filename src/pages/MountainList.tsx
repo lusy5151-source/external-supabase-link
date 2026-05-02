@@ -17,6 +17,7 @@ import { useBac100Mountains } from "@/hooks/useBac100Mountains";
 import { useAllWalkingPaths, pathTypeLabel } from "@/hooks/useWalkingPaths";
 import RegisterMountainModal from "@/components/RegisterMountainModal";
 import { NearbyClubs } from "@/components/NearbyClubs";
+import StickySearchBar from "@/components/StickySearchBar";
 
 const MountainMapSection = lazy(() => import("@/components/MountainMapSection"));
 
@@ -266,6 +267,9 @@ const MountainList = () => {
         </div>
       </Link>
 
+      {/* Sticky search */}
+      <StickySearchBar search={search} setSearch={setSearch} />
+
       {/* Segment toggle */}
       <div className="flex rounded-xl p-1" style={{ background: "hsl(var(--secondary))" }}>
         {([["list", "목록"], ["map", "지도"]] as const).map(([key, label]) => (
@@ -291,8 +295,6 @@ const MountainList = () => {
         </div>
       ) : (
         <>
-          <RecentSearchInput search={search} setSearch={setSearch} />
-
           <RegisterMountainModal />
 
           {/* Nearby clubs */}
