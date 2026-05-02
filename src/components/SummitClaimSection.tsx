@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { useSummits, type Summit, type SummitClaim } from "@/hooks/useSummits";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingGroups } from "@/hooks/useHikingGroups";
@@ -62,9 +62,15 @@ interface AiVerification {
 interface Props {
   mountainId: number;
   mountainName: string;
+  /** When true, suppresses the rendered summit list — only the claim dialog/celebration are mounted. */
+  hideList?: boolean;
+  /** When set, automatically opens the claim dialog for the matching summit id. */
+  triggerSummitId?: string | null;
+  /** Called after a triggerSummitId has been consumed, so the parent can clear it. */
+  onTriggerHandled?: () => void;
 }
 
-export function SummitClaimSection({ mountainId, mountainName }: Props) {
+export function SummitClaimSection({ mountainId, mountainName, hideList, triggerSummitId, onTriggerHandled }: Props) {
   const { mountains: mountainsData } = useMountains();
   const { user } = useAuth();
   const { summits, claims, loading, getSummitOwner, getMountainLeader, claimSummit } = useSummits(mountainId);
