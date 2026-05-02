@@ -55,6 +55,43 @@ const MountainList = () => {
   const totalBaekdu = dbMountains.filter((m) => m.is_baekdu).length;
   const completedBaekdu = dbMountains.filter((m) => m.is_baekdu && isCompleted(m.id)).length;
 
+  // ── Hero progress card: collection toggle ──
+  type CollectionKey = "forestry100" | "bac100";
+  const [collection, setCollection] = useState<CollectionKey>(() => {
+    const saved = (typeof window !== "undefined" && localStorage.getItem("defaultMountainCollection")) as CollectionKey | null;
+    return saved === "bac100" || saved === "forestry100" ? saved : "forestry100";
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("defaultMountainCollection", collection);
+  }, [collection]);
+
+  // 산림청 100대 완등 수
+  const forestryCompleted = dbMountains.filter((m) => m.bac100_label?.includes("산림청") && isCompleted(m.id)).length;
+  // BAC 100대 완등 수: bac100List 항목 중 mountain_id 가 완등이거나, name 매칭
+  const bacCompleted = useMemo(() => {
+    return bac100List.filter((b: any) => {
+      const mid = b.mountain_id ?? b.id;
+      return mid != null && isCompleted(mid);
+    }).length;
+  }, [bac100List, isCompleted]);
+
+  const collectionMeta = {
+    forestry100: { name: "산림청 100대 명산", completed: forestryCompleted },
+    bac100: { name: "100대 명산", completed: bacCompleted },
+  } as const;
+  const selected = collectionMeta[collection];
+
+  // Animated progress bar
+  const [progressWidth, setProgressWidth] = useState(0);
+  useEffect(() => {
+    setProgressWidth(0);
+    const t = window.setTimeout(() => setProgressWidth(Math.min(100, selected.completed)), 30);
+    return () => window.clearTimeout(t);
+  }, [collection, selected.completed]);
+
+  const favoritesCount = 0; // placeholder until favorites feature is wired up
+
+
   const filterAndSort = (list: any[]) => {
     let filtered = list.filter((m: any) => {
       const matchSearch = !search.trim() || m.nameKo.includes(search) || m.name.toLowerCase().includes(search.toLowerCase());
@@ -126,8 +163,108 @@ const MountainList = () => {
     <div className="space-y-5 pb-24 -mx-5 -mt-4 px-5 pt-4" style={{ background: "linear-gradient(180deg, hsl(205, 60%, 94%) 0%, hsl(var(--background)) 40%)" }}>
       <div>
         <h1 className="text-2xl font-bold text-foreground">탐색</h1>
-        <p className="mt-1 text-muted-foreground text-sm">전체 {allMountains.length}개 · 완등 {completedCount}개 · 백대명산 {completedBaekdu}/{totalBaekdu}</p>
       </div>
+
+      {/* Hero progress card */}
+      <Link
+        to={`/my/collections/${collection}`}
+        className="block -mx-1"
+        style={{
+          background: "#C7D66D",
+          padding: 14,
+          borderRadius: 14,
+          marginLeft: 12,
+          marginRight: 12,
+          marginTop: -4,
+          marginBottom: 12,
+          textDecoration: "none",
+        }}
+      >
+        {/* Collection toggle */}
+        <div
+          className="inline-flex"
+          style={{
+            padding: 3,
+            background: "rgba(255,255,255,0.5)",
+            borderRadius: 999,
+            marginBottom: 12,
+          }}
+          onClick={(e) => e.preventDefault()}
+        >
+          {([
+            ["forestry100", "산림청 100대"],
+            ["bac100", "100대 명산"],
+          ] as const).map(([key, label]) => {
+            const active = collection === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setCollection(key);
+                }}
+                style={{
+                  padding: "4px 10px",
+                  background: active ? "#2F403A" : "transparent",
+                  color: active ? "#FFFFFF" : "#2F403A",
+                  borderRadius: 999,
+                  fontSize: 11,
+                  fontWeight: 500,
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Progress label row */}
+        <div className="flex justify-between items-baseline" style={{ marginBottom: 8 }}>
+          <span style={{ fontSize: 12, color: "rgba(47,64,58,0.75)" }}>{selected.name}</span>
+          <span style={{ fontSize: 14, fontWeight: 500, color: "#2F403A" }}>
+            {selected.completed} / 100
+          </span>
+        </div>
+
+        {/* Progress bar */}
+        <div
+          style={{
+            height: 6,
+            width: "100%",
+            background: "rgba(255,255,255,0.5)",
+            borderRadius: 999,
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              height: "100%",
+              width: `${progressWidth}%`,
+              background: "#2F403A",
+              borderRadius: 999,
+              transition: "width 800ms ease-out",
+            }}
+          />
+        </div>
+
+        {/* Inline stats */}
+        <div className="flex" style={{ gap: 16, marginTop: 12 }}>
+          {[
+            { caption: "전체 산", value: allMountains.length },
+            { caption: "완등", value: completedCount },
+            { caption: "즐겨찾기", value: favoritesCount },
+          ].map((s) => (
+            <div key={s.caption}>
+              <div style={{ fontSize: 11, color: "rgba(47,64,58,0.7)" }}>{s.caption}</div>
+              <div style={{ fontSize: 15, fontWeight: 500, color: "#2F403A" }}>{s.value}</div>
+            </div>
+          ))}
+        </div>
+      </Link>
 
       {/* Segment toggle */}
       <div className="flex rounded-xl p-1" style={{ background: "hsl(var(--secondary))" }}>
