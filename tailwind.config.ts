@@ -25,11 +25,67 @@ export default {
         caption: ['12px', { lineHeight: '1.5', fontWeight: '400' }],
       },
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
+        border: "hsl(var(--border) / 0.12)",
+        input: "hsl(var(--input) / 0.12)",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+
+        /* Brand palette — the only allowed colors */
+        brand: {
+          lime: "hsl(var(--brand-lime))",
+          sky: "hsl(var(--brand-sky))",
+          coral: "hsl(var(--brand-coral))",
+          cream: "hsl(var(--brand-cream))",
+          lavender: "hsl(var(--brand-lavender))",
+          navy: "hsl(var(--brand-navy))",
+          forest: "hsl(var(--brand-forest))",
+        },
+
+        /* Semantic surfaces */
+        page: "hsl(var(--background))",
+        "bg-soft": "hsl(var(--bg-soft))",
+        "bg-accent": "hsl(var(--bg-accent))",
+
+        /* Text hierarchy */
+        "text-primary": "hsl(var(--text-primary))",
+        "text-secondary": "hsl(var(--text-secondary) / 0.7)",
+        "text-tertiary": "hsl(var(--text-tertiary) / 0.5)",
+
+        /* CTAs */
+        cta: {
+          DEFAULT: "hsl(var(--cta-primary))",
+          foreground: "hsl(var(--cta-primary-foreground))",
+          secondary: "hsl(var(--cta-secondary))",
+          "secondary-foreground": "hsl(var(--cta-secondary-foreground))",
+          soft: "hsl(var(--cta-soft))",
+          "soft-foreground": "hsl(var(--cta-soft-foreground))",
+        },
+
+        /* Difficulty */
+        difficulty: {
+          "easy-bg": "hsl(var(--difficulty-easy-bg))",
+          "easy-fg": "hsl(var(--difficulty-easy-fg))",
+          "medium-bg": "hsl(var(--difficulty-medium-bg))",
+          "medium-fg": "hsl(var(--difficulty-medium-fg))",
+          "hard-bg": "hsl(var(--difficulty-hard-bg))",
+          "hard-fg": "hsl(var(--difficulty-hard-fg))",
+        },
+
+        /* Badges */
+        badge: {
+          "100mt-bg": "hsl(var(--badge-100mt-bg))",
+          "100mt-fg": "hsl(var(--badge-100mt-fg))",
+          "forest100-bg": "hsl(var(--badge-forest100-bg))",
+          "forest100-fg": "hsl(var(--badge-forest100-fg))",
+          "park-bg": "hsl(var(--badge-nationalpark-bg))",
+          "park-fg": "hsl(var(--badge-nationalpark-fg))",
+          "popular-bg": "hsl(var(--badge-popular-bg))",
+          "popular-fg": "hsl(var(--badge-popular-fg))",
+          "completed-bg": "hsl(var(--badge-completed-bg))",
+          "completed-fg": "hsl(var(--badge-completed-fg))",
+        },
+
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
