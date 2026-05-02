@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Building2, Tent, ParkingCircle, MapPin, Loader2, Map as MapIcon } from "lucide-react";
+import { MapPin, ChevronRight, Loader2 } from "lucide-react";
 
 interface Facility {
   id: string;
@@ -11,13 +11,11 @@ interface Facility {
   longitude: number | null;
 }
 
-const typeMeta: Record<string, { label: string; icon: any; color: string }> = {
-  visitor_center: { label: "탐방안내소", icon: Building2, color: "bg-blue-50 text-blue-700 border-blue-200" },
-  shelter: { label: "대피소", icon: Tent, color: "bg-amber-50 text-amber-700 border-amber-200" },
-  parking: { label: "주차장", icon: ParkingCircle, color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-};
-
-const getMeta = (type: string) => typeMeta[type] || { label: type, icon: MapPin, color: "bg-secondary text-secondary-foreground border-border" };
+// Only these two types are surfaced in the 편의시설 tab
+const SURFACED_TYPES: { type: string; label: string }[] = [
+  { type: "visitor_center", label: "탐방안내소" },
+  { type: "parking", label: "주차장" },
+];
 
 export function MountainFacilities({ mountainId }: { mountainId: number }) {
   const { data: facilities = [], isLoading } = useQuery<Facility[]>({
@@ -36,67 +34,93 @@ export function MountainFacilities({ mountainId }: { mountainId: number }) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 text-muted-foreground" style={{ fontSize: 12, padding: "12px 0" }}>
         <Loader2 className="h-4 w-4 animate-spin" /> 시설 정보를 불러오는 중...
       </div>
     );
   }
 
-  if (facilities.length === 0) return null;
+  // Group surfaced types
+  const grouped = SURFACED_TYPES.map((g) => ({
+    ...g,
+    items: facilities.filter((f) => f.facility_type === g.type),
+  })).filter((g) => g.items.length > 0);
 
-  // group by type
-  const grouped = facilities.reduce<Record<string, Facility[]>>((acc, f) => {
-    (acc[f.facility_type] ||= []).push(f);
-    return acc;
-  }, {});
+  if (grouped.length === 0) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center text-center"
+        style={{ padding: "60px 16px", gap: 8 }}
+      >
+        <p className="text-muted-foreground" style={{ fontSize: 12 }}>
+          이 산의 편의시설 정보가 아직 등록되지 않았어요
+        </p>
+        <a
+          href="mailto:hello@wandeung.com?subject=편의시설 정보 제보"
+          className="text-primary hover:underline"
+          style={{ fontSize: 11 }}
+        >
+          정보 제보하기
+        </a>
+      </div>
+    );
+  }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-      <div className="flex items-center gap-2">
-        <Building2 className="h-4 w-4 text-primary" />
-        <h3 className="font-semibold text-sm text-foreground">편의시설</h3>
-        <span className="text-xs text-muted-foreground">({facilities.length}개)</span>
-      </div>
-
-      <div className="space-y-3">
-        {Object.entries(grouped).map(([type, list]) => {
-          const meta = getMeta(type);
-          const Icon = meta.icon;
-          return (
-            <div key={type} className="space-y-1.5">
-              <div className="flex items-center gap-1.5">
-                <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-xs font-medium text-foreground">{meta.label}</span>
-                <span className="text-[10px] text-muted-foreground">{list.length}개</span>
-              </div>
-              <div className="space-y-1.5">
-                {list.map((f) => {
-                  const query = encodeURIComponent(f.name || meta.label);
-                  const naverUrl = `https://map.naver.com/v5/search/${query}`;
-                  return (
-                    <a
-                      key={f.id}
-                      href={naverUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`group flex items-start justify-between gap-2 rounded-lg border px-2.5 py-1.5 transition-all hover:shadow-sm hover:scale-[1.01] active:scale-[0.99] cursor-pointer ${meta.color}`}
-                      aria-label={`${f.name || meta.label} 네이버 지도에서 보기`}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium truncate">{f.name || meta.label}</p>
-                        {f.description && (
-                          <p className="text-[11px] mt-0.5 opacity-80 line-clamp-2">{f.description}</p>
-                        )}
-                      </div>
-                      <MapIcon className="h-3.5 w-3.5 mt-0.5 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" />
-                    </a>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+    <div className="space-y-4">
+      {grouped.map((g) => (
+        <section key={g.type} className="space-y-2">
+          <h3 className="text-foreground" style={{ fontSize: 13, fontWeight: 500 }}>
+            {g.label}
+          </h3>
+          <div className="space-y-2">
+            {g.items.map((f) => (
+              <FacilityCard key={f.id} facility={f} fallbackLabel={g.label} />
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
+  );
+}
+
+function FacilityCard({ facility, fallbackLabel }: { facility: Facility; fallbackLabel: string }) {
+  const name = facility.name || fallbackLabel;
+  const hasCoords = facility.latitude != null && facility.longitude != null;
+  const naverUrl = hasCoords
+    ? `nmap://place?lat=${facility.latitude}&lng=${facility.longitude}&name=${encodeURIComponent(name)}&appname=com.wandeung.app`
+    : `https://map.naver.com/v5/search/${encodeURIComponent(name)}`;
+
+  return (
+    <a
+      href={naverUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="bg-card flex items-center gap-3 transition-colors hover:bg-secondary/30"
+      style={{
+        border: "0.5px solid hsl(var(--border))",
+        borderRadius: 10,
+        padding: 12,
+      }}
+      aria-label={`${name} 네이버 지도에서 보기`}
+    >
+      <div
+        className="bg-secondary/60 flex items-center justify-center flex-shrink-0"
+        style={{ width: 24, height: 24, borderRadius: 6 }}
+      >
+        <MapPin className="text-primary" style={{ width: 14, height: 14 }} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-foreground truncate" style={{ fontSize: 13, fontWeight: 500 }}>
+          {name}
+        </p>
+        {facility.description && (
+          <p className="text-muted-foreground truncate" style={{ fontSize: 12, marginTop: 2 }}>
+            {facility.description}
+          </p>
+        )}
+      </div>
+      <ChevronRight className="text-muted-foreground/60 flex-shrink-0" style={{ width: 16, height: 16 }} />
+    </a>
   );
 }
