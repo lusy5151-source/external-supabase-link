@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { useSummits, type Summit, type SummitClaim } from "@/hooks/useSummits";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingGroups } from "@/hooks/useHikingGroups";
@@ -62,9 +62,15 @@ interface AiVerification {
 interface Props {
   mountainId: number;
   mountainName: string;
+  /** When true, suppresses the rendered summit list — only the claim dialog/celebration are mounted. */
+  hideList?: boolean;
+  /** When set, automatically opens the claim dialog for the matching summit id. */
+  triggerSummitId?: string | null;
+  /** Called after a triggerSummitId has been consumed, so the parent can clear it. */
+  onTriggerHandled?: () => void;
 }
 
-export function SummitClaimSection({ mountainId, mountainName }: Props) {
+export function SummitClaimSection({ mountainId, mountainName, hideList, triggerSummitId, onTriggerHandled }: Props) {
   const { mountains: mountainsData } = useMountains();
   const { user } = useAuth();
   const { summits, claims, loading, getSummitOwner, getMountainLeader, claimSummit } = useSummits(mountainId);
@@ -169,6 +175,16 @@ export function SummitClaimSection({ mountainId, mountainName }: Props) {
     setShowClaimDialog(true);
   };
 
+  // External trigger: open claim dialog for a specific summit id
+  useEffect(() => {
+    if (!triggerSummitId) return;
+    const found = displaySummits.find((s) => s.id === triggerSummitId);
+    if (found) {
+      handleStartClaim(found);
+      onTriggerHandled?.();
+    }
+  }, [triggerSummitId, displaySummits]);
+
   const handleGetLocation = () => {
     setGpsStatus("loading");
     navigator.geolocation.getCurrentPosition(
@@ -258,6 +274,7 @@ export function SummitClaimSection({ mountainId, mountainName }: Props) {
           </div>
         </div>
       )}
+      {!hideList && (<>
       {/* Mountain Leader */}
       {leader && (
         <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/10 dark:border-amber-800/30 p-4 shadow-sm">
@@ -415,6 +432,7 @@ export function SummitClaimSection({ mountainId, mountainName }: Props) {
           })}
         </div>
       </div>
+      </>)}
 
       {/* Claim Dialog */}
       <Dialog open={showClaimDialog} onOpenChange={setShowClaimDialog}>

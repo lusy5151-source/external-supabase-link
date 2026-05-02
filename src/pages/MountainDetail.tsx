@@ -10,8 +10,9 @@ import { SummitClaimSection } from "@/components/SummitClaimSection";
 import {
   ArrowLeft, ChevronLeft, Heart, Share2, Mountain as MountainIcon, MapPin, TrendingUp, CheckCircle2, Circle, Calendar,
   Sun, Cloud, CloudRain, CloudSnow, CloudFog, CloudSun, ImagePlus, X, Users,
-  Clock, Route, Flag, Save, UserPlus, UserMinus, Globe, Lock, Upload, User,
+  Clock, Route, Flag, Save, UserPlus, UserMinus, Globe, Lock, Upload, User, Check,
 } from "lucide-react";
+import { useSummits } from "@/hooks/useSummits";
 import { useState, useEffect, useRef } from "react";
 import type { WeatherCondition, CompletionRecord } from "@/hooks/useMountainStore";
 import { WeatherCard } from "@/components/WeatherCard";
@@ -88,6 +89,7 @@ const MountainDetail = () => {
   const [showDuplicateReport, setShowDuplicateReport] = useState(false);
   const [selectedTrail, setSelectedTrail] = useState<Trail | null>(null);
   const [activeTab, setActiveTab] = useState<"개요" | "코스" | "날씨·복장" | "편의시설">("개요");
+  const [pendingTriggerSummitId, setPendingTriggerSummitId] = useState<string | null>(null);
   const { pioneerBadges } = usePioneerBadges(createdBy);
 
   useEffect(() => {
@@ -281,7 +283,7 @@ const MountainDetail = () => {
           }}
         >
           {/* 개요 */}
-          <div className="space-y-6" style={{ width: "25%", flexShrink: 0, paddingRight: 8 }}>
+          <div className="space-y-4" style={{ width: "25%", flexShrink: 0, paddingRight: 8 }}>
             {isUserCreated && creatorName && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <User className="h-3.5 w-3.5" />
@@ -301,23 +303,36 @@ const MountainDetail = () => {
                 </button>
               </div>
             )}
-            {(mountain.overview || mountain.description) && (
-              <div className="rounded-2xl border border-border bg-card p-4">
-                <p className="text-xs font-semibold text-muted-foreground mb-1.5">📖 산 소개</p>
-                <p className="text-sm leading-relaxed text-foreground">
-                  {mountain.overview || mountain.description}
-                </p>
-                {(mountain.address || mountain.province) && (
-                  <div className="mt-3 flex items-center gap-2 rounded-xl bg-secondary/50 px-3 py-2">
-                    <MapPin className="h-4 w-4 text-primary shrink-0" />
-                    <p className="text-sm text-foreground">
-                      {[mountain.province, mountain.address].filter(Boolean).join(" | ")}
-                    </p>
-                  </div>
-                )}
-              </div>
+            {isUserCreated && (
+              <DuplicateReportModal
+                reportedMountainId={mountainId}
+                open={showDuplicateReport}
+                onOpenChange={setShowDuplicateReport}
+              />
             )}
-      {/* Pioneer badge display for user-created mountains */}
+
+            {/* Block 1: 산 소개 */}
+            <OverviewIntroBlock text={mountain.overview || mountain.description || ""} />
+
+            {/* Block 2: 정상 정복 */}
+            <OverviewSummitsBlock
+              mountainId={mountain.id}
+              mountainName={mountain.nameKo}
+              onTriggerSummit={setPendingTriggerSummitId}
+            />
+
+            {/* Block 3: 위치 */}
+            <OverviewLocationBlock mountain={mountain} />
+
+            {/* Hidden claim handler — opens dialog when a peak is tapped above */}
+            <SummitClaimSection
+              mountainId={mountain.id}
+              mountainName={mountain.nameKo}
+              hideList
+              triggerSummitId={pendingTriggerSummitId}
+              onTriggerHandled={() => setPendingTriggerSummitId(null)}
+            />
+
             {isUserCreated && pioneerBadges.some((p) => p.mountainId === mountainId) && (
               <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <div className="flex items-center gap-2">
@@ -329,14 +344,6 @@ const MountainDetail = () => {
                 </div>
               </div>
             )}
-            {isUserCreated && (
-              <DuplicateReportModal
-                reportedMountainId={mountainId}
-                open={showDuplicateReport}
-                onOpenChange={setShowDuplicateReport}
-              />
-            )}
-            <SummitClaimSection mountainId={mountain.id} mountainName={mountain.nameKo} />
             {completed && record && (
               <JournalSection
                 record={record}
@@ -405,6 +412,149 @@ const MountainDetail = () => {
   );
 };
 
+function OverviewIntroBlock({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!text) return null;
+  return (
+    <div>
+      <p className="text-muted-foreground" style={{ fontSize: 12, marginBottom: 8 }}>산 소개</p>
+      <p
+        className="text-foreground"
+        style={{
+          fontSize: 13,
+          lineHeight: 1.6,
+          display: expanded ? "block" : "-webkit-box",
+          WebkitLineClamp: expanded ? "unset" : 4,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }}
+      >
+        {text}
+      </p>
+      {text.length > 120 && (
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-1 text-primary hover:underline"
+          style={{ fontSize: 12 }}
+        >
+          {expanded ? "접기" : "더 보기"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function OverviewSummitsBlock({
+  mountainId,
+  mountainName,
+  onTriggerSummit,
+}: {
+  mountainId: number;
+  mountainName: string;
+  onTriggerSummit: (id: string) => void;
+}) {
+  const { summits, claims, loading } = useSummits(mountainId);
+  const { user } = useAuth();
+  const myClaimedIds = new Set(
+    (claims || []).filter((c) => user && c.user_id === user.id).map((c) => c.summit_id)
+  );
+
+  const list = summits && summits.length > 0
+    ? summits
+    : [{ id: `fallback-${mountainId}`, mountain_id: mountainId, summit_name: `${mountainName} 정상`, latitude: 0, longitude: 0, elevation: 0 }];
+
+  const completedCount = list.filter((s) => myClaimedIds.has(s.id)).length;
+
+  return (
+    <div className="bg-secondary/50" style={{ padding: 12, borderRadius: 12 }}>
+      <div className="flex items-center justify-between" style={{ marginBottom: 10 }}>
+        <span className="text-foreground" style={{ fontSize: 13, fontWeight: 500 }}>정상 정복</span>
+        <span className="text-muted-foreground" style={{ fontSize: 12 }}>
+          {completedCount} / {list.length}
+        </span>
+      </div>
+      {loading ? (
+        <p className="text-muted-foreground" style={{ fontSize: 12 }}>불러오는 중…</p>
+      ) : (
+        <div className="space-y-2">
+          {list.map((s) => {
+            const checked = myClaimedIds.has(s.id);
+            return (
+              <button
+                key={s.id}
+                onClick={() => onTriggerSummit(s.id)}
+                className="w-full flex items-center bg-card hover:bg-card/80 transition-colors"
+                style={{ padding: "8px 10px", borderRadius: 8, gap: 10 }}
+              >
+                <span
+                  className="flex items-center justify-center shrink-0"
+                  style={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: 999,
+                    background: checked ? "hsl(var(--primary))" : "transparent",
+                    border: checked ? "none" : "1.5px solid hsl(var(--text-secondary) / 0.7)",
+                  }}
+                >
+                  {checked && <Check className="text-primary-foreground" style={{ width: 10, height: 10, strokeWidth: 3 }} />}
+                </span>
+                <span className="flex-1 text-left text-foreground truncate" style={{ fontSize: 13 }}>
+                  {s.summit_name}
+                </span>
+                {s.elevation > 0 && (
+                  <span className="text-muted-foreground shrink-0" style={{ fontSize: 11 }}>
+                    {s.elevation.toLocaleString()}m
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OverviewLocationBlock({ mountain }: { mountain: Mountain }) {
+  const address = [mountain.province, mountain.address].filter(Boolean).join(" ");
+  const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(mountain.nameKo)}`;
+  // Static map preview using OSM-style tile via a public service; fallback to gradient if unavailable
+  const lat = mountain.lat;
+  const lng = mountain.lng;
+  return (
+    <div>
+      <p className="text-muted-foreground" style={{ fontSize: 12, marginBottom: 8 }}>위치</p>
+      {address && (
+        <p className="text-foreground" style={{ fontSize: 13, marginBottom: 8 }}>
+          {address}
+        </p>
+      )}
+      <a
+        href={naverUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block relative overflow-hidden bg-secondary/50"
+        style={{ height: 90, borderRadius: 12 }}
+        aria-label="네이버 지도에서 보기"
+      >
+        {/* Simple gradient placeholder map (no external tiles to avoid leaks) */}
+        <div
+          className="absolute inset-0"
+          style={{ background: "linear-gradient(135deg, hsl(var(--brand-sky)), hsl(var(--brand-cream)))" }}
+        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <MapPin className="text-primary" style={{ width: 24, height: 24 }} />
+        </div>
+        <div
+          className="absolute bottom-1 right-2 text-foreground/70"
+          style={{ fontSize: 10 }}
+        >
+          {lat.toFixed(3)}, {lng.toFixed(3)}
+        </div>
+      </a>
+    </div>
+  );
+}
 function StatCell({ label, value, divider }: { label: string; value: string; divider?: boolean }) {
   return (
     <div
