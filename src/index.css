@@ -35,39 +35,39 @@
     --text-secondary: 159 15% 22%;              /* use text-foreground/70 */
     --text-tertiary: 159 15% 22%;               /* use text-foreground/50 */
 
-    /* CTAs */
-    --cta-primary: var(--brand-forest);
-    --cta-primary-foreground: 0 0% 100%;
+    /* CTAs — lime is the key brand color */
+    --cta-primary: var(--brand-lime);
+    --cta-primary-foreground: var(--brand-forest);
     --cta-secondary: var(--brand-navy);
     --cta-secondary-foreground: 0 0% 100%;
     --cta-soft: var(--brand-lime);
     --cta-soft-foreground: var(--brand-forest);
 
-    /* shadcn semantic mappings */
-    --primary: var(--brand-forest);             /* primary CTA = forest */
-    --primary-foreground: 0 0% 100%;
+    /* shadcn semantic mappings — primary = lime (key color) */
+    --primary: var(--brand-lime);
+    --primary-foreground: var(--brand-forest);
     --secondary: var(--brand-sky);
     --secondary-foreground: var(--brand-navy);
-    --muted: 69 30% 90%;
-    --muted-foreground: 159 15% 45%;
+    --muted: 69 30% 92%;
+    --muted-foreground: 159 12% 38%;
     --accent: var(--brand-lime);
     --accent-foreground: var(--brand-forest);
     --destructive: var(--brand-coral);
     --destructive-foreground: 0 0% 100%;
     --border: 159 15% 22%;                      /* use /12 for 0.12 alpha */
     --input: 159 15% 22%;
-    --ring: var(--brand-forest);
+    --ring: var(--brand-lime);
     --radius: 14px;
 
-    /* Sidebar */
+    /* Sidebar — lime as active accent */
     --sidebar-background: var(--brand-cream);
     --sidebar-foreground: var(--brand-forest);
-    --sidebar-primary: var(--brand-forest);
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: var(--brand-sky);
-    --sidebar-accent-foreground: var(--brand-navy);
+    --sidebar-primary: var(--brand-lime);
+    --sidebar-primary-foreground: var(--brand-forest);
+    --sidebar-accent: var(--brand-lime);
+    --sidebar-accent-foreground: var(--brand-forest);
     --sidebar-border: 159 15% 22%;
-    --sidebar-ring: var(--brand-forest);
+    --sidebar-ring: var(--brand-lime);
 
     /* Difficulty (no yellow/orange in palette) */
     --difficulty-easy-bg: var(--brand-lime);
