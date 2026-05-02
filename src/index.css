@@ -86,8 +86,8 @@
     --badge-nationalpark-fg: var(--brand-navy);
     --badge-popular-bg: 358 100% 94%;           /* #FFE0E1 */
     --badge-popular-fg: var(--brand-coral);
-    --badge-completed-bg: var(--brand-forest);
-    --badge-completed-fg: var(--brand-lime);
+    --badge-completed-bg: var(--brand-lime);
+    --badge-completed-fg: var(--brand-forest);
 
     /* Legacy aliases (mapped to brand for back-compat) */
     --nature-50: var(--brand-cream);
@@ -109,7 +109,7 @@
     --magazine-foreground: 0 0% 100%;
     --magazine-line: var(--brand-coral);
     --progress-track: 159 15% 22%;              /* use /12 */
-    --progress-fill: var(--brand-forest);
+    --progress-fill: var(--brand-lime);
     --success: var(--brand-lime);
     --success-foreground: var(--brand-forest);
     --coral: var(--brand-coral);
