@@ -14,7 +14,15 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['"Noto Sans KR"', 'system-ui', 'sans-serif'],
+        sans: ['Pretendard', 'Pretendard Variable', '-apple-system', 'BlinkMacSystemFont', 'system-ui', '"Noto Sans KR"', 'sans-serif'],
+        pretendard: ['Pretendard', 'Pretendard Variable', '-apple-system', 'system-ui', 'sans-serif'],
+      },
+      fontSize: {
+        h1: ['22px', { lineHeight: '1.4', fontWeight: '500' }],
+        h2: ['18px', { lineHeight: '1.4', fontWeight: '500' }],
+        h3: ['15px', { lineHeight: '1.45', fontWeight: '500' }],
+        body: ['14px', { lineHeight: '1.6', fontWeight: '400' }],
+        caption: ['12px', { lineHeight: '1.5', fontWeight: '400' }],
       },
       colors: {
         border: "hsl(var(--border))",
