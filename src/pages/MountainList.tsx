@@ -55,6 +55,43 @@ const MountainList = () => {
   const totalBaekdu = dbMountains.filter((m) => m.is_baekdu).length;
   const completedBaekdu = dbMountains.filter((m) => m.is_baekdu && isCompleted(m.id)).length;
 
+  // ── Hero progress card: collection toggle ──
+  type CollectionKey = "forestry100" | "bac100";
+  const [collection, setCollection] = useState<CollectionKey>(() => {
+    const saved = (typeof window !== "undefined" && localStorage.getItem("defaultMountainCollection")) as CollectionKey | null;
+    return saved === "bac100" || saved === "forestry100" ? saved : "forestry100";
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("defaultMountainCollection", collection);
+  }, [collection]);
+
+  // 산림청 100대 완등 수
+  const forestryCompleted = dbMountains.filter((m) => m.bac100_label?.includes("산림청") && isCompleted(m.id)).length;
+  // BAC 100대 완등 수: bac100List 항목 중 mountain_id 가 완등이거나, name 매칭
+  const bacCompleted = useMemo(() => {
+    return bac100List.filter((b: any) => {
+      const mid = b.mountain_id ?? b.id;
+      return mid != null && isCompleted(mid);
+    }).length;
+  }, [bac100List, isCompleted]);
+
+  const collectionMeta = {
+    forestry100: { name: "산림청 100대 명산", completed: forestryCompleted },
+    bac100: { name: "100대 명산", completed: bacCompleted },
+  } as const;
+  const selected = collectionMeta[collection];
+
+  // Animated progress bar
+  const [progressWidth, setProgressWidth] = useState(0);
+  useEffect(() => {
+    setProgressWidth(0);
+    const t = window.setTimeout(() => setProgressWidth(Math.min(100, selected.completed)), 30);
+    return () => window.clearTimeout(t);
+  }, [collection, selected.completed]);
+
+  const favoritesCount = 0; // placeholder until favorites feature is wired up
+
+
   const filterAndSort = (list: any[]) => {
     let filtered = list.filter((m: any) => {
       const matchSearch = !search.trim() || m.nameKo.includes(search) || m.name.toLowerCase().includes(search.toLowerCase());
