@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useMountains } from "@/contexts/MountainsContext";
 import type { Mountain } from "@/data/mountains";
 import { useUserMountains, toMountain } from "@/hooks/useUserMountains";
@@ -8,7 +8,7 @@ import HikingShareCard from "@/components/HikingShareCard";
 import { useStore } from "@/context/StoreContext";
 import { SummitClaimSection } from "@/components/SummitClaimSection";
 import {
-  ArrowLeft, Mountain as MountainIcon, MapPin, TrendingUp, CheckCircle2, Circle, Calendar,
+  ArrowLeft, ChevronLeft, Heart, Share2, Mountain as MountainIcon, MapPin, TrendingUp, CheckCircle2, Circle, Calendar,
   Sun, Cloud, CloudRain, CloudSnow, CloudFog, CloudSun, ImagePlus, X, Users,
   Clock, Route, Flag, Save, UserPlus, UserMinus, Globe, Lock, Upload, User,
 } from "lucide-react";
@@ -62,6 +62,7 @@ async function resizeImage(file: File): Promise<string> {
 
 const MountainDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { mountains } = useMountains();
   const { userMountains } = useUserMountains();
 
@@ -110,96 +111,175 @@ const MountainDetail = () => {
   const record = getRecord(mountain.id);
   const completionCount = getCompletionCount(mountain.id);
 
-  return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <Link to="/mountains" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-4 w-4" />
-        산 목록
-      </Link>
+  const firstTrail = mountain.trails && mountain.trails.length > 0 ? mountain.trails[0] : undefined;
+  const heroImage = (mountain as any).image_url || (mountain as any).photo_url || null;
 
-      {/* Header */}
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-foreground">{mountain.nameKo}</h1>
-              {mountain.is_baekdu && (
-                <span className="inline-flex items-center rounded-full border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
-                  🏔️ {mountain.bac100_label || "산림청 100대 명산"}
-                </span>
-              )}
-            </div>
-            <p className="mt-0.5 text-sm text-muted-foreground">{mountain.name}</p>
-          </div>
+  // Difficulty -> gradient fallback (uses brand tokens via CSS vars)
+  const gradientByDifficulty: Record<string, string> = {
+    "쉬움": "linear-gradient(135deg, hsl(var(--brand-lime)), hsl(var(--brand-sky)))",
+    "보통": "linear-gradient(135deg, hsl(var(--brand-sky)), hsl(var(--brand-navy)))",
+    "어려움": "linear-gradient(135deg, hsl(var(--brand-forest)), hsl(var(--brand-navy)))",
+  };
+  const heroBg = heroImage
+    ? `url(${heroImage}) center/cover no-repeat`
+    : (gradientByDifficulty[mountain.difficulty] || gradientByDifficulty["보통"]);
+
+  // Favorite (localStorage)
+  const FAV_KEY = "wandeung.favorites";
+  const [isFavorite, setIsFavorite] = useState<boolean>(() => {
+    try {
+      const raw = localStorage.getItem(FAV_KEY);
+      const arr: number[] = raw ? JSON.parse(raw) : [];
+      return arr.includes(mountain.id);
+    } catch { return false; }
+  });
+  const toggleFavorite = () => {
+    try {
+      const raw = localStorage.getItem(FAV_KEY);
+      const arr: number[] = raw ? JSON.parse(raw) : [];
+      const next = arr.includes(mountain.id) ? arr.filter((x) => x !== mountain.id) : [...arr, mountain.id];
+      localStorage.setItem(FAV_KEY, JSON.stringify(next));
+      setIsFavorite(next.includes(mountain.id));
+    } catch {}
+  };
+  const handleShare = async () => {
+    const url = window.location.href;
+    const title = `${mountain.nameKo} · 완등`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+      }
+    } catch {}
+  };
+
+  return (
+    <div className="mx-auto max-w-2xl">
+      {/* Hero */}
+      <div className="relative -mx-4 sm:-mx-6" style={{ height: 180, background: heroBg }}>
+        {/* Bottom gradient overlay */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: "linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.45) 100%)" }}
+        />
+
+        {/* Top bar */}
+        <div className="relative flex items-center justify-between" style={{ padding: "12px 16px" }}>
+          <button
+            onClick={() => navigate(-1)}
+            aria-label="뒤로"
+            className="flex items-center justify-center rounded-full"
+            style={{ width: 28, height: 28, background: "rgba(255,255,255,0.25)", backdropFilter: "blur(4px)" }}
+          >
+            <ChevronLeft className="h-4 w-4 text-white" />
+          </button>
           <div className="flex items-center gap-2">
-            {completed && (
-              <span className="rounded-full bg-primary px-2.5 py-1.5 text-xs font-bold text-foreground">
-                완등 {completionCount}회
-              </span>
-            )}
             <button
-              onClick={() => completed ? addCompletion(mountain.id) : toggleComplete(mountain.id)}
-              className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                completed
-                  ? "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                  : "bg-primary/10 text-primary hover:bg-primary/20"
-              }`}
+              onClick={toggleFavorite}
+              aria-label="즐겨찾기"
+              className="flex items-center justify-center rounded-full"
+              style={{ width: 28, height: 28, background: "rgba(255,255,255,0.25)", backdropFilter: "blur(4px)" }}
             >
-              {completed ? (
-                <><TrendingUp className="h-4 w-4" /> 재등반</>
-              ) : (
-                <><Circle className="h-4 w-4" /> 완등 기록</>
-              )}
+              <Heart className="h-4 w-4 text-white" fill={isFavorite ? "#fff" : "none"} />
+            </button>
+            <button
+              onClick={handleShare}
+              aria-label="공유"
+              className="flex items-center justify-center rounded-full"
+              style={{ width: 28, height: 28, background: "rgba(255,255,255,0.25)", backdropFilter: "blur(4px)" }}
+            >
+              <Share2 className="h-4 w-4 text-white" />
             </button>
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-3 gap-4">
-          <InfoItem icon={MountainIcon} label="높이" value={`${mountain.height}m`} />
-          <InfoItem icon={MapPin} label="지역" value={mountain.region} />
-          <InfoItem icon={TrendingUp} label="난이도" value={mountain.difficulty} />
+        {/* Bottom area */}
+        <div className="absolute bottom-0 left-0 right-0" style={{ padding: "0 16px 14px" }}>
+          <div className="flex flex-wrap gap-1.5 mb-1.5">
+            {mountain.is_baekdu && (
+              <span
+                className="inline-flex items-center rounded-full text-white"
+                style={{ padding: "2px 8px", fontSize: 11, background: "rgba(255,255,255,0.22)", backdropFilter: "blur(4px)" }}
+              >
+                {mountain.bac100_label || "100대 명산"}
+              </span>
+            )}
+            {mountain.is_national_park && (
+              <span
+                className="inline-flex items-center rounded-full text-white"
+                style={{ padding: "2px 8px", fontSize: 11, background: "rgba(255,255,255,0.22)", backdropFilter: "blur(4px)" }}
+              >
+                {mountain.national_park_name || "국립공원"}
+              </span>
+            )}
+            {completed && (
+              <span
+                className="inline-flex items-center rounded-full text-white"
+                style={{ padding: "2px 8px", fontSize: 11, background: "rgba(255,255,255,0.22)", backdropFilter: "blur(4px)" }}
+              >
+                완등 {completionCount}회
+              </span>
+            )}
+          </div>
+          <h1 className="text-white" style={{ fontSize: 22, fontWeight: 500, lineHeight: 1.2 }}>
+            {mountain.nameKo}
+          </h1>
+          <p className="text-white/85" style={{ fontSize: 12, marginTop: 2 }}>
+            {[mountain.name, mountain.region].filter(Boolean).join(" · ")}
+          </p>
         </div>
+      </div>
 
-        {/* 산 소개 */}
-        <div className="mt-5">
+      {/* Stat bar */}
+      <div
+        className="grid grid-cols-3 border-b border-border bg-card -mx-4 sm:-mx-6"
+        style={{ padding: "14px 16px" }}
+      >
+        <StatCell label="높이" value={`${mountain.height}m`} />
+        <StatCell label="난이도" value={mountain.difficulty} divider />
+        <StatCell label="소요" value={firstTrail?.duration ? `약 ${firstTrail.duration}` : "—"} divider />
+      </div>
+
+      <div className="space-y-6 mt-6">
+      {/* User-created meta */}
+      {isUserCreated && creatorName && (
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <User className="h-3.5 w-3.5" />
+          <span>등록자: {creatorName}</span>
+          {pioneerBadges.some((p) => p.mountainId === mountainId) && (
+            <span title="개척자">🗺️</span>
+          )}
+        </div>
+      )}
+      {isUserCreated && (
+        <div>
+          <button
+            onClick={() => setShowDuplicateReport(true)}
+            className="text-xs text-muted-foreground hover:text-destructive transition-colors underline underline-offset-2"
+          >
+            이 산은 이미 목록에 있어요
+          </button>
+        </div>
+      )}
+
+      {/* 산 소개 */}
+      {(mountain.overview || mountain.description) && (
+        <div className="rounded-2xl border border-border bg-card p-4">
           <p className="text-xs font-semibold text-muted-foreground mb-1.5">📖 산 소개</p>
           <p className="text-sm leading-relaxed text-foreground">
             {mountain.overview || mountain.description}
           </p>
+          {(mountain.address || mountain.province) && (
+            <div className="mt-3 flex items-center gap-2 rounded-xl bg-secondary/50 px-3 py-2">
+              <MapPin className="h-4 w-4 text-primary shrink-0" />
+              <p className="text-sm text-foreground">
+                {[mountain.province, mountain.address].filter(Boolean).join(" | ")}
+              </p>
+            </div>
+          )}
         </div>
-
-        {/* 위치 정보 */}
-        {(mountain.address || mountain.province) && (
-          <div className="mt-4 flex items-center gap-2 rounded-xl bg-secondary/50 px-4 py-3">
-            <MapPin className="h-4 w-4 text-primary shrink-0" />
-            <p className="text-sm text-foreground">
-              📍 {[mountain.province, mountain.address].filter(Boolean).join(" | ")}
-            </p>
-          </div>
-        )}
-
-        {isUserCreated && creatorName && (
-          <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-            <User className="h-3.5 w-3.5" />
-            <span>등록자: {creatorName}</span>
-            {pioneerBadges.some((p) => p.mountainId === mountainId) && (
-              <span title="개척자">🗺️</span>
-            )}
-          </div>
-        )}
-
-        {isUserCreated && (
-          <div className="mt-3">
-            <button
-              onClick={() => setShowDuplicateReport(true)}
-              className="text-xs text-muted-foreground hover:text-destructive transition-colors underline underline-offset-2"
-            >
-              이 산은 이미 목록에 있어요
-            </button>
-          </div>
-        )}
-      </div>
-
+      )}
       {/* Pioneer badge display for user-created mountains */}
       {isUserCreated && pioneerBadges.some((p) => p.mountainId === mountainId) && (
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
@@ -292,9 +372,22 @@ const MountainDetail = () => {
           />
         </div>
       )}
+      </div>
     </div>
   );
 };
+
+function StatCell({ label, value, divider }: { label: string; value: string; divider?: boolean }) {
+  return (
+    <div
+      className="flex flex-col items-center justify-center"
+      style={divider ? { borderLeft: "0.5px solid hsl(var(--border) / 0.12)" } : undefined}
+    >
+      <p className="text-muted-foreground" style={{ fontSize: 11 }}>{label}</p>
+      <p className="text-foreground" style={{ fontSize: 14, fontWeight: 500, marginTop: 2 }}>{value}</p>
+    </div>
+  );
+}
 
 function InfoItem({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
   return (
