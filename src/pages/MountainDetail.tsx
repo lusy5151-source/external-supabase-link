@@ -241,45 +241,81 @@ const MountainDetail = () => {
         <StatCell label="소요" value={firstTrail?.duration ? `약 ${firstTrail.duration}` : "—"} divider />
       </div>
 
-      <div className="space-y-6 mt-6">
-      {/* User-created meta */}
-      {isUserCreated && creatorName && (
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <User className="h-3.5 w-3.5" />
-          <span>등록자: {creatorName}</span>
-          {pioneerBadges.some((p) => p.mountainId === mountainId) && (
-            <span title="개척자">🗺️</span>
-          )}
+      {/* Sticky tab navigation */}
+      <div
+        className="sticky bg-card border-b border-border -mx-4 sm:-mx-6"
+        style={{ top: 0, zIndex: 30 }}
+      >
+        <div className="flex overflow-x-auto scrollbar-hide">
+          {(["개요", "코스", "날씨·복장", "편의시설"] as const).map((tab) => {
+            const isActive = activeTab === tab;
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className="shrink-0 whitespace-nowrap"
+                style={{
+                  padding: "12px 16px",
+                  fontSize: 13,
+                  fontWeight: isActive ? 500 : 400,
+                  color: isActive ? "hsl(var(--text-primary))" : "hsl(var(--text-secondary) / 0.7)",
+                  borderBottom: isActive ? "2px solid hsl(var(--primary))" : "2px solid transparent",
+                  transition: "color 200ms ease-out",
+                }}
+              >
+                {tab}
+              </button>
+            );
+          })}
         </div>
-      )}
-      {isUserCreated && (
-        <div>
-          <button
-            onClick={() => setShowDuplicateReport(true)}
-            className="text-xs text-muted-foreground hover:text-destructive transition-colors underline underline-offset-2"
-          >
-            이 산은 이미 목록에 있어요
-          </button>
-        </div>
-      )}
+      </div>
 
-      {/* 산 소개 */}
-      {(mountain.overview || mountain.description) && (
-        <div className="rounded-2xl border border-border bg-card p-4">
-          <p className="text-xs font-semibold text-muted-foreground mb-1.5">📖 산 소개</p>
-          <p className="text-sm leading-relaxed text-foreground">
-            {mountain.overview || mountain.description}
-          </p>
-          {(mountain.address || mountain.province) && (
-            <div className="mt-3 flex items-center gap-2 rounded-xl bg-secondary/50 px-3 py-2">
-              <MapPin className="h-4 w-4 text-primary shrink-0" />
-              <p className="text-sm text-foreground">
-                {[mountain.province, mountain.address].filter(Boolean).join(" | ")}
-              </p>
-            </div>
-          )}
-        </div>
-      )}
+      <div className="overflow-hidden mt-6">
+        <div
+          className="flex"
+          style={{
+            width: "400%",
+            transform: `translateX(-${["개요", "코스", "날씨·복장", "편의시설"].indexOf(activeTab) * 25}%)`,
+            transition: "transform 200ms ease-out",
+          }}
+        >
+          {/* 개요 */}
+          <div className="space-y-6" style={{ width: "25%", flexShrink: 0, paddingRight: 8 }}>
+            {isUserCreated && creatorName && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <User className="h-3.5 w-3.5" />
+                <span>등록자: {creatorName}</span>
+                {pioneerBadges.some((p) => p.mountainId === mountainId) && (
+                  <span title="개척자">🗺️</span>
+                )}
+              </div>
+            )}
+            {isUserCreated && (
+              <div>
+                <button
+                  onClick={() => setShowDuplicateReport(true)}
+                  className="text-xs text-muted-foreground hover:text-destructive transition-colors underline underline-offset-2"
+                >
+                  이 산은 이미 목록에 있어요
+                </button>
+              </div>
+            )}
+            {(mountain.overview || mountain.description) && (
+              <div className="rounded-2xl border border-border bg-card p-4">
+                <p className="text-xs font-semibold text-muted-foreground mb-1.5">📖 산 소개</p>
+                <p className="text-sm leading-relaxed text-foreground">
+                  {mountain.overview || mountain.description}
+                </p>
+                {(mountain.address || mountain.province) && (
+                  <div className="mt-3 flex items-center gap-2 rounded-xl bg-secondary/50 px-3 py-2">
+                    <MapPin className="h-4 w-4 text-primary shrink-0" />
+                    <p className="text-sm text-foreground">
+                      {[mountain.province, mountain.address].filter(Boolean).join(" | ")}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
       {/* Pioneer badge display for user-created mountains */}
       {isUserCreated && pioneerBadges.some((p) => p.mountainId === mountainId) && (
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
