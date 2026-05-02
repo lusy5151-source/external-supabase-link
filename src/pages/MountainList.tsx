@@ -33,15 +33,26 @@ const MountainList = () => {
   const { userMountainsAsMountains, userMountains } = useUserMountains();
   const { data: bac100List = [] } = useBac100Mountains();
   const { data: walkingPaths = [] } = useAllWalkingPaths();
+  const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<MountainFilterState>(DEFAULT_FILTERS);
   const [openRegions, setOpenRegions] = useState<Set<string>>(new Set());
   const [segment, setSegment] = useState<Segment>("list");
 
   // Derive legacy values used downstream
   const sortKey: SortKey = filters.sort;
-  const sortAsc = filters.sort === "name"; // name asc, others desc
+  const sortAsc = filters.sort === "name"; // name asc, others desc/asc
   const showCompleted: "all" | "done" | "todo" = filters.status;
   const showUserOnly = filters.showUserOnly;
+  const difficultyFilter: string = filters.difficulties.length === 0 ? "전체" : "__multi__";
+  // Map "종류" pill to internal viewMode for category lists
+  const viewMode: ViewMode =
+    filters.kind === "bac100"
+      ? "bac100"
+      : filters.kind === "forestry100"
+      ? "forestry100"
+      : filters.kind === "national"
+      ? "national"
+      : "all";
 
   const allMountains = useMemo(() => {
     const visibleUserMountains = userMountainsAsMountains.filter((m) => {
