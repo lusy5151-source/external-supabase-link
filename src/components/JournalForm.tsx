@@ -560,7 +560,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
             onClick={handleSubmit}
             disabled={saving || mountainIds.length === 0}
             className="flex-1 text-white"
-            style={{ background: "#639922" }}
+            style={{ background: "hsl(var(--brand-forest))" }}
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
             {uploadProgress

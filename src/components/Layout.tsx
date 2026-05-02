@@ -99,7 +99,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         >
           <div
             className="relative flex items-center justify-center rounded-full overflow-hidden"
-            style={{ width: 56, height: 56, background: "#639922" }}
+            style={{ width: 56, height: 56, background: "hsl(var(--brand-forest))" }}
           >
             <svg width="26" height="26" viewBox="0 0 20 20" fill="none" className="relative z-10">
               <path d="M10 3L16 15H4L10 3Z" fill="white" />
@@ -113,7 +113,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               }}
             />
           </div>
-          <span style={{ fontSize: 11, color: "#27500A", fontWeight: 500, marginTop: 2 }}>
+          <span style={{ fontSize: 11, color: "hsl(var(--brand-forest))", fontWeight: 500, marginTop: 2 }}>
             인증
           </span>
         </Link>
@@ -159,7 +159,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   {label === "마이" && (unreadChatCount > 0 || friendActivityUnread > 0 || notifUnread > 0) && (
                     <span
                       className="absolute top-0 right-0 rounded-full"
-                      style={{ width: 8, height: 8, background: "#E24B4A" }}
+                      style={{ width: 8, height: 8, background: "hsl(var(--brand-coral))" }}
                     />
                   )}
                 </div>

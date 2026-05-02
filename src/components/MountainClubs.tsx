@@ -111,7 +111,7 @@ export function MountainClubs({ mountainId }: { mountainId: number }) {
               className="shrink-0"
               style={{
                 fontSize: 12,
-                border: "0.5px solid #639922",
+                border: "0.5px solid hsl(var(--brand-forest))",
                 color: "#3B6D11",
                 borderRadius: 20,
                 padding: "4px 10px",

@@ -477,7 +477,7 @@ export default function SummitClaimPage() {
                   resetFlow();
                 }}
                 className="w-full rounded-xl text-white font-medium"
-                style={{ background: "#639922", height: 48, fontSize: 14 }}
+                style={{ background: "hsl(var(--brand-forest))", height: 48, fontSize: 14 }}
               >
                 기록 남기기
               </button>
@@ -554,9 +554,9 @@ export default function SummitClaimPage() {
                         height: 20,
                         fontSize: 10,
                         ...(isCompleted
-                          ? { background: "#C0DD97", color: "#27500A" }
+                          ? { background: "hsl(var(--brand-lime))", color: "hsl(var(--brand-forest))" }
                           : isActive
-                            ? { background: "#639922", color: "#fff" }
+                            ? { background: "hsl(var(--brand-forest))", color: "#fff" }
                             : { background: "hsl(var(--secondary))", color: "hsl(var(--muted-foreground))" }),
                       }}
                     >
@@ -566,7 +566,7 @@ export default function SummitClaimPage() {
                       style={{
                         fontSize: 10,
                         fontWeight: isActive ? 600 : 400,
-                        color: isCompleted ? "#27500A" : isActive ? "#639922" : "hsl(var(--muted-foreground))",
+                        color: isCompleted ? "hsl(var(--brand-forest))" : isActive ? "hsl(var(--brand-forest))" : "hsl(var(--muted-foreground))",
                       }}
                     >
                       {label}
@@ -578,7 +578,7 @@ export default function SummitClaimPage() {
                       style={{
                         height: 2,
                         marginBottom: 18,
-                        background: idx < currentIdx ? "#C0DD97" : "hsl(var(--border))",
+                        background: idx < currentIdx ? "hsl(var(--brand-lime))" : "hsl(var(--border))",
                       }}
                     />
                   )}
@@ -929,7 +929,7 @@ export default function SummitClaimPage() {
                         className="flex-1 flex items-center justify-center rounded-lg text-sm font-medium text-white"
                         style={{
                           height: 44,
-                          background: "#639922",
+                          background: "hsl(var(--brand-forest))",
                         }}
                         onClick={handleGetLocation}
                       >
@@ -1096,19 +1096,19 @@ function PhotoGuideCard() {
   ];
   return (
     <div
-      style={{ background: "#EAF3DE", borderRadius: "var(--radius)", padding: 12 }}
+      style={{ background: "hsl(var(--brand-lime))", borderRadius: "var(--radius)", padding: 12 }}
     >
       <button
         className="flex items-center justify-between w-full"
         onClick={() => setExpanded((v) => !v)}
       >
-        <span style={{ fontSize: 13, fontWeight: 500, color: "#27500A" }}>
+        <span style={{ fontSize: 13, fontWeight: 500, color: "hsl(var(--brand-forest))" }}>
           어떤 사진이 인증되나요?
         </span>
         {expanded ? (
-          <ChevronUp className="h-4 w-4" style={{ color: "#27500A" }} />
+          <ChevronUp className="h-4 w-4" style={{ color: "hsl(var(--brand-forest))" }} />
         ) : (
-          <ChevronDown className="h-4 w-4" style={{ color: "#27500A" }} />
+          <ChevronDown className="h-4 w-4" style={{ color: "hsl(var(--brand-forest))" }} />
         )}
       </button>
       {expanded && (
@@ -1117,9 +1117,9 @@ function PhotoGuideCard() {
             <div key={text} className="flex items-start gap-2" style={{ lineHeight: 1.6 }}>
               <span
                 className="shrink-0 mt-1 rounded-full"
-                style={{ width: 12, height: 12, background: "#639922" }}
+                style={{ width: 12, height: 12, background: "hsl(var(--brand-forest))" }}
               />
-              <span style={{ fontSize: 12, color: "#27500A" }}>{text}</span>
+              <span style={{ fontSize: 12, color: "hsl(var(--brand-forest))" }}>{text}</span>
             </div>
           ))}
         </div>

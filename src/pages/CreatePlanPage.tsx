@@ -354,7 +354,7 @@ const CreatePlanPage = () => {
           disabled={!canSubmit}
           className="w-full"
           style={{
-            background: "#639922",
+            background: "hsl(var(--brand-forest))",
             color: "white",
             height: 48,
             borderRadius: "var(--border-radius-md, 12px)",

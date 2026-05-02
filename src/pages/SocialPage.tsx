@@ -461,7 +461,7 @@ const SocialPage = () => {
                     >
                       <div
                         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-primary"
-                        style={{ background: "#EAF3DE" }}
+                        style={{ background: "hsl(var(--brand-lime))" }}
                       >
                         {inv.hiking_group?.avatar_url ? (
                           <img src={inv.hiking_group.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
@@ -481,7 +481,7 @@ const SocialPage = () => {
                         <button
                           onClick={() => handleAcceptInvite(inv.id, inv.notification_id)}
                           className="rounded-full px-2.5 py-1 text-[12px] font-medium text-white"
-                          style={{ background: "#639922" }}
+                          style={{ background: "hsl(var(--brand-forest))" }}
                         >
                           수락
                         </button>

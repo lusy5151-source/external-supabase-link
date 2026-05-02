@@ -43,7 +43,7 @@ const RoleBadge = ({ role, compact = false }: { role: PlanRole; compact?: boolea
   const styles =
     role === "interested"
       ? { background: "#FAEEDA", color: "#633806", label: "관심" }
-      : { background: "#EAF3DE", color: "#27500A", label: "참석" };
+      : { background: "hsl(var(--brand-lime))", color: "hsl(var(--brand-forest))", label: "참석" };
   return (
     <span
       style={{
@@ -62,8 +62,8 @@ const RoleBadge = ({ role, compact = false }: { role: PlanRole; compact?: boolea
 };
 
 const STATUS_BADGE: Record<string, { label: string; bg: string; color: string }> = {
-  planned: { label: "예정", bg: "#EAF3DE", color: "#27500A" },
-  upcoming: { label: "예정", bg: "#EAF3DE", color: "#27500A" },
+  planned: { label: "예정", bg: "hsl(var(--brand-lime))", color: "hsl(var(--brand-forest))" },
+  upcoming: { label: "예정", bg: "hsl(var(--brand-lime))", color: "hsl(var(--brand-forest))" },
   completed: { label: "완료", bg: "#E0E7FF", color: "#1E3A8A" },
   cancelled: { label: "취소", bg: "#FEE2E2", color: "#7F1D1D" },
 };
@@ -140,7 +140,7 @@ function PlanCard({
           <div className="mt-1.5">
             <span
               style={{
-                background: "#EAF3DE",
+                background: "hsl(var(--brand-lime))",
                 color: "#3B6D11",
                 fontSize: 12,
                 borderRadius: 10,
@@ -172,7 +172,7 @@ function PlanCard({
               }}
               style={{
                 fontSize: 12,
-                border: "0.5px solid #639922",
+                border: "0.5px solid hsl(var(--brand-forest))",
                 color: "#3B6D11",
                 borderRadius: 20,
                 padding: "3px 10px",
@@ -192,8 +192,8 @@ function PlanCard({
           {plan.role === "creator" ? (
             <span
               style={{
-                background: "#EAF3DE",
-                color: "#27500A",
+                background: "hsl(var(--brand-lime))",
+                color: "hsl(var(--brand-forest))",
                 fontSize: 10,
                 borderRadius: 10,
                 padding: "1px 6px",

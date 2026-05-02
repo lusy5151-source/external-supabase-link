@@ -303,7 +303,7 @@ const OnboardingTutorial = () => {
                   height: 6,
                   background:
                     i === step
-                      ? "#639922"
+                      ? "hsl(var(--brand-forest))"
                       : "hsl(var(--color-border-tertiary, var(--border)))",
                 }}
               />
@@ -316,7 +316,7 @@ const OnboardingTutorial = () => {
             className="w-full font-medium text-white mt-3"
             style={{
               height: 44,
-              background: "#639922",
+              background: "hsl(var(--brand-forest))",
               borderRadius: "var(--border-radius-md, 12px)",
               fontSize: 14,
             }}

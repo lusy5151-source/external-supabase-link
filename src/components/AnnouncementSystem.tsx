@@ -172,8 +172,8 @@ function AnnouncementDetail({ announcement, onClose }: { announcement: Announcem
           <span
             className="inline-block font-medium"
             style={{
-              backgroundColor: "#EAF3DE",
-              color: "#27500A",
+              backgroundColor: "hsl(var(--brand-lime))",
+              color: "hsl(var(--brand-forest))",
               fontSize: 11,
               borderRadius: 20,
               padding: "2px 8px",

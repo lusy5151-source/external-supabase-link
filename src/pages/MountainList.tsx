@@ -137,8 +137,8 @@ const MountainList = () => {
             onClick={() => setSegment(key)}
             className="flex-1 rounded-lg py-2 text-sm font-semibold transition-colors"
             style={{
-              background: segment === key ? "#EAF3DE" : "transparent",
-              color: segment === key ? "#27500A" : "hsl(var(--color-text-tertiary))",
+              background: segment === key ? "hsl(var(--brand-lime))" : "transparent",
+              color: segment === key ? "hsl(var(--brand-forest))" : "hsl(var(--color-text-tertiary))",
             }}
           >
             {label}

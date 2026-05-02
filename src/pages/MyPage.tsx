@@ -122,7 +122,7 @@ const MyPage = () => {
             {item.label === "산악회" && unreadChatCount > 0 && (
               <span
                 className="rounded-full px-1.5 py-0.5 font-semibold text-white"
-                style={{ fontSize: 11, background: "#E24B4A", lineHeight: "14px" }}
+                style={{ fontSize: 11, background: "hsl(var(--brand-coral))", lineHeight: "14px" }}
               >
                 {unreadChatCount}개 새 메시지
               </span>
@@ -285,7 +285,7 @@ const MyPage = () => {
                 toast("탈퇴가 완료되었습니다");
               }}
               className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-white"
-              style={{ background: "#E24B4A" }}
+              style={{ background: "hsl(var(--brand-coral))" }}
             >
               탈퇴하기
             </button>

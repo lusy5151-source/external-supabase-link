@@ -6,7 +6,7 @@ interface Props {
   onDismiss: () => void;
 }
 
-const CONFETTI_COLORS = ["#639922", "#C0DD97", "#EF9F27", "#E24B4A"];
+const CONFETTI_COLORS = ["hsl(var(--brand-forest))", "hsl(var(--brand-lime))", "hsl(var(--brand-coral))", "hsl(var(--brand-coral))"];
 
 const AchievementModal = ({ badge, onDismiss }: Props) => {
   const [visible, setVisible] = useState(false);
@@ -63,9 +63,9 @@ const AchievementModal = ({ badge, onDismiss }: Props) => {
         {/* Icon circle */}
         <div
           className="mx-auto flex items-center justify-center rounded-full"
-          style={{ width: 60, height: 60, background: "#EAF3DE" }}
+          style={{ width: 60, height: 60, background: "hsl(var(--brand-lime))" }}
         >
-          <span style={{ fontSize: 28, lineHeight: 1, color: "#639922" }}>{badge.icon}</span>
+          <span style={{ fontSize: 28, lineHeight: 1, color: "hsl(var(--brand-forest))" }}>{badge.icon}</span>
         </div>
 
         <p className="text-foreground" style={{ fontSize: 18, fontWeight: 500, marginTop: 12 }}>
@@ -79,7 +79,7 @@ const AchievementModal = ({ badge, onDismiss }: Props) => {
           onClick={onDismiss}
           className="w-full text-white font-medium"
           style={{
-            background: "#639922",
+            background: "hsl(var(--brand-forest))",
             borderRadius: "var(--border-radius-md, 12px)",
             height: 44,
             marginTop: 20,
