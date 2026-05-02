@@ -31,7 +31,7 @@ export function GuestSignupBanner() {
           to="/auth"
           className="inline-flex items-center justify-center text-white"
           style={{
-            background: "hsl(var(--brand-forest))",
+            background: "hsl(var(--brand-lime))",
             borderRadius: "var(--radius)",
             padding: "6px 12px",
             fontSize: 12,

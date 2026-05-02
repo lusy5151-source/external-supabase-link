@@ -79,7 +79,7 @@ const AchievementModal = ({ badge, onDismiss }: Props) => {
           onClick={onDismiss}
           className="w-full text-white font-medium"
           style={{
-            background: "hsl(var(--brand-forest))",
+            background: "hsl(var(--brand-lime))",
             borderRadius: "var(--border-radius-md, 12px)",
             height: 44,
             marginTop: 20,

@@ -39,7 +39,7 @@ const MyChallengePage = () => {
             style={{
               width: `${percentage}%`,
               borderRadius: 3,
-              background: "hsl(var(--brand-forest))",
+              background: "hsl(var(--brand-lime))",
             }}
           />
         </div>

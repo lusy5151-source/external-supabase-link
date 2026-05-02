@@ -257,7 +257,7 @@ const InviteFriendsSheet = ({ open, onOpenChange, planId, onDone }: InviteFriend
                     <button
                       onClick={() => handleInvite(f)}
                       style={{
-                        background: "hsl(var(--brand-forest))",
+                        background: "hsl(var(--brand-lime))",
                         color: "#fff",
                         borderRadius: 20,
                         fontSize: 12,
@@ -280,7 +280,7 @@ const InviteFriendsSheet = ({ open, onOpenChange, planId, onDone }: InviteFriend
             style={{
               width: "100%",
               height: 48,
-              background: "hsl(var(--brand-forest))",
+              background: "hsl(var(--brand-lime))",
               color: "#fff",
               borderRadius: "var(--radius, 12px)",
               fontSize: 15,
