@@ -40,7 +40,7 @@ const RecordsHub = () => {
               fontSize: 13,
               fontWeight: active === key ? 700 : 500,
               color: active === key ? "hsl(var(--brand-forest))" : "hsl(var(--color-text-tertiary))",
-              borderBottom: active === key ? "2px solid hsl(var(--brand-forest))" : "2px solid transparent",
+              borderBottom: active === key ? "2px solid hsl(var(--brand-lime))" : "2px solid transparent",
             }}
           >
             {label}

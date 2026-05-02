@@ -138,7 +138,7 @@ export function MyPlansCalendar({ plans, selectedDate, onSelectDate }: MyPlansCa
           let bg = "transparent";
           let color = baseColor;
           if (isToday) {
-            bg = "hsl(var(--brand-forest))";
+            bg = "hsl(var(--brand-lime))";
             color = "#fff";
           } else if (isSelected) {
             bg = "hsl(var(--brand-lime))";
@@ -188,7 +188,7 @@ export function MyPlansCalendar({ plans, selectedDate, onSelectDate }: MyPlansCa
                     width: 5,
                     height: 5,
                     borderRadius: 999,
-                    background: "hsl(var(--brand-forest))",
+                    background: "hsl(var(--brand-lime))",
                   }}
                 />
               )}

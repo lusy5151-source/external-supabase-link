@@ -257,7 +257,7 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
             <button
               onClick={openCreate}
               className="mt-3 inline-flex items-center gap-1 font-medium text-white"
-              style={{ background: "hsl(var(--brand-forest))", borderRadius: "var(--border-radius-md)", padding: "8px 20px", fontSize: 13 }}
+              style={{ background: "hsl(var(--brand-lime))", color: "hsl(var(--brand-forest))", borderRadius: "var(--border-radius-md)", padding: "8px 20px", fontSize: 13 }}
             >
               <Plus className="h-3.5 w-3.5" /> 계획 만들기
             </button>
@@ -458,7 +458,7 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
                       let activeStyle: React.CSSProperties = {};
                       if (active) {
                         if (s === "going") {
-                          activeStyle = { background: "hsl(var(--brand-forest))", color: "#fff", borderColor: "hsl(var(--brand-forest))" };
+                          activeStyle = { background: "hsl(var(--brand-lime))", color: "hsl(var(--brand-forest))", borderColor: "hsl(var(--brand-lime))" };
                         } else if (s === "interested") {
                           activeStyle = {
                             background: "#FAEEDA",
@@ -589,7 +589,7 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
                 disabled={creating || !plannedDate}
                 className="w-full"
                 style={{
-                  background: "hsl(var(--brand-forest))",
+                  background: "hsl(var(--brand-lime))",
                   color: "white",
                   height: 48,
                   borderRadius: "var(--border-radius-md, 12px)",

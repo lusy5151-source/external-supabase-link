@@ -99,7 +99,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         >
           <div
             className="relative flex items-center justify-center rounded-full overflow-hidden"
-            style={{ width: 56, height: 56, background: "hsl(var(--brand-forest))" }}
+            style={{ width: 56, height: 56, background: "hsl(var(--brand-lime))" }}
           >
             <svg width="26" height="26" viewBox="0 0 20 20" fill="none" className="relative z-10">
               <path d="M10 3L16 15H4L10 3Z" fill="white" />

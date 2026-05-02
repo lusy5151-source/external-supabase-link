@@ -341,7 +341,7 @@ const NotificationsPage = () => {
                               handleAccept(n);
                             }}
                             style={{
-                              background: "hsl(var(--brand-forest))",
+                              background: "hsl(var(--brand-lime))",
                               color: "white",
                               borderRadius: 20,
                               fontSize: 12,
