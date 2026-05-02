@@ -11,6 +11,7 @@ export interface OutfitRecommendation {
   category: string;
   item: string;
   reason: string;
+  sponsorImageUrl?: string;
 }
 
 export function getMockWeather(mountainId: number): MockWeatherData {
