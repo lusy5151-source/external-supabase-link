@@ -87,6 +87,7 @@ const MountainDetail = () => {
   const [creatorName, setCreatorName] = useState<string | null>(null);
   const [showDuplicateReport, setShowDuplicateReport] = useState(false);
   const [selectedTrail, setSelectedTrail] = useState<Trail | null>(null);
+  const [activeTab, setActiveTab] = useState<"개요" | "코스" | "날씨·복장" | "편의시설">("개요");
   const { pioneerBadges } = usePioneerBadges(createdBy);
 
   useEffect(() => {
