@@ -165,7 +165,7 @@ export function JournalCard({ journal, showAuthor = true, onRefresh }: JournalCa
       />
 
       {/* Content area */}
-      <div className={cn("p-3 space-y-1.5", photos.length === 0 && "border-l-[3px]")} style={photos.length === 0 ? { borderLeftColor: "#C0DD97" } : undefined}>
+      <div className={cn("p-3 space-y-1.5", photos.length === 0 && "border-l-[3px]")} style={photos.length === 0 ? { borderLeftColor: "hsl(var(--brand-lime))" } : undefined}>
         {/* Summit claim badge */}
         {journal.notes?.includes("정상 점령 성공! 🏔") && (
           <div className="flex items-center gap-1.5 bg-primary/10 text-primary rounded-md px-2 py-0.5 w-fit text-[11px] font-medium">

@@ -250,14 +250,14 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
       {loading ? (
         <p className="text-xs text-muted-foreground text-center py-4">불러오는 중...</p>
       ) : plans.length === 0 ? (
-        <div className="rounded-2xl p-4 text-center" style={{ background: "#EAF3DE", borderRadius: "var(--border-radius-lg)" }}>
+        <div className="rounded-2xl p-4 text-center" style={{ background: "hsl(var(--brand-lime))", borderRadius: "var(--border-radius-lg)" }}>
           <p style={{ fontSize: 13, color: "#3B6D11", fontWeight: 500 }}>아직 등산 계획이 없어요</p>
           <p style={{ fontSize: 12, color: "#3B6D11", marginTop: 4 }}>멤버들과 함께 첫 계획을 만들어볼까요?</p>
           {isMember && (
             <button
               onClick={openCreate}
               className="mt-3 inline-flex items-center gap-1 font-medium text-white"
-              style={{ background: "#639922", borderRadius: "var(--border-radius-md)", padding: "8px 20px", fontSize: 13 }}
+              style={{ background: "hsl(var(--brand-forest))", borderRadius: "var(--border-radius-md)", padding: "8px 20px", fontSize: 13 }}
             >
               <Plus className="h-3.5 w-3.5" /> 계획 만들기
             </button>
@@ -400,7 +400,7 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
                     }}
                   >
                     {[
-                      { label: "✅ 참석", color: "#27500A", bg: "#EAF3DE", list: goingList },
+                      { label: "✅ 참석", color: "hsl(var(--brand-forest))", bg: "hsl(var(--brand-lime))", list: goingList },
                       { label: "👀 관심", color: "#633806", bg: "#FAEEDA", list: interestedList },
                       { label: "❌ 불참", color: "#A32D2D", bg: "#FCEBEB", list: notGoingList },
                     ].map((section) =>
@@ -458,18 +458,18 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
                       let activeStyle: React.CSSProperties = {};
                       if (active) {
                         if (s === "going") {
-                          activeStyle = { background: "#639922", color: "#fff", borderColor: "#639922" };
+                          activeStyle = { background: "hsl(var(--brand-forest))", color: "#fff", borderColor: "hsl(var(--brand-forest))" };
                         } else if (s === "interested") {
                           activeStyle = {
                             background: "#FAEEDA",
                             color: "#633806",
-                            border: "0.5px solid #EF9F27",
+                            border: "0.5px solid hsl(var(--brand-coral))",
                           };
                         } else {
                           activeStyle = {
                             background: "#FCEBEB",
                             color: "#A32D2D",
-                            border: "0.5px solid #E24B4A",
+                            border: "0.5px solid hsl(var(--brand-coral))",
                           };
                         }
                       }
@@ -589,7 +589,7 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
                 disabled={creating || !plannedDate}
                 className="w-full"
                 style={{
-                  background: "#639922",
+                  background: "hsl(var(--brand-forest))",
                   color: "white",
                   height: 48,
                   borderRadius: "var(--border-radius-md, 12px)",

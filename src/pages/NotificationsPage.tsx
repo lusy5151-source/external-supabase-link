@@ -28,17 +28,17 @@ const formatRelativeTime = (iso: string) => {
 };
 
 const typeStyle: Record<string, { emoji: string; bg: string }> = {
-  group_invitation: { emoji: "👥", bg: "#EAF3DE" },
-  invitation_accepted: { emoji: "🎉", bg: "#EAF3DE" },
-  new_member_joined: { emoji: "🙋", bg: "#EAF3DE" },
+  group_invitation: { emoji: "👥", bg: "hsl(var(--brand-lime))" },
+  invitation_accepted: { emoji: "🎉", bg: "hsl(var(--brand-lime))" },
+  new_member_joined: { emoji: "🙋", bg: "hsl(var(--brand-lime))" },
   club_chat: { emoji: "💬", bg: "#EEF2FF" },
   plan_created: { emoji: "📅", bg: "#FAEEDA" },
-  plan_joined: { emoji: "✅", bg: "#EAF3DE" },
+  plan_joined: { emoji: "✅", bg: "hsl(var(--brand-lime))" },
   plan_declined: { emoji: "😔", bg: "#FCEBEB" },
   plan_updated: { emoji: "📝", bg: "#FAEEDA" },
   plan_deleted: { emoji: "🗑", bg: "#FCEBEB" },
   plan_cancelled: { emoji: "❌", bg: "#FCEBEB" },
-  plan_status_changed: { emoji: "🏔", bg: "#EAF3DE" },
+  plan_status_changed: { emoji: "🏔", bg: "hsl(var(--brand-lime))" },
 };
 
 const getStyle = (type: string) =>
@@ -222,7 +222,7 @@ const NotificationsPage = () => {
           </button>
           <button
             onClick={() => setConfirmDeleteAll(true)}
-            style={{ fontSize: 13, color: "#E24B4A", fontWeight: 500 }}
+            style={{ fontSize: 13, color: "hsl(var(--brand-coral))", fontWeight: 500 }}
             disabled={isEmpty}
             className="disabled:opacity-40"
           >
@@ -341,7 +341,7 @@ const NotificationsPage = () => {
                               handleAccept(n);
                             }}
                             style={{
-                              background: "#639922",
+                              background: "hsl(var(--brand-forest))",
                               color: "white",
                               borderRadius: 20,
                               fontSize: 12,
@@ -417,7 +417,7 @@ const NotificationsPage = () => {
             <AlertDialogCancel>취소</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDeleteAll}
-              style={{ background: "#E24B4A", color: "white" }}
+              style={{ background: "hsl(var(--brand-coral))", color: "white" }}
             >
               삭제하기
             </AlertDialogAction>

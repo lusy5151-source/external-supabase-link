@@ -31,7 +31,7 @@ const TOOLTIP_STYLES = `
 }
 @keyframes tutorial-border-flash {
   0%, 100% { border-color: transparent; }
-  50% { border-color: #639922; }
+  50% { border-color: hsl(var(--brand-forest)); }
 }
 `;
 
@@ -39,8 +39,8 @@ const WelcomeChips = () => (
   <div className="flex gap-2 mt-3">
     <span
       style={{
-        background: "#EAF3DE",
-        color: "#27500A",
+        background: "hsl(var(--brand-lime))",
+        color: "hsl(var(--brand-forest))",
         borderRadius: 20,
         fontSize: 12,
         padding: "4px 10px",
@@ -101,7 +101,7 @@ const PlanChecklist = () => (
 
 const ClubChips = () => (
   <div className="flex gap-2 mt-3">
-    <span style={{ background: "#EAF3DE", color: "#27500A", borderRadius: 20, fontSize: 12, padding: "5px 12px" }}>
+    <span style={{ background: "hsl(var(--brand-lime))", color: "hsl(var(--brand-forest))", borderRadius: 20, fontSize: 12, padding: "5px 12px" }}>
       👥 산악회 만들기
     </span>
     <span style={{
@@ -142,7 +142,7 @@ const FinalCelebration = () => (
     <div className="flex gap-4">
       <div className="flex flex-col items-center">
         <div style={{
-          width: 40, height: 40, borderRadius: "50%", background: "#EAF3DE",
+          width: 40, height: 40, borderRadius: "50%", background: "hsl(var(--brand-lime))",
           display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
         }}>⛰️</div>
         <span style={{ fontSize: 10, marginTop: 4, color: "hsl(var(--foreground))" }}>첫 발자국</span>
@@ -257,7 +257,7 @@ const TutorialTooltip = ({
             borderRadius: 16,
             padding: 18,
             boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
-            border: borderFlash ? "2px solid #639922" : "2px solid transparent",
+            border: borderFlash ? "2px solid hsl(var(--brand-forest))" : "2px solid transparent",
             transition: "border-color 0.3s",
           }}
         >
@@ -273,7 +273,7 @@ const TutorialTooltip = ({
               className="h-full rounded-full"
               style={{
                 width: `${((currentStep + 1) / totalSteps) * 100}%`,
-                background: "#639922",
+                background: "hsl(var(--brand-forest))",
                 transition: "width 0.2s ease",
               }}
             />
@@ -323,7 +323,7 @@ const TutorialTooltip = ({
               className="text-center"
               style={{
                 fontSize: 13,
-                color: "#639922",
+                color: "hsl(var(--brand-forest))",
                 marginTop: 14,
                 fontWeight: 500,
               }}
@@ -336,7 +336,7 @@ const TutorialTooltip = ({
               className="w-full font-medium text-white"
               style={{
                 height: customContent === "final-celebration" ? 48 : 44,
-                background: "#639922",
+                background: "hsl(var(--brand-forest))",
                 borderRadius: 10,
                 fontSize: customContent === "final-celebration" ? 15 : 14,
                 fontWeight: customContent === "final-celebration" ? 500 : undefined,

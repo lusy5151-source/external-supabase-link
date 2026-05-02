@@ -231,14 +231,14 @@ const Dashboard = () => {
       hikeDate.setHours(0, 0, 0, 0);
       const daysSince = Math.round((now.getTime() - hikeDate.getTime()) / (1000 * 60 * 60 * 24));
       if (daysSince <= 7) {
-        return { msg: "지난 등산 기록을 남겨두셨나요?", btn: "기록 추가하기", to: "/records", bg: "#EAF3DE" };
+        return { msg: "지난 등산 기록을 남겨두셨나요?", btn: "기록 추가하기", to: "/records", bg: "hsl(var(--brand-lime))" };
       }
       // C: 7+ days ago
       return { msg: "슬슬 산이 그리워질 때가 됐어요 ⛰", btn: "등산 계획 만들기", to: "/plans/create", bg: "#EEEDFE" };
     }
     // A: no record at all
     if (completedCount === 0) {
-      return { msg: "첫 번째 산을 정복해볼까요?", btn: "산 탐색하기", to: "/mountains", bg: "#EAF3DE" };
+      return { msg: "첫 번째 산을 정복해볼까요?", btn: "산 탐색하기", to: "/mountains", bg: "hsl(var(--brand-lime))" };
     }
     return null;
   }, [isDemo, upcomingPlan, upcomingMountain, lastHikeDate, completedCount]);
@@ -266,7 +266,7 @@ const Dashboard = () => {
               <Link
                 to={ctaCard.to}
                 className="shrink-0 inline-flex items-center justify-center text-white"
-                style={{ background: "#639922", borderRadius: "var(--radius)", padding: "6px 12px", fontSize: 12, fontWeight: 500 }}
+                style={{ background: "hsl(var(--brand-forest))", borderRadius: "var(--radius)", padding: "6px 12px", fontSize: 12, fontWeight: 500 }}
               >
                 {ctaCard.btn}
               </Link>
@@ -499,7 +499,7 @@ const Dashboard = () => {
                   <div className="relative" style={{ width: 80, height: 80 }}>
                     <svg className="-rotate-90" viewBox="0 0 80 80" width="80" height="80">
                       <circle cx="40" cy="40" r="32" fill="none" stroke="#FFE0E0" strokeWidth="8" />
-                      <circle cx="40" cy="40" r="32" fill="none" stroke="#E24B4A" strokeWidth="8" strokeLinecap="round"
+                      <circle cx="40" cy="40" r="32" fill="none" stroke="hsl(var(--brand-coral))" strokeWidth="8" strokeLinecap="round"
                         strokeDasharray={`${2 * Math.PI * 32}`}
                         strokeDashoffset={`${2 * Math.PI * 32 * (1 - (isDemo ? goalPercent : hundredPercent) / 100)}`}
                         className="transition-all duration-700 ease-out"
@@ -533,7 +533,7 @@ const Dashboard = () => {
                     <circle cx="40" cy="40" r="32" fill="none" stroke="#FFE0E0" strokeWidth="8" />
                     <circle
                       cx="40" cy="40" r="32" fill="none"
-                      stroke="#E24B4A" strokeWidth="8"
+                      stroke="hsl(var(--brand-coral))" strokeWidth="8"
                       strokeLinecap="round"
                       strokeDasharray={`${2 * Math.PI * 32}`}
                       strokeDashoffset={`${2 * Math.PI * 32 * (1 - challengeProgress / 100)}`}
@@ -549,7 +549,7 @@ const Dashboard = () => {
                 <p style={{ fontSize: 11 }} className="text-muted-foreground mt-2 text-center">
                   {isDemo ? "3개 진행 중" : activeChallenges.length > 0 ? `${activeChallenges.length}개 진행 중` : "참여 없음"}
                 </p>
-                <Link to={isDemo ? "/auth" : "/challenges"} style={{ fontSize: 11, color: "#E24B4A" }} className="font-medium hover:underline">
+                <Link to={isDemo ? "/auth" : "/challenges"} style={{ fontSize: 11, color: "hsl(var(--brand-coral))" }} className="font-medium hover:underline">
                   전체 보기
                 </Link>
               </div>
@@ -584,9 +584,9 @@ const Dashboard = () => {
               >
                 <div
                   className="shrink-0 flex items-center justify-center rounded-full"
-                  style={{ width: 36, height: 36, background: "#EAF3DE" }}
+                  style={{ width: 36, height: 36, background: "hsl(var(--brand-lime))" }}
                 >
-                  <Flag className="h-[18px] w-[18px]" style={{ color: "#639922" }} />
+                  <Flag className="h-[18px] w-[18px]" style={{ color: "hsl(var(--brand-forest))" }} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-muted-foreground" style={{ fontSize: 11 }}>다음 업적까지</p>
@@ -594,7 +594,7 @@ const Dashboard = () => {
                     {nextBadge.name} {current}/{target}
                   </p>
                   <div className="w-full mt-1 overflow-hidden" style={{ height: 4, borderRadius: 2, background: "hsl(var(--color-border-tertiary, var(--border)))" }}>
-                    <div className="h-full transition-all duration-500" style={{ width: `${pct}%`, borderRadius: 2, background: "#639922" }} />
+                    <div className="h-full transition-all duration-500" style={{ width: `${pct}%`, borderRadius: 2, background: "hsl(var(--brand-forest))" }} />
                   </div>
                   <p style={{ fontSize: 10, color: "#3B6D11", marginTop: 2 }}>{current}/{target}</p>
                 </div>

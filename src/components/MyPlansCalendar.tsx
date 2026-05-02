@@ -112,7 +112,7 @@ export function MyPlansCalendar({ plans, selectedDate, onSelectDate }: MyPlansCa
               textAlign: "center",
               color:
                 i === 0
-                  ? "#E24B4A"
+                  ? "hsl(var(--brand-coral))"
                   : i === 6
                   ? "#3B82F6"
                   : "hsl(var(--muted-foreground))",
@@ -134,15 +134,15 @@ export function MyPlansCalendar({ plans, selectedDate, onSelectDate }: MyPlansCa
           const isPast = cell.date < today && !isToday;
           const weekday = cell.date.getDay();
           const baseColor =
-            weekday === 0 ? "#E24B4A" : weekday === 6 ? "#3B82F6" : "hsl(var(--foreground))";
+            weekday === 0 ? "hsl(var(--brand-coral))" : weekday === 6 ? "#3B82F6" : "hsl(var(--foreground))";
           let bg = "transparent";
           let color = baseColor;
           if (isToday) {
-            bg = "#639922";
+            bg = "hsl(var(--brand-forest))";
             color = "#fff";
           } else if (isSelected) {
-            bg = "#EAF3DE";
-            color = "#27500A";
+            bg = "hsl(var(--brand-lime))";
+            color = "hsl(var(--brand-forest))";
           }
           return (
             <button
@@ -188,7 +188,7 @@ export function MyPlansCalendar({ plans, selectedDate, onSelectDate }: MyPlansCa
                     width: 5,
                     height: 5,
                     borderRadius: 999,
-                    background: "#639922",
+                    background: "hsl(var(--brand-forest))",
                   }}
                 />
               )}

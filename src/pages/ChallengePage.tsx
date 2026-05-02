@@ -459,7 +459,7 @@ const ChallengePage = () => {
                                     progress,
                                     goal,
                                   })}
-                                  style={{ color: "#E24B4A", fontSize: 14 }}
+                                  style={{ color: "hsl(var(--brand-coral))", fontSize: 14 }}
                                 >
                                   챌린지 포기하기
                                 </DropdownMenuItem>
@@ -637,7 +637,7 @@ const ChallengePage = () => {
               onClick={handleAbandon}
               disabled={abandoning}
               className="w-full mt-5 rounded-xl text-white font-medium transition disabled:opacity-50"
-              style={{ background: "#E24B4A", height: 44 }}
+              style={{ background: "hsl(var(--brand-coral))", height: 44 }}
             >
               {abandoning ? "처리 중..." : "포기하기"}
             </button>

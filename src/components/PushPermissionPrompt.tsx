@@ -79,7 +79,7 @@ const PushPermissionPrompt = () => {
               marginBottom: 14,
             }}
           >
-            <Bell style={{ width: 24, height: 24, color: "#639922" }} />
+            <Bell style={{ width: 24, height: 24, color: "hsl(var(--brand-forest))" }} />
           </div>
 
           {/* Title */}
@@ -104,7 +104,7 @@ const PushPermissionPrompt = () => {
             className="w-full flex items-center justify-center rounded-xl text-white font-medium"
             style={{
               height: 44,
-              background: "#639922",
+              background: "hsl(var(--brand-forest))",
               fontSize: 14,
               marginBottom: 8,
             }}

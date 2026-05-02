@@ -13,13 +13,13 @@ export function GuestSignupBanner() {
     <div
       className="flex items-center justify-between gap-3"
       style={{
-        background: "#EAF3DE",
+        background: "hsl(var(--brand-lime))",
         borderRadius: "var(--radius)",
         padding: "12px 14px",
       }}
     >
       <div className="flex-1 min-w-0">
-        <p style={{ fontSize: 13, fontWeight: 500, color: "#27500A" }}>
+        <p style={{ fontSize: 13, fontWeight: 500, color: "hsl(var(--brand-forest))" }}>
           완등 기록을 시작해보세요
         </p>
         <p style={{ fontSize: 11, color: "#3B6D11", marginTop: 2 }}>
@@ -31,7 +31,7 @@ export function GuestSignupBanner() {
           to="/auth"
           className="inline-flex items-center justify-center text-white"
           style={{
-            background: "#639922",
+            background: "hsl(var(--brand-forest))",
             borderRadius: "var(--radius)",
             padding: "6px 12px",
             fontSize: 12,

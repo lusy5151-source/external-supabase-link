@@ -21,7 +21,7 @@ const NotificationCenter = () => {
             top: 0,
             right: 0,
             transform: "translate(-2px, 2px)",
-            background: "#E24B4A",
+            background: "hsl(var(--brand-coral))",
             minWidth: 16,
             height: 16,
             borderRadius: 9999,
