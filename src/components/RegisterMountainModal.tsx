@@ -19,11 +19,22 @@ const DIFFICULTIES: { value: string; label: string }[] = [
   { value: "어려움", label: "어려움" },
 ];
 
-export default function RegisterMountainModal() {
+interface RegisterMountainModalProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
+}
+
+export default function RegisterMountainModal({ open: openProp, onOpenChange, hideTrigger }: RegisterMountainModalProps = {}) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { createMountain, uploadMountainImage } = useUserMountains();
-  const [open, setOpen] = useState(false);
+  const [openInternal, setOpenInternal] = useState(false);
+  const open = openProp ?? openInternal;
+  const setOpen = (v: boolean) => {
+    if (onOpenChange) onOpenChange(v);
+    else setOpenInternal(v);
+  };
   const [submitting, setSubmitting] = useState(false);
 
   const [nameKo, setNameKo] = useState("");
