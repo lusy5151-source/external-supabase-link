@@ -274,6 +274,7 @@ export function SummitClaimSection({ mountainId, mountainName, hideList, trigger
           </div>
         </div>
       )}
+      {!hideList && (<>
       {/* Mountain Leader */}
       {leader && (
         <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/10 dark:border-amber-800/30 p-4 shadow-sm">
