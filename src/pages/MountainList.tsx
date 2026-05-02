@@ -267,6 +267,9 @@ const MountainList = () => {
         </div>
       </Link>
 
+      {/* Sticky search */}
+      <StickySearchBar search={search} setSearch={setSearch} />
+
       {/* Segment toggle */}
       <div className="flex rounded-xl p-1" style={{ background: "hsl(var(--secondary))" }}>
         {([["list", "목록"], ["map", "지도"]] as const).map(([key, label]) => (
