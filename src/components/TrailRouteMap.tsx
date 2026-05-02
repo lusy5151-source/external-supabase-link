@@ -10,18 +10,19 @@ interface TrailRouteMapProps {
   selectedTrail: Trail | null;
 }
 
-const ROUTE_COLORS = [
-  "#2D6A4F", // 1번째 - 진초록
-  "#E76F51", // 2번째 - 주황
-  "#457B9D", // 3번째 - 파랑
-  "#9B2226", // 4번째 - 빨강
-  "#6A4C93", // 5번째 - 보라
-  "#F4A261", // 6번째 - 연주황
+// Brand-token derived stroke colors (forest, navy, coral, lavender, lime, sky)
+export const ROUTE_COLORS = [
+  "#2F403A", // brand-forest
+  "#013F92", // brand-navy
+  "#FF696C", // brand-coral
+  "#C2B6DE", // brand-lavender
+  "#C7D66D", // brand-lime
+  "#C6DBF0", // brand-sky
 ];
 
 const NO_GEOMETRY_COLOR = "#AAAAAA";
 
-function getCourseColor(index: number): string {
+export function getCourseColor(index: number): string {
   return ROUTE_COLORS[index % ROUTE_COLORS.length];
 }
 
