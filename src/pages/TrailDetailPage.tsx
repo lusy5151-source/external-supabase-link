@@ -52,13 +52,17 @@ function getDifficultyStyle(difficulty: string) {
 
 export default function TrailDetailPage() {
   const { mountains } = useMountains();
-  const { trailId } = useParams<{ trailId: string }>();
+  const params = useParams<{ trailId?: string; courseId?: string }>();
+  // Course id can be prefixed: "t-<uuid>" (trail) or "np-<id>" (national park course)
+  const rawId = params.trailId || params.courseId || "";
+  const isParkCourse = rawId.startsWith("np-");
+  const trailId = rawId.startsWith("t-") ? rawId.slice(2) : rawId.startsWith("np-") ? null : rawId;
   const [trail, setTrail] = useState<TrailDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!trailId) return;
+    if (!trailId) { setLoading(false); return; }
     (async () => {
       setLoading(true);
       const { data, error } = await supabase
