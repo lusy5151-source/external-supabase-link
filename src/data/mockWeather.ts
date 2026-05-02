@@ -28,17 +28,33 @@ export function getMockWeather(mountainId: number): MockWeatherData {
 
 export function getOutfitRecommendations(weather: MockWeatherData): OutfitRecommendation[] {
   const recs: OutfitRecommendation[] = [];
+  // 상의
+  let top: OutfitRecommendation;
   if (weather.temp < 5) {
-    recs.push({ category: "상의", item: "패딩 재킷", reason: "기온이 낮아 보온이 필요합니다" });
-    recs.push({ category: "하의", item: "기모 바지", reason: "추운 날씨에 적합합니다" });
+    top = { category: "상의", item: "패딩 재킷", reason: "기온이 낮아 보온 필수" };
   } else if (weather.temp < 15) {
-    recs.push({ category: "상의", item: "플리스 + 바람막이", reason: "쌀쌀한 날씨에 레이어링이 좋습니다" });
+    top = { category: "상의", item: "플리스 + 바람막이", reason: "쌀쌀해 레이어링 권장" };
+  } else if (weather.temp < 22) {
+    top = { category: "상의", item: "긴팔 기능성 티", reason: "선선한 산행 적정 온도" };
   } else {
-    recs.push({ category: "상의", item: "기능성 반팔", reason: "따뜻한 날씨에 적합합니다" });
+    top = { category: "상의", item: "기능성 반팔", reason: "따뜻해 통기성 우선" };
   }
-  if (weather.precipChance > 40) {
+  if (weather.windSpeed > 25) {
+    top.reason += ` · 바람 ${weather.windSpeed}km/h`;
+  }
+  recs.push(top);
+
+  // 우비 / 바람막이
+  if (weather.precipChance >= 40) {
     recs.push({ category: "우비", item: "방수 재킷", reason: `강수 확률 ${weather.precipChance}%` });
+  } else if (weather.windSpeed > 20) {
+    recs.push({ category: "우비", item: "경량 바람막이", reason: `바람 ${weather.windSpeed}km/h` });
+  } else {
+    recs.push({ category: "우비", item: "휴대용 우비", reason: "산 날씨 대비용" });
   }
-  recs.push({ category: "신발", item: "등산화", reason: "안전한 산행을 위해 필수입니다" });
+
+  // 신발
+  recs.push({ category: "신발", item: "등산화", reason: weather.precipChance >= 40 ? "미끄럼 방지 방수화 권장" : "발목 보호 필수" });
+
   return recs;
 }
