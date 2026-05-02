@@ -1,7 +1,7 @@
 import { useWeather, useForecast } from "@/hooks/useWeather";
 import { getOutfitRecommendations } from "@/data/mockWeather";
 import { useMountains } from "@/contexts/MountainsContext";
-import { Sun, Cloud, CloudRain, CloudSnow, Wind, Droplets, Thermometer, CloudSun, Loader2 } from "lucide-react";
+import { Sun, Cloud, CloudRain, CloudSnow, CloudSun, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 
@@ -20,54 +20,73 @@ export function WeatherCard({ mountainId }: { mountainId: number }) {
   const lng = mountain?.lng ?? 127.0;
 
   const { weather, loading, isReal } = useWeather(mountainId, lat, lng);
-  const { forecast, loading: forecastLoading } = useForecast(lat, lng);
+  const { forecast } = useForecast(lat, lng);
   const recommendations = getOutfitRecommendations(weather);
   const CondIcon = conditionIcons[weather.condition] || Cloud;
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-5">
-      <div className="flex items-center gap-2">
-        <div className="h-8 w-1 rounded-full bg-primary" />
-        <div className="flex-1">
-          <h2 className="text-lg font-semibold text-foreground">현재 날씨</h2>
-          <p className="text-xs text-muted-foreground">
-            {isReal ? "실시간 데이터" : "예상 데이터 · 실제 날씨와 다를 수 있습니다"}
-          </p>
-        </div>
-        {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-      </div>
+    <div className="space-y-4">
+      {/* 1. 현재 날씨 card */}
+      <div
+        className="bg-card"
+        style={{
+          border: "0.5px solid hsl(var(--border))",
+          borderRadius: 12,
+          padding: 14,
+        }}
+      >
+        <div className="flex items-start justify-between gap-4">
+          {/* Left: temp + condition */}
+          <div className="min-w-0">
+            <div className="flex items-center gap-3">
+              <CondIcon className="text-primary" style={{ width: 36, height: 36 }} />
+              <span className="text-foreground" style={{ fontSize: 32, fontWeight: 500, lineHeight: 1 }}>
+                {weather.temp}°
+              </span>
+            </div>
+            <p className="text-muted-foreground" style={{ fontSize: 12, marginTop: 6 }}>
+              체감 {weather.feelsLike}°
+              {!isReal && " · 예상"}
+              {loading && " · 갱신 중"}
+            </p>
+          </div>
 
-      {/* Weather overview */}
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-3">
-          <CondIcon className="h-10 w-10 text-primary" />
-          <div>
-            <p className="text-3xl font-bold text-foreground">{weather.temp}°C</p>
-            <p className="text-xs text-muted-foreground">체감 {weather.feelsLike}°C</p>
+          {/* Right: 3 mini metrics column */}
+          <div className="flex flex-col gap-1.5 text-right">
+            <MiniMetric label="풍속" value={`${weather.windSpeed}km/h`} />
+            <MiniMetric label="강수확률" value={`${weather.precipChance}%`} />
+            <MiniMetric label="습도" value={`${weather.humidity}%`} />
           </div>
         </div>
-        <div className="flex-1 grid grid-cols-3 gap-3">
-          <WeatherStat icon={Wind} label="풍속" value={`${weather.windSpeed}km/h`} />
-          <WeatherStat icon={Droplets} label="강수 확률" value={`${weather.precipChance}%`} />
-          <WeatherStat icon={Thermometer} label="습도" value={`${weather.humidity}%`} />
-        </div>
       </div>
 
-      {/* 7-day forecast */}
+      {/* 2. 주간 예보 */}
       {forecast.length > 0 && (
         <div>
-          <h3 className="mb-2 text-sm font-semibold text-foreground">📅 주간 예보</h3>
-          <div className="flex gap-2 overflow-x-auto pb-1">
+          <p className="text-muted-foreground" style={{ fontSize: 12, marginBottom: 8 }}>주간 예보</p>
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {forecast.map((day) => {
               const DayIcon = conditionIcons[day.condition] || Cloud;
               return (
-                <div key={day.date} className="flex flex-col items-center gap-1 rounded-lg bg-secondary/40 px-3 py-2 min-w-[60px]">
-                  <p className="text-[10px] text-muted-foreground">
+                <div
+                  key={day.date}
+                  className="bg-card flex flex-col items-center justify-center flex-shrink-0"
+                  style={{
+                    width: 60,
+                    border: "0.5px solid hsl(var(--border))",
+                    borderRadius: 10,
+                    padding: "8px 4px",
+                    gap: 4,
+                  }}
+                >
+                  <p className="text-muted-foreground" style={{ fontSize: 12 }}>
                     {format(new Date(day.date), "E", { locale: ko })}
                   </p>
-                  <DayIcon className="h-5 w-5 text-primary/70" />
-                  <p className="text-xs font-semibold text-foreground">{day.temp}°</p>
-                  <p className="text-[9px] text-muted-foreground">{day.tempMin}°/{day.tempMax}°</p>
+                  <DayIcon className="text-primary/80" style={{ width: 18, height: 18 }} />
+                  <p className="text-foreground" style={{ fontSize: 13, fontWeight: 500 }}>{day.temp}°</p>
+                  <p className="text-muted-foreground" style={{ fontSize: 10 }}>
+                    {day.tempMin}°/{day.tempMax}°
+                  </p>
                 </div>
               );
             })}
@@ -75,18 +94,43 @@ export function WeatherCard({ mountainId }: { mountainId: number }) {
         </div>
       )}
 
-      {/* Outfit recommendations */}
-      <div>
-        <h3 className="mb-3 text-sm font-semibold text-foreground">🧥 복장 추천</h3>
+      {/* 3. 복장 추천 card */}
+      <div
+        className="bg-secondary/50"
+        style={{
+          borderRadius: 12,
+          padding: 14,
+        }}
+      >
+        <p className="text-foreground" style={{ fontSize: 13, fontWeight: 500, marginBottom: 10 }}>
+          오늘의 복장 추천
+        </p>
         <div className="space-y-2">
           {recommendations.map((rec, i) => (
-            <div key={i} className="flex items-start gap-3 rounded-lg bg-secondary/50 p-3">
-              <span className="mt-0.5 rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary whitespace-nowrap">
+            <div key={i} className="flex items-center gap-2.5">
+              <span
+                className="bg-primary/10 text-primary flex-shrink-0 inline-flex items-center justify-center"
+                style={{
+                  fontSize: 10,
+                  fontWeight: 500,
+                  borderRadius: 6,
+                  padding: "3px 6px",
+                  minWidth: 36,
+                }}
+              >
                 {rec.category}
               </span>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground">{rec.item}</p>
-                <p className="text-xs text-muted-foreground">{rec.reason}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-foreground truncate" style={{ fontSize: 13, fontWeight: 500 }}>{rec.item}</p>
+                <p className="text-muted-foreground truncate" style={{ fontSize: 11 }}>{rec.reason}</p>
+              </div>
+              <div
+                className="flex-shrink-0 overflow-hidden"
+                style={{ width: 24, height: 24, borderRadius: 4 }}
+              >
+                {rec.sponsorImageUrl ? (
+                  <img src={rec.sponsorImageUrl} alt="" className="w-full h-full object-cover" />
+                ) : null}
               </div>
             </div>
           ))}
@@ -96,12 +140,11 @@ export function WeatherCard({ mountainId }: { mountainId: number }) {
   );
 }
 
-function WeatherStat({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
+function MiniMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="text-center">
-      <Icon className="mx-auto h-4 w-4 text-muted-foreground" />
-      <p className="mt-1 text-[10px] text-muted-foreground">{label}</p>
-      <p className="text-xs font-semibold text-foreground">{value}</p>
+    <div className="flex items-baseline justify-end gap-1.5">
+      <span className="text-muted-foreground" style={{ fontSize: 10 }}>{label}</span>
+      <span className="text-foreground" style={{ fontSize: 12, fontWeight: 500 }}>{value}</span>
     </div>
   );
 }
