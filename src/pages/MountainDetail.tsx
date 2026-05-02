@@ -281,7 +281,7 @@ const MountainDetail = () => {
           }}
         >
           {/* 개요 */}
-          <div className="space-y-6" style={{ width: "25%", flexShrink: 0, paddingRight: 8 }}>
+          <div className="space-y-4" style={{ width: "25%", flexShrink: 0, paddingRight: 8 }}>
             {isUserCreated && creatorName && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <User className="h-3.5 w-3.5" />
@@ -301,23 +301,36 @@ const MountainDetail = () => {
                 </button>
               </div>
             )}
-            {(mountain.overview || mountain.description) && (
-              <div className="rounded-2xl border border-border bg-card p-4">
-                <p className="text-xs font-semibold text-muted-foreground mb-1.5">📖 산 소개</p>
-                <p className="text-sm leading-relaxed text-foreground">
-                  {mountain.overview || mountain.description}
-                </p>
-                {(mountain.address || mountain.province) && (
-                  <div className="mt-3 flex items-center gap-2 rounded-xl bg-secondary/50 px-3 py-2">
-                    <MapPin className="h-4 w-4 text-primary shrink-0" />
-                    <p className="text-sm text-foreground">
-                      {[mountain.province, mountain.address].filter(Boolean).join(" | ")}
-                    </p>
-                  </div>
-                )}
-              </div>
+            {isUserCreated && (
+              <DuplicateReportModal
+                reportedMountainId={mountainId}
+                open={showDuplicateReport}
+                onOpenChange={setShowDuplicateReport}
+              />
             )}
-      {/* Pioneer badge display for user-created mountains */}
+
+            {/* Block 1: 산 소개 */}
+            <OverviewIntroBlock text={mountain.overview || mountain.description || ""} />
+
+            {/* Block 2: 정상 정복 */}
+            <OverviewSummitsBlock
+              mountainId={mountain.id}
+              mountainName={mountain.nameKo}
+              onTriggerSummit={setPendingTriggerSummitId}
+            />
+
+            {/* Block 3: 위치 */}
+            <OverviewLocationBlock mountain={mountain} />
+
+            {/* Hidden claim handler — opens dialog when a peak is tapped above */}
+            <SummitClaimSection
+              mountainId={mountain.id}
+              mountainName={mountain.nameKo}
+              hideList
+              triggerSummitId={pendingTriggerSummitId}
+              onTriggerHandled={() => setPendingTriggerSummitId(null)}
+            />
+
             {isUserCreated && pioneerBadges.some((p) => p.mountainId === mountainId) && (
               <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <div className="flex items-center gap-2">
@@ -329,14 +342,6 @@ const MountainDetail = () => {
                 </div>
               </div>
             )}
-            {isUserCreated && (
-              <DuplicateReportModal
-                reportedMountainId={mountainId}
-                open={showDuplicateReport}
-                onOpenChange={setShowDuplicateReport}
-              />
-            )}
-            <SummitClaimSection mountainId={mountain.id} mountainName={mountain.nameKo} />
             {completed && record && (
               <JournalSection
                 record={record}
