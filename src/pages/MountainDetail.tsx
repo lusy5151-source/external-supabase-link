@@ -10,8 +10,9 @@ import { SummitClaimSection } from "@/components/SummitClaimSection";
 import {
   ArrowLeft, ChevronLeft, Heart, Share2, Mountain as MountainIcon, MapPin, TrendingUp, CheckCircle2, Circle, Calendar,
   Sun, Cloud, CloudRain, CloudSnow, CloudFog, CloudSun, ImagePlus, X, Users,
-  Clock, Route, Flag, Save, UserPlus, UserMinus, Globe, Lock, Upload, User,
+  Clock, Route, Flag, Save, UserPlus, UserMinus, Globe, Lock, Upload, User, Check,
 } from "lucide-react";
+import { useSummits } from "@/hooks/useSummits";
 import { useState, useEffect, useRef } from "react";
 import type { WeatherCondition, CompletionRecord } from "@/hooks/useMountainStore";
 import { WeatherCard } from "@/components/WeatherCard";
