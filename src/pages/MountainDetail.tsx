@@ -555,6 +555,30 @@ function OverviewLocationBlock({ mountain }: { mountain: Mountain }) {
     </div>
   );
 }
+function CourseLegend({ mountainId }: { mountainId: number }) {
+  const { trails } = useTrailsForLegend(mountainId);
+  const withGeo = trails.filter((t) => Array.isArray((t.geometry as any)?.coordinates) && (t.geometry as any).coordinates.length > 0);
+  if (withGeo.length === 0) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+      {withGeo.map((t, i) => (
+        <div key={t.id} className="inline-flex items-center gap-1.5">
+          <span
+            className="inline-block"
+            style={{
+              width: 14,
+              height: 3,
+              borderRadius: 2,
+              background: ROUTE_COLORS[i % ROUTE_COLORS.length],
+            }}
+          />
+          <span className="text-foreground" style={{ fontSize: 11 }}>{t.name}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function StatCell({ label, value, divider }: { label: string; value: string; divider?: boolean }) {
   return (
     <div
