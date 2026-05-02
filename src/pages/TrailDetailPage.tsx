@@ -52,13 +52,17 @@ function getDifficultyStyle(difficulty: string) {
 
 export default function TrailDetailPage() {
   const { mountains } = useMountains();
-  const { trailId } = useParams<{ trailId: string }>();
+  const params = useParams<{ trailId?: string; courseId?: string }>();
+  // Course id can be prefixed: "t-<uuid>" (trail) or "np-<id>" (national park course)
+  const rawId = params.trailId || params.courseId || "";
+  const isParkCourse = rawId.startsWith("np-");
+  const trailId = rawId.startsWith("t-") ? rawId.slice(2) : rawId.startsWith("np-") ? null : rawId;
   const [trail, setTrail] = useState<TrailDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!trailId) return;
+    if (!trailId) { setLoading(false); return; }
     (async () => {
       setLoading(true);
       const { data, error } = await supabase
@@ -78,6 +82,18 @@ export default function TrailDetailPage() {
       <div className="mx-auto max-w-2xl py-20 text-center">
         <MountainMascot mood="loading" size={80} />
         <p className="mt-4 text-sm text-muted-foreground">코스 정보를 불러오는 중...</p>
+      </div>
+    );
+  }
+
+  if (isParkCourse) {
+    return (
+      <div className="mx-auto max-w-2xl py-20 text-center">
+        <MountainMascot mood="loading" size={80} />
+        <p className="mt-4 text-muted-foreground">국립공원 공식 코스 상세 페이지는 준비 중입니다</p>
+        <Link to="/mountains" className="mt-2 inline-block text-sm text-primary hover:underline">
+          산 목록으로 돌아가기
+        </Link>
       </div>
     );
   }

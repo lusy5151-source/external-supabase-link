@@ -18,12 +18,14 @@ import type { WeatherCondition, CompletionRecord } from "@/hooks/useMountainStor
 import { WeatherCard } from "@/components/WeatherCard";
 import { TrailInfoSection } from "@/components/TrailInfo";
 import { NearbyPlaces } from "@/components/NearbyPlaces";
-import { TrailRouteMap } from "@/components/TrailRouteMap";
+import { TrailRouteMap, ROUTE_COLORS } from "@/components/TrailRouteMap";
 import type { Trail } from "@/hooks/useTrails";
 import { ParkRestrictions } from "@/components/ParkRestrictions";
 import { MountainFacilities } from "@/components/MountainFacilities";
 import WalkingPathsSection from "@/components/WalkingPathsSection";
 import NationalParkCoursesSection from "@/components/NationalParkCoursesSection";
+import CourseList from "@/components/CourseList";
+import { useTrails as useTrailsForLegend } from "@/hooks/useTrails";
 
 import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
@@ -374,24 +376,22 @@ const MountainDetail = () => {
           </div>
 
           {/* 코스 */}
-          <div className="space-y-6" style={{ width: "25%", flexShrink: 0, paddingRight: 8 }}>
-            <TrailInfoSection
-              mountainId={mountain.id}
-              fallbackTrails={mountain.trails}
-              selectedTrailId={selectedTrail?.id ?? null}
-              onSelectTrail={setSelectedTrail}
-            />
-            <NationalParkCoursesSection
+          <div className="space-y-4" style={{ width: "25%", flexShrink: 0, paddingRight: 8 }}>
+            <CourseList
               mountainId={mountain.id}
               isNationalPark={mountain.is_national_park}
+              onSelectTrail={setSelectedTrail}
             />
-            <TrailRouteMap
-              mountainName={mountain.nameKo}
-              mountainId={mountain.id}
-              lat={mountain.lat}
-              lng={mountain.lng}
-              selectedTrail={selectedTrail}
-            />
+            <div style={{ height: 200 }} className="overflow-hidden rounded-[12px]">
+              <TrailRouteMap
+                mountainName={mountain.nameKo}
+                mountainId={mountain.id}
+                lat={mountain.lat}
+                lng={mountain.lng}
+                selectedTrail={selectedTrail}
+              />
+            </div>
+            <CourseLegend mountainId={mountain.id} />
             <WalkingPathsSection mountainId={mountain.id} />
           </div>
 
@@ -555,6 +555,30 @@ function OverviewLocationBlock({ mountain }: { mountain: Mountain }) {
     </div>
   );
 }
+function CourseLegend({ mountainId }: { mountainId: number }) {
+  const { trails } = useTrailsForLegend(mountainId);
+  const withGeo = trails.filter((t) => Array.isArray((t.geometry as any)?.coordinates) && (t.geometry as any).coordinates.length > 0);
+  if (withGeo.length === 0) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+      {withGeo.map((t, i) => (
+        <div key={t.id} className="inline-flex items-center gap-1.5">
+          <span
+            className="inline-block"
+            style={{
+              width: 14,
+              height: 3,
+              borderRadius: 2,
+              background: ROUTE_COLORS[i % ROUTE_COLORS.length],
+            }}
+          />
+          <span className="text-foreground" style={{ fontSize: 11 }}>{t.name}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function StatCell({ label, value, divider }: { label: string; value: string; divider?: boolean }) {
   return (
     <div
