@@ -176,23 +176,14 @@ const MountainList = () => {
     });
   };
 
-  const viewModes: { key: ViewMode; label: string; icon: any }[] = [
-    { key: "all", label: "전체", icon: MountainIcon },
-    { key: "national", label: "국립공원", icon: Trees },
-    { key: "bac100", label: "백대명산", icon: Star },
-    { key: "forestry100", label: "산림청 100대", icon: Star },
-    { key: "region", label: "지역별", icon: MapPin },
-    { key: "oreum", label: "제주 오름", icon: Flame },
-    { key: "walking", label: "둘레길", icon: Footprints },
-  ];
-
   const getCurrentList = () => {
     if (viewMode === "national") return nationalFiltered;
     if (viewMode === "forestry100") return forestry100Filtered;
     if (viewMode === "bac100") return bac100Filtered;
-    if (viewMode === "oreum") return oreumFiltered;
     return allFiltered;
   };
+  // Suppress unused-var TS warnings for legacy view branches
+  void oreumFiltered; void regionGroups; void openRegions; void toggleRegion; void walkingPaths;
 
   return (
     <div className="space-y-5 pb-24 -mx-5 -mt-4 px-5 pt-4" style={{ background: "linear-gradient(180deg, hsl(205, 60%, 94%) 0%, hsl(var(--background)) 40%)" }}>
