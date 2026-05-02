@@ -750,11 +750,11 @@ const Dashboard = () => {
           {/* ── Demo CTA Banner ── */}
           {isDemo && (
             <section>
-              <Link to="/auth" className="block rounded-3xl bg-gradient-to-r from-primary to-primary/80 p-6 shadow-lg text-center">
+              <Link to="/auth" className="block rounded-3xl p-6 shadow-lg text-center" style={{ background: "hsl(var(--brand-forest))" }}>
                 <MountainMascot size={60} mood="waving" className="mx-auto mb-3" />
-                <h3 className="text-lg font-bold text-primary-foreground">완등과 함께 산을 정복하세요!</h3>
-                <p className="text-xs text-primary-foreground/80 mt-1">가입하고 나만의 등산 기록을 시작하세요</p>
-                <span className="mt-3 inline-block rounded-full bg-white/20 px-6 py-2.5 text-sm font-bold text-primary-foreground backdrop-blur-sm">
+                <h3 className="text-lg font-bold text-white">완등과 함께 산을 정복하세요!</h3>
+                <p className="text-xs text-white/80 mt-1">가입하고 나만의 등산 기록을 시작하세요</p>
+                <span className="mt-3 inline-block rounded-full bg-white/20 px-6 py-2.5 text-sm font-bold text-white backdrop-blur-sm">
                   무료로 시작하기 →
                 </span>
               </Link>
