@@ -19,11 +19,22 @@ const DIFFICULTIES: { value: string; label: string }[] = [
   { value: "어려움", label: "어려움" },
 ];
 
-export default function RegisterMountainModal() {
+interface RegisterMountainModalProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
+}
+
+export default function RegisterMountainModal({ open: openProp, onOpenChange, hideTrigger }: RegisterMountainModalProps = {}) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { createMountain, uploadMountainImage } = useUserMountains();
-  const [open, setOpen] = useState(false);
+  const [openInternal, setOpenInternal] = useState(false);
+  const open = openProp ?? openInternal;
+  const setOpen = (v: boolean) => {
+    if (onOpenChange) onOpenChange(v);
+    else setOpenInternal(v);
+  };
   const [submitting, setSubmitting] = useState(false);
 
   const [nameKo, setNameKo] = useState("");
@@ -124,12 +135,14 @@ export default function RegisterMountainModal() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <button className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm font-medium text-primary transition-colors hover:bg-primary/10">
-          <Plus className="h-4 w-4" />
-          산이 없나요? 직접 등록하기
-        </button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <button className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm font-medium text-primary transition-colors hover:bg-primary/10">
+            <Plus className="h-4 w-4" />
+            산이 없나요? 직접 등록하기
+          </button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
