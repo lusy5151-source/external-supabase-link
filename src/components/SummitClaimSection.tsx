@@ -175,6 +175,16 @@ export function SummitClaimSection({ mountainId, mountainName, hideList, trigger
     setShowClaimDialog(true);
   };
 
+  // External trigger: open claim dialog for a specific summit id
+  useEffect(() => {
+    if (!triggerSummitId) return;
+    const found = displaySummits.find((s) => s.id === triggerSummitId);
+    if (found) {
+      handleStartClaim(found);
+      onTriggerHandled?.();
+    }
+  }, [triggerSummitId, displaySummits]);
+
   const handleGetLocation = () => {
     setGpsStatus("loading");
     navigator.geolocation.getCurrentPosition(
