@@ -374,24 +374,22 @@ const MountainDetail = () => {
           </div>
 
           {/* 코스 */}
-          <div className="space-y-6" style={{ width: "25%", flexShrink: 0, paddingRight: 8 }}>
-            <TrailInfoSection
-              mountainId={mountain.id}
-              fallbackTrails={mountain.trails}
-              selectedTrailId={selectedTrail?.id ?? null}
-              onSelectTrail={setSelectedTrail}
-            />
-            <NationalParkCoursesSection
+          <div className="space-y-4" style={{ width: "25%", flexShrink: 0, paddingRight: 8 }}>
+            <CourseList
               mountainId={mountain.id}
               isNationalPark={mountain.is_national_park}
+              onSelectTrail={setSelectedTrail}
             />
-            <TrailRouteMap
-              mountainName={mountain.nameKo}
-              mountainId={mountain.id}
-              lat={mountain.lat}
-              lng={mountain.lng}
-              selectedTrail={selectedTrail}
-            />
+            <div style={{ height: 200 }} className="overflow-hidden rounded-[12px]">
+              <TrailRouteMap
+                mountainName={mountain.nameKo}
+                mountainId={mountain.id}
+                lat={mountain.lat}
+                lng={mountain.lng}
+                selectedTrail={selectedTrail}
+              />
+            </div>
+            <CourseLegend mountainId={mountain.id} />
             <WalkingPathsSection mountainId={mountain.id} />
           </div>
 
