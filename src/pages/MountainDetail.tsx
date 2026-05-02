@@ -18,7 +18,7 @@ import type { WeatherCondition, CompletionRecord } from "@/hooks/useMountainStor
 import { WeatherCard } from "@/components/WeatherCard";
 import { TrailInfoSection } from "@/components/TrailInfo";
 import { NearbyPlaces } from "@/components/NearbyPlaces";
-import { TrailRouteMap } from "@/components/TrailRouteMap";
+import { TrailRouteMap, ROUTE_COLORS } from "@/components/TrailRouteMap";
 import type { Trail } from "@/hooks/useTrails";
 import { ParkRestrictions } from "@/components/ParkRestrictions";
 import { MountainFacilities } from "@/components/MountainFacilities";
