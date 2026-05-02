@@ -24,6 +24,8 @@ import { ParkRestrictions } from "@/components/ParkRestrictions";
 import { MountainFacilities } from "@/components/MountainFacilities";
 import WalkingPathsSection from "@/components/WalkingPathsSection";
 import NationalParkCoursesSection from "@/components/NationalParkCoursesSection";
+import CourseList from "@/components/CourseList";
+import { useTrails as useTrailsForLegend } from "@/hooks/useTrails";
 
 import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
