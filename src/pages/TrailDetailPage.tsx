@@ -86,6 +86,18 @@ export default function TrailDetailPage() {
     );
   }
 
+  if (isParkCourse) {
+    return (
+      <div className="mx-auto max-w-2xl py-20 text-center">
+        <MountainMascot mood="loading" size={80} />
+        <p className="mt-4 text-muted-foreground">국립공원 공식 코스 상세 페이지는 준비 중입니다</p>
+        <Link to="/mountains" className="mt-2 inline-block text-sm text-primary hover:underline">
+          산 목록으로 돌아가기
+        </Link>
+      </div>
+    );
+  }
+
   if (!trail) {
     return (
       <div className="mx-auto max-w-2xl py-20 text-center">
