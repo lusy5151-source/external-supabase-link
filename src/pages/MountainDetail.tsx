@@ -63,7 +63,6 @@ async function resizeImage(file: File): Promise<string> {
 const MountainDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { toast: toastFn } = useToast();
   const { mountains } = useMountains();
   const { userMountains } = useUserMountains();
 
