@@ -333,7 +333,7 @@ const MountainList = () => {
           </div>
 
           <p className="text-xs text-muted-foreground">{getCurrentList().length}개 결과</p>
-          <div className="space-y-2">
+          <div>
             {getCurrentList().length === 0 ? (
               <p className="py-12 text-center text-sm text-muted-foreground">검색 결과가 없습니다</p>
             ) : (
@@ -353,32 +353,238 @@ const MountainList = () => {
   );
 };
 
-const MountainCard = React.memo(function MountainCard({ m, isCompleted: completed, toggleComplete }: { m: any; isCompleted: boolean; toggleComplete: (id: number) => void }) {
-  const isUserCreated = !!(m as any).isUserCreated;
-  const diffColor = m.difficulty === "쉬움" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : m.difficulty === "보통" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+// ── Brand palette ──────────────────────────────────────────────────────────
+const BRAND = {
+  forest: "#2F403A",
+  lime: "#C7D66D",
+  sky: "#C6DBF0",
+  navy: "#013F92",
+  coral: "#FF696C",
+  cream: "#F8FAED",
+  lavender: "#C2B6DE",
+  lavenderDeep: "#5E548E",
+  lavenderText: "#2F2645",
+} as const;
+
+function getCategory(m: any): "bac100" | "forestry100" | "national" | "default" {
+  if (m.is_bac100 ?? m.is_baekdu) return "bac100";
+  if (m.bac100_label?.includes("산림청")) return "forestry100";
+  if (m.is_national_park) return "national";
+  return "default";
+}
+
+const THUMB_GRADIENT: Record<ReturnType<typeof getCategory>, string> = {
+  bac100: "linear-gradient(135deg, #C6DBF0, #013F92)",
+  national: "linear-gradient(135deg, #C7D66D, #2F403A)",
+  forestry100: "linear-gradient(135deg, #C2B6DE, #5E548E)",
+  default: "linear-gradient(135deg, #F8FAED, #2F403A)",
+};
+
+function getMountainImage(m: any): string | null {
+  return m?.image_url || m?.imageUrl || m?.photo_url || m?.thumbnail_url || null;
+}
+
+function parseHours(m: any): string | null {
+  const dur = m?.trails?.[0]?.duration as string | undefined;
+  if (!dur) return null;
+  // Examples: "2시간", "1시간 30분", "4시간 30분"
+  const hMatch = dur.match(/(\d+)\s*시간/);
+  const mMatch = dur.match(/(\d+)\s*분/);
+  if (!hMatch && !mMatch) return null;
+  const hours = hMatch ? parseInt(hMatch[1], 10) : 0;
+  const mins = mMatch ? parseInt(mMatch[1], 10) : 0;
+  if (mins >= 30) return `${hours}.5`;
+  return `${hours}`;
+}
+
+function formatCompletedDate(iso?: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const da = String(d.getDate()).padStart(2, "0");
+  return `${y}.${mo}.${da}`;
+}
+
+const MountainCard = React.memo(function MountainCard({
+  m,
+  isCompleted: completed,
+  toggleComplete,
+}: {
+  m: any;
+  isCompleted: boolean;
+  toggleComplete: (id: number) => void;
+}) {
+  const { getRecord } = useStore();
+  void toggleComplete; // completion now toggled from detail page; card-tap routes
+  const category = getCategory(m);
+  const image = getMountainImage(m);
+  const hours = parseHours(m);
+  const record = completed ? getRecord(m.id) : null;
+  const completedDate = formatCompletedDate(record?.completedAt);
+
+  // Category badge
+  const catBadge =
+    category === "bac100"
+      ? { label: "100대 명산", bg: BRAND.lavender, color: BRAND.lavenderText }
+      : category === "forestry100"
+      ? { label: "산림청 100대", bg: BRAND.lime, color: BRAND.forest }
+      : category === "national"
+      ? { label: m.national_park_name || "국립공원", bg: BRAND.sky, color: BRAND.navy }
+      : null;
+
+  // Difficulty chip
+  const diffStyle =
+    m.difficulty === "쉬움"
+      ? { bg: BRAND.lime, color: BRAND.forest }
+      : m.difficulty === "보통"
+      ? { bg: BRAND.sky, color: BRAND.navy }
+      : { bg: BRAND.coral, color: "#FFFFFF" };
+
+  const completedDiffBg = "rgba(255,255,255,0.7)";
+  const cardStyle: React.CSSProperties = completed
+    ? { background: BRAND.lime, border: "none" }
+    : {
+        background: "#FFFFFF",
+        border: "0.5px solid rgba(47,64,58,0.1)",
+      };
+
   return (
-    <div className={`flex items-center gap-3 rounded-lg border bg-card p-3.5 shadow-sm transition-colors ${completed ? "border-primary/20 bg-primary/5" : "border-border"}`}>
-      <button onClick={() => toggleComplete(m.id)} className="shrink-0" aria-label={completed ? "완등 취소" : "완등 표시"}>
-        {completed ? <CheckCircle2 className="h-5 w-5 text-primary" /> : <Circle className="h-5 w-5 text-muted-foreground/40" />}
-      </button>
-      <Link to={`/mountains/${m.id}`} onClick={() => addRecentSearch({ id: m.id, name: m.nameKo })} className="flex flex-1 items-center justify-between min-w-0">
-        <div className="min-w-0 space-y-0.5">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <p className="font-medium truncate text-foreground">{m.nameKo}</p>
-            {(m.is_bac100 ?? m.is_baekdu) && (<Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-blue-300 text-blue-600 dark:border-blue-700 dark:text-blue-400">100대 명산</Badge>)}
-            {m.bac100_label?.includes("산림청") && (<Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-emerald-300 text-emerald-600 dark:border-emerald-700 dark:text-emerald-400">산림청 100대 명산</Badge>)}
-            {m.is_national_park && (<Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-green-400 text-green-700 dark:border-green-700 dark:text-green-400">🌲 {m.national_park_name || "국립공원"}</Badge>)}
-            {isUserCreated && m.status === "pending" && (<Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 gap-0.5 border-amber-300 text-amber-600"><Clock className="h-2.5 w-2.5" />승인 대기</Badge>)}
-            {isUserCreated && m.status !== "pending" && (<Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 gap-0.5"><User className="h-2.5 w-2.5" />커스텀</Badge>)}
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span>{m.region}</span><span>·</span><span>{m.height}m</span>
-            <span className={`rounded px-1 py-0.5 text-[10px] font-medium ${diffColor}`}>{m.difficulty}</span>
-          </div>
+    <Link
+      to={`/mountains/${m.id}`}
+      onClick={() => addRecentSearch({ id: m.id, name: m.nameKo })}
+      className="block mb-2.5"
+      style={{
+        ...cardStyle,
+        borderRadius: 12,
+        padding: 12,
+        textDecoration: "none",
+        display: "flex",
+        gap: 12,
+        alignItems: "center",
+      }}
+    >
+      {/* Thumbnail */}
+      <div
+        style={{
+          width: 60,
+          height: 60,
+          borderRadius: 10,
+          flexShrink: 0,
+          overflow: "hidden",
+          background: completed ? BRAND.forest : THUMB_GRADIENT[category],
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundImage:
+            !completed && image ? `url(${image})` : undefined,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        {completed && <CheckCircle2 size={28} color={BRAND.lime} strokeWidth={2.5} />}
+      </div>
+
+      {/* Right content */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Row 1: name + category badge */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            flexWrap: "wrap",
+          }}
+        >
+          <span
+            style={{
+              fontSize: 15,
+              fontWeight: 500,
+              color: BRAND.forest,
+              minWidth: 0,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {m.nameKo}
+          </span>
+          {catBadge && (
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 500,
+                padding: "1px 6px",
+                borderRadius: 4,
+                background: catBadge.bg,
+                color: catBadge.color,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {catBadge.label}
+            </span>
+          )}
+          {completed && (
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 500,
+                padding: "1px 6px",
+                borderRadius: 4,
+                background: BRAND.forest,
+                color: BRAND.lime,
+              }}
+            >
+              완등
+            </span>
+          )}
         </div>
-        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40" />
-      </Link>
-    </div>
+
+        {/* Row 2: region · height */}
+        <div
+          style={{
+            fontSize: 12,
+            color: "rgba(47,64,58,0.7)",
+            marginTop: 2,
+          }}
+        >
+          {m.region} · {m.height}m
+        </div>
+
+        {/* Row 3: difficulty chip + caption */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            marginTop: 4,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 500,
+              padding: "2px 6px",
+              borderRadius: 4,
+              background: completed ? completedDiffBg : diffStyle.bg,
+              color: completed && m.difficulty === "보통" ? BRAND.navy : diffStyle.color,
+            }}
+          >
+            {m.difficulty}
+          </span>
+          <span style={{ fontSize: 11, color: completed ? "rgba(47,64,58,0.7)" : "rgba(47,64,58,0.55)" }}>
+            {completed
+              ? completedDate
+                ? `${completedDate} 완등`
+                : "완등"
+              : hours
+              ? `소요 약 ${hours}시간`
+              : ""}
+          </span>
+        </div>
+      </div>
+    </Link>
   );
 });
 
