@@ -317,97 +317,88 @@ const MountainDetail = () => {
               </div>
             )}
       {/* Pioneer badge display for user-created mountains */}
-      {isUserCreated && pioneerBadges.some((p) => p.mountainId === mountainId) && (
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🗺️</span>
-            <div>
-              <p className="text-sm font-medium text-foreground">이 산의 개척자</p>
-              <p className="text-xs text-muted-foreground">{creatorName} 🗺️</p>
-            </div>
+            {isUserCreated && pioneerBadges.some((p) => p.mountainId === mountainId) && (
+              <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🗺️</span>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">이 산의 개척자</p>
+                    <p className="text-xs text-muted-foreground">{creatorName} 🗺️</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            {isUserCreated && (
+              <DuplicateReportModal
+                reportedMountainId={mountainId}
+                open={showDuplicateReport}
+                onOpenChange={setShowDuplicateReport}
+              />
+            )}
+            <SummitClaimSection mountainId={mountain.id} mountainName={mountain.nameKo} />
+            {completed && record && (
+              <JournalSection
+                record={record}
+                mountainId={mountain.id}
+                mountainName={mountain.nameKo}
+                mountainTrails={mountain.trails}
+                updateNotes={updateNotes}
+                updateDate={updateDate}
+                updateWeather={updateWeather}
+                addPhotos={addPhotos}
+                removePhoto={removePhoto}
+                updateTaggedFriends={updateTaggedFriends}
+                updateCourseInfo={updateCourseInfo}
+                updateDuration={updateDuration}
+                updateDifficulty={updateDifficulty}
+              />
+            )}
+            {completed && record && (
+              <div className="space-y-3">
+                <h2 className="text-lg font-bold text-foreground">📤 공유 카드</h2>
+                <HikingShareCard
+                  mountain={mountain}
+                  record={record}
+                  photoUrl={record.photos && record.photos.length > 0 ? record.photos[0] : undefined}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* 코스 */}
+          <div className="space-y-6" style={{ width: "25%", flexShrink: 0, paddingRight: 8 }}>
+            <TrailInfoSection
+              mountainId={mountain.id}
+              fallbackTrails={mountain.trails}
+              selectedTrailId={selectedTrail?.id ?? null}
+              onSelectTrail={setSelectedTrail}
+            />
+            <NationalParkCoursesSection
+              mountainId={mountain.id}
+              isNationalPark={mountain.is_national_park}
+            />
+            <TrailRouteMap
+              mountainName={mountain.nameKo}
+              mountainId={mountain.id}
+              lat={mountain.lat}
+              lng={mountain.lng}
+              selectedTrail={selectedTrail}
+            />
+            <WalkingPathsSection mountainId={mountain.id} />
+          </div>
+
+          {/* 날씨·복장 */}
+          <div className="space-y-6" style={{ width: "25%", flexShrink: 0, paddingRight: 8 }}>
+            <WeatherCard mountainId={mountain.id} />
+          </div>
+
+          {/* 편의시설 */}
+          <div className="space-y-6" style={{ width: "25%", flexShrink: 0, paddingRight: 8 }}>
+            <ParkRestrictions mountainId={mountain.id} />
+            <MountainFacilities mountainId={mountain.id} />
+            <NearbyPlaces lat={mountain.lat} lng={mountain.lng} mountainName={mountain.nameKo} />
           </div>
         </div>
-      )}
-
-      {/* Duplicate Report Modal */}
-      {isUserCreated && (
-        <DuplicateReportModal
-          reportedMountainId={mountainId}
-          open={showDuplicateReport}
-          onOpenChange={setShowDuplicateReport}
-        />
-      )}
-
-      {/* Summit Claim */}
-      <SummitClaimSection mountainId={mountain.id} mountainName={mountain.nameKo} />
-
-      {/* Park trail restrictions (국립공원만 표시) */}
-      <ParkRestrictions mountainId={mountain.id} />
-
-      {/* Mountain facilities (탐방안내소/대피소/주차장 등) */}
-      <MountainFacilities mountainId={mountain.id} />
-
-      {/* Trail info + interactive route map */}
-      <TrailInfoSection
-        mountainId={mountain.id}
-        fallbackTrails={mountain.trails}
-        selectedTrailId={selectedTrail?.id ?? null}
-        onSelectTrail={setSelectedTrail}
-      />
-
-      {/* Official national park courses */}
-      <NationalParkCoursesSection
-        mountainId={mountain.id}
-        isNationalPark={mountain.is_national_park}
-      />
-
-      <TrailRouteMap
-        mountainName={mountain.nameKo}
-        mountainId={mountain.id}
-        lat={mountain.lat}
-        lng={mountain.lng}
-        selectedTrail={selectedTrail}
-      />
-
-      {/* Weather & outfit */}
-      <WeatherCard mountainId={mountain.id} />
-
-      {/* Nearby places */}
-      <NearbyPlaces lat={mountain.lat} lng={mountain.lng} mountainName={mountain.nameKo} />
-
-      {/* Connected walking paths */}
-      <WalkingPathsSection mountainId={mountain.id} />
-
-      {/* Hiking Journal */}
-      {completed && record && (
-        <JournalSection
-          record={record}
-          mountainId={mountain.id}
-          mountainName={mountain.nameKo}
-          mountainTrails={mountain.trails}
-          updateNotes={updateNotes}
-          updateDate={updateDate}
-          updateWeather={updateWeather}
-          addPhotos={addPhotos}
-          removePhoto={removePhoto}
-          updateTaggedFriends={updateTaggedFriends}
-          updateCourseInfo={updateCourseInfo}
-          updateDuration={updateDuration}
-          updateDifficulty={updateDifficulty}
-        />
-      )}
-
-      {/* Share Card */}
-      {completed && record && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-bold text-foreground">📤 공유 카드</h2>
-          <HikingShareCard
-            mountain={mountain}
-            record={record}
-            photoUrl={record.photos && record.photos.length > 0 ? record.photos[0] : undefined}
-          />
-        </div>
-      )}
       </div>
     </div>
   );
