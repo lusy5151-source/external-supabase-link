@@ -175,9 +175,20 @@ export default {
         info: "hsl(var(--info))",
       },
       borderRadius: {
-        lg: "16px",
-        md: "12px",
+        lg: "14px",   // card radius
+        md: "10px",   // inner element radius
         sm: "8px",
+        pill: "999px",
+        card: "14px",
+        inner: "10px",
+        chip: "999px",
+      },
+      borderWidth: {
+        hairline: "0.5px",
+      },
+      spacing: {
+        card: "14px",       // card padding
+        section: "20px",    // gap between sections
       },
       keyframes: {
         "accordion-down": {
