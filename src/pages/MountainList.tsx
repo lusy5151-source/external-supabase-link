@@ -107,51 +107,73 @@ const MountainList = () => {
 
   const filterAndSort = (list: any[]) => {
     let filtered = list.filter((m: any) => {
-      const matchSearch = !search.trim() || m.nameKo.includes(search) || m.name.toLowerCase().includes(search.toLowerCase());
-      const matchDifficulty = difficultyFilter === "전체" || m.difficulty === difficultyFilter;
-      const matchStatus = showCompleted === "all" || (showCompleted === "done" && isCompleted(m.id)) || (showCompleted === "todo" && !isCompleted(m.id));
+      const matchSearch =
+        !search.trim() ||
+        m.nameKo.includes(search) ||
+        m.name.toLowerCase().includes(search.toLowerCase());
+      const matchDifficulty =
+        filters.difficulties.length === 0 ||
+        filters.difficulties.includes(m.difficulty);
+      const matchStatus =
+        showCompleted === "all" ||
+        (showCompleted === "done" && isCompleted(m.id)) ||
+        (showCompleted === "todo" && !isCompleted(m.id));
       const matchUserOnly = !showUserOnly || !!(m as any).isUserCreated;
-      return matchSearch && matchDifficulty && matchStatus && matchUserOnly;
+      const matchKindUser = filters.kind !== "user" || !!(m as any).isUserCreated;
+      const matchRegion = filters.region === "전체" || m.region === filters.region;
+      return (
+        matchSearch &&
+        matchDifficulty &&
+        matchStatus &&
+        matchUserOnly &&
+        matchKindUser &&
+        matchRegion
+      );
     });
     filtered.sort((a: any, b: any) => {
       let cmp = 0;
       if (sortKey === "name") cmp = a.nameKo.localeCompare(b.nameKo, "ko");
-      else if (sortKey === "height") cmp = a.height - b.height;
-      else if (sortKey === "popularity") cmp = (a.popularity || 0) - (b.popularity || 0);
-      return sortAsc ? cmp : -cmp;
+      else if (sortKey === "height") cmp = b.height - a.height; // 높이순: 높은 순
+      else if (sortKey === "popularity") cmp = (b.popularity || 0) - (a.popularity || 0);
+      return cmp;
     });
     return filtered;
   };
 
-  const allFiltered = useMemo(() => filterAndSort(allMountains), [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, allMountains, showUserOnly]);
-  // 산림청 100대 명산: bac100_label 에 "산림청" 포함
+  const filterDeps = [search, filters, isCompleted] as const;
+
+  const allFiltered = useMemo(() => filterAndSort(allMountains), [...filterDeps, allMountains]);
   const forestry100Filtered = useMemo(
     () => filterAndSort(dbMountains.filter((m) => m.bac100_label?.includes("산림청"))),
-    [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly, dbMountains]
+    [...filterDeps, dbMountains]
   );
-  // BAC 100대 명산: bac100_mountains 테이블 기준 (mountains와 JOIN)
   const bac100Filtered = useMemo(
     () => filterAndSort(bac100List),
-    [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly, bac100List]
+    [...filterDeps, bac100List]
   );
-  const oreumFiltered = useMemo(() => filterAndSort(dbMountains.filter((m) => m.region === "제주" && !m.is_baekdu)), [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly, dbMountains]);
+  const oreumFiltered = useMemo(
+    () => filterAndSort(dbMountains.filter((m) => m.region === "제주" && !m.is_baekdu)),
+    [...filterDeps, dbMountains]
+  );
   const nationalFiltered = useMemo(
     () => filterAndSort(dbMountains.filter((m) => m.is_national_park)),
-    [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, showUserOnly, dbMountains]
+    [...filterDeps, dbMountains]
   );
 
   const allRegions = [...regions, "기타"] as const;
   const regionGroups = useMemo(() => {
-    return allRegions.map((r) => ({ region: r, mountains: filterAndSort(allMountains.filter((m) => m.region === r)) })).filter((g) => g.mountains.length > 0);
-  }, [search, difficultyFilter, showCompleted, isCompleted, sortKey, sortAsc, allMountains, showUserOnly]);
-
-  const toggleSort = (key: SortKey) => {
-    if (sortKey === key) setSortAsc(!sortAsc);
-    else { setSortKey(key); setSortAsc(key === "name"); }
-  };
+    return allRegions
+      .map((r) => ({ region: r, mountains: filterAndSort(allMountains.filter((m) => m.region === r)) }))
+      .filter((g) => g.mountains.length > 0);
+  }, [...filterDeps, allMountains]);
 
   const toggleRegion = (region: string) => {
-    setOpenRegions((prev) => { const next = new Set(prev); if (next.has(region)) next.delete(region); else next.add(region); return next; });
+    setOpenRegions((prev) => {
+      const next = new Set(prev);
+      if (next.has(region)) next.delete(region);
+      else next.add(region);
+      return next;
+    });
   };
 
   const viewModes: { key: ViewMode; label: string; icon: any }[] = [
