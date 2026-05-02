@@ -33,15 +33,15 @@ const MountainList = () => {
   const { userMountainsAsMountains, userMountains } = useUserMountains();
   const { data: bac100List = [] } = useBac100Mountains();
   const { data: walkingPaths = [] } = useAllWalkingPaths();
-  const [search, setSearch] = useState("");
-  const [difficultyFilter, setDifficultyFilter] = useState<string>("전체");
-  const [showCompleted, setShowCompleted] = useState<"all" | "done" | "todo">("all");
-  const [sortKey, setSortKey] = useState<SortKey>("name");
-  const [sortAsc, setSortAsc] = useState(true);
-  const [viewMode, setViewMode] = useState<ViewMode>("all");
+  const [filters, setFilters] = useState<MountainFilterState>(DEFAULT_FILTERS);
   const [openRegions, setOpenRegions] = useState<Set<string>>(new Set());
-  const [showUserOnly, setShowUserOnly] = useState(false);
   const [segment, setSegment] = useState<Segment>("list");
+
+  // Derive legacy values used downstream
+  const sortKey: SortKey = filters.sort;
+  const sortAsc = filters.sort === "name"; // name asc, others desc
+  const showCompleted: "all" | "done" | "todo" = filters.status;
+  const showUserOnly = filters.showUserOnly;
 
   const allMountains = useMemo(() => {
     const visibleUserMountains = userMountainsAsMountains.filter((m) => {
