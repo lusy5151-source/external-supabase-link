@@ -372,9 +372,22 @@ const MountainDetail = () => {
           />
         </div>
       )}
+      </div>
     </div>
   );
 };
+
+function StatCell({ label, value, divider }: { label: string; value: string; divider?: boolean }) {
+  return (
+    <div
+      className="flex flex-col items-center justify-center"
+      style={divider ? { borderLeft: "0.5px solid hsl(var(--border) / 0.12)" } : undefined}
+    >
+      <p className="text-muted-foreground" style={{ fontSize: 11 }}>{label}</p>
+      <p className="text-foreground" style={{ fontSize: 14, fontWeight: 500, marginTop: 2 }}>{value}</p>
+    </div>
+  );
+}
 
 function InfoItem({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
   return (
