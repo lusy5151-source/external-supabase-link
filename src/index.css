@@ -1,4 +1,5 @@
-/* Noto Sans KR is loaded via <link rel="preconnect"> + <link rel="stylesheet"> in index.html for better performance (avoids @import chain that delays font discovery). */
+/* Pretendard for Korean text — primary typeface for 완등 brand */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
 @tailwind base;
 @tailwind components;
@@ -6,73 +7,128 @@
 
 @layer base {
   :root {
-    --background: 69 59% 95%;
-    --foreground: 159 15% 22%;
-    --card: 0 0% 100%;
-    --card-foreground: 159 15% 22%;
+    /* ============================================================
+       완등 Brand Palette (only allowed colors)
+       lime #C7D66D · sky #C6DBF0 · coral #FF696C · cream #F8FAED
+       lavender #C2B6DE · navy #013F92 · forest #2F403A
+       ============================================================ */
+    --brand-lime: 69 56% 63%;
+    --brand-sky: 210 58% 86%;
+    --brand-coral: 359 100% 71%;
+    --brand-cream: 69 59% 95%;
+    --brand-lavender: 258 35% 79%;
+    --brand-navy: 214 99% 29%;
+    --brand-forest: 159 15% 22%;
+
+    /* Semantic surface tokens */
+    --background: var(--brand-cream);          /* bg-page */
+    --foreground: var(--brand-forest);
+    --card: 0 0% 100%;                          /* bg-card white */
+    --card-foreground: var(--brand-forest);
     --popover: 0 0% 100%;
-    --popover-foreground: 159 15% 22%;
-    --primary: 69 55% 63%;
+    --popover-foreground: var(--brand-forest);
+    --bg-soft: var(--brand-cream);
+    --bg-accent: var(--brand-lime);
+
+    /* Text hierarchy (alpha applied via /70 /50 utilities) */
+    --text-primary: var(--brand-forest);
+    --text-secondary: 159 15% 22%;              /* use text-foreground/70 */
+    --text-tertiary: 159 15% 22%;               /* use text-foreground/50 */
+
+    /* CTAs */
+    --cta-primary: var(--brand-forest);
+    --cta-primary-foreground: 0 0% 100%;
+    --cta-secondary: var(--brand-navy);
+    --cta-secondary-foreground: 0 0% 100%;
+    --cta-soft: var(--brand-lime);
+    --cta-soft-foreground: var(--brand-forest);
+
+    /* shadcn semantic mappings */
+    --primary: var(--brand-forest);             /* primary CTA = forest */
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 58% 86%;
-    --secondary-foreground: 159 15% 22%;
+    --secondary: var(--brand-sky);
+    --secondary-foreground: var(--brand-navy);
     --muted: 69 30% 90%;
-    --muted-foreground: 159 10% 45%;
-    --accent: 210 58% 86%;
-    --accent-foreground: 159 15% 22%;
-    --destructive: 359 100% 71%;
+    --muted-foreground: 159 15% 45%;
+    --accent: var(--brand-lime);
+    --accent-foreground: var(--brand-forest);
+    --destructive: var(--brand-coral);
     --destructive-foreground: 0 0% 100%;
-    --border: 69 20% 88%;
-    --input: 69 15% 85%;
-    --ring: 69 55% 63%;
-    --radius: 0.75rem;
-    --sidebar-background: 69 40% 93%;
-    --sidebar-foreground: 159 15% 22%;
-    --sidebar-primary: 69 55% 63%;
+    --border: 159 15% 22%;                      /* use /12 for 0.12 alpha */
+    --input: 159 15% 22%;
+    --ring: var(--brand-forest);
+    --radius: 14px;
+
+    /* Sidebar */
+    --sidebar-background: var(--brand-cream);
+    --sidebar-foreground: var(--brand-forest);
+    --sidebar-primary: var(--brand-forest);
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 58% 86%;
-    --sidebar-accent-foreground: 159 15% 22%;
-    --sidebar-border: 69 20% 88%;
-    --sidebar-ring: 69 55% 63%;
-    --nature-50: 69 40% 94%;
-    --nature-100: 69 38% 88%;
-    --nature-200: 69 42% 76%;
-    --nature-500: 69 55% 63%;
-    --nature-600: 69 50% 50%;
-    --nature-700: 69 48% 36%;
-    --sky-50: 210 50% 96%;
-    --sky-100: 210 48% 90%;
-    --sky-200: 210 50% 82%;
-    --sky-500: 210 58% 86%;
-    --sky-600: 214 99% 29%;
-    --sky-hero: 210 58% 86%;
-    --earth-50: 30 20% 96%;
-    --earth-100: 30 18% 88%;
-    --earth-200: 30 15% 78%;
-    --magazine: 258 31% 79%;
+    --sidebar-accent: var(--brand-sky);
+    --sidebar-accent-foreground: var(--brand-navy);
+    --sidebar-border: 159 15% 22%;
+    --sidebar-ring: var(--brand-forest);
+
+    /* Difficulty (no yellow/orange in palette) */
+    --difficulty-easy-bg: var(--brand-lime);
+    --difficulty-easy-fg: var(--brand-forest);
+    --difficulty-medium-bg: var(--brand-sky);
+    --difficulty-medium-fg: var(--brand-navy);
+    --difficulty-hard-bg: var(--brand-coral);
+    --difficulty-hard-fg: 0 0% 100%;
+
+    /* Badges */
+    --badge-100mt-bg: var(--brand-lavender);
+    --badge-100mt-fg: 258 31% 17%;              /* #2F2645 */
+    --badge-forest100-bg: var(--brand-lime);
+    --badge-forest100-fg: var(--brand-forest);
+    --badge-nationalpark-bg: var(--brand-sky);
+    --badge-nationalpark-fg: var(--brand-navy);
+    --badge-popular-bg: 358 100% 94%;           /* #FFE0E1 */
+    --badge-popular-fg: var(--brand-coral);
+    --badge-completed-bg: var(--brand-forest);
+    --badge-completed-fg: var(--brand-lime);
+
+    /* Legacy aliases (mapped to brand for back-compat) */
+    --nature-50: var(--brand-cream);
+    --nature-100: var(--brand-lime);
+    --nature-200: var(--brand-lime);
+    --nature-500: var(--brand-lime);
+    --nature-600: var(--brand-forest);
+    --nature-700: var(--brand-forest);
+    --sky-50: var(--brand-cream);
+    --sky-100: var(--brand-sky);
+    --sky-200: var(--brand-sky);
+    --sky-500: var(--brand-sky);
+    --sky-600: var(--brand-navy);
+    --sky-hero: var(--brand-sky);
+    --earth-50: var(--brand-cream);
+    --earth-100: var(--brand-cream);
+    --earth-200: var(--brand-cream);
+    --magazine: var(--brand-lavender);
     --magazine-foreground: 0 0% 100%;
-    --magazine-line: 359 100% 71%;
-    --progress-track: 69 30% 90%;
-    --progress-fill: 69 55% 63%;
-    --success: 69 55% 63%;
-    --success-foreground: 0 0% 100%;
-    --coral: 359 100% 71%;
-    --coral-light: 359 100% 92%;
-    --peach: 25 85% 75%;
-    --lavender: 258 31% 79%;
-    --lavender-light: 258 31% 94%;
-    --mint: 69 45% 82%;
-    --mint-light: 69 45% 95%;
-    --orange-accent: 359 100% 71%;
-    --orange-light: 359 100% 92%;
-    --color-text-tertiary: 159 10% 55%;
+    --magazine-line: var(--brand-coral);
+    --progress-track: 159 15% 22%;              /* use /12 */
+    --progress-fill: var(--brand-forest);
+    --success: var(--brand-lime);
+    --success-foreground: var(--brand-forest);
+    --coral: var(--brand-coral);
+    --coral-light: 358 100% 94%;
+    --peach: var(--brand-coral);
+    --lavender: var(--brand-lavender);
+    --lavender-light: 258 35% 94%;
+    --mint: var(--brand-lime);
+    --mint-light: var(--brand-cream);
+    --orange-accent: var(--brand-coral);
+    --orange-light: 358 100% 94%;
+    --color-text-tertiary: 159 15% 22%;
     --color-background-primary: 0 0% 100%;
-    --color-border-tertiary: 210 20% 88%;
-    --color-tab-active-bg: 90 46% 90%;
-    --color-tab-active-label: 100 76% 17%;
-    --info: 214 99% 29%;
-    --purple-accent: 258 31% 79%;
-    --purple-light: 258 31% 94%;
+    --color-border-tertiary: 159 15% 22%;
+    --color-tab-active-bg: var(--brand-lime);
+    --color-tab-active-label: var(--brand-forest);
+    --info: var(--brand-navy);
+    --purple-accent: var(--brand-lavender);
+    --purple-light: 258 35% 94%;
   }
 
   .dark {
