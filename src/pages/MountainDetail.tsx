@@ -17,7 +17,7 @@ import { useState, useEffect, useRef } from "react";
 import type { WeatherCondition, CompletionRecord } from "@/hooks/useMountainStore";
 import { WeatherCard } from "@/components/WeatherCard";
 import { TrailInfoSection } from "@/components/TrailInfo";
-import { NearbyPlaces } from "@/components/NearbyPlaces";
+
 import { TrailRouteMap, ROUTE_COLORS } from "@/components/TrailRouteMap";
 import type { Trail } from "@/hooks/useTrails";
 import { ParkRestrictions } from "@/components/ParkRestrictions";
@@ -404,7 +404,6 @@ const MountainDetail = () => {
           <div className="space-y-6" style={{ width: "25%", flexShrink: 0, paddingRight: 8 }}>
             <ParkRestrictions mountainId={mountain.id} />
             <MountainFacilities mountainId={mountain.id} />
-            <NearbyPlaces lat={mountain.lat} lng={mountain.lng} mountainName={mountain.nameKo} />
           </div>
         </div>
       </div>
