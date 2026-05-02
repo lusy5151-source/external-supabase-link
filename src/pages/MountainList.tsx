@@ -320,72 +320,33 @@ const MountainList = () => {
         </div>
       ) : (
         <>
-          <RegisterMountainModal />
-
           {/* Nearby clubs */}
           <NearbyClubs />
 
-          <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
-            {viewModes.map(({ key, label, icon: Icon }) => (
-              <button key={key} onClick={() => setViewMode(key)} className={`flex items-center gap-1 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-medium transition-colors ${viewMode === key ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"}`}>
-                <Icon className="h-3.5 w-3.5" />{label}
-              </button>
-            ))}
+          {/* Single-row pill filter bar (replaces previous quick chips + bottom-sheet filters) */}
+          <div className="-mx-5">
+            <MountainFilterBar
+              value={filters}
+              onChange={setFilters}
+              regions={[...regions, "기타"]}
+            />
           </div>
 
+          <p className="text-xs text-muted-foreground">{getCurrentList().length}개 결과</p>
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex gap-1.5 overflow-x-auto">
-                {["전체", "쉬움", "보통", "어려움"].map((d) => (
-                  <button key={d} onClick={() => setDifficultyFilter(d)} className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${difficultyFilter === d ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"}`}>{d}</button>
-                ))}
-              </div>
-              <div className="flex gap-1">
-                {([["name", "이름"], ["height", "높이"], ["popularity", "인기"]] as const).map(([key, label]) => (
-                  <button key={key} onClick={() => toggleSort(key)} className={`flex items-center gap-0.5 rounded-lg px-2 py-1 text-[11px] font-medium transition-colors ${sortKey === key ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}>
-                    {label}{sortKey === key && <ArrowUpDown className="h-3 w-3" />}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div data-onboarding="mountain-filter" className="flex gap-1.5">
-              {([["all", "전체"], ["done", "완등"], ["todo", "미등"]] as const).map(([val, label]) => (
-                <button key={val} onClick={() => setShowCompleted(val)} className={`rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors ${showCompleted === val ? "bg-primary text-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"}`}>{label}</button>
-              ))}
-            </div>
-            <button onClick={() => setShowUserOnly(!showUserOnly)} className={`rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors ${showUserOnly ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"}`}>
-              <User className="inline h-3 w-3 mr-0.5" />사용자 등록 산만
-            </button>
+            {getCurrentList().length === 0 ? (
+              <p className="py-12 text-center text-sm text-muted-foreground">검색 결과가 없습니다</p>
+            ) : (
+              getCurrentList().map((m) => (
+                <MountainCard
+                  key={m.id}
+                  m={m}
+                  isCompleted={isCompleted(m.id)}
+                  toggleComplete={toggleComplete}
+                />
+              ))
+            )}
           </div>
-
-          {viewMode === "walking" ? (
-            <WalkingPathsList paths={walkingPaths.filter((p) => !search.trim() || p.name.includes(search))} />
-          ) : viewMode === "region" ? (
-            <div className="space-y-2">
-              {regionGroups.map(({ region, mountains: rMountains }) => (
-                <Collapsible key={region} open={openRegions.has(region)} onOpenChange={() => toggleRegion(region)}>
-                  <CollapsibleTrigger className="w-full">
-                    <div className="flex items-center justify-between rounded-xl border border-border bg-card p-3.5 hover:bg-accent/50 transition-colors">
-                      <div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /><span className="font-medium text-sm text-foreground">{region}</span><span className="text-xs text-muted-foreground">{rMountains.length}개</span></div>
-                      <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${openRegions.has(region) ? "rotate-180" : ""}`} />
-                    </div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <div className="space-y-2 mt-2 pl-2">
-                      {rMountains.map((m) => (<MountainCard key={m.id} m={m} isCompleted={isCompleted(m.id)} toggleComplete={toggleComplete} />))}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              ))}
-            </div>
-          ) : (
-            <>
-              <p className="text-xs text-muted-foreground">{getCurrentList().length}개 결과</p>
-              <div className="space-y-2">
-                {getCurrentList().length === 0 ? (<p className="py-12 text-center text-sm text-muted-foreground">검색 결과가 없습니다</p>) : getCurrentList().map((m) => (<MountainCard key={m.id} m={m} isCompleted={isCompleted(m.id)} toggleComplete={toggleComplete} />))}
-              </div>
-            </>
-          )}
         </>
       )}
     </div>
