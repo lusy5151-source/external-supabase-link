@@ -333,7 +333,7 @@ const MountainList = () => {
           </div>
 
           <p className="text-xs text-muted-foreground">{getCurrentList().length}개 결과</p>
-          <div className="space-y-2">
+          <div>
             {getCurrentList().length === 0 ? (
               <p className="py-12 text-center text-sm text-muted-foreground">검색 결과가 없습니다</p>
             ) : (
