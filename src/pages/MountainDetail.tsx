@@ -555,8 +555,7 @@ function OverviewLocationBlock({ mountain }: { mountain: Mountain }) {
     </div>
   );
 }
-
-
+function StatCell({ label, value, divider }: { label: string; value: string; divider?: boolean }) {
   return (
     <div
       className="flex flex-col items-center justify-center"
