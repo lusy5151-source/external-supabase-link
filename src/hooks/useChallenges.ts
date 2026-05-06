@@ -122,7 +122,7 @@ export function useChallenges() {
     try {
       const [{ data: journals }, { data: claims }] = await Promise.all([
         supabase.from("hiking_journals").select("*").eq("user_id", user.id),
-        (supabase as any).from("summit_claims").select("*").eq("user_id", user.id),
+        (supabase as any).from("summit_claims").select("*").eq("user_id", user.id).not("photo_url", "is", null),
       ]);
       const allJournals = journals || [];
       const allClaims = claims || [];
