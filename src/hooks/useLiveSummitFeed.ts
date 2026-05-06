@@ -52,6 +52,7 @@ export function useLiveSummitFeed() {
     const { data } = await (supabase as any)
       .from("summit_claims")
       .select("id, user_id, mountain_id, summit_id, photo_url, claimed_at")
+      .not("photo_url", "is", null)
       .order("claimed_at", { ascending: false })
       .limit(20);
 
@@ -67,6 +68,7 @@ export function useLiveSummitFeed() {
     const { data } = await (supabase as any)
       .from("summit_claims")
       .select("user_id")
+      .not("photo_url", "is", null)
       .gte("claimed_at", todayStart.toISOString());
 
     if (!data || (data as any[]).length === 0) {
@@ -119,6 +121,7 @@ export function useLiveSummitFeed() {
         { event: "INSERT", schema: "public", table: "summit_claims" },
         async (payload) => {
           const newClaim = payload.new as any;
+          if (!newClaim?.photo_url) return; // only photo-verified claims
           const enriched = await enrichClaims([newClaim]);
           setClaims((prev) => [...enriched, ...prev].slice(0, 20));
           fetchKingOfDay();
