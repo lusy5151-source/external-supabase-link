@@ -21,8 +21,6 @@ import {
 import { toast } from "sonner";
 
 const ADMIN_EMAIL = "wandeung1@gmail.com";
-const VWORLD_KEY = "F41DD5DC-6774-33EA-8E02-68505ADAF394";
-const VWORLD_DOMAIN = "https://wandeung.com";
 
 type MountainRow = {
   id: number;
@@ -73,18 +71,30 @@ function lineLength(coords: number[][]): number {
 }
 
 async function fetchVworldFeatures(lat: number, lng: number): Promise<any[]> {
-  const minLng = lng - 0.03;
-  const maxLng = lng + 0.03;
-  const minLat = lat - 0.03;
-  const maxLat = lat + 0.03;
-  const url =
-    `https://api.vworld.kr/req/wfs?SERVICE=WFS&REQUEST=GetFeature&VERSION=2.0.0` +
-    `&TYPENAME=lt_l_frtrk&SRSNAME=EPSG:4326&OUTPUT=application/json` +
-    `&BBOX=${minLng},${minLat},${maxLng},${maxLat},EPSG:4326` +
-    `&KEY=${VWORLD_KEY}&DOMAIN=${encodeURIComponent(VWORLD_DOMAIN)}`;
-  const res = await fetch(url);
+  // Calls the vworld-proxy Edge Function — VWORLD_API_KEY is stored
+  // server-side and never sent to the browser. The Edge Function also
+  // verifies the caller is the admin before forwarding to VWorld.
+  const projectUrl = import.meta.env.VITE_SUPABASE_URL as string;
+  const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+  const accessToken = (await supabase.auth.getSession()).data.session?.access_token;
+
+  const params = new URLSearchParams({
+    type: "wfs",
+    lat: String(lat),
+    lng: String(lng),
+    range: "0.03",
+    typename: "lt_l_frtrk",
+  });
+
+  const res = await fetch(`${projectUrl}/functions/v1/vworld-proxy?${params}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken ?? anonKey}`,
+      apikey: anonKey,
+    },
+  });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const json = await res.json();
+  if (json?.error) throw new Error(json.error);
   return json?.features ?? [];
 }
 
@@ -344,7 +354,7 @@ export default function AdminGpxSyncPage() {
       <div>
         <h1 className="text-2xl font-bold">GPX 데이터 동기화 (VWorld)</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          VWorld WFS API를 통해 등산로 geometry를 브라우저에서 직접 동기화합니다.
+          VWorld WFS API를 vworld-proxy Edge Function으로 호출해 등산로 geometry를 동기화합니다.
         </p>
       </div>
 

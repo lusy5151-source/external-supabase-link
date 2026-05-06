@@ -209,44 +209,49 @@ const AdminPage = () => {
     setDataLoading(false);
   };
 
-  // Trail coordinate collection — calls VWorld API directly from browser
+  // Trail coordinate collection — calls the vworld-proxy Edge Function so the
+  // VWorld API key stays server-side (never shipped to the browser bundle).
   const handleCollectTrails = async () => {
     if (collecting) return;
-    const VWORLD_KEY = "F41DD5DC-6774-33EA-8E02-68505ADAF394";
     setCollecting(true);
     setCollectStatus("수집 시작...");
     let page = 1;
     let totalSaved = 0;
 
+    const projectUrl = import.meta.env.VITE_SUPABASE_URL as string;
+    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+
     try {
       while (true) {
         setCollectStatus(`페이지 ${page} 수집 중...`);
 
+        const accessToken = (await supabase.auth.getSession()).data.session?.access_token;
         const params = new URLSearchParams({
-          service: "data",
-          request: "GetFeature",
+          type: "data",
           data: "LT_L_FRSTCLIMB",
-          key: VWORLD_KEY,
-          domain: "https://wandeung.com",
-          format: "json",
-          crs: "EPSG:4326",
           size: "100",
           page: String(page),
-          geometry: "true",
-          attribute: "true",
         });
 
-        const res = await fetch(`https://api.vworld.kr/req/data?${params}`);
+        const res = await fetch(`${projectUrl}/functions/v1/vworld-proxy?${params}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken ?? anonKey}`,
+            apikey: anonKey,
+          },
+        });
         const data = await res.json();
 
-        if (data?.response?.status !== "OK") {
-          setCollectStatus(`오류: ${data?.response?.status ?? "unknown"}`);
+        if (data?.error) {
+          setCollectStatus(`오류: ${data.error}`);
+          break;
+        }
+        if (data?.response?.status && data.response.status !== "OK") {
+          setCollectStatus(`오류: ${data.response.status}`);
           break;
         }
 
-        const features =
-          data.response.result?.featureCollection?.features ?? [];
-        const total = Number(data.response.record?.total ?? 0);
+        const features = data.features ?? data.response?.result?.featureCollection?.features ?? [];
+        const total = Number(data.response?.record?.total ?? features.length ?? 0);
 
         for (const feature of features) {
           const props = feature.properties ?? {};
@@ -456,7 +461,7 @@ const AdminPage = () => {
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            VWorld API(LT_L_FRSTCLIMB)를 브라우저에서 직접 호출하여 등산로 geometry를 trails 테이블에 저장합니다.
+            VWorld API(LT_L_FRSTCLIMB)를 vworld-proxy Edge Function으로 호출해 등산로 geometry를 trails 테이블에 저장합니다.
           </p>
         </CardContent>
       </Card>
