@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { TrailDetailMap } from "@/components/TrailDetailMap";
+import { NearbyRestaurantsSection } from "@/components/NearbyRestaurantsSection";
 
 interface TrailDetail {
   id: string;
@@ -282,6 +283,29 @@ export default function TrailDetailPage() {
           />
         </div>
       </InfoCard>
+
+      {/* Nearby Restaurants */}
+      <NearbyRestaurantsSection
+        lat={(() => {
+          const g: any = trail.geometry;
+          const c = g?.coordinates;
+          if (Array.isArray(c) && Array.isArray(c[0])) {
+            const first = Array.isArray(c[0][0]) ? c[0][0] : c[0];
+            if (Array.isArray(first) && typeof first[1] === "number") return first[1];
+          }
+          return mountain?.lat ?? null;
+        })()}
+        lng={(() => {
+          const g: any = trail.geometry;
+          const c = g?.coordinates;
+          if (Array.isArray(c) && Array.isArray(c[0])) {
+            const first = Array.isArray(c[0][0]) ? c[0][0] : c[0];
+            if (Array.isArray(first) && typeof first[0] === "number") return first[0];
+          }
+          return mountain?.lng ?? null;
+        })()}
+      />
+
 
       {/* Public Transportation */}
       {trail.transport_public && (
