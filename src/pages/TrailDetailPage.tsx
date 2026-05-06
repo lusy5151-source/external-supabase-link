@@ -343,7 +343,9 @@ export default function TrailDetailPage() {
           <EmptyInfo text="아직 정보가 등록되지 않았습니다." />
         )}
       </SectionCard>
+      </div>
     </div>
+
   );
 }
 
