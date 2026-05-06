@@ -42,7 +42,8 @@ const SORT_LABELS: Record<SortKey, string> = {
 const KIND_CHIPS: { key: KindKey; label: string }[] = [
   { key: "all", label: "전체" },
   { key: "national", label: "국립공원" },
-  { key: "bac100", label: "백대명산" },
+  { key: "bac100_blackyak", label: "100대 명산" },
+  { key: "forestry100", label: "산림청 100대" },
 ];
 
 interface Props {
