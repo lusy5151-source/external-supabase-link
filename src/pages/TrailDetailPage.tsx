@@ -263,7 +263,7 @@ export default function TrailDetailPage() {
         </button>
       </div>
 
-      <div className="space-y-3" style={{ padding: "0 12px" }}>
+      
 
       {/* Start / End Points */}
       <InfoCard title="출발지 · 도착지">
