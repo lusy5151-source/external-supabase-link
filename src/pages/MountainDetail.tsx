@@ -161,21 +161,35 @@ const MountainDetail = () => {
 
   return (
     <div className="mx-auto max-w-2xl">
-      {/* Hero */}
-      <div className="relative -mx-4 sm:-mx-6" style={{ height: 180, background: heroBg }}>
-        {/* Bottom gradient overlay */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: "linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.45) 100%)" }}
-        />
+      {/* Hero banner */}
+      <div
+        className="relative"
+        style={{
+          height: 150,
+          marginLeft: 12,
+          marginRight: 12,
+          borderRadius: 18,
+          overflow: "hidden",
+          background: "linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 60%, #4a7ba8 100%)",
+        }}
+      >
+        {/* Mountain silhouette decoration */}
+        <svg
+          viewBox="0 0 380 100"
+          preserveAspectRatio="none"
+          style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: 75, opacity: 0.5 }}
+        >
+          <path d="M0 100 L50 55 L95 75 L150 30 L195 60 L240 38 L290 65 L340 45 L380 55 L380 100 Z" fill="rgba(255,255,255,0.1)" />
+          <path d="M0 100 L70 65 L120 45 L175 70 L225 50 L275 75 L325 55 L380 70 L380 100 Z" fill="rgba(255,255,255,0.16)" />
+        </svg>
 
         {/* Top bar */}
-        <div className="relative flex items-center justify-between" style={{ padding: "12px 16px" }}>
+        <div className="relative flex items-center justify-between" style={{ padding: "10px 12px", zIndex: 2 }}>
           <button
             onClick={() => navigate(-1)}
             aria-label="뒤로"
             className="flex items-center justify-center rounded-full"
-            style={{ width: 28, height: 28, background: "rgba(255,255,255,0.25)", backdropFilter: "blur(4px)" }}
+            style={{ width: 30, height: 30, background: "rgba(0,0,0,0.35)" }}
           >
             <ChevronLeft className="h-4 w-4 text-white" />
           </button>
@@ -184,55 +198,76 @@ const MountainDetail = () => {
               onClick={toggleFavorite}
               aria-label="즐겨찾기"
               className="flex items-center justify-center rounded-full"
-              style={{ width: 28, height: 28, background: "rgba(255,255,255,0.25)", backdropFilter: "blur(4px)" }}
+              style={{ width: 30, height: 30, background: "rgba(0,0,0,0.35)" }}
             >
-              <Heart className="h-4 w-4 text-white" fill={isFavorite ? "#fff" : "none"} />
+              <Heart size={14} className="text-white" fill={isFavorite ? "#fff" : "none"} />
             </button>
             <button
               onClick={handleShare}
               aria-label="공유"
               className="flex items-center justify-center rounded-full"
-              style={{ width: 28, height: 28, background: "rgba(255,255,255,0.25)", backdropFilter: "blur(4px)" }}
+              style={{ width: 30, height: 30, background: "rgba(0,0,0,0.35)" }}
             >
-              <Share2 className="h-4 w-4 text-white" />
+              <Share2 size={14} className="text-white" />
             </button>
           </div>
         </div>
 
-        {/* Bottom area */}
-        <div className="absolute bottom-0 left-0 right-0" style={{ padding: "0 16px 14px" }}>
-          <div className="flex flex-wrap gap-1.5 mb-1.5">
-            {mountain.is_baekdu && (
-              <span
-                className="inline-flex items-center rounded-full text-white"
-                style={{ padding: "2px 8px", fontSize: 11, background: "rgba(255,255,255,0.22)", backdropFilter: "blur(4px)" }}
-              >
-                {mountain.bac100_label || "100대 명산"}
-              </span>
-            )}
-            {mountain.is_national_park && (
-              <span
-                className="inline-flex items-center rounded-full text-white"
-                style={{ padding: "2px 8px", fontSize: 11, background: "rgba(255,255,255,0.22)", backdropFilter: "blur(4px)" }}
-              >
-                {mountain.national_park_name || "국립공원"}
-              </span>
-            )}
-            {completed && (
-              <span
-                className="inline-flex items-center rounded-full text-white"
-                style={{ padding: "2px 8px", fontSize: 11, background: "rgba(255,255,255,0.22)", backdropFilter: "blur(4px)" }}
-              >
-                완등 {completionCount}회
-              </span>
-            )}
-          </div>
-          <h1 className="text-white" style={{ fontSize: 22, fontWeight: 500, lineHeight: 1.2 }}>
+        {/* Bottom-left title */}
+        <div style={{ position: "absolute", bottom: 14, left: 14, zIndex: 2 }}>
+          <h1 style={{ fontSize: 26, fontWeight: 700, color: "#fff", lineHeight: 1.1, margin: 0 }}>
             {mountain.nameKo}
           </h1>
-          <p className="text-white/85" style={{ fontSize: 12, marginTop: 2 }}>
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", marginTop: 3 }}>
             {[mountain.name, mountain.region].filter(Boolean).join(" · ")}
           </p>
+        </div>
+
+        {/* Bottom-right badges */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: 12,
+            right: 12,
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+            alignItems: "flex-end",
+            zIndex: 2,
+          }}
+        >
+          {mountain.is_baekdu && (
+            <span
+              style={{
+                background: "#fff",
+                color: "#173404",
+                fontSize: 10,
+                padding: "3px 9px",
+                borderRadius: 10,
+                fontWeight: 500,
+                whiteSpace: "nowrap",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
+              }}
+            >
+              {mountain.bac100_label || "100대 명산"}
+            </span>
+          )}
+          {mountain.is_national_park && (
+            <span
+              style={{
+                background: "#fff",
+                color: "#04342C",
+                fontSize: 10,
+                padding: "3px 9px",
+                borderRadius: 10,
+                fontWeight: 500,
+                whiteSpace: "nowrap",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
+              }}
+            >
+              {mountain.national_park_name || "국립공원"}
+            </span>
+          )}
         </div>
       </div>
 
