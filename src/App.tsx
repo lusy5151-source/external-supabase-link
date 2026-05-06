@@ -126,6 +126,7 @@ const AppRoutes = () => {
       <Route path="/plans/create" element={<ProtectedRoute><LazyPage><CreatePlanPage /></LazyPage></ProtectedRoute>} />
       <Route path="/plans/:id" element={<ProtectedRoute><LazyPage><PlanDetailPage /></LazyPage></ProtectedRoute>} />
       <Route path="/challenges" element={<ProtectedRoute><LazyPage><ChallengePage /></LazyPage></ProtectedRoute>} />
+      <Route path="/challenge" element={<LazyPage><ChallengeMountainsPage /></LazyPage>} />
       <Route path="/achievements" element={<LazyPage><AchievementsPage /></LazyPage>} />
       <Route path="/feed" element={<LazyPage><FeedPage /></LazyPage>} />
       <Route path="/journals/:id" element={<LazyPage><JournalDetailPage /></LazyPage>} />
