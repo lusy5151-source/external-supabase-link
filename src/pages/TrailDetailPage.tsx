@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { TrailDetailMap } from "@/components/TrailDetailMap";
+import { NearbyRestaurantsSection } from "@/components/NearbyRestaurantsSection";
 
 interface TrailDetail {
   id: string;
