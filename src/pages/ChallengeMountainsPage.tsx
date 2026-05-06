@@ -12,12 +12,17 @@ interface MountainRow {
   name_ko?: string | null;
   name?: string | null;
   height?: number | null;
-  bac_rank?: number | null;
+  bac100_rank?: number | null;
   is_bac100?: boolean | null;
   is_bac100_blackyak?: boolean | null;
   image_url?: string | null;
   lat?: number | null;
   lng?: number | null;
+  difficulty?: string | null;
+  region?: string | null;
+  province?: string | null;
+  is_national_park?: boolean | null;
+  national_park_name?: string | null;
 }
 
 type FilterMode = "all" | "done" | "todo";
