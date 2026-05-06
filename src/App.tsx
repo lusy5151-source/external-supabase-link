@@ -48,6 +48,7 @@ const FeedPage = lazy(() => import("@/pages/FeedPage"));
 const JournalDetailPage = lazy(() => import("@/pages/JournalDetailPage"));
 const FriendProfilePage = lazy(() => import("@/pages/FriendProfilePage"));
 const ChallengePage = lazy(() => import("@/pages/ChallengePage"));
+const ChallengeMountainsPage = lazy(() => import("@/pages/ChallengeMountainsPage"));
 const SharedCompletionPage = lazy(() => import("@/pages/SharedCompletionPage"));
 const GroupDetailPage = lazy(() => import("@/pages/GroupDetailPage"));
 const KakaoCallback = lazy(() => import("@/pages/KakaoCallback"));
