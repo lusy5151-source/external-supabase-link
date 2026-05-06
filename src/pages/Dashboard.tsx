@@ -522,10 +522,7 @@ const Dashboard = () => {
             </div>
 
             {/* RIGHT: 정상 챌린지 */}
-            <div
-              className="rounded-2xl bg-card p-4"
-              style={{ border: "0.5px solid hsl(var(--border))" }}
-            >
+            <div className="rounded-2xl bg-card p-4">
               <p style={{ fontSize: 12 }} className="text-muted-foreground mb-3">정상 챌린지</p>
               <div className="flex flex-col items-center">
                 <div className="relative" style={{ width: 80, height: 80 }}>
