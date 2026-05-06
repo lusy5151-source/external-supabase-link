@@ -44,43 +44,74 @@ export default function ChallengeMountainsPage() {
   const [sort, setSort] = useState<SortMode>("rank");
 
   // Fetch mountains for the active challenge
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      const column = challengeType === "bac100" ? "is_bac100_blackyak" : "is_bac100";
-      const { data } = await (supabase as any)
-        .from("mountains")
-        .select("id, name_ko, name, height, bac_rank, is_bac100, is_bac100_blackyak, image_url, lat, lng")
-        .eq(column, true)
-        .limit(200);
-      if (!cancelled) {
-        setMountains((data || []) as MountainRow[]);
-      }
-    })();
-    return () => { cancelled = true; };
+  const fetchMountains = useCallback(async () => {
+    const column = challengeType === "bac100" ? "is_bac100_blackyak" : "is_bac100";
+    const { data } = await (supabase as any)
+      .from("mountains")
+      .select("id, name_ko, name, height, bac_rank, is_bac100, is_bac100_blackyak, image_url, lat, lng")
+      .eq(column, true)
+      .limit(200);
+    return (data || []) as MountainRow[];
   }, [challengeType]);
 
-  // Fetch user claims
-  useEffect(() => {
-    if (!user) {
-      setClaimedIds(new Set());
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      const { data } = await (supabase as any)
-        .from("summit_claims")
-        .select("mountain_id")
-        .eq("user_id", user.id);
-      if (!cancelled) {
-        setClaimedIds(new Set(((data || []) as any[]).map((c) => c.mountain_id)));
-        setLoading(false);
+  const fetchClaims = useCallback(async () => {
+    if (!user) return new Set<number>();
+    const { data } = await (supabase as any)
+      .from("summit_claims")
+      .select("mountain_id")
+      .eq("user_id", user.id);
+    return new Set(((data || []) as any[]).map((c) => c.mountain_id));
+  }, [user]);
+
+  // Track previous claim count to detect new completions for celebration toast
+  const prevClaimCountRef = useRef<number | null>(null);
+  const prevClaimedIdsRef = useRef<Set<number>>(new Set());
+
+  const refetch = useCallback(async () => {
+    const [mtns, claims] = await Promise.all([fetchMountains(), fetchClaims()]);
+    setMountains(mtns);
+
+    // Detect newly claimed mountain (in this challenge) for celebration toast
+    const prevIds = prevClaimedIdsRef.current;
+    const newlyClaimed = [...claims].filter((id) => !prevIds.has(id));
+    if (prevClaimCountRef.current !== null && newlyClaimed.length > 0) {
+      const newlyInChallenge = mtns.find((m) => newlyClaimed.includes(m.id));
+      if (newlyInChallenge) {
+        const completedInChallenge = mtns.filter((m) => claims.has(m.id)).length;
+        toast(
+          `🎉 ${newlyInChallenge.name_ko || newlyInChallenge.name} 완등! 100대 명산 ${completedInChallenge}/100 진행 중`,
+          { duration: 5000 },
+        );
       }
-    })();
-    return () => { cancelled = true; };
-  }, [user, challengeType]);
+    }
+    prevClaimedIdsRef.current = claims;
+    prevClaimCountRef.current = claims.size;
+
+    setClaimedIds(claims);
+    setLoading(false);
+  }, [fetchMountains, fetchClaims]);
+
+  // Initial + on dependency change
+  useEffect(() => {
+    setLoading(true);
+    prevClaimCountRef.current = null; // reset on challenge/user change
+    prevClaimedIdsRef.current = new Set();
+    refetch();
+  }, [refetch]);
+
+  // Refetch on window focus / visibility change so newly claimed summits appear
+  useEffect(() => {
+    const onFocus = () => refetch();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") refetch();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [refetch]);
 
   const completedCount = useMemo(
     () => mountains.filter((m) => claimedIds.has(m.id)).length,
