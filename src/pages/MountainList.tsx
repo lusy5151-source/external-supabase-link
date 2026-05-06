@@ -6,7 +6,7 @@ import type { Mountain } from "@/data/mountains";
 import { useMountains } from "@/contexts/MountainsContext";
 import { useStore } from "@/context/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { Search, CheckCircle2, Circle, ChevronRight, ChevronDown, ArrowUpDown, Mountain as MountainIcon, Star, Smile, MapPin, Flame, User, Clock, Trees, Footprints, Route } from "lucide-react";
+import { Search, CheckCircle2, Circle, ChevronRight, ChevronDown, ArrowUpDown, Mountain as MountainIcon, Star, Smile, MapPin, Flame, User, Clock, Trees, Footprints, Route, ListFilter, Map as MapIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
