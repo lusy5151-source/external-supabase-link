@@ -1262,6 +1262,8 @@ export type Database = {
           height: number | null
           homepage_url: string | null
           id: number
+          image_credit: string | null
+          image_license: string | null
           image_url: string | null
           is_bac100: boolean | null
           is_bac100_blackyak: boolean
@@ -1299,6 +1301,8 @@ export type Database = {
           height?: number | null
           homepage_url?: string | null
           id: number
+          image_credit?: string | null
+          image_license?: string | null
           image_url?: string | null
           is_bac100?: boolean | null
           is_bac100_blackyak?: boolean
@@ -1336,6 +1340,8 @@ export type Database = {
           height?: number | null
           homepage_url?: string | null
           id?: number
+          image_credit?: string | null
+          image_license?: string | null
           image_url?: string | null
           is_bac100?: boolean | null
           is_bac100_blackyak?: boolean
