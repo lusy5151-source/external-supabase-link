@@ -266,134 +266,125 @@ export default function TrailDetailPage() {
       <div className="space-y-3" style={{ padding: "0 12px" }}>
 
       {/* Start / End Points */}
-      <SectionCard title="출발지 · 도착지" icon={MapPin}>
-        <div className="divide-y divide-border">
-          <div className="flex items-start justify-between gap-3 pb-3">
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
-                  출발
-                </span>
-              </div>
-              <p className="text-sm font-medium text-foreground break-words">
-                {trail.starting_point || "정보 없음"}
-              </p>
-            </div>
-            {trail.starting_point && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="shrink-0 gap-1.5"
-                onClick={() =>
-                  window.open(
-                    `https://map.naver.com/v5/search/${encodeURIComponent(trail.starting_point)}`,
-                    "_blank"
-                  )
-                }
-              >
-                <Navigation className="h-3.5 w-3.5" /> 길찾기
-              </Button>
-            )}
-          </div>
-          <div className="flex items-start justify-between gap-3 pt-3">
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700 dark:bg-red-900/40 dark:text-red-300">
-                  도착
-                </span>
-              </div>
-              <p className="text-sm font-medium text-foreground break-words">
-                {(trail as any).ending_point || "정보 없음"}
-              </p>
-            </div>
-            {(trail as any).ending_point && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="shrink-0 gap-1.5"
-                onClick={() =>
-                  window.open(
-                    `https://map.naver.com/v5/search/${encodeURIComponent((trail as any).ending_point)}`,
-                    "_blank"
-                  )
-                }
-              >
-                <Navigation className="h-3.5 w-3.5" /> 길찾기
-              </Button>
-            )}
-          </div>
+      <InfoCard title="출발지 · 도착지">
+        <PointRow
+          tag="출발"
+          tagBg="#EAF3DE"
+          tagColor="#27500A"
+          name={trail.starting_point}
+        />
+        <div style={{ borderTop: "0.5px solid #f1efe8", paddingTop: 8, marginTop: 6 }}>
+          <PointRow
+            tag="도착"
+            tagBg="#FCEBEB"
+            tagColor="#501313"
+            name={(trail as any).ending_point}
+          />
         </div>
-      </SectionCard>
+      </InfoCard>
 
       {/* Public Transportation */}
-      <SectionCard title="대중교통 안내" icon={Bus}>
-        {trail.transport_public ? (
-          <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">{trail.transport_public}</p>
-        ) : (
-          <EmptyInfo text="아직 정보가 등록되지 않았습니다." />
-        )}
-      </SectionCard>
+      {trail.transport_public && (
+        <InfoCard title="대중교통 안내">
+          <p style={{ fontSize: 12, color: "#444", lineHeight: 1.6, whiteSpace: "pre-line" }}>
+            {trail.transport_public}
+          </p>
+        </InfoCard>
+      )}
 
       {/* Car Access */}
-      <SectionCard title="자가용 안내" icon={Car}>
-        {trail.transport_car ? (
-          <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">{trail.transport_car}</p>
-        ) : (
-          <EmptyInfo text="아직 정보가 등록되지 않았습니다." />
-        )}
-      </SectionCard>
+      {trail.transport_car && (
+        <InfoCard title="자가용 안내">
+          <p style={{ fontSize: 12, color: "#444", lineHeight: 1.6, whiteSpace: "pre-line" }}>
+            {trail.transport_car}
+          </p>
+        </InfoCard>
+      )}
 
       {/* Parking Info */}
-      <SectionCard title="주차장 정보" icon={ParkingCircle}>
-        {trail.parking_info ? (
-          <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">{trail.parking_info}</p>
-        ) : (
-          <EmptyInfo text="아직 정보가 등록되지 않았습니다." />
-        )}
-      </SectionCard>
+      {trail.parking_info && (
+        <InfoCard title="주차장 정보">
+          <p style={{ fontSize: 12, color: "#444", lineHeight: 1.6, whiteSpace: "pre-line" }}>
+            {trail.parking_info}
+          </p>
+        </InfoCard>
+      )}
 
       {/* Hiking Tips */}
-      <SectionCard title="등산 팁" icon={Lightbulb}>
+      <InfoCard title="등산 팁">
         {trail.hiking_tips ? (
-          <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">{trail.hiking_tips}</p>
+          <p style={{ fontSize: 12, color: "#444", lineHeight: 1.6, whiteSpace: "pre-line" }}>
+            {trail.hiking_tips}
+          </p>
         ) : (
-          <EmptyInfo text="아직 정보가 등록되지 않았습니다." />
+          <div style={{
+            background: "#f7faf2", border: "1px dashed #c6d56c",
+            borderRadius: 14, padding: 18, textAlign: "center",
+          }}>
+            <p style={{ fontSize: 11, color: "#666", lineHeight: 1.5, margin: "0 0 10px" }}>
+              아직 등산 팁이 등록되지 않았어요<br/>
+              이 코스를 다녀온 분이 가장 먼저 공유해보세요
+            </p>
+            <button
+              type="button"
+              onClick={() => toast({ title: "등산 팁 등록은 곧 지원될 예정이에요" })}
+              style={{
+                background: "#c6d56c", color: "#173404",
+                padding: "6px 14px", borderRadius: 10,
+                fontSize: 11, fontWeight: 600, border: "none", cursor: "pointer",
+              }}
+            >
+              + 등산 팁 공유하기
+            </button>
+          </div>
         )}
-      </SectionCard>
-      </div>
+      </InfoCard>
     </div>
-
   );
 }
 
-function SectionCard({ title, icon: Icon, children }: { title: string; icon: any; children: React.ReactNode }) {
+function InfoCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-3">
-      <div className="flex items-center gap-2">
-        <div className="h-7 w-1 rounded-full bg-primary" />
-        <Icon className="h-4 w-4 text-primary" />
-        <h2 className="text-base font-semibold text-foreground">{title}</h2>
-      </div>
+    <div style={{ background: "white", borderRadius: 16, padding: 14, margin: "0 12px 8px" }}>
+      <h2 style={{
+        fontSize: 12, fontWeight: 600, color: "#173404",
+        borderLeft: "2.5px solid #c6d56c", paddingLeft: 8, marginBottom: 10,
+      }}>
+        {title}
+      </h2>
       {children}
     </div>
   );
 }
 
-function StatCard({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
+function PointRow({ tag, tagBg, tagColor, name }: { tag: string; tagBg: string; tagColor: string; name: string | null | undefined }) {
   return (
-    <div className="rounded-xl bg-secondary/50 p-3 text-center">
-      <Icon className="mx-auto h-4 w-4 text-primary" />
-      <p className="mt-1 text-[10px] text-muted-foreground">{label}</p>
-      <p className="text-xs font-semibold text-foreground truncate">{value}</p>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0" }}>
+      <span style={{
+        background: tagBg, color: tagColor, fontSize: 10,
+        padding: "2px 7px", borderRadius: 6, fontWeight: 500, flexShrink: 0,
+      }}>
+        {tag}
+      </span>
+      {name ? (
+        <>
+          <span style={{ fontSize: 12, color: "#333", flex: 1, minWidth: 0, wordBreak: "break-word" }}>{name}</span>
+          <button
+            type="button"
+            onClick={() => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(name)}`, "_blank")}
+            style={{
+              background: "#f7faf2", border: "0.5px solid #e3efcc", borderRadius: 9999,
+              padding: "4px 10px", fontSize: 10, color: "#639922",
+              display: "inline-flex", alignItems: "center", gap: 3, cursor: "pointer", flexShrink: 0,
+            }}
+          >
+            <Navigation size={9} /> 길찾기
+          </button>
+        </>
+      ) : (
+        <span style={{ fontSize: 11, color: "#aaa", fontStyle: "italic", flex: 1 }}>정보 없음</span>
+      )}
     </div>
   );
 }
 
-function EmptyInfo({ text }: { text: string }) {
-  return (
-    <div className="flex items-center gap-2 text-sm text-muted-foreground/60 italic">
-      <Info className="h-3.5 w-3.5" />
-      {text}
-    </div>
-  );
-}
