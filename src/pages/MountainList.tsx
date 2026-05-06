@@ -208,35 +208,61 @@ const MountainList = () => {
           </Link>
         </div>
 
-        <Link
-          to="/my/collections/bac100"
+        <div
           style={{
-            display: "block",
             background: "#FFFFFF",
-            borderRadius: 12,
-            padding: "10px 14px",
-            border: "0.5px solid #E5E7EB",
+            border: "0.5px solid #e3efcc",
+            borderRadius: 14,
             marginTop: 12,
             marginBottom: 16,
-            textDecoration: "none",
+            overflow: "hidden",
           }}
         >
-          <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
-            <span style={{ fontSize: 12, fontWeight: 500, color: "#374151" }}>백대명산 진행률</span>
-            <span style={{ color: "#D1D5DB", fontSize: 14 }}>›</span>
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "12px 14px 8px",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <MountainIcon size={14} color="#173404" strokeWidth={2} />
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#173404" }}>100대 명산 도전</span>
+            </div>
+            <span style={{ fontSize: 10, color: "#999" }}>탭하면 도전 페이지로</span>
           </div>
-          <div style={{ height: 4, width: "100%", background: "#F3F4F6", borderRadius: 2, overflow: "hidden" }}>
-            <div
-              style={{
-                height: "100%",
-                width: `${progressWidth}%`,
-                background: "#C7D66D",
-                borderRadius: 2,
-                transition: "width 600ms ease-out",
-              }}
-            />
-          </div>
-        </Link>
+
+          {([
+            { label: "100대 명산", count: bacCompleted, to: "/challenge?type=bac100", borderTop: false },
+            { label: "산림청 100대", count: forestryCompleted, to: "/challenge?type=forest100", borderTop: true },
+          ] as const).map((row) => {
+            const pct = Math.min(100, Math.max(0, (row.count / 100) * 100));
+            return (
+              <Link
+                key={row.label}
+                to={row.to}
+                style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: "10px 14px",
+                  borderTop: row.borderTop ? "0.5px solid #f1efe8" : undefined,
+                  textDecoration: "none", cursor: "pointer",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#fafbf7")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              >
+                <span style={{ fontSize: 11, color: "#444", flex: "0 0 90px" }}>{row.label}</span>
+                <div style={{ flex: 1, height: 5, background: "#f1efe8", borderRadius: 3, overflow: "hidden" }}>
+                  <div style={{
+                    height: "100%", width: `${pct}%`, background: "#c6d56c",
+                    transition: "width 600ms ease-out",
+                  }} />
+                </div>
+                <span style={{
+                  fontSize: 11, fontWeight: 600, color: "#639922",
+                  flex: "0 0 50px", textAlign: "right",
+                }}>{row.count}/100</span>
+                <span style={{ color: "#ccc", fontSize: 14 }}>›</span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
 
