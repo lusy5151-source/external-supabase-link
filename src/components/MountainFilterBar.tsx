@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/sheet";
 
 // ── Types ──────────────────────────────────────────────────────────────────
-export type KindKey = "all" | "bac100" | "forestry100" | "national" | "user";
+export type KindKey = "all" | "bac100" | "forestry100" | "national" | "user" | "bac100_blackyak";
 export type StatusKey = "all" | "todo" | "done";
 export type SortKey = "name" | "height" | "popularity";
 export type Difficulty = "쉬움" | "보통" | "어려움";
