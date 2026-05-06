@@ -449,10 +449,7 @@ const Dashboard = () => {
           {/* ── 2. Circular Progress Cards: 100대 명산 + 정상 챌린지 ── */}
           <section className="grid grid-cols-2 gap-3">
             {/* LEFT: 100대 명산 */}
-            <div
-              className="rounded-2xl bg-card p-4"
-              style={{ border: "0.5px solid hsl(var(--border))" }}
-            >
+            <div className="rounded-2xl bg-card p-4">
               <div className="flex items-center justify-between mb-3">
                 <p style={{ fontSize: 12 }} className="text-muted-foreground">
                   {!isDemo && hundredType ? hundredLabel : "100대 명산 진행률"}
