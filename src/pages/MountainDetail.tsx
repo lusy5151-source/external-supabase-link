@@ -337,33 +337,42 @@ const MountainDetail = () => {
         );
       })()}
 
-      {/* Sticky tab navigation */}
+      {/* Tab bar */}
       <div
-        className="sticky bg-card border-b border-border -mx-4 sm:-mx-6"
-        style={{ top: 0, zIndex: 30 }}
+        style={{
+          background: "#f7faf2",
+          border: "0.5px solid #e3efcc",
+          borderRadius: 14,
+          padding: 3,
+          margin: "12px 12px",
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: 2,
+        }}
       >
-        <div className="flex overflow-x-auto scrollbar-hide">
-          {(["개요", "코스", "날씨·복장", "편의시설"] as const).map((tab) => {
-            const isActive = activeTab === tab;
-            return (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className="shrink-0 whitespace-nowrap"
-                style={{
-                  padding: "12px 16px",
-                  fontSize: 13,
-                  fontWeight: isActive ? 500 : 400,
-                  color: isActive ? "hsl(var(--text-primary))" : "hsl(var(--text-secondary) / 0.7)",
-                  borderBottom: isActive ? "2px solid hsl(var(--primary))" : "2px solid transparent",
-                  transition: "color 200ms ease-out",
-                }}
-              >
-                {tab}
-              </button>
-            );
-          })}
-        </div>
+        {(["개요", "코스", "날씨·복장", "편의시설"] as const).map((tab) => {
+          const isActive = activeTab === tab;
+          const label = tab === "날씨·복장" ? "날씨" : tab;
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                padding: "7px 4px",
+                textAlign: "center",
+                fontSize: 11,
+                cursor: "pointer",
+                transition: "all 0.2s",
+                background: isActive ? "#c6d56c" : "transparent",
+                borderRadius: isActive ? 11 : 0,
+                color: isActive ? "#173404" : "#666",
+                fontWeight: isActive ? 600 : 400,
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       <div className="overflow-hidden mt-6">
