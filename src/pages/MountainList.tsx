@@ -6,7 +6,7 @@ import type { Mountain } from "@/data/mountains";
 import { useMountains } from "@/contexts/MountainsContext";
 import { useStore } from "@/context/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { Search, CheckCircle2, Circle, ChevronRight, ChevronDown, ArrowUpDown, Mountain as MountainIcon, Star, Smile, MapPin, Flame, User, Clock, Trees, Footprints, Route } from "lucide-react";
+import { Search, CheckCircle2, Circle, ChevronRight, ChevronDown, ArrowUpDown, Mountain as MountainIcon, Star, Smile, MapPin, Flame, User, Clock, Trees, Footprints, Route, ListFilter, Map as MapIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -237,25 +237,50 @@ const MountainList = () => {
       </div>
 
 
+      {/* Segment toggle */}
+      <div
+        style={{
+          background: "#F7FAF2",
+          border: "0.5px solid #F3F4F6",
+          borderRadius: 16,
+          padding: 4,
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 4,
+        }}
+      >
+        {([["list", "목록", ListFilter], ["map", "지도", MapIcon]] as const).map(([key, label, Icon]) => {
+          const active = segment === key;
+          return (
+            <button
+              key={key}
+              onClick={() => setSegment(key)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                padding: 8,
+                borderRadius: 12,
+                fontSize: 14,
+                fontWeight: 500,
+                background: active ? "#C0DD97" : "transparent",
+                color: active ? "#173404" : "#6B7280",
+                border: "none",
+                cursor: "pointer",
+                transition: "background-color 0.2s, color 0.2s",
+              }}
+            >
+              <Icon size={14} strokeWidth={1.8} />
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Sticky search */}
       <StickySearchBar search={search} setSearch={setSearch} />
 
-      {/* Segment toggle */}
-      <div className="flex rounded-xl p-1" style={{ background: "hsl(var(--secondary))" }}>
-        {([["list", "목록"], ["map", "지도"]] as const).map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => setSegment(key)}
-            className="flex-1 rounded-lg py-2 text-sm font-semibold transition-colors"
-            style={{
-              background: segment === key ? "hsl(var(--brand-lime))" : "transparent",
-              color: segment === key ? "hsl(var(--brand-forest))" : "hsl(var(--color-text-tertiary))",
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
 
       {segment === "map" ? (
         <div data-onboarding="mountain-map" className="relative" style={{ zIndex: 0 }}>
