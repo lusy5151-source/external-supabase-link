@@ -271,15 +271,71 @@ const MountainDetail = () => {
         </div>
       </div>
 
-      {/* Stat bar */}
-      <div
-        className="grid grid-cols-3 border-b border-border bg-card -mx-4 sm:-mx-6"
-        style={{ padding: "14px 16px" }}
-      >
-        <StatCell label="높이" value={`${mountain.height}m`} />
-        <StatCell label="난이도" value={mountain.difficulty} divider />
-        <StatCell label="소요" value={firstTrail?.duration ? `약 ${firstTrail.duration}` : "—"} divider />
-      </div>
+      {/* Stat card */}
+      {(() => {
+        const diffStyles: Record<string, { bg: string; fg: string }> = {
+          "쉬움": { bg: "#EAF3DE", fg: "#173404" },
+          "보통": { bg: "#FAEEDA", fg: "#412402" },
+          "어려움": { bg: "#FCEBEB", fg: "#501313" },
+        };
+        const ds = diffStyles[mountain.difficulty] || diffStyles["보통"];
+        const colCss: React.CSSProperties = {
+          textAlign: "center",
+          borderRight: "0.5px solid #f1efe8",
+        };
+        const lastColCss: React.CSSProperties = { textAlign: "center" };
+        const labelCss: React.CSSProperties = { fontSize: 10, color: "#888780", marginBottom: 2 };
+        const valNumCss: React.CSSProperties = { fontSize: 14, fontWeight: 700, color: "#173404" };
+        const iconStyle: React.CSSProperties = { display: "block", margin: "0 auto 3px" };
+        const duration = firstTrail?.duration;
+        return (
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 16,
+              padding: "12px 4px",
+              marginLeft: 12,
+              marginRight: 12,
+              marginTop: 10,
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: 0,
+            }}
+          >
+            <div style={colCss}>
+              <MountainIcon size={14} color="#888780" strokeWidth={2} style={iconStyle} />
+              <div style={labelCss}>높이</div>
+              <div style={valNumCss}>{mountain.height}m</div>
+            </div>
+            <div style={colCss}>
+              <TrendingUp size={14} color="#888780" strokeWidth={2} style={iconStyle} />
+              <div style={labelCss}>난이도</div>
+              <span
+                style={{
+                  display: "inline-block",
+                  background: ds.bg,
+                  color: ds.fg,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: "1px 8px",
+                  borderRadius: 6,
+                }}
+              >
+                {mountain.difficulty}
+              </span>
+            </div>
+            <div style={lastColCss}>
+              <Clock size={14} color="#888780" strokeWidth={2} style={iconStyle} />
+              <div style={labelCss}>소요</div>
+              {duration ? (
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#173404" }}>{duration}</div>
+              ) : (
+                <div style={{ fontSize: 11, color: "#aaa", fontStyle: "italic" }}>정보 없음</div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Sticky tab navigation */}
       <div
