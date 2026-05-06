@@ -479,8 +479,9 @@ const MountainCard = React.memo(function MountainCard({ m, isCompleted: complete
       <button
         type="button"
         onClick={handleToggle}
+        disabled={busy}
         aria-label={completed ? "완등 취소" : "완등 표시"}
-        className="active:scale-[0.85] transition-transform"
+        className="active:scale-[0.85] transition-transform disabled:opacity-60"
         style={{
           width: 28,
           height: 28,
