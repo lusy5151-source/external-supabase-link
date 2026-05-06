@@ -144,7 +144,7 @@ export default function ChallengeMountainsPage() {
           return Number(claimedIds.has(b.id)) - Number(claimedIds.has(a.id));
         case "rank":
         default:
-          return (a.bac_rank ?? 999) - (b.bac_rank ?? 999);
+          return (a.bac100_rank ?? 999) - (b.bac100_rank ?? 999);
       }
     });
     return arr;
@@ -340,7 +340,7 @@ export default function ChallengeMountainsPage() {
         }}>
           {filtered.map((m, i) => {
             const done = claimedIds.has(m.id);
-            const rank = m.bac_rank ?? null;
+            const rank = m.bac100_rank ?? null;
             const silhouette = SILHOUETTE_PATHS[i % SILHOUETTE_PATHS.length];
             return (
               <Link
