@@ -237,9 +237,6 @@ const MountainList = () => {
       </div>
 
 
-      {/* Sticky search */}
-      <StickySearchBar search={search} setSearch={setSearch} />
-
       {/* Segment toggle */}
       <div
         style={{
@@ -280,6 +277,9 @@ const MountainList = () => {
           );
         })}
       </div>
+
+      {/* Sticky search */}
+      <StickySearchBar search={search} setSearch={setSearch} />
 
 
       {segment === "map" ? (
