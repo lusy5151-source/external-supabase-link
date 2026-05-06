@@ -52,6 +52,7 @@ export function useLiveSummitFeed() {
     const { data } = await (supabase as any)
       .from("summit_claims")
       .select("id, user_id, mountain_id, summit_id, photo_url, claimed_at")
+      .not("photo_url", "is", null)
       .order("claimed_at", { ascending: false })
       .limit(20);
 
