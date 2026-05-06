@@ -473,19 +473,19 @@ const MountainCard = React.memo(function MountainCard({ m, isCompleted: complete
               완등
             </span>
           )}
-          {m.bac100_label?.includes("산림청") && (
-            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 9999, background: "#F3F8E9", color: "#3F6212", fontWeight: 500 }}>
-              산림청 100대
-            </span>
-          )}
-          {(m.is_bac100 ?? m.is_baekdu) && !m.bac100_label?.includes("산림청") && (
-            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 9999, background: "#F3F8E9", color: "#3F6212", fontWeight: 500 }}>
+          {m.is_bac100_blackyak && (
+            <span style={{ fontSize: 10, fontWeight: 500, padding: "2px 8px", borderRadius: 9999, background: "#FAEEDA", color: "#633806", whiteSpace: "nowrap" }}>
               100대 명산
             </span>
           )}
+          {m.is_bac100 && (
+            <span style={{ fontSize: 10, fontWeight: 500, padding: "2px 8px", borderRadius: 9999, background: "#EAF3DE", color: "#173404", whiteSpace: "nowrap" }}>
+              산림청 100대
+            </span>
+          )}
           {m.is_national_park && (
-            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 9999, background: "#F3F8E9", color: "#3F6212", fontWeight: 500 }}>
-              국립공원
+            <span style={{ fontSize: 10, fontWeight: 500, padding: "2px 8px", borderRadius: 9999, background: "#E1F5EE", color: "#04342C", whiteSpace: "nowrap" }}>
+              {m.national_park_name || "국립공원"}
             </span>
           )}
           {isUserCreated && m.status === "pending" && (
