@@ -460,7 +460,7 @@ const MountainCard = React.memo(function MountainCard({ m, isCompleted: complete
           )}
           {(m.is_bac100 ?? m.is_baekdu) && !m.bac100_label?.includes("산림청") && (
             <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 9999, background: "#F3F8E9", color: "#3F6212", fontWeight: 500 }}>
-              백대명산
+              100대 명산
             </span>
           )}
           {m.is_national_park && (
