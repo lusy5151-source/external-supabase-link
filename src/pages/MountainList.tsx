@@ -31,8 +31,16 @@ type Segment = "list" | "map";
 
 const MountainList = () => {
   const { mountains: dbMountains } = useMountains();
-  const { isCompleted, toggleComplete, completedCount } = useStore();
+  const { isCompleted: isCompletedLocal, toggleComplete: toggleCompleteLocal } = useStore();
   const { user } = useAuth();
+  const { claimedIds, toggleClaim } = useSummitClaims();
+  const isCompleted = useCallback((id: number) => claimedIds.has(id) || isCompletedLocal(id), [claimedIds, isCompletedLocal]);
+  const completedCount = useMemo(() => {
+    const s = new Set<number>(claimedIds);
+    // include any local-only completions
+    dbMountains.forEach((m) => { if (isCompletedLocal(m.id)) s.add(m.id); });
+    return s.size;
+  }, [claimedIds, dbMountains, isCompletedLocal]);
   const { userMountainsAsMountains, userMountains } = useUserMountains();
   const { data: bac100List = [] } = useBac100Mountains();
   const { data: walkingPaths = [] } = useAllWalkingPaths();
