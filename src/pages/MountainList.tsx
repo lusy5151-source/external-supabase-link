@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { getRecentSearches, removeRecentSearch, clearRecentSearches, addRecentSearch, type RecentSearch } from "@/lib/recentSearches";
 import { X as XIcon } from "lucide-react";
 import { regions } from "@/data/mountains";
