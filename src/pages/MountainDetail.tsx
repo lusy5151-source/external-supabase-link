@@ -511,17 +511,35 @@ const MountainDetail = () => {
   );
 };
 
+const sectionCardStyle: React.CSSProperties = {
+  background: "#fff",
+  borderRadius: 16,
+  padding: 12,
+  margin: "0 12px 8px",
+};
+const sectionTitleStyle: React.CSSProperties = {
+  fontSize: 12,
+  fontWeight: 600,
+  color: "#173404",
+  marginBottom: 8,
+  borderLeft: "2.5px solid #c6d56c",
+  paddingLeft: 8,
+};
+const sectionBodyStyle: React.CSSProperties = {
+  fontSize: 12,
+  color: "#444",
+  lineHeight: 1.6,
+};
+
 function OverviewIntroBlock({ text }: { text: string }) {
   const [expanded, setExpanded] = useState(false);
   if (!text) return null;
   return (
-    <div>
-      <p className="text-muted-foreground" style={{ fontSize: 12, marginBottom: 8 }}>산 소개</p>
+    <div style={sectionCardStyle}>
+      <div style={sectionTitleStyle}>산 소개</div>
       <p
-        className="text-foreground"
         style={{
-          fontSize: 13,
-          lineHeight: 1.6,
+          ...sectionBodyStyle,
           display: expanded ? "block" : "-webkit-box",
           WebkitLineClamp: expanded ? "unset" : 4,
           WebkitBoxOrient: "vertical",
@@ -533,8 +551,7 @@ function OverviewIntroBlock({ text }: { text: string }) {
       {text.length > 120 && (
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="mt-1 text-primary hover:underline"
-          style={{ fontSize: 12 }}
+          style={{ marginTop: 4, fontSize: 12, color: "#639922", fontWeight: 500 }}
         >
           {expanded ? "접기" : "더 보기"}
         </button>
@@ -565,43 +582,48 @@ function OverviewSummitsBlock({
   const completedCount = list.filter((s) => myClaimedIds.has(s.id)).length;
 
   return (
-    <div className="bg-secondary/50" style={{ padding: 12, borderRadius: 12 }}>
-      <div className="flex items-center justify-between" style={{ marginBottom: 10 }}>
-        <span className="text-foreground" style={{ fontSize: 13, fontWeight: 500 }}>정상 정복</span>
-        <span className="text-muted-foreground" style={{ fontSize: 12 }}>
+    <div style={sectionCardStyle}>
+      <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
+        <div style={sectionTitleStyle}>정상 정복</div>
+        <span style={{ fontSize: 11, color: "#666" }}>
           {completedCount} / {list.length}
         </span>
       </div>
       {loading ? (
-        <p className="text-muted-foreground" style={{ fontSize: 12 }}>불러오는 중…</p>
+        <p style={{ ...sectionBodyStyle, color: "#888" }}>불러오는 중…</p>
       ) : (
-        <div className="space-y-2">
-          {list.map((s) => {
+        <div>
+          {list.map((s, idx) => {
             const checked = myClaimedIds.has(s.id);
+            const isLast = idx === list.length - 1;
             return (
               <button
                 key={s.id}
                 onClick={() => onTriggerSummit(s.id)}
-                className="w-full flex items-center bg-card hover:bg-card/80 transition-colors"
-                style={{ padding: "8px 10px", borderRadius: 8, gap: 10 }}
+                className="w-full flex items-center text-left"
+                style={{
+                  padding: "8px 4px",
+                  gap: 10,
+                  borderBottom: isLast ? "none" : "0.5px solid #f1efe8",
+                }}
               >
                 <span
                   className="flex items-center justify-center shrink-0"
                   style={{
-                    width: 16,
-                    height: 16,
+                    width: 18,
+                    height: 18,
                     borderRadius: 999,
-                    background: checked ? "hsl(var(--primary))" : "transparent",
-                    border: checked ? "none" : "1.5px solid hsl(var(--text-secondary) / 0.7)",
+                    background: checked ? "#c6d56c" : "transparent",
+                    border: checked ? "none" : "1.5px solid #c6d56c",
                   }}
                 >
-                  {checked && <Check className="text-primary-foreground" style={{ width: 10, height: 10, strokeWidth: 3 }} />}
+                  {checked && <Check style={{ width: 11, height: 11, strokeWidth: 3, color: "#173404" }} />}
                 </span>
-                <span className="flex-1 text-left text-foreground truncate" style={{ fontSize: 13 }}>
+                <span style={{ fontSize: 12, flex: 1, color: "#173404" }}>
                   {s.summit_name}
                 </span>
                 {s.elevation > 0 && (
-                  <span className="text-muted-foreground shrink-0" style={{ fontSize: 11 }}>
+                  <span style={{ fontSize: 11, color: "#666" }}>
                     {s.elevation.toLocaleString()}m
                   </span>
                 )}
@@ -617,63 +639,39 @@ function OverviewSummitsBlock({
 function OverviewLocationBlock({ mountain }: { mountain: Mountain }) {
   const address = [mountain.province, mountain.address].filter(Boolean).join(" ");
   const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(mountain.nameKo)}`;
-  // Static map preview using OSM-style tile via a public service; fallback to gradient if unavailable
-  const lat = mountain.lat;
-  const lng = mountain.lng;
   return (
-    <div>
-      <p className="text-muted-foreground" style={{ fontSize: 12, marginBottom: 8 }}>위치</p>
+    <div style={sectionCardStyle}>
+      <div style={sectionTitleStyle}>위치</div>
       {address && (
-        <p className="text-foreground" style={{ fontSize: 13, marginBottom: 8 }}>
-          {address}
-        </p>
+        <p style={{ ...sectionBodyStyle, marginBottom: 8 }}>{address}</p>
       )}
       <a
         href={naverUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="block relative overflow-hidden bg-secondary/50"
-        style={{ height: 90, borderRadius: 12 }}
+        className="block relative overflow-hidden"
+        style={{
+          height: 90,
+          borderRadius: 10,
+          background: "linear-gradient(180deg, #d5e8c8 0%, #c8d8b9 100%)",
+        }}
         aria-label="네이버 지도에서 보기"
       >
-        {/* Simple gradient placeholder map (no external tiles to avoid leaks) */}
-        <div
-          className="absolute inset-0"
-          style={{ background: "linear-gradient(135deg, hsl(var(--brand-sky)), hsl(var(--brand-cream)))" }}
-        />
         <div className="absolute inset-0 flex items-center justify-center">
-          <MapPin className="text-primary" style={{ width: 24, height: 24 }} />
-        </div>
-        <div
-          className="absolute bottom-1 right-2 text-foreground/70"
-          style={{ fontSize: 10 }}
-        >
-          {lat.toFixed(3)}, {lng.toFixed(3)}
+          <span
+            style={{
+              background: "#639922",
+              color: "#fff",
+              padding: "4px 10px",
+              borderRadius: 12,
+              fontSize: 11,
+              fontWeight: 500,
+            }}
+          >
+            {mountain.nameKo}
+          </span>
         </div>
       </a>
-    </div>
-  );
-}
-function CourseLegend({ mountainId }: { mountainId: number }) {
-  const { trails } = useTrailsForLegend(mountainId);
-  const withGeo = trails.filter((t) => Array.isArray((t.geometry as any)?.coordinates) && (t.geometry as any).coordinates.length > 0);
-  if (withGeo.length === 0) return null;
-  return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-      {withGeo.map((t, i) => (
-        <div key={t.id} className="inline-flex items-center gap-1.5">
-          <span
-            className="inline-block"
-            style={{
-              width: 14,
-              height: 3,
-              borderRadius: 2,
-              background: ROUTE_COLORS[i % ROUTE_COLORS.length],
-            }}
-          />
-          <span className="text-foreground" style={{ fontSize: 11 }}>{t.name}</span>
-        </div>
-      ))}
     </div>
   );
 }
