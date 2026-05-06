@@ -2303,12 +2303,12 @@ export type Database = {
           created_at: string | null
           group_id: string | null
           id: string
-          latitude: number
-          longitude: number
+          latitude: number | null
+          longitude: number | null
           mountain_id: number
           photo_url: string | null
           record_id: string | null
-          summit_id: string
+          summit_id: string | null
           user_id: string
         }
         Insert: {
@@ -2318,12 +2318,12 @@ export type Database = {
           created_at?: string | null
           group_id?: string | null
           id?: string
-          latitude: number
-          longitude: number
+          latitude?: number | null
+          longitude?: number | null
           mountain_id: number
           photo_url?: string | null
           record_id?: string | null
-          summit_id: string
+          summit_id?: string | null
           user_id: string
         }
         Update: {
@@ -2333,12 +2333,12 @@ export type Database = {
           created_at?: string | null
           group_id?: string | null
           id?: string
-          latitude?: number
-          longitude?: number
+          latitude?: number | null
+          longitude?: number | null
           mountain_id?: number
           photo_url?: string | null
           record_id?: string | null
-          summit_id?: string
+          summit_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -3086,6 +3086,7 @@ export type Database = {
         Args: { p_plan_id: string; p_user_id: string }
         Returns: undefined
       }
+      toggle_summit_claim: { Args: { p_mountain_id: number }; Returns: Json }
     }
     Enums: {
       challenge_list_type: "forestry_100" | "bac_100"
