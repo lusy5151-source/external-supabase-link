@@ -283,7 +283,7 @@ export function TrailDetailMap({
         position: naverPath[0],
         map,
         icon: {
-          content: `<div style="display:flex;align-items:center;gap:4px;background:#22C55E;color:white;padding:5px 10px;border-radius:14px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);transform:translate(-50%,-50%);">▶ 출발</div>`,
+          content: `<div style="display:flex;align-items:center;gap:4px;background:white;color:#16A34A;padding:5px 10px;border-radius:14px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.15);transform:translate(-50%,-50%);border:1px solid #E5E7EB;">▶ 출발</div>`,
           anchor: new naver.maps.Point(0, 0),
         },
         zIndex: 150,
@@ -294,7 +294,7 @@ export function TrailDetailMap({
         position: naverPath[naverPath.length - 1],
         map,
         icon: {
-          content: `<div style="display:flex;align-items:center;gap:4px;background:#EF4444;color:white;padding:5px 10px;border-radius:14px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);transform:translate(-50%,-50%);">🏁 도착</div>`,
+          content: `<div style="display:flex;align-items:center;gap:4px;background:white;color:#DC2626;padding:5px 10px;border-radius:14px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.15);transform:translate(-50%,-50%);border:1px solid #E5E7EB;">🏁 도착</div>`,
           anchor: new naver.maps.Point(0, 0),
         },
         zIndex: 150,
