@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { getRecentSearches, removeRecentSearch, clearRecentSearches, addRecentSearch, type RecentSearch } from "@/lib/recentSearches";
 import { X as XIcon } from "lucide-react";
 import { regions } from "@/data/mountains";
@@ -15,6 +15,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import React, { lazy, Suspense } from "react";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useUserMountains } from "@/hooks/useUserMountains";
+import { useSummitClaims } from "@/hooks/useSummitClaims";
 import { useBac100Mountains } from "@/hooks/useBac100Mountains";
 import { useAllWalkingPaths, pathTypeLabel } from "@/hooks/useWalkingPaths";
 import RegisterMountainModal from "@/components/RegisterMountainModal";
@@ -30,8 +31,16 @@ type Segment = "list" | "map";
 
 const MountainList = () => {
   const { mountains: dbMountains } = useMountains();
-  const { isCompleted, toggleComplete, completedCount } = useStore();
+  const { isCompleted: isCompletedLocal, toggleComplete: toggleCompleteLocal } = useStore();
   const { user } = useAuth();
+  const { claimedIds, toggleClaim } = useSummitClaims();
+  const isCompleted = useCallback((id: number) => claimedIds.has(id) || isCompletedLocal(id), [claimedIds, isCompletedLocal]);
+  const completedCount = useMemo(() => {
+    const s = new Set<number>(claimedIds);
+    // include any local-only completions
+    dbMountains.forEach((m) => { if (isCompletedLocal(m.id)) s.add(m.id); });
+    return s.size;
+  }, [claimedIds, dbMountains, isCompletedLocal]);
   const { userMountainsAsMountains, userMountains } = useUserMountains();
   const { data: bac100List = [] } = useBac100Mountains();
   const { data: walkingPaths = [] } = useAllWalkingPaths();
@@ -385,7 +394,7 @@ const MountainList = () => {
                   key={m.id}
                   m={m}
                   isCompleted={isCompleted(m.id)}
-                  toggleComplete={toggleComplete}
+                  onToggleClaim={toggleClaim}
                 />
               ))
             )}
@@ -396,10 +405,11 @@ const MountainList = () => {
   );
 };
 
-const MountainCard = React.memo(function MountainCard({ m, isCompleted: completed, toggleComplete }: { m: any; isCompleted: boolean; toggleComplete: (id: number) => void }) {
+const MountainCard = React.memo(function MountainCard({ m, isCompleted: completed, onToggleClaim }: { m: any; isCompleted: boolean; onToggleClaim: (mountainId: number, mountainName?: string) => Promise<{ ok: boolean; action: "marked" | "unmarked" | null; message?: string }> }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isGuest, showLoginPrompt } = useGuest();
+  const [busy, setBusy] = useState(false);
   const isUserCreated = !!(m as any).isUserCreated;
 
   const diffStyle =
@@ -409,15 +419,30 @@ const MountainCard = React.memo(function MountainCard({ m, isCompleted: complete
       ? { background: "#FFFBEB", color: "#92400E" }
       : { background: "#FEF2F2", color: "#991B1B" };
 
-  const handleToggle = (e: React.MouseEvent) => {
+  const handleToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user || isGuest) {
-      toast("로그인하고 완등을 기록하세요", {
+      toast("로그인 후 완등을 기록할 수 있어요", {
         action: { label: "로그인", onClick: () => showLoginPrompt() },
       });
       return;
     }
-    toggleComplete(m.id);
+    if (busy) return;
+    setBusy(true);
+    try {
+      const res = await onToggleClaim(m.id, m.nameKo);
+      if (!res.ok) {
+        toast.error(`기록 실패: ${res.message ?? ""}`);
+        return;
+      }
+      if (res.action === "marked") {
+        toast(`🎉 ${m.nameKo} 완등!`);
+      } else if (res.action === "unmarked") {
+        toast("완등 기록을 취소했어요");
+      }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleCardClick = () => {
@@ -454,8 +479,9 @@ const MountainCard = React.memo(function MountainCard({ m, isCompleted: complete
       <button
         type="button"
         onClick={handleToggle}
+        disabled={busy}
         aria-label={completed ? "완등 취소" : "완등 표시"}
-        className="active:scale-[0.85] transition-transform"
+        className="active:scale-[0.85] transition-transform disabled:opacity-60"
         style={{
           width: 28,
           height: 28,
