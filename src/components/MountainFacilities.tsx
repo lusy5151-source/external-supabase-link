@@ -50,23 +50,7 @@ export function MountainFacilities({ mountainId }: { mountainId: number }) {
   })).filter((g) => g.items.length > 0);
 
   if (grouped.length === 0) {
-    return (
-      <div
-        className="flex flex-col items-center justify-center text-center"
-        style={{ padding: "60px 16px", gap: 8 }}
-      >
-        <p className="text-muted-foreground" style={{ fontSize: 12 }}>
-          이 산의 편의시설 정보가 아직 등록되지 않았어요
-        </p>
-        <a
-          href="mailto:hello@wandeung.com?subject=편의시설 정보 제보"
-          className="text-primary hover:underline"
-          style={{ fontSize: 11 }}
-        >
-          정보 제보하기
-        </a>
-      </div>
-    );
+    return <FacilitiesEmptyState mountainId={mountainId} />;
   }
 
   return (
