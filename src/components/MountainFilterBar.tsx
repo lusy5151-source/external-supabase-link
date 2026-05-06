@@ -90,6 +90,7 @@ export default function MountainFilterBar({ value, onChange, resultCount }: Prop
     <div className="px-5">
       {/* Filter chips row */}
       <div
+        data-onboarding="mountain-filter"
         className="-mx-1 px-1 no-scrollbar"
         style={{
           display: "flex",
