@@ -87,7 +87,7 @@ export default function StickySearchBar({ search, setSearch }: Props) {
           className="flex items-center"
           style={{
             background: "#FFFFFF",
-            border: focused ? "2px solid #97C459" : "0.5px solid #E5E7EB",
+            border: focused ? "2px solid #C7D66D" : "0.5px solid #E5E7EB",
             padding: focused ? "8.5px 12.5px" : "10px 14px",
             borderRadius: 16,
             transition: "border-color 0.15s",
