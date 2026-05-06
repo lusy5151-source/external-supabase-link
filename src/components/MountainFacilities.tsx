@@ -111,3 +111,65 @@ function FacilityCard({ facility, fallbackLabel }: { facility: Facility; fallbac
     </a>
   );
 }
+
+function FacilitiesEmptyState({ mountainId }: { mountainId: number }) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    if (!user) {
+      toast("로그인이 필요해요", { description: "정보를 등록하려면 먼저 로그인해주세요." });
+      navigate("/auth");
+      return;
+    }
+    window.dispatchEvent(new CustomEvent("open-facility-register", { detail: { mountainId } }));
+  };
+
+  return (
+    <div>
+      <div
+        style={{
+          background: "#f7faf2",
+          border: "1.5px dashed #c6d56c",
+          borderRadius: 16,
+          padding: "32px 16px",
+          margin: "0 12px",
+          textAlign: "center",
+        }}
+      >
+        <svg viewBox="0 0 100 100" width="56" height="56" style={{ display: "block", margin: "0 auto 12px" }}>
+          <circle cx="50" cy="50" r="44" fill="#e3efcc" />
+          <circle cx="68" cy="35" r="6" fill="#FAC775" />
+          <path d="M28 68 L48 35 L68 68 Z" fill="#c6d56c" />
+          <path d="M40 68 L52 50 L64 68 Z" fill="#639922" />
+        </svg>
+        <p style={{ fontSize: 13, fontWeight: 600, color: "#173404", margin: "0 0 4px" }}>
+          아직 정보가 없어요
+        </p>
+        <p style={{ fontSize: 11, color: "#666", margin: "0 0 16px", lineHeight: 1.5 }}>
+          탐방안내소 · 대피소 · 주차장
+          <br />
+          위치를 가장 먼저 등록해보세요
+        </p>
+        <button
+          onClick={handleClick}
+          style={{
+            background: "#c6d56c",
+            color: "#173404",
+            padding: "9px 20px",
+            borderRadius: 12,
+            fontSize: 12,
+            fontWeight: 600,
+            border: "none",
+            cursor: "pointer",
+          }}
+        >
+          + 정보 등록하기
+        </button>
+      </div>
+      <p style={{ textAlign: "center", fontSize: 10, color: "#999", marginTop: 16 }}>
+        또는 다른 사용자 등록을 기다려요
+      </p>
+    </div>
+  );
+}
