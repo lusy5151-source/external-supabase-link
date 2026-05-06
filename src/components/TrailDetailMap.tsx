@@ -419,27 +419,27 @@ export function TrailDetailMap({
   // No geometry — placeholder map
   if (!hasPath) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-3">
-        <div className="flex items-center gap-2">
-          <MapIcon className="h-5 w-5 text-primary" />
-          <h2 className="text-base font-bold text-foreground">코스 경로</h2>
-        </div>
+      <div style={{ background: "white", borderRadius: 18, padding: 12, margin: "0 12px 8px" }}>
+        <h2 style={{
+          fontSize: 12, fontWeight: 600, color: "#173404",
+          borderLeft: "2.5px solid #c6d56c", paddingLeft: 8, marginBottom: 10,
+        }}>코스 경로</h2>
         <div className="relative">
           <div
             ref={placeholderMapRef}
-            className="naver-map-container h-[280px] rounded-xl border border-border overflow-hidden"
+            className="naver-map-container"
+            style={{ height: 220, borderRadius: 12, overflow: "hidden" }}
           />
-          <div className="absolute top-2 right-2 z-10 flex rounded-lg overflow-hidden shadow-md border border-border bg-background">
+          <div className="absolute top-2 right-2 z-10 flex rounded-lg overflow-hidden shadow-md" style={{ border: "0.5px solid #e3efcc", background: "white" }}>
             {(["NORMAL", "TERRAIN"] as const).map((t) => (
               <button
                 key={t}
                 type="button"
                 onClick={() => setMapType(t)}
-                className={`px-2.5 py-1 text-xs font-semibold transition-colors ${
-                  mapType === t
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-background text-foreground hover:bg-muted"
-                }`}
+                className="px-2.5 py-1 text-xs font-semibold transition-colors"
+                style={mapType === t
+                  ? { background: "#c6d56c", color: "#173404" }
+                  : { background: "white", color: "#444" }}
               >
                 {t === "NORMAL" ? "일반" : "지형도"}
               </button>
