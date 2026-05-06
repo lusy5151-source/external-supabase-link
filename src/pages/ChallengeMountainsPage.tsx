@@ -12,12 +12,17 @@ interface MountainRow {
   name_ko?: string | null;
   name?: string | null;
   height?: number | null;
-  bac_rank?: number | null;
+  bac100_rank?: number | null;
   is_bac100?: boolean | null;
   is_bac100_blackyak?: boolean | null;
   image_url?: string | null;
   lat?: number | null;
   lng?: number | null;
+  difficulty?: string | null;
+  region?: string | null;
+  province?: string | null;
+  is_national_park?: boolean | null;
+  national_park_name?: string | null;
 }
 
 type FilterMode = "all" | "done" | "todo";
@@ -46,11 +51,13 @@ export default function ChallengeMountainsPage() {
   // Fetch mountains for the active challenge
   const fetchMountains = useCallback(async () => {
     const column = challengeType === "bac100" ? "is_bac100_blackyak" : "is_bac100";
-    const { data } = await (supabase as any)
+    const { data, error } = await (supabase as any)
       .from("mountains")
-      .select("id, name_ko, name, height, bac_rank, is_bac100, is_bac100_blackyak, image_url, lat, lng")
+      .select("id, name_ko, name, height, difficulty, region, province, is_bac100_blackyak, is_bac100, is_national_park, national_park_name, bac100_rank, lat, lng, image_url")
       .eq(column, true)
+      .order("bac100_rank", { ascending: true, nullsFirst: false })
       .limit(200);
+    if (error) console.error("[ChallengeMountains] fetch error", error);
     return (data || []) as MountainRow[];
   }, [challengeType]);
 
@@ -137,7 +144,7 @@ export default function ChallengeMountainsPage() {
           return Number(claimedIds.has(b.id)) - Number(claimedIds.has(a.id));
         case "rank":
         default:
-          return (a.bac_rank ?? 999) - (b.bac_rank ?? 999);
+          return (a.bac100_rank ?? 999) - (b.bac100_rank ?? 999);
       }
     });
     return arr;
@@ -333,7 +340,7 @@ export default function ChallengeMountainsPage() {
         }}>
           {filtered.map((m, i) => {
             const done = claimedIds.has(m.id);
-            const rank = m.bac_rank ?? null;
+            const rank = m.bac100_rank ?? null;
             const silhouette = SILHOUETTE_PATHS[i % SILHOUETTE_PATHS.length];
             return (
               <Link
