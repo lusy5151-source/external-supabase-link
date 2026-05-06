@@ -245,3 +245,8 @@
 /* Hide scrollbars (for horizontal pill rows etc.) */
 .scrollbar-hide, .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .scrollbar-hide::-webkit-scrollbar, .no-scrollbar::-webkit-scrollbar { display: none; }
+
+@keyframes wd-check-in {
+  0% { transform: scale(0) rotate(-45deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}

@@ -6,8 +6,10 @@ import type { Mountain } from "@/data/mountains";
 import { useMountains } from "@/contexts/MountainsContext";
 import { useStore } from "@/context/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { Search, CheckCircle2, Circle, ChevronRight, ChevronDown, ArrowUpDown, Mountain as MountainIcon, Star, Smile, MapPin, Flame, User, Clock, Trees, Footprints, Route, ListFilter, Map as MapIcon } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Search, CheckCircle2, Circle, ChevronRight, ChevronDown, ArrowUpDown, Mountain as MountainIcon, Star, Smile, MapPin, Flame, User, Clock, Trees, Footprints, Route, ListFilter, Map as MapIcon, Check } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { useGuest } from "@/contexts/GuestContext";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import React, { lazy, Suspense } from "react";
@@ -303,9 +305,34 @@ const MountainList = () => {
             />
           </div>
 
-          <div className="space-y-2">
+          <div>
             {getCurrentList().length === 0 ? (
-              <p className="py-12 text-center text-sm text-muted-foreground">검색 결과가 없습니다</p>
+              <div
+                className="text-center"
+                style={{
+                  background: "#FFFFFF",
+                  border: "2px dashed #E5E7EB",
+                  borderRadius: 16,
+                  padding: 24,
+                }}
+              >
+                <p style={{ fontSize: 14, color: "#6B7280" }}>검색 결과가 없어요</p>
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent("open-register-mountain"))}
+                  style={{
+                    marginTop: 8,
+                    fontSize: 12,
+                    color: "#6B9E2F",
+                    fontWeight: 500,
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  + 산이 없나요? 직접 등록하기
+                </button>
+              </div>
             ) : (
               getCurrentList().map((m) => (
                 <MountainCard
@@ -324,30 +351,142 @@ const MountainList = () => {
 };
 
 const MountainCard = React.memo(function MountainCard({ m, isCompleted: completed, toggleComplete }: { m: any; isCompleted: boolean; toggleComplete: (id: number) => void }) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { isGuest, showLoginPrompt } = useGuest();
   const isUserCreated = !!(m as any).isUserCreated;
-  const diffColor = m.difficulty === "쉬움" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : m.difficulty === "보통" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+
+  const diffStyle =
+    m.difficulty === "쉬움"
+      ? { background: "#ECFDF5", color: "#065F46" }
+      : m.difficulty === "보통"
+      ? { background: "#FFFBEB", color: "#92400E" }
+      : { background: "#FEF2F2", color: "#991B1B" };
+
+  const handleToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user || isGuest) {
+      toast("로그인하고 완등을 기록하세요", {
+        action: { label: "로그인", onClick: () => showLoginPrompt() },
+      });
+      return;
+    }
+    toggleComplete(m.id);
+  };
+
+  const handleCardClick = () => {
+    addRecentSearch({ id: m.id, name: m.nameKo });
+    navigate(`/mountains/${m.id}`);
+  };
+
   return (
-    <div className={`flex items-center gap-3 rounded-lg border bg-card p-3.5 shadow-sm transition-colors ${completed ? "border-primary/20 bg-primary/5" : "border-border"}`}>
-      <button onClick={() => toggleComplete(m.id)} className="shrink-0" aria-label={completed ? "완등 취소" : "완등 표시"}>
-        {completed ? <CheckCircle2 className="h-5 w-5 text-primary" /> : <Circle className="h-5 w-5 text-muted-foreground/40" />}
+    <div
+      onClick={handleCardClick}
+      className="group transition-all"
+      style={{
+        background: "#FFFFFF",
+        borderRadius: 16,
+        padding: 12,
+        marginBottom: 8,
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        cursor: "pointer",
+        border: "0.5px solid transparent",
+        boxShadow: completed
+          ? "0 0 0 1px hsl(var(--background)), 0 0 0 3px #97C459"
+          : "none",
+      }}
+      onMouseEnter={(e) => {
+        if (!completed) e.currentTarget.style.border = "0.5px solid #E5E7EB";
+      }}
+      onMouseLeave={(e) => {
+        if (!completed) e.currentTarget.style.border = "0.5px solid transparent";
+      }}
+    >
+      {/* (A) Toggle */}
+      <button
+        type="button"
+        onClick={handleToggle}
+        aria-label={completed ? "완등 취소" : "완등 표시"}
+        className="active:scale-[0.85] transition-transform"
+        style={{
+          width: 28,
+          height: 28,
+          flexShrink: 0,
+          borderRadius: "50%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          border: completed ? "none" : "2px solid #C0DD97",
+          background: completed ? "#97C459" : "transparent",
+          cursor: "pointer",
+          padding: 0,
+        }}
+        onMouseEnter={(e) => {
+          if (!completed) (e.currentTarget.style.borderColor = "#97C459");
+        }}
+        onMouseLeave={(e) => {
+          if (!completed) (e.currentTarget.style.borderColor = "#C0DD97");
+        }}
+      >
+        {completed && (
+          <Check
+            size={16}
+            strokeWidth={3}
+            color="#FFFFFF"
+            style={{
+              animation: "wd-check-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+            }}
+          />
+        )}
       </button>
-      <Link to={`/mountains/${m.id}`} onClick={() => addRecentSearch({ id: m.id, name: m.nameKo })} className="flex flex-1 items-center justify-between min-w-0">
-        <div className="min-w-0 space-y-0.5">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <p className="font-medium truncate text-foreground">{m.nameKo}</p>
-            {(m.is_bac100 ?? m.is_baekdu) && (<Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-blue-300 text-blue-600 dark:border-blue-700 dark:text-blue-400">100대 명산</Badge>)}
-            {m.bac100_label?.includes("산림청") && (<Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-emerald-300 text-emerald-600 dark:border-emerald-700 dark:text-emerald-400">산림청 100대 명산</Badge>)}
-            {m.is_national_park && (<Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-green-400 text-green-700 dark:border-green-700 dark:text-green-400">🌲 {m.national_park_name || "국립공원"}</Badge>)}
-            {isUserCreated && m.status === "pending" && (<Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 gap-0.5 border-amber-300 text-amber-600"><Clock className="h-2.5 w-2.5" />승인 대기</Badge>)}
-            {isUserCreated && m.status !== "pending" && (<Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 gap-0.5"><User className="h-2.5 w-2.5" />커스텀</Badge>)}
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span>{m.region}</span><span>·</span><span>{m.height}m</span>
-            <span className={`rounded px-1 py-0.5 text-[10px] font-medium ${diffColor}`}>{m.difficulty}</span>
-          </div>
+
+      {/* (B) Info */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="flex items-center flex-wrap" style={{ gap: 6 }}>
+          <p style={{ fontSize: 15, fontWeight: 600, color: "#111827" }} className="truncate">
+            {m.nameKo}
+          </p>
+          {completed && (
+            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 9999, background: "#6B9E2F", color: "#FFFFFF", fontWeight: 500 }}>
+              완등
+            </span>
+          )}
+          {m.bac100_label?.includes("산림청") && (
+            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 9999, background: "#F3F8E9", color: "#3F6212", fontWeight: 500 }}>
+              산림청 100대
+            </span>
+          )}
+          {(m.is_bac100 ?? m.is_baekdu) && !m.bac100_label?.includes("산림청") && (
+            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 9999, background: "#F3F8E9", color: "#3F6212", fontWeight: 500 }}>
+              백대명산
+            </span>
+          )}
+          {m.is_national_park && (
+            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 9999, background: "#F3F8E9", color: "#3F6212", fontWeight: 500 }}>
+              국립공원
+            </span>
+          )}
+          {isUserCreated && m.status === "pending" && (
+            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 9999, background: "#FFFBEB", color: "#92400E", fontWeight: 500 }}>
+              승인 대기
+            </span>
+          )}
         </div>
-        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40" />
-      </Link>
+        <div className="flex items-center" style={{ gap: 6, marginTop: 2, fontSize: 11, color: "#6B7280" }}>
+          <span>{m.region}</span>
+          <span>·</span>
+          <span>{m.height}m</span>
+          <span>·</span>
+          <span style={{ padding: "1px 6px", borderRadius: 4, fontWeight: 500, ...diffStyle }}>
+            {m.difficulty}
+          </span>
+        </div>
+      </div>
+
+      {/* (C) Chevron */}
+      <ChevronRight size={16} strokeWidth={2} color="#D1D5DB" style={{ flexShrink: 0 }} />
     </div>
   );
 });
