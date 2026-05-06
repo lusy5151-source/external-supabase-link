@@ -23,6 +23,7 @@ export interface Mountain {
   /** @deprecated use is_bac100 instead */
   is_baekdu: boolean;
   is_bac100?: boolean;
+  is_bac100_blackyak?: boolean;
   bac100_label?: string;
   popularity?: number;
   trails: TrailInfo[];

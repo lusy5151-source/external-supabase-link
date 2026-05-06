@@ -1264,6 +1264,7 @@ export type Database = {
           id: number
           image_url: string | null
           is_bac100: boolean | null
+          is_bac100_blackyak: boolean
           is_national_park: boolean | null
           is_oreum: boolean | null
           lat: number | null
@@ -1300,6 +1301,7 @@ export type Database = {
           id: number
           image_url?: string | null
           is_bac100?: boolean | null
+          is_bac100_blackyak?: boolean
           is_national_park?: boolean | null
           is_oreum?: boolean | null
           lat?: number | null
@@ -1336,6 +1338,7 @@ export type Database = {
           id?: number
           image_url?: string | null
           is_bac100?: boolean | null
+          is_bac100_blackyak?: boolean
           is_national_park?: boolean | null
           is_oreum?: boolean | null
           lat?: number | null
