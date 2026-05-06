@@ -78,8 +78,7 @@ export default function StickySearchBar({ search, setSearch }: Props) {
       style={{
         top: 60,
         zIndex: 20,
-        marginLeft: 8,
-        marginRight: 8,
+        marginTop: 8,
         marginBottom: 12,
       }}
     >
@@ -87,13 +86,14 @@ export default function StickySearchBar({ search, setSearch }: Props) {
         <div
           className="flex items-center"
           style={{
-            background: "#F8FAED",
-            border: "0.5px solid rgba(47,64,58,0.12)",
-            padding: "10px 12px",
-            borderRadius: 10,
+            background: "#FFFFFF",
+            border: focused ? "2px solid #97C459" : "0.5px solid #E5E7EB",
+            padding: focused ? "8.5px 12.5px" : "10px 14px",
+            borderRadius: 16,
+            transition: "border-color 0.15s",
           }}
         >
-          <Search size={14} style={{ color: "rgba(47,64,58,0.5)", flexShrink: 0 }} />
+          <Search size={16} strokeWidth={2} style={{ color: "#9CA3AF", flexShrink: 0 }} />
           <input
             ref={inputRef}
             type="text"
@@ -101,11 +101,11 @@ export default function StickySearchBar({ search, setSearch }: Props) {
             onChange={(e) => setSearch(e.target.value)}
             onFocus={() => setFocused(true)}
             onKeyDown={handleKeyDown}
-            placeholder="산 이름·지역으로 검색"
-            className="ml-2 flex-1 bg-transparent outline-none"
+            placeholder="산 이름으로 검색..."
+            className="ml-2 flex-1 bg-transparent outline-none placeholder:text-gray-400"
             style={{
-              fontSize: 13,
-              color: "#2F403A",
+              fontSize: 14,
+              color: "#111827",
             }}
           />
           {search && (
@@ -116,9 +116,10 @@ export default function StickySearchBar({ search, setSearch }: Props) {
                 inputRef.current?.focus();
               }}
               aria-label="검색어 지우기"
-              style={{ color: "rgba(47,64,58,0.5)", marginLeft: 6 }}
+              className="text-gray-300 hover:text-gray-500 transition-colors"
+              style={{ marginLeft: 6 }}
             >
-              <XIcon size={14} />
+              <XIcon size={16} strokeWidth={2} />
             </button>
           )}
         </div>
