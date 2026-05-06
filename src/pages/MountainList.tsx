@@ -229,7 +229,7 @@ const MountainList = () => {
               style={{
                 height: "100%",
                 width: `${progressWidth}%`,
-                background: "#97C459",
+                background: "#C7D66D",
                 borderRadius: 2,
                 transition: "width 600ms ease-out",
               }}
@@ -266,7 +266,7 @@ const MountainList = () => {
                 borderRadius: 12,
                 fontSize: 14,
                 fontWeight: 500,
-                background: active ? "#C0DD97" : "transparent",
+                background: active ? "#C7D66D" : "transparent",
                 color: active ? "#173404" : "#6B7280",
                 border: "none",
                 cursor: "pointer",
@@ -394,7 +394,7 @@ const MountainCard = React.memo(function MountainCard({ m, isCompleted: complete
         cursor: "pointer",
         border: "0.5px solid transparent",
         boxShadow: completed
-          ? "0 0 0 1px hsl(var(--background)), 0 0 0 3px #97C459"
+          ? "0 0 0 1px hsl(var(--background)), 0 0 0 3px #C7D66D"
           : "none",
       }}
       onMouseEnter={(e) => {
@@ -418,16 +418,16 @@ const MountainCard = React.memo(function MountainCard({ m, isCompleted: complete
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          border: completed ? "none" : "2px solid #C0DD97",
-          background: completed ? "#97C459" : "transparent",
+          border: completed ? "none" : "2px solid #C7D66D",
+          background: completed ? "#C7D66D" : "transparent",
           cursor: "pointer",
           padding: 0,
         }}
         onMouseEnter={(e) => {
-          if (!completed) (e.currentTarget.style.borderColor = "#97C459");
+          if (!completed) (e.currentTarget.style.borderColor = "#C7D66D");
         }}
         onMouseLeave={(e) => {
-          if (!completed) (e.currentTarget.style.borderColor = "#C0DD97");
+          if (!completed) (e.currentTarget.style.borderColor = "#C7D66D");
         }}
       >
         {completed && (
