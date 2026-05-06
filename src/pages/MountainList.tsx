@@ -405,10 +405,11 @@ const MountainList = () => {
   );
 };
 
-const MountainCard = React.memo(function MountainCard({ m, isCompleted: completed, toggleComplete }: { m: any; isCompleted: boolean; toggleComplete: (id: number) => void }) {
+const MountainCard = React.memo(function MountainCard({ m, isCompleted: completed, onToggleClaim }: { m: any; isCompleted: boolean; onToggleClaim: (mountainId: number, mountainName?: string) => Promise<{ ok: boolean; action: "marked" | "unmarked" | null; message?: string }> }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isGuest, showLoginPrompt } = useGuest();
+  const [busy, setBusy] = useState(false);
   const isUserCreated = !!(m as any).isUserCreated;
 
   const diffStyle =
@@ -418,15 +419,30 @@ const MountainCard = React.memo(function MountainCard({ m, isCompleted: complete
       ? { background: "#FFFBEB", color: "#92400E" }
       : { background: "#FEF2F2", color: "#991B1B" };
 
-  const handleToggle = (e: React.MouseEvent) => {
+  const handleToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user || isGuest) {
-      toast("로그인하고 완등을 기록하세요", {
+      toast("로그인 후 완등을 기록할 수 있어요", {
         action: { label: "로그인", onClick: () => showLoginPrompt() },
       });
       return;
     }
-    toggleComplete(m.id);
+    if (busy) return;
+    setBusy(true);
+    try {
+      const res = await onToggleClaim(m.id, m.nameKo);
+      if (!res.ok) {
+        toast.error(`기록 실패: ${res.message ?? ""}`);
+        return;
+      }
+      if (res.action === "marked") {
+        toast(`🎉 ${m.nameKo} 완등!`);
+      } else if (res.action === "unmarked") {
+        toast("완등 기록을 취소했어요");
+      }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleCardClick = () => {
