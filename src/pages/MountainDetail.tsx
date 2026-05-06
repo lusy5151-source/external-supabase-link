@@ -491,7 +491,7 @@ const MountainDetail = () => {
                 selectedTrail={selectedTrail}
               />
             </div>
-            <CourseLegend mountainId={mountain.id} />
+            
             <WalkingPathsSection mountainId={mountain.id} />
           </div>
 
