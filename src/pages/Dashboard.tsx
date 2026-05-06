@@ -330,7 +330,7 @@ const Dashboard = () => {
                 /* Demo upcoming plan */
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="inline-block rounded-full bg-coral px-3 py-1 text-sm font-bold text-primary-foreground">D-3</span>
+                    <span className="inline-block rounded-full bg-coral px-3 py-1 text-sm font-bold text-white">D-3</span>
                     <h3 className="mt-2 text-lg font-bold text-foreground">북한산</h3>
                     <p className="text-xs text-muted-foreground mt-1">
                       {new Date(Date.now() + 3 * 86400000).toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })} · 08:00
