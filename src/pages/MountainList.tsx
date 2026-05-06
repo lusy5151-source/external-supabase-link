@@ -394,7 +394,7 @@ const MountainList = () => {
                   key={m.id}
                   m={m}
                   isCompleted={isCompleted(m.id)}
-                  toggleComplete={toggleComplete}
+                  onToggleClaim={toggleClaim}
                 />
               ))
             )}
