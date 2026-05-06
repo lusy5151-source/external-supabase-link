@@ -61,6 +61,7 @@ const AdminMountainApprovalPage = lazy(() => import("@/pages/AdminMountainApprov
 const AdminPage = lazy(() => import("@/pages/AdminPage"));
 const AdminUsersPage = lazy(() => import("@/pages/AdminUsersPage"));
 const AdminGpxSyncPage = lazy(() => import("@/pages/AdminGpxSyncPage"));
+const AdminMountainPhotosPage = lazy(() => import("@/pages/AdminMountainPhotosPage"));
 const SummitClaimPage = lazy(() => import("@/pages/SummitClaimPage"));
 const PrivacyPolicyPage = lazy(() => import("@/pages/PrivacyPolicyPage"));
 const DeleteAccountPage = lazy(() => import("@/pages/DeleteAccountPage"));
