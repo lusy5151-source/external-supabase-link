@@ -98,9 +98,9 @@ const MountainList = () => {
   const [progressWidth, setProgressWidth] = useState(0);
   useEffect(() => {
     setProgressWidth(0);
-    const t = window.setTimeout(() => setProgressWidth(Math.min(100, selected.completed)), 30);
+    const t = window.setTimeout(() => setProgressWidth(Math.min(100, bacCompleted)), 30);
     return () => window.clearTimeout(t);
-  }, [collection, selected.completed]);
+  }, [bacCompleted]);
 
   const favoritesCount = 0; // placeholder until favorites feature is wired up
 
