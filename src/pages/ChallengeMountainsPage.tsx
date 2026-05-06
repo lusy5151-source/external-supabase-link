@@ -51,11 +51,13 @@ export default function ChallengeMountainsPage() {
   // Fetch mountains for the active challenge
   const fetchMountains = useCallback(async () => {
     const column = challengeType === "bac100" ? "is_bac100_blackyak" : "is_bac100";
-    const { data } = await (supabase as any)
+    const { data, error } = await (supabase as any)
       .from("mountains")
-      .select("id, name_ko, name, height, bac_rank, is_bac100, is_bac100_blackyak, image_url, lat, lng")
+      .select("id, name_ko, name, height, difficulty, region, province, is_bac100_blackyak, is_bac100, is_national_park, national_park_name, bac100_rank, lat, lng, image_url")
       .eq(column, true)
+      .order("bac100_rank", { ascending: true, nullsFirst: false })
       .limit(200);
+    if (error) console.error("[ChallengeMountains] fetch error", error);
     return (data || []) as MountainRow[];
   }, [challengeType]);
 
