@@ -283,7 +283,7 @@ export function TrailDetailMap({
         position: naverPath[0],
         map,
         icon: {
-          content: `<div style="display:flex;align-items:center;gap:4px;background:#22C55E;color:white;padding:5px 10px;border-radius:14px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);transform:translate(-50%,-50%);">▶ 출발</div>`,
+          content: `<div style="display:flex;align-items:center;gap:4px;background:white;color:#16A34A;padding:5px 10px;border-radius:14px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.15);transform:translate(-50%,-50%);border:1px solid #E5E7EB;">▶ 출발</div>`,
           anchor: new naver.maps.Point(0, 0),
         },
         zIndex: 150,
@@ -294,7 +294,7 @@ export function TrailDetailMap({
         position: naverPath[naverPath.length - 1],
         map,
         icon: {
-          content: `<div style="display:flex;align-items:center;gap:4px;background:#EF4444;color:white;padding:5px 10px;border-radius:14px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);transform:translate(-50%,-50%);">🏁 도착</div>`,
+          content: `<div style="display:flex;align-items:center;gap:4px;background:white;color:#DC2626;padding:5px 10px;border-radius:14px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.15);transform:translate(-50%,-50%);border:1px solid #E5E7EB;">🏁 도착</div>`,
           anchor: new naver.maps.Point(0, 0),
         },
         zIndex: 150,
@@ -419,27 +419,27 @@ export function TrailDetailMap({
   // No geometry — placeholder map
   if (!hasPath) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-3">
-        <div className="flex items-center gap-2">
-          <MapIcon className="h-5 w-5 text-primary" />
-          <h2 className="text-base font-bold text-foreground">코스 경로</h2>
-        </div>
+      <div style={{ background: "white", borderRadius: 18, padding: 12, margin: "0 12px 8px" }}>
+        <h2 style={{
+          fontSize: 12, fontWeight: 600, color: "#173404",
+          borderLeft: "2.5px solid #c6d56c", paddingLeft: 8, marginBottom: 10,
+        }}>코스 경로</h2>
         <div className="relative">
           <div
             ref={placeholderMapRef}
-            className="naver-map-container h-[280px] rounded-xl border border-border overflow-hidden"
+            className="naver-map-container"
+            style={{ height: 220, borderRadius: 12, overflow: "hidden" }}
           />
-          <div className="absolute top-2 right-2 z-10 flex rounded-lg overflow-hidden shadow-md border border-border bg-background">
+          <div className="absolute top-2 right-2 z-10 flex rounded-lg overflow-hidden shadow-md" style={{ border: "0.5px solid #e3efcc", background: "white" }}>
             {(["NORMAL", "TERRAIN"] as const).map((t) => (
               <button
                 key={t}
                 type="button"
                 onClick={() => setMapType(t)}
-                className={`px-2.5 py-1 text-xs font-semibold transition-colors ${
-                  mapType === t
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-background text-foreground hover:bg-muted"
-                }`}
+                className="px-2.5 py-1 text-xs font-semibold transition-colors"
+                style={mapType === t
+                  ? { background: "#c6d56c", color: "#173404" }
+                  : { background: "white", color: "#444" }}
               >
                 {t === "NORMAL" ? "일반" : "지형도"}
               </button>
@@ -455,27 +455,27 @@ export function TrailDetailMap({
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-3">
-      <div className="flex items-center gap-2">
-        <MapIcon className="h-5 w-5 text-primary" />
-        <h2 className="text-base font-bold text-foreground">코스 경로</h2>
-      </div>
+    <div style={{ background: "white", borderRadius: 18, padding: 12, margin: "0 12px 8px" }}>
+      <h2 style={{
+        fontSize: 12, fontWeight: 600, color: "#173404",
+        borderLeft: "2.5px solid #c6d56c", paddingLeft: 8, marginBottom: 10,
+      }}>코스 경로</h2>
       <div className="relative">
         <div
           ref={mapRef}
-          className="naver-map-container h-[280px] rounded-xl border border-border overflow-hidden"
+          className="naver-map-container"
+          style={{ height: 220, borderRadius: 12, overflow: "hidden" }}
         />
-        <div className="absolute top-2 right-2 z-10 flex rounded-lg overflow-hidden shadow-md border border-border bg-background">
+        <div className="absolute top-2 right-2 z-10 flex rounded-lg overflow-hidden shadow-md" style={{ border: "0.5px solid #e3efcc", background: "white" }}>
           {(["NORMAL", "TERRAIN"] as const).map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => setMapType(t)}
-              className={`px-2.5 py-1 text-xs font-semibold transition-colors ${
-                mapType === t
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-background text-foreground hover:bg-muted"
-              }`}
+              className="px-2.5 py-1 text-xs font-semibold transition-colors"
+              style={mapType === t
+                ? { background: "#c6d56c", color: "#173404" }
+                : { background: "white", color: "#444" }}
             >
               {t === "NORMAL" ? "일반" : "지형도"}
             </button>
