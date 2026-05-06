@@ -98,9 +98,9 @@ const MountainList = () => {
   const [progressWidth, setProgressWidth] = useState(0);
   useEffect(() => {
     setProgressWidth(0);
-    const t = window.setTimeout(() => setProgressWidth(Math.min(100, selected.completed)), 30);
+    const t = window.setTimeout(() => setProgressWidth(Math.min(100, bacCompleted)), 30);
     return () => window.clearTimeout(t);
-  }, [collection, selected.completed]);
+  }, [bacCompleted]);
 
   const favoritesCount = 0; // placeholder until favorites feature is wired up
 
@@ -188,109 +188,54 @@ const MountainList = () => {
   return (
     <div className="space-y-5 pb-24 -mx-5 -mt-4 px-5 pt-4" style={{ background: "linear-gradient(180deg, hsl(205, 60%, 94%) 0%, hsl(var(--background)) 40%)" }}>
       <div>
-        <h1 className="text-2xl font-bold text-foreground">탐색</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: "#111827", marginBottom: 4 }}>탐색</h1>
+        <div style={{ fontSize: 12, color: "#6B7280" }}>
+          전체 {allMountains.length}개 ·{" "}
+          완등 <span style={{ color: "#6B9E2F", fontWeight: 500 }}>{completedCount}</span>개 ·{" "}
+          <Link
+            to="/my/collections/bac100"
+            style={{
+              color: "#6B9E2F",
+              fontWeight: 500,
+              textDecoration: "underline dotted",
+              textUnderlineOffset: 2,
+            }}
+          >
+            백대명산 {bacCompleted}/100 ›
+          </Link>
+        </div>
+
+        <Link
+          to="/my/collections/bac100"
+          style={{
+            display: "block",
+            background: "#FFFFFF",
+            borderRadius: 12,
+            padding: "10px 14px",
+            border: "0.5px solid #E5E7EB",
+            marginTop: 12,
+            marginBottom: 16,
+            textDecoration: "none",
+          }}
+        >
+          <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 500, color: "#374151" }}>백대명산 진행률</span>
+            <span style={{ color: "#D1D5DB", fontSize: 14 }}>›</span>
+          </div>
+          <div style={{ height: 4, width: "100%", background: "#F3F4F6", borderRadius: 2, overflow: "hidden" }}>
+            <div
+              style={{
+                height: "100%",
+                width: `${progressWidth}%`,
+                background: "#97C459",
+                borderRadius: 2,
+                transition: "width 600ms ease-out",
+              }}
+            />
+          </div>
+        </Link>
       </div>
 
-      {/* Hero progress card */}
-      <Link
-        to={`/my/collections/${collection}`}
-        className="block -mx-1"
-        style={{
-          background: "#C7D66D",
-          padding: 14,
-          borderRadius: 14,
-          marginLeft: 12,
-          marginRight: 12,
-          marginTop: -4,
-          marginBottom: 12,
-          textDecoration: "none",
-        }}
-      >
-        {/* Collection toggle */}
-        <div
-          className="inline-flex"
-          style={{
-            padding: 3,
-            background: "rgba(255,255,255,0.5)",
-            borderRadius: 999,
-            marginBottom: 12,
-          }}
-          onClick={(e) => e.preventDefault()}
-        >
-          {([
-            ["forestry100", "산림청 100대"],
-            ["bac100", "100대 명산"],
-          ] as const).map(([key, label]) => {
-            const active = collection === key;
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setCollection(key);
-                }}
-                style={{
-                  padding: "4px 10px",
-                  background: active ? "#2F403A" : "transparent",
-                  color: active ? "#FFFFFF" : "#2F403A",
-                  borderRadius: 999,
-                  fontSize: 11,
-                  fontWeight: 500,
-                  border: "none",
-                  cursor: "pointer",
-                }}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Progress label row */}
-        <div className="flex justify-between items-baseline" style={{ marginBottom: 8 }}>
-          <span style={{ fontSize: 12, color: "rgba(47,64,58,0.75)" }}>{selected.name}</span>
-          <span style={{ fontSize: 14, fontWeight: 500, color: "#2F403A" }}>
-            {selected.completed} / 100
-          </span>
-        </div>
-
-        {/* Progress bar */}
-        <div
-          style={{
-            height: 6,
-            width: "100%",
-            background: "rgba(255,255,255,0.5)",
-            borderRadius: 999,
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              height: "100%",
-              width: `${progressWidth}%`,
-              background: "#2F403A",
-              borderRadius: 999,
-              transition: "width 800ms ease-out",
-            }}
-          />
-        </div>
-
-        {/* Inline stats */}
-        <div className="flex" style={{ gap: 16, marginTop: 12 }}>
-          {[
-            { caption: "전체 산", value: allMountains.length },
-            { caption: "완등", value: completedCount },
-            { caption: "즐겨찾기", value: favoritesCount },
-          ].map((s) => (
-            <div key={s.caption}>
-              <div style={{ fontSize: 11, color: "rgba(47,64,58,0.7)" }}>{s.caption}</div>
-              <div style={{ fontSize: 15, fontWeight: 500, color: "#2F403A" }}>{s.value}</div>
-            </div>
-          ))}
-        </div>
-      </Link>
 
       {/* Sticky search */}
       <StickySearchBar search={search} setSearch={setSearch} />
