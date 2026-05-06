@@ -68,6 +68,7 @@ export function useLiveSummitFeed() {
     const { data } = await (supabase as any)
       .from("summit_claims")
       .select("user_id")
+      .not("photo_url", "is", null)
       .gte("claimed_at", todayStart.toISOString());
 
     if (!data || (data as any[]).length === 0) {
