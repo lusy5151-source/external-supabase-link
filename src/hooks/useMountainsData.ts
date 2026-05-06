@@ -16,7 +16,7 @@ export function useMountainsData() {
       const { data, error } = await supabase
         .from("mountains")
         .select(
-          "id,name,name_ko,height,region,lat,lng,difficulty,description,is_bac100,bac100_label,popularity,overview,address,province,is_national_park,national_park_name"
+          "id,name,name_ko,height,region,lat,lng,difficulty,description,is_bac100,is_bac100_blackyak,bac100_label,popularity,overview,address,province,is_national_park,national_park_name"
         )
         .order("id", { ascending: true });
 
@@ -34,6 +34,7 @@ export function useMountainsData() {
         description: row.description || "",
         is_baekdu: row.is_bac100 || false,
         is_bac100: row.is_bac100 || false,
+        is_bac100_blackyak: (row as any).is_bac100_blackyak || false,
         bac100_label: row.bac100_label || undefined,
         popularity: row.popularity || 0,
         overview: row.overview || "",

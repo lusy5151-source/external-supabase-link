@@ -236,38 +236,39 @@ const MountainDetail = () => {
             zIndex: 2,
           }}
         >
-          {mountain.is_baekdu && (
-            <span
-              style={{
-                background: "#fff",
-                color: "#173404",
-                fontSize: 10,
-                padding: "3px 9px",
-                borderRadius: 10,
-                fontWeight: 500,
-                whiteSpace: "nowrap",
-                boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
-              }}
-            >
-              {mountain.bac100_label || "100대 명산"}
-            </span>
-          )}
-          {mountain.is_national_park && (
-            <span
-              style={{
-                background: "#fff",
-                color: "#04342C",
-                fontSize: 10,
-                padding: "3px 9px",
-                borderRadius: 10,
-                fontWeight: 500,
-                whiteSpace: "nowrap",
-                boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
-              }}
-            >
-              {mountain.national_park_name || "국립공원"}
-            </span>
-          )}
+          {(() => {
+            const baseBadge: React.CSSProperties = {
+              background: "#fff",
+              fontSize: 10,
+              fontWeight: 500,
+              padding: "3px 9px",
+              borderRadius: 10,
+              whiteSpace: "nowrap",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
+              display: "inline-flex",
+              alignItems: "center",
+            };
+            return (
+              <>
+                {(mountain as any).is_bac100_blackyak && (
+                  <span style={{ ...baseBadge, color: "#633806", border: "0.5px solid #FAC775" }}>
+                    <Star size={10} fill="#FAC775" stroke="#FAC775" strokeWidth={1} style={{ marginRight: 4 }} />
+                    100대 명산
+                  </span>
+                )}
+                {mountain.is_bac100 && (
+                  <span style={{ ...baseBadge, color: "#173404", border: "0.5px solid #c6d56c" }}>
+                    산림청 100대 명산
+                  </span>
+                )}
+                {mountain.is_national_park && (
+                  <span style={{ ...baseBadge, color: "#04342C", border: "0.5px solid #9FE1CB" }}>
+                    {mountain.national_park_name || "국립공원"}
+                  </span>
+                )}
+              </>
+            );
+          })()}
         </div>
       </div>
 
