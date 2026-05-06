@@ -238,7 +238,7 @@ export default function TrailDetailPage() {
         })}
       </div>
 
-      {/* Quick Action Buttons */}
+      <div className="space-y-3" style={{ padding: "0 12px" }}>
       <div className="flex gap-2">
         <Button variant="outline" size="sm" className="flex-1 gap-1.5" onClick={handleNavigate}>
           <Navigation className="h-3.5 w-3.5" /> 길찾기
