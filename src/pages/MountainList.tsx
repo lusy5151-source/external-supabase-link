@@ -293,16 +293,16 @@ const MountainList = () => {
           {/* Nearby clubs */}
           <NearbyClubs />
 
-          {/* Single-row pill filter bar (replaces previous quick chips + bottom-sheet filters) */}
+          {/* Filter chips + result count + filter sheet */}
           <div className="-mx-5">
             <MountainFilterBar
               value={filters}
               onChange={setFilters}
               regions={[...regions, "기타"]}
+              resultCount={getCurrentList().length}
             />
           </div>
 
-          <p className="text-xs text-muted-foreground">{getCurrentList().length}개 결과</p>
           <div className="space-y-2">
             {getCurrentList().length === 0 ? (
               <p className="py-12 text-center text-sm text-muted-foreground">검색 결과가 없습니다</p>

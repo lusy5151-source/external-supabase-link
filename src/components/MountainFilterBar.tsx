@@ -1,12 +1,11 @@
-import { useEffect, useRef, useState } from "react";
-import { ChevronDown, X, Plus, MoreHorizontal } from "lucide-react";
+import { useState } from "react";
+import { X, ListFilter } from "lucide-react";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import RegisterMountainModal from "@/components/RegisterMountainModal";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 export type KindKey = "all" | "bac100" | "forestry100" | "national" | "user";
@@ -16,10 +15,10 @@ export type Difficulty = "쉬움" | "보통" | "어려움";
 
 export interface MountainFilterState {
   kind: KindKey;
-  difficulties: Difficulty[]; // multi
+  difficulties: Difficulty[];
   status: StatusKey;
   sort: SortKey;
-  region: string; // "전체" or region name
+  region: string;
   showUserOnly: boolean;
   favoritesOnly: boolean;
 }
@@ -34,567 +33,346 @@ export const DEFAULT_FILTERS: MountainFilterState = {
   favoritesOnly: false,
 };
 
-const KIND_LABELS: Record<KindKey, string> = {
-  all: "전체",
-  bac100: "백대명산",
-  forestry100: "산림청 100대",
-  national: "국립공원",
-  user: "사용자 등록",
-};
-const STATUS_LABELS: Record<StatusKey, string> = {
-  all: "전체",
-  todo: "미등",
-  done: "완등",
-};
 const SORT_LABELS: Record<SortKey, string> = {
-  name: "가나다순",
+  name: "이름순",
   height: "높이순",
   popularity: "인기순",
 };
 
-// ── Tokens ────────────────────────────────────────────────────────────────
-const FOREST = "#2F403A";
-const CREAM = "#F8FAED";
-const LIME = "#C7D66D";
-const SKY = "#C6DBF0";
-const NAVY = "#013F92";
-const BORDER = "rgba(47,64,58,0.12)";
+const KIND_CHIPS: { key: KindKey; label: string }[] = [
+  { key: "all", label: "전체" },
+  { key: "national", label: "국립공원" },
+  { key: "bac100", label: "백대명산" },
+];
 
-// ── Pill ──────────────────────────────────────────────────────────────────
-type PillVariant = "default" | "single" | "multi" | "personal";
-
-function Pill({
-  label,
-  variant,
-  onClick,
-  onClear,
-}: {
-  label: string;
-  variant: PillVariant;
-  onClick: () => void;
-  onClear?: () => void;
-}) {
-  const base: React.CSSProperties = {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 4,
-    padding: "6px 10px",
-    borderRadius: 999,
-    fontSize: 11,
-    whiteSpace: "nowrap",
-    border: "0.5px solid transparent",
-    cursor: "pointer",
-    flexShrink: 0,
-    lineHeight: 1.2,
-  };
-  let style: React.CSSProperties = base;
-  if (variant === "default") {
-    style = {
-      ...base,
-      background: CREAM,
-      color: FOREST,
-      borderColor: BORDER,
-    };
-  } else if (variant === "single") {
-    style = { ...base, background: FOREST, color: "#FFFFFF" };
-  } else if (variant === "multi") {
-    style = { ...base, background: SKY, color: NAVY, fontWeight: 500 };
-  } else if (variant === "personal") {
-    style = { ...base, background: LIME, color: FOREST, fontWeight: 500 };
-  }
-  return (
-    <button type="button" style={style} onClick={onClick}>
-      <span>{label}</span>
-      {onClear ? (
-        <X
-          size={12}
-          onClick={(e) => {
-            e.stopPropagation();
-            onClear();
-          }}
-        />
-      ) : (
-        <ChevronDown size={12} />
-      )}
-    </button>
-  );
-}
-
-// ── Dropdown panel (anchored below pill) ──────────────────────────────────
-function DropdownPanel({
-  open,
-  onClose,
-  children,
-  anchorRef,
-}: {
-  open: boolean;
-  onClose: () => void;
-  children: React.ReactNode;
-  anchorRef: React.RefObject<HTMLDivElement>;
-}) {
-  const panelRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (panelRef.current?.contains(t)) return;
-      if (anchorRef.current?.contains(t)) return;
-      onClose();
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open, onClose, anchorRef]);
-  if (!open) return null;
-  return (
-    <div
-      ref={panelRef}
-      style={{
-        position: "absolute",
-        top: "calc(100% + 6px)",
-        left: 0,
-        zIndex: 30,
-        background: "#FFFFFF",
-        border: `0.5px solid ${BORDER}`,
-        borderRadius: 12,
-        padding: 8,
-        minWidth: 160,
-        boxShadow: "0 6px 20px rgba(47,64,58,0.12)",
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-function OptionRow({
-  label,
-  selected,
-  onClick,
-  multi,
-}: {
-  label: string;
-  selected: boolean;
-  onClick: () => void;
-  multi?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        width: "100%",
-        padding: "8px 10px",
-        background: selected && !multi ? "rgba(199,214,109,0.25)" : "transparent",
-        color: FOREST,
-        fontSize: 13,
-        borderRadius: 8,
-        border: "none",
-        cursor: "pointer",
-        textAlign: "left",
-      }}
-    >
-      <span>{label}</span>
-      {multi ? (
-        <span
-          style={{
-            width: 16,
-            height: 16,
-            borderRadius: 4,
-            border: `1px solid ${selected ? FOREST : BORDER}`,
-            background: selected ? FOREST : "transparent",
-            color: "#FFF",
-            fontSize: 10,
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {selected ? "✓" : ""}
-        </span>
-      ) : selected ? (
-        <span style={{ color: FOREST }}>✓</span>
-      ) : null}
-    </button>
-  );
-}
-
-// ── Pill with its own dropdown wrapper ────────────────────────────────────
-function PillWithDropdown({
-  pillLabel,
-  variant,
-  onClear,
-  children,
-}: {
-  pillLabel: string;
-  variant: PillVariant;
-  onClear?: () => void;
-  children: (close: () => void) => React.ReactNode;
-}) {
-  const [open, setOpen] = useState(false);
-  const anchor = useRef<HTMLDivElement>(null);
-  return (
-    <div ref={anchor} style={{ position: "relative", flexShrink: 0 }}>
-      <Pill
-        label={pillLabel}
-        variant={variant}
-        onClick={() => setOpen((v) => !v)}
-        onClear={onClear}
-      />
-      <DropdownPanel open={open} onClose={() => setOpen(false)} anchorRef={anchor}>
-        {children(() => setOpen(false))}
-      </DropdownPanel>
-    </div>
-  );
-}
-
-// ── Main bar ──────────────────────────────────────────────────────────────
 interface Props {
   value: MountainFilterState;
   onChange: (next: MountainFilterState) => void;
   regions: string[];
+  resultCount?: number;
 }
 
-export default function MountainFilterBar({ value, onChange, regions }: Props) {
+export default function MountainFilterBar({ value, onChange, resultCount }: Props) {
   const set = <K extends keyof MountainFilterState>(k: K, v: MountainFilterState[K]) =>
     onChange({ ...value, [k]: v });
 
-  const [moreOpen, setMoreOpen] = useState(false);
-  const [registerOpen, setRegisterOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
 
-  // Pending state for multi-select (difficulty)
-  const [pendingDiff, setPendingDiff] = useState<Difficulty[]>(value.difficulties);
-  useEffect(() => setPendingDiff(value.difficulties), [value.difficulties]);
+  // Pending state for the sheet
+  const [pending, setPending] = useState<MountainFilterState>(value);
+  const openFilter = () => {
+    setPending(value);
+    setFilterOpen(true);
+  };
+  const apply = () => {
+    onChange(pending);
+    setFilterOpen(false);
+  };
+  const resetSheet = () =>
+    setPending({
+      ...pending,
+      difficulties: [],
+      status: "all",
+      showUserOnly: false,
+    });
 
-  const isDirty =
-    value.kind !== DEFAULT_FILTERS.kind ||
-    value.difficulties.length > 0 ||
-    value.status !== DEFAULT_FILTERS.status ||
-    value.sort !== DEFAULT_FILTERS.sort ||
-    value.region !== DEFAULT_FILTERS.region ||
-    value.showUserOnly ||
-    value.favoritesOnly;
-
-  // Pill labels & variants
-  const kindActive = value.kind !== "all";
-  const diffActive = value.difficulties.length > 0;
-  const statusActive = value.status !== "all";
-  const sortActive = value.sort !== "name";
-
-  const reset = () => onChange(DEFAULT_FILTERS);
+  const toggleDiff = (d: Difficulty) =>
+    setPending((p) => ({
+      ...p,
+      difficulties: p.difficulties.includes(d)
+        ? p.difficulties.filter((x) => x !== d)
+        : [...p.difficulties, d],
+    }));
 
   return (
-    <div>
-      {/* Pill row */}
+    <div className="px-5">
+      {/* Filter chips row */}
       <div
-        className="scrollbar-hide"
+        className="-mx-1 px-1 no-scrollbar"
         style={{
           display: "flex",
-          gap: 6,
-          padding: "0 16px",
-          height: 36,
-          alignItems: "center",
+          gap: 8,
           overflowX: "auto",
           overflowY: "hidden",
         }}
       >
-        {/* 종류 */}
-        <PillWithDropdown
-          pillLabel={kindActive ? `종류: ${KIND_LABELS[value.kind]}` : "종류"}
-          variant={kindActive ? "single" : "default"}
-          onClear={kindActive ? () => set("kind", "all") : undefined}
-        >
-          {(close) => (
-            <div style={{ minWidth: 160 }}>
-              {(Object.keys(KIND_LABELS) as KindKey[]).map((k) => (
-                <OptionRow
-                  key={k}
-                  label={KIND_LABELS[k]}
-                  selected={value.kind === k}
-                  onClick={() => {
-                    set("kind", k);
-                    close();
-                  }}
-                />
-              ))}
-            </div>
-          )}
-        </PillWithDropdown>
-
-        {/* 난이도 (multi) */}
-        <PillWithDropdown
-          pillLabel={
-            diffActive ? `난이도 ${value.difficulties.length}` : "난이도"
-          }
-          variant={diffActive ? "multi" : "default"}
-        >
-          {(close) => (
-            <div style={{ minWidth: 180 }}>
-              {(["쉬움", "보통", "어려움"] as Difficulty[]).map((d) => {
-                const checked = pendingDiff.includes(d);
-                return (
-                  <OptionRow
-                    key={d}
-                    label={d}
-                    multi
-                    selected={checked}
-                    onClick={() =>
-                      setPendingDiff((prev) =>
-                        prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]
-                      )
-                    }
-                  />
-                );
-              })}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginTop: 6,
-                  paddingTop: 6,
-                  borderTop: `0.5px solid ${BORDER}`,
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => setPendingDiff([])}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: FOREST,
-                    fontSize: 12,
-                    opacity: 0.7,
-                    cursor: "pointer",
-                  }}
-                >
-                  초기화
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    set("difficulties", pendingDiff);
-                    close();
-                  }}
-                  style={{
-                    background: FOREST,
-                    color: "#FFF",
-                    fontSize: 12,
-                    padding: "6px 12px",
-                    borderRadius: 8,
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  적용
-                </button>
-              </div>
-            </div>
-          )}
-        </PillWithDropdown>
-
-        {/* 완등 상태 */}
-        <PillWithDropdown
-          pillLabel={
-            statusActive ? `완등 상태: ${STATUS_LABELS[value.status]}` : "완등 상태"
-          }
-          variant={statusActive ? "personal" : "default"}
-          onClear={statusActive ? () => set("status", "all") : undefined}
-        >
-          {(close) => (
-            <div style={{ minWidth: 140 }}>
-              {(Object.keys(STATUS_LABELS) as StatusKey[]).map((s) => (
-                <OptionRow
-                  key={s}
-                  label={STATUS_LABELS[s]}
-                  selected={value.status === s}
-                  onClick={() => {
-                    set("status", s);
-                    close();
-                  }}
-                />
-              ))}
-            </div>
-          )}
-        </PillWithDropdown>
-
-        {/* 정렬 */}
-        <PillWithDropdown
-          pillLabel={sortActive ? `정렬: ${SORT_LABELS[value.sort]}` : "정렬"}
-          variant={sortActive ? "single" : "default"}
-          onClear={sortActive ? () => set("sort", "name") : undefined}
-        >
-          {(close) => (
-            <div style={{ minWidth: 140 }}>
-              {(Object.keys(SORT_LABELS) as SortKey[]).map((s) => (
-                <OptionRow
-                  key={s}
-                  label={SORT_LABELS[s]}
-                  selected={value.sort === s}
-                  onClick={() => {
-                    set("sort", s);
-                    close();
-                  }}
-                />
-              ))}
-            </div>
-          )}
-        </PillWithDropdown>
-
-        {/* 더보기 */}
-        <button
-          type="button"
-          onClick={() => setMoreOpen(true)}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 4,
-            padding: "6px 10px",
-            background: CREAM,
-            color: FOREST,
-            border: `0.5px solid ${BORDER}`,
-            borderRadius: 999,
-            fontSize: 11,
-            whiteSpace: "nowrap",
-            flexShrink: 0,
-            cursor: "pointer",
-          }}
-        >
-          <MoreHorizontal size={12} />
-          더보기
-        </button>
+        {KIND_CHIPS.map(({ key, label }) => {
+          const active = value.kind === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => set("kind", key)}
+              style={{
+                padding: "6px 14px",
+                borderRadius: 9999,
+                fontSize: 12,
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+                background: active ? "#C0DD97" : "#FFFFFF",
+                color: active ? "#173404" : "#4B5563",
+                fontWeight: active ? 500 : 400,
+                border: active ? "none" : "0.5px solid #F3F4F6",
+                cursor: "pointer",
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Reset link */}
-      {isDirty && (
-        <div style={{ padding: "6px 16px 0" }}>
+      {/* Result count + sort/filter row */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginTop: 12,
+          marginBottom: 12,
+        }}
+      >
+        <span style={{ fontSize: 12, color: "#6B7280" }}>
+          {resultCount ?? 0}개 결과
+        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button
             type="button"
-            onClick={reset}
+            onClick={() => setSortOpen(true)}
             style={{
-              padding: "4px 8px",
-              background: CREAM,
-              color: "rgba(47,64,58,0.7)",
-              fontSize: 10,
-              borderRadius: 6,
+              fontSize: 12,
+              color: "#4B5563",
+              background: "transparent",
               border: "none",
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            {SORT_LABELS[value.sort]} ↕
+          </button>
+          <button
+            type="button"
+            onClick={openFilter}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              background: "#FFFFFF",
+              border: "0.5px solid #F3F4F6",
+              padding: "4px 10px",
+              borderRadius: 9999,
+              fontSize: 12,
+              color: "#4B5563",
               cursor: "pointer",
             }}
           >
-            초기화
+            <ListFilter size={12} />
+            필터
           </button>
         </div>
-      )}
+      </div>
 
-      {/* 더보기 sheet */}
-      <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-        <SheetContent side="bottom" className="rounded-t-2xl">
+      {/* Sort sheet */}
+      <Sheet open={sortOpen} onOpenChange={setSortOpen}>
+        <SheetContent side="bottom" className="rounded-t-3xl">
           <SheetHeader>
-            <SheetTitle style={{ color: FOREST }}>추가 필터</SheetTitle>
+            <SheetTitle>정렬</SheetTitle>
           </SheetHeader>
-          <div className="space-y-5 mt-4 pb-6">
-            {/* Region */}
+          <div className="mt-4 pb-6 space-y-1">
+            {(Object.keys(SORT_LABELS) as SortKey[]).map((s) => {
+              const active = value.sort === s;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => {
+                    set("sort", s);
+                    setSortOpen(false);
+                  }}
+                  style={{
+                    display: "flex",
+                    width: "100%",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "12px 14px",
+                    fontSize: 14,
+                    color: "#111827",
+                    background: active ? "rgba(192,221,151,0.25)" : "transparent",
+                    border: "none",
+                    borderRadius: 12,
+                    cursor: "pointer",
+                  }}
+                >
+                  <span>{SORT_LABELS[s]}</span>
+                  {active && <span style={{ color: "#6B9E2F" }}>✓</span>}
+                </button>
+              );
+            })}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Filter sheet */}
+      <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
+        <SheetContent side="bottom" className="rounded-t-3xl flex flex-col" style={{ maxHeight: "85vh" }}>
+          <SheetHeader className="flex-row items-center justify-between">
+            <SheetTitle>필터</SheetTitle>
+            <button
+              type="button"
+              onClick={() => setFilterOpen(false)}
+              aria-label="닫기"
+              style={{ background: "transparent", border: "none", cursor: "pointer", color: "#6B7280" }}
+            >
+              <X size={20} />
+            </button>
+          </SheetHeader>
+
+          <div className="mt-4 flex-1 overflow-y-auto space-y-6 pb-4">
+            {/* 난이도 (multi) */}
             <div>
-              <div style={{ fontSize: 12, color: FOREST, opacity: 0.7, marginBottom: 8 }}>
-                지역
+              <div style={{ fontSize: 13, fontWeight: 500, color: "#111827", marginBottom: 8 }}>
+                난이도
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {["전체", ...regions].map((r) => {
-                  const active = value.region === r;
+              <div className="flex flex-wrap gap-2">
+                {(["쉬움", "보통", "어려움"] as Difficulty[]).map((d) => {
+                  const active = pending.difficulties.includes(d);
                   return (
                     <button
-                      key={r}
+                      key={d}
                       type="button"
-                      onClick={() => set("region", r)}
+                      onClick={() => toggleDiff(d)}
                       style={{
-                        padding: "6px 10px",
-                        borderRadius: 999,
+                        padding: "6px 14px",
+                        borderRadius: 9999,
                         fontSize: 12,
-                        border: `0.5px solid ${active ? FOREST : BORDER}`,
-                        background: active ? FOREST : "#FFF",
-                        color: active ? "#FFF" : FOREST,
+                        background: active ? "#C0DD97" : "#FFFFFF",
+                        color: active ? "#173404" : "#4B5563",
+                        fontWeight: active ? 500 : 400,
+                        border: active ? "none" : "0.5px solid #F3F4F6",
                         cursor: "pointer",
                       }}
                     >
-                      {r}
+                      {d}
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            {/* Toggles */}
-            <div className="space-y-2">
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  fontSize: 13,
-                  color: FOREST,
-                }}
-              >
-                <span>사용자 등록 산만 보기</span>
-                <input
-                  type="checkbox"
-                  checked={value.showUserOnly}
-                  onChange={(e) => set("showUserOnly", e.target.checked)}
-                />
-              </label>
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  fontSize: 13,
-                  color: FOREST,
-                }}
-              >
-                <span>즐겨찾기만 보기</span>
-                <input
-                  type="checkbox"
-                  checked={value.favoritesOnly}
-                  onChange={(e) => set("favoritesOnly", e.target.checked)}
-                />
-              </label>
+            {/* 완등 상태 */}
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: "#111827", marginBottom: 8 }}>
+                완등 상태
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {([["all", "전체"], ["done", "완등"], ["todo", "미등"]] as [StatusKey, string][]).map(
+                  ([key, label]) => {
+                    const active = pending.status === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setPending({ ...pending, status: key })}
+                        style={{
+                          padding: "6px 14px",
+                          borderRadius: 9999,
+                          fontSize: 12,
+                          background: active ? "#C0DD97" : "#FFFFFF",
+                          color: active ? "#173404" : "#4B5563",
+                          fontWeight: active ? 500 : 400,
+                          border: active ? "none" : "0.5px solid #F3F4F6",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {label}
+                      </button>
+                    );
+                  }
+                )}
+              </div>
             </div>
 
-            {/* Register mountain */}
+            {/* 등록 출처 */}
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: "#111827", marginBottom: 8 }}>
+                등록 출처
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  [false, "전체"],
+                  [true, "사용자 등록 산만"],
+                ] as [boolean, string][]).map(([key, label]) => {
+                  const active = pending.showUserOnly === key;
+                  return (
+                    <button
+                      key={String(key)}
+                      type="button"
+                      onClick={() => setPending({ ...pending, showUserOnly: key })}
+                      style={{
+                        padding: "6px 14px",
+                        borderRadius: 9999,
+                        fontSize: 12,
+                        background: active ? "#C0DD97" : "#FFFFFF",
+                        color: active ? "#173404" : "#4B5563",
+                        fontWeight: active ? 500 : 400,
+                        border: active ? "none" : "0.5px solid #F3F4F6",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              paddingTop: 12,
+              borderTop: "0.5px solid #F3F4F6",
+            }}
+          >
             <button
               type="button"
-              onClick={() => {
-                setMoreOpen(false);
-                setRegisterOpen(true);
-              }}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-3 text-sm font-medium transition-colors"
+              onClick={resetSheet}
               style={{
-                borderColor: "rgba(47,64,58,0.3)",
-                color: FOREST,
-                background: "rgba(199,214,109,0.15)",
+                background: "transparent",
+                border: "none",
+                color: "#6B7280",
+                fontSize: 14,
+                cursor: "pointer",
+                padding: "12px 4px",
               }}
             >
-              <Plus className="h-4 w-4" />
-              산이 없나요? 직접 등록하기
+              초기화
+            </button>
+            <button
+              type="button"
+              onClick={apply}
+              style={{
+                flex: 1,
+                background: "#97C459",
+                color: "#FFFFFF",
+                fontSize: 14,
+                fontWeight: 500,
+                padding: 12,
+                borderRadius: 16,
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              적용
             </button>
           </div>
         </SheetContent>
       </Sheet>
-
-      {/* Hidden register modal, controlled */}
-      <RegisterMountainModal
-        hideTrigger
-        open={registerOpen}
-        onOpenChange={setRegisterOpen}
-      />
     </div>
   );
 }
