@@ -86,7 +86,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         className="fixed bottom-0 left-0 right-0 z-50"
         style={{
           background: "hsl(var(--color-background-primary))",
-          borderTop: "0.5px solid hsl(var(--color-border-tertiary))",
         }}
       >
         {/* FAB - center, lifted above bar */}
