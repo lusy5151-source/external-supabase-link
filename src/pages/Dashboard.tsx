@@ -345,7 +345,7 @@ const Dashboard = () => {
                 <Link to={`/plans/${upcomingPlan.id}`} className="block">
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="inline-block rounded-full bg-coral px-3 py-1 text-sm font-bold text-primary-foreground">{dDay}</span>
+                      <span className="inline-block rounded-full bg-coral px-3 py-1 text-sm font-bold text-white">{dDay}</span>
                       <h3 className="mt-2 text-lg font-bold text-foreground">{upcomingMountain.nameKo}</h3>
                       <p className="text-xs text-muted-foreground mt-1">
                         {new Date(upcomingPlan.planned_date).toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })}
