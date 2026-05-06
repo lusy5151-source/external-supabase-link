@@ -123,19 +123,25 @@ const MountainList = () => {
       const matchUserOnly = !showUserOnly || !!(m as any).isUserCreated;
       const matchKindUser = filters.kind !== "user" || !!(m as any).isUserCreated;
       const matchRegion = filters.region === "전체" || m.region === filters.region;
+      const matchKindCategory =
+        filters.kind === "national" ? !!m.is_national_park :
+        filters.kind === "bac100_blackyak" ? !!(m as any).is_bac100_blackyak :
+        filters.kind === "forestry100" ? !!m.is_bac100 :
+        true;
       return (
         matchSearch &&
         matchDifficulty &&
         matchStatus &&
         matchUserOnly &&
         matchKindUser &&
-        matchRegion
+        matchRegion &&
+        matchKindCategory
       );
     });
     filtered.sort((a: any, b: any) => {
       let cmp = 0;
       if (sortKey === "name") cmp = a.nameKo.localeCompare(b.nameKo, "ko");
-      else if (sortKey === "height") cmp = b.height - a.height; // 높이순: 높은 순
+      else if (sortKey === "height") cmp = b.height - a.height;
       else if (sortKey === "popularity") cmp = (b.popularity || 0) - (a.popularity || 0);
       return cmp;
     });
@@ -178,12 +184,7 @@ const MountainList = () => {
     });
   };
 
-  const getCurrentList = () => {
-    if (viewMode === "national") return nationalFiltered;
-    if (viewMode === "forestry100") return forestry100Filtered;
-    if (viewMode === "bac100") return bac100Filtered;
-    return allFiltered;
-  };
+  const getCurrentList = () => allFiltered;
   // Suppress unused-var TS warnings for legacy view branches
   void oreumFiltered; void regionGroups; void openRegions; void toggleRegion; void walkingPaths;
 
@@ -316,22 +317,41 @@ const MountainList = () => {
                   padding: 24,
                 }}
               >
-                <p style={{ fontSize: 14, color: "#6B7280" }}>검색 결과가 없어요</p>
-                <button
-                  type="button"
-                  onClick={() => window.dispatchEvent(new CustomEvent("open-register-mountain"))}
-                  style={{
-                    marginTop: 8,
-                    fontSize: 12,
-                    color: "#6B9E2F",
-                    fontWeight: 500,
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  + 산이 없나요? 직접 등록하기
-                </button>
+                <p style={{ fontSize: 14, color: "#6B7280" }}>
+                  {filters.kind !== "all" ? "선택한 조건의 산이 없어요" : "검색 결과가 없어요"}
+                </p>
+                {filters.kind !== "all" ? (
+                  <button
+                    type="button"
+                    onClick={() => setFilters({ ...filters, kind: "all" })}
+                    style={{
+                      marginTop: 8,
+                      fontSize: 12,
+                      color: "#639922",
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    다른 필터 시도해보기
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new CustomEvent("open-register-mountain"))}
+                    style={{
+                      marginTop: 8,
+                      fontSize: 12,
+                      color: "#6B9E2F",
+                      fontWeight: 500,
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    + 산이 없나요? 직접 등록하기
+                  </button>
+                )}
               </div>
             ) : (
               getCurrentList().map((m) => (
