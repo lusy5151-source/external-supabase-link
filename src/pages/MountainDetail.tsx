@@ -159,6 +159,8 @@ const MountainDetail = () => {
     } catch {}
   };
 
+  const imageCredit = (mountain as any).image_credit as string | null | undefined;
+
   return (
     <div className="mx-auto max-w-2xl">
       {/* Hero banner */}
@@ -170,18 +172,60 @@ const MountainDetail = () => {
           marginRight: 12,
           borderRadius: 18,
           overflow: "hidden",
-          background: "linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 60%, #4a7ba8 100%)",
+          background: heroImage
+            ? undefined
+            : "linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 60%, #4a7ba8 100%)",
+          backgroundImage: heroImage ? `url(${heroImage})` : undefined,
+          backgroundSize: heroImage ? "cover" : undefined,
+          backgroundPosition: heroImage ? "center" : undefined,
         }}
       >
+        {/* Photo overlay for text legibility */}
+        {heroImage && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 100%)",
+              pointerEvents: "none",
+            }}
+          />
+        )}
+
         {/* Mountain silhouette decoration */}
         <svg
           viewBox="0 0 380 100"
           preserveAspectRatio="none"
-          style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: 75, opacity: 0.5 }}
+          style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: 75, opacity: heroImage ? 0 : 0.5 }}
         >
           <path d="M0 100 L50 55 L95 75 L150 30 L195 60 L240 38 L290 65 L340 45 L380 55 L380 100 Z" fill="rgba(255,255,255,0.1)" />
           <path d="M0 100 L70 65 L120 45 L175 70 L225 50 L275 75 L325 55 L380 70 L380 100 Z" fill="rgba(255,255,255,0.16)" />
         </svg>
+
+        {/* Image credit */}
+        {heroImage && imageCredit && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: 8,
+              right: 10,
+              fontSize: 9,
+              color: "rgba(255,255,255,0.75)",
+              background: "rgba(0,0,0,0.35)",
+              padding: "2px 7px",
+              borderRadius: 4,
+              backdropFilter: "blur(4px)",
+              WebkitBackdropFilter: "blur(4px)",
+              zIndex: 2,
+              maxWidth: "70%",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {imageCredit}
+          </div>
+        )}
 
         {/* Top bar */}
         <div className="relative flex items-center justify-between" style={{ padding: "10px 12px", zIndex: 2 }}>
