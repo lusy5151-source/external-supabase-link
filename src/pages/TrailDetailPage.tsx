@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMountains } from "@/contexts/MountainsContext";
 import MountainMascot from "@/components/MountainMascot";
 import {
-  ArrowLeft, Route, Clock, MapPin, Ruler, TrendingUp, Star, Car, Bus,
-  ParkingCircle, Copy, Navigation, ExternalLink, Info, Lightbulb, Mountain,
+  ArrowLeft, ChevronLeft, Route, Clock, MapPin, Ruler, TrendingUp, Star, Car, Bus,
+  ParkingCircle, Copy, Navigation, ExternalLink, Info, Lightbulb, Mountain, Hexagon, ArrowUpRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
