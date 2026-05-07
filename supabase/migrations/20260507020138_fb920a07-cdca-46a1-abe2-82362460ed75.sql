@@ -1,0 +1,1 @@
+CREATE POLICY "Admins can update mountains" ON public.mountains FOR UPDATE TO authenticated USING (has_role(auth.uid(), 'admin')) WITH CHECK (has_role(auth.uid(), 'admin'));
