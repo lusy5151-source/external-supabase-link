@@ -237,12 +237,14 @@ export default function AdminMountainPhotosPage() {
       const publicUrl = urlData.publicUrl;
       const { credit, license } = computeCredit();
 
+      const positionStr = `${posX}% ${posY}%`;
       const { error: updErr } = await (supabase as any)
         .from("mountains")
         .update({
           image_url: publicUrl,
           image_credit: credit,
           image_license: license,
+          image_position: positionStr,
         })
         .eq("id", target.id);
       if (updErr) {
@@ -254,7 +256,7 @@ export default function AdminMountainPhotosPage() {
       setMountains((prev) =>
         prev.map((m) =>
           m.id === target.id
-            ? { ...m, image_url: publicUrl, image_credit: credit, image_license: license }
+            ? { ...m, image_url: publicUrl, image_credit: credit, image_license: license, image_position: positionStr }
             : m
         )
       );
