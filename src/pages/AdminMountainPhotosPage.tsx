@@ -192,6 +192,11 @@ export default function AdminMountainPhotosPage() {
       toast.error("사진을 선택해주세요");
       return;
     }
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error("로그인이 필요합니다");
+      return;
+    }
     setUploading(true);
     try {
       const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
