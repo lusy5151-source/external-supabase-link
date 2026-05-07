@@ -45,6 +45,7 @@ export function useMountainsData() {
         image_url: (row as any).image_url || null,
         image_credit: (row as any).image_credit || null,
         image_license: (row as any).image_license || null,
+        image_position: (row as any).image_position || null,
         trails: [],
       }));
     },
