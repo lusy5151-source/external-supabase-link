@@ -49,9 +49,20 @@ interface MountainRow {
   image_url: string | null;
   image_credit: string | null;
   image_license: string | null;
+  image_position: string | null;
   is_bac100: boolean | null;
   is_bac100_blackyak: boolean | null;
 }
+
+const parsePosition = (pos: string | null | undefined): { x: number; y: number } => {
+  if (!pos) return { x: 50, y: 50 };
+  const m = pos.match(/(-?\d+(?:\.\d+)?)\s*%\s+(-?\d+(?:\.\d+)?)\s*%/);
+  if (!m) return { x: 50, y: 50 };
+  return {
+    x: Math.min(100, Math.max(0, parseFloat(m[1]))),
+    y: Math.min(100, Math.max(0, parseFloat(m[2]))),
+  };
+};
 
 type CreditType = "self" | "public" | "other";
 
