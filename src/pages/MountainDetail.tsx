@@ -163,33 +163,85 @@ const MountainDetail = () => {
   };
 
   const imageCredit = (mountain as any).image_credit as string | null | undefined;
+  const imagePosition = ((mountain as any).image_position as string) || "50% 50%";
+
+  // Scroll-linked banner collapse
+  const BANNER_MAX = heroImage ? 220 : 150;
+  const BANNER_MIN = 80;
+  const COLLAPSE_RANGE = 120;
+  const [scrollY, setScrollY] = useState(0);
+  useEffect(() => {
+    let last = 0;
+    const onScroll = () => {
+      const now = Date.now();
+      if (now - last < 16) return;
+      last = now;
+      setScrollY(window.scrollY || window.pageYOffset || 0);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  const collapseRatio = Math.min(1, Math.max(0, scrollY / COLLAPSE_RANGE));
+  const bannerHeight = BANNER_MAX - collapseRatio * (BANNER_MAX - BANNER_MIN);
+  const sideMargin = 12 - collapseRatio * 12;
+  const bannerRadius = collapseRatio < 0.8 ? 18 - collapseRatio * 8 : 0;
+  const nameFontSize = 26 - collapseRatio * 8;
+  const nameBottom = 14 - collapseRatio * 14;
+  const nameLeft = 14 - collapseRatio * 14;
+  const nameTextAlign: "left" | "center" = collapseRatio > 0.6 ? "center" : "left";
+  const subtitleOpacity = Math.max(0, 1 - collapseRatio * 2);
+  const actionOpacity = Math.max(0, 1 - collapseRatio * 1.5);
+  const badgeOpacity = Math.max(0, 1 - collapseRatio * 2);
+  const overlayTop = 0.1 + collapseRatio * 0.3;
+  const overlayBottom = 0.5 + collapseRatio * 0.2;
 
   return (
     <div className="mx-auto max-w-2xl">
-      {/* Hero banner */}
+      {/* Hero banner — scroll-linked collapse */}
       <div
         className="relative"
         style={{
-          height: 150,
-          marginLeft: 12,
-          marginRight: 12,
-          borderRadius: 18,
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          height: bannerHeight,
+          marginLeft: sideMargin,
+          marginRight: sideMargin,
+          borderRadius: bannerRadius,
           overflow: "hidden",
+          marginBottom: 12,
+          transition: "border-radius 0.2s",
           background: heroImage
-            ? undefined
+            ? "#1e3a5f"
             : "linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 60%, #4a7ba8 100%)",
-          backgroundImage: heroImage ? `url(${heroImage})` : undefined,
-          backgroundSize: heroImage ? "cover" : undefined,
-          backgroundPosition: heroImage ? ((mountain as any).image_position || "50% 50%") : undefined,
         }}
       >
+        {/* Parallax photo layer */}
+        {heroImage && (
+          <img
+            src={heroImage}
+            alt={mountain.nameKo}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: BANNER_MAX,
+              objectFit: "cover",
+              objectPosition: imagePosition,
+              transform: `translateY(${scrollY * 0.4}px)`,
+              willChange: "transform",
+              pointerEvents: "none",
+            }}
+          />
+        )}
         {/* Photo overlay for text legibility */}
         {heroImage && (
           <div
             style={{
               position: "absolute",
               inset: 0,
-              background: "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 100%)",
+              background: `linear-gradient(to bottom, rgba(0,0,0,${overlayTop}) 0%, rgba(0,0,0,${overlayBottom}) 100%)`,
               pointerEvents: "none",
             }}
           />
@@ -240,7 +292,7 @@ const MountainDetail = () => {
           >
             <ChevronLeft className="h-4 w-4 text-white" />
           </button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" style={{ opacity: actionOpacity, pointerEvents: actionOpacity < 0.1 ? "none" : "auto" }}>
             <button
               onClick={toggleFavorite}
               aria-label="즐겨찾기"
@@ -261,11 +313,21 @@ const MountainDetail = () => {
         </div>
 
         {/* Bottom-left title */}
-        <div style={{ position: "absolute", bottom: 14, left: 14, zIndex: 2 }}>
-          <h1 style={{ fontSize: 26, fontWeight: 700, color: "#fff", lineHeight: 1.1, margin: 0 }}>
+        <div
+          style={{
+            position: "absolute",
+            bottom: nameBottom,
+            left: nameLeft,
+            right: nameLeft,
+            textAlign: nameTextAlign,
+            zIndex: 2,
+            padding: "0 4px",
+          }}
+        >
+          <h1 style={{ fontSize: nameFontSize, fontWeight: 700, color: "#fff", lineHeight: 1.1, margin: 0 }}>
             {mountain.nameKo}
           </h1>
-          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", marginTop: 3 }}>
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", marginTop: 3, opacity: subtitleOpacity }}>
             {[mountain.name, mountain.region].filter(Boolean).join(" · ")}
           </p>
         </div>
@@ -281,6 +343,8 @@ const MountainDetail = () => {
             gap: 4,
             alignItems: "flex-end",
             zIndex: 2,
+            opacity: badgeOpacity,
+            pointerEvents: badgeOpacity < 0.1 ? "none" : "auto",
           }}
         >
           {(() => {
