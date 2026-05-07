@@ -180,7 +180,7 @@ const MountainDetail = () => {
             : "linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 60%, #4a7ba8 100%)",
           backgroundImage: heroImage ? `url(${heroImage})` : undefined,
           backgroundSize: heroImage ? "cover" : undefined,
-          backgroundPosition: heroImage ? "center" : undefined,
+          backgroundPosition: heroImage ? ((mountain as any).image_position || "50% 50%") : undefined,
         }}
       >
         {/* Photo overlay for text legibility */}
