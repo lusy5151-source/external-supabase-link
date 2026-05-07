@@ -1,16 +1,14 @@
-import { useState, useRef, useEffect, useCallback, useMemo, Fragment } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useMountains } from "@/contexts/MountainsContext";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { mountains } from "@/data/mountains";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingPlans } from "@/hooks/useHikingPlans";
 import { useHikingGroups } from "@/hooks/useHikingGroups";
 import { useSummits, type Summit } from "@/hooks/useSummits";
-import { useChallenges } from "@/hooks/useChallenges";
 import { useOfflineClaims } from "@/hooks/useOfflineClaims";
+import { useStore } from "@/context/StoreContext";
 import { useToast } from "@/hooks/use-toast";
-import { toast as sonnerToast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import ChallengeCompletionModal, { CompletionInfo } from "@/components/ChallengeCompletionModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +24,7 @@ import {
   ArrowLeft, Search, Mountain, Flag, Camera, MapPin,
   Navigation, Loader2, Shield, Clock, Users, Wifi, WifiOff,
   CheckCircle2, Calendar, ChevronRight, AlertTriangle,
-  ImagePlus, ShieldCheck, ShieldX, Sparkles, ChevronDown, ChevronUp,
+  ImagePlus, ShieldCheck, ShieldX, Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -42,15 +40,12 @@ function dataURLtoFile(dataUrl: string, filename: string): File {
 }
 
 export default function SummitClaimPage() {
-  const navigate = useNavigate();
-  const { mountains } = useMountains();
   const { user } = useAuth();
   const { toast } = useToast();
   const { plans } = useHikingPlans();
   const { myGroups } = useHikingGroups();
   const { pendingClaims, addOfflineClaim, markSynced, removeOfflineClaim } = useOfflineClaims();
-  const { fetchAllChallenges, fetchUserChallenges } = useChallenges();
-  const [challengeCompletion, setChallengeCompletion] = useState<CompletionInfo | null>(null);
+  const { addCompletion, isCompleted } = useStore();
 
   // Steps: select-mountain → select-summit → upload-photo → review
   const [step, setStep] = useState<"select-mountain" | "select-summit" | "upload-photo" | "review">("select-mountain");
@@ -64,18 +59,13 @@ export default function SummitClaimPage() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [claiming, setClaiming] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [showDiaryPrompt, setShowDiaryPrompt] = useState(false);
-  const [claimedMountainName, setClaimedMountainName] = useState("");
-  const [claimedMountainId, setClaimedMountainId] = useState<number | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [aiVerification, setAiVerification] = useState<{
-    status: "idle" | "verifying" | "approved" | "rejected" | "error" | "blocked" | "cooldown";
+    status: "idle" | "verifying" | "approved" | "rejected" | "error";
     confidence: number;
     reason: string;
     elements: string[];
-    remaining?: number;
-    waitSeconds?: number;
   }>({ status: "idle", confidence: 0, reason: "", elements: [] });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -167,18 +157,13 @@ export default function SummitClaimPage() {
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const { compressImageToDataUrl, resizeImageForAI } = await import("@/lib/imageUpload");
+      const { compressImageToDataUrl } = await import("@/lib/imageUpload");
       const dataUrl = await compressImageToDataUrl(file, "summit");
       if (!dataUrl) return;
       setPhotoFile(file);
       setAiVerification({ status: "idle", confidence: 0, reason: "", elements: [] });
       setPhotoPreview(dataUrl);
-      try {
-        const aiDataUrl = await resizeImageForAI(file);
-        verifyPhotoWithAI(aiDataUrl);
-      } catch {
-        verifyPhotoWithAI(dataUrl);
-      }
+      verifyPhotoWithAI(dataUrl);
     }
   };
 
@@ -193,36 +178,13 @@ export default function SummitClaimPage() {
         },
       });
 
-      if (error) {
-        try {
-          const errBody = typeof error === 'object' && error.context ? await error.context.json?.() : null;
-          if (errBody?.blocked) {
-            setAiVerification({ status: "blocked", confidence: 0, reason: errBody.error, elements: [], remaining: 0 });
-            return;
-          }
-          if (errBody?.cooldown) {
-            setAiVerification({ status: "cooldown", confidence: 0, reason: errBody.error, elements: [], waitSeconds: errBody.wait_seconds, remaining: errBody.remaining });
-            return;
-          }
-        } catch {}
-        throw error;
-      }
-
-      if (data?.blocked) {
-        setAiVerification({ status: "blocked", confidence: 0, reason: data.error, elements: [], remaining: 0 });
-        return;
-      }
-      if (data?.cooldown) {
-        setAiVerification({ status: "cooldown", confidence: 0, reason: data.error, elements: [], waitSeconds: data.wait_seconds, remaining: data.remaining });
-        return;
-      }
+      if (error) throw error;
 
       setAiVerification({
         status: data.approved ? "approved" : "rejected",
         confidence: data.confidence || 0,
         reason: data.reason || "",
         elements: data.detected_elements || [],
-        remaining: data.remaining,
       });
     } catch (err) {
       console.error("AI verification error:", err);
@@ -257,12 +219,10 @@ export default function SummitClaimPage() {
         timestamp: new Date().toISOString(),
       });
       toast({ title: "📱 오프라인 저장 완료", description: "네트워크 연결 시 자동으로 업로드됩니다." });
-      setClaimedMountainName(selectedMountain.nameKo);
-      setClaimedMountainId(selectedMountain.id);
       setShowCelebration(true);
       setTimeout(() => {
         setShowCelebration(false);
-        setShowDiaryPrompt(true);
+        resetFlow();
       }, 3000);
       return;
     }
@@ -286,61 +246,19 @@ export default function SummitClaimPage() {
         latitude: selectedSummit.latitude,
         longitude: selectedSummit.longitude,
         elevation: selectedSummit.elevation,
-      } : undefined,
-      aiVerification.status === "approved" ? true : aiVerification.status === "rejected" ? false : null,
-      aiVerification.confidence || null
+      } : undefined
     );
     setClaiming(false);
 
     if (result.success) {
-      setClaimedMountainName(selectedMountain?.nameKo || "");
-      setClaimedMountainId(selectedMountain?.id ?? null);
-      setShowCelebration(true);
-
-      // Check challenge progress after summit claim
-      try {
-        const [allCh, userCh] = await Promise.all([fetchAllChallenges(), fetchUserChallenges()]);
-        const newlyCompleted = userCh.find(
-          (uc) => uc.completed && uc.completed_at && (Date.now() - new Date(uc.completed_at).getTime()) < 30000
-        );
-        if (newlyCompleted) {
-          const ch = allCh.find((c) => c.id === newlyCompleted.challenge_id);
-          if (ch) {
-            const key = (ch as any).category_group ?? ch.category ?? "other";
-            const ladder = allCh
-              .filter((x) => ((x as any).category_group ?? x.category) === key)
-              .sort((a, b) => a.level - b.level);
-            const next = ladder.find((x) => x.level === ch.level + 1);
-            setChallengeCompletion({
-              categoryLabel: ch.category ?? "챌린지",
-              completedLevel: ch.level,
-              completedTitle: ch.title,
-              nextLevel: next?.level ?? null,
-              nextTitle: next?.title ?? null,
-              nextGoalValue: next?.goal_value ?? null,
-              isFinalLevel: !next,
-              badge: (ch as any).badge ?? null,
-            });
-          }
-          sonnerToast.success(`정상 인증 완료! 챌린지 진행 중 🎯 ${newlyCompleted.progress}/${ch?.goal_value ?? "?"}`);
-        } else {
-          // Check if any active challenge was updated (progress increased)
-          const activeSummitCh = userCh.find(
-            (uc) => !uc.completed && uc.challenge && (uc.challenge as any).goal_type === "mountain"
-          );
-          if (activeSummitCh) {
-            sonnerToast.success(`정상 인증 완료! 챌린지 진행 중 🎯 ${activeSummitCh.progress}/${(activeSummitCh.challenge as any)?.goal_value ?? "?"}`);
-          } else {
-            sonnerToast.success("정상 인증 완료! 🚩");
-          }
-        }
-      } catch {
-        sonnerToast.success("정상 인증 완료! 🚩");
+      // Sync to localStorage store so MountainDetail & ProfilePage reflect the new completion
+      if (!isCompleted(selectedMountain.id)) {
+        addCompletion(selectedMountain.id);
       }
-
+      setShowCelebration(true);
       setTimeout(() => {
         setShowCelebration(false);
-        setShowDiaryPrompt(true);
+        resetFlow();
       }, 3000);
     } else {
       toast({ title: "인증 실패", description: result.error, variant: "destructive" });
@@ -367,7 +285,7 @@ export default function SummitClaimPage() {
 
       const { data: urlData } = supabase.storage.from("summit-photos").getPublicUrl(filePath);
 
-      const { error: insertError } = await (supabase as any)
+      const { error: insertError } = await supabase
         .from("summit_claims")
         .insert({
           user_id: user.id,
@@ -426,9 +344,6 @@ export default function SummitClaimPage() {
 
   return (
     <div className="mx-auto max-w-lg space-y-6 pb-28">
-      {/* Challenge completion modal */}
-      <ChallengeCompletionModal completion={challengeCompletion} onDismiss={() => setChallengeCompletion(null)} />
-
       {/* Celebration overlay */}
       {showCelebration && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm">
@@ -441,54 +356,6 @@ export default function SummitClaimPage() {
             <Badge className="mt-3 bg-primary/10 text-primary border-0 gap-1">
               <Flag className="h-3 w-3" /> Summit Claimed!
             </Badge>
-          </div>
-        </div>
-      )}
-
-      {/* Diary prompt bottom sheet */}
-      {showDiaryPrompt && (
-        <div className="fixed inset-0 z-[60] flex items-end justify-center" onClick={() => { setShowDiaryPrompt(false); resetFlow(); }}>
-          <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.4)" }} />
-          <div
-            className="relative w-full max-w-lg animate-in slide-in-from-bottom duration-300"
-            style={{
-              background: "hsl(var(--background))",
-              borderRadius: "20px 20px 0 0",
-              padding: "16px 20px 32px",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Handle bar */}
-            <div className="flex justify-center mb-4">
-              <div className="rounded-full" style={{ width: 40, height: 4, background: "hsl(var(--muted-foreground) / 0.3)" }} />
-            </div>
-
-            <h3 className="text-foreground" style={{ fontSize: 16, fontWeight: 500 }}>등산 기록도 남겨볼까요?</h3>
-            <p className="text-muted-foreground mt-1" style={{ fontSize: 13 }}>
-              오늘 {claimedMountainName || "산"} 등산을 기록해두세요
-            </p>
-
-            <div className="mt-5 space-y-2">
-              <button
-                onClick={() => {
-                  setShowDiaryPrompt(false);
-                  const today = new Date().toISOString().split("T")[0];
-                  navigate("/records", { state: { openJournalForm: true, prefillMountainId: claimedMountainId, prefillDate: today } });
-                  resetFlow();
-                }}
-                className="w-full rounded-xl text-white font-medium"
-                style={{ background: "hsl(var(--brand-forest))", height: 48, fontSize: 14 }}
-              >
-                기록 남기기
-              </button>
-              <button
-                onClick={() => { setShowDiaryPrompt(false); resetFlow(); }}
-                className="w-full rounded-xl text-muted-foreground font-medium"
-                style={{ background: "transparent", height: 44, fontSize: 14 }}
-              >
-                다음에 할게요
-              </button>
-            </div>
           </div>
         </div>
       )}
@@ -535,59 +402,25 @@ export default function SummitClaimPage() {
       </div>
 
       {/* Step indicator */}
-      {(() => {
-        const stepKeys = ["select-mountain", "select-summit", "upload-photo", "review"];
-        const stepLabels = ["산 선택", "정상 선택", "사진", "확인"];
-        const currentIdx = stepKeys.indexOf(step);
-        return (
-          <div className="flex items-center justify-between px-2">
-            {stepLabels.map((label, idx) => {
-              const isCompleted = idx < currentIdx;
-              const isActive = idx === currentIdx;
-              return (
-                <Fragment key={label}>
-                  <div className="flex flex-col items-center gap-1" style={{ minWidth: 36 }}>
-                    <div
-                      className="flex items-center justify-center rounded-full text-xs font-bold transition-colors"
-                      style={{
-                        width: 20,
-                        height: 20,
-                        fontSize: 10,
-                        ...(isCompleted
-                          ? { background: "hsl(var(--brand-lime))", color: "hsl(var(--brand-forest))" }
-                          : isActive
-                            ? { background: "hsl(var(--brand-forest))", color: "#fff" }
-                            : { background: "hsl(var(--secondary))", color: "hsl(var(--muted-foreground))" }),
-                      }}
-                    >
-                      {isCompleted ? "✓" : idx + 1}
-                    </div>
-                    <span
-                      style={{
-                        fontSize: 10,
-                        fontWeight: isActive ? 600 : 400,
-                        color: isCompleted ? "hsl(var(--brand-forest))" : isActive ? "hsl(var(--brand-forest))" : "hsl(var(--muted-foreground))",
-                      }}
-                    >
-                      {label}
-                    </span>
-                  </div>
-                  {idx < stepLabels.length - 1 && (
-                    <div
-                      className="flex-1 mx-1"
-                      style={{
-                        height: 2,
-                        marginBottom: 18,
-                        background: idx < currentIdx ? "hsl(var(--brand-lime))" : "hsl(var(--border))",
-                      }}
-                    />
-                  )}
-                </Fragment>
-              );
-            })}
-          </div>
-        );
-      })()}
+      <div className="flex items-center gap-2">
+        {["산 선택", "정상 선택", "사진", "확인"].map((label, idx) => {
+          const steps = ["select-mountain", "select-summit", "upload-photo", "review"];
+          const currentIdx = steps.indexOf(step);
+          const isActive = idx <= currentIdx;
+          return (
+            <div key={label} className="flex-1 flex flex-col items-center gap-1">
+              <div className={cn(
+                "h-1.5 w-full rounded-full transition-colors",
+                isActive ? "bg-primary" : "bg-muted"
+              )} />
+              <span className={cn(
+                "text-[10px] font-medium",
+                isActive ? "text-primary" : "text-muted-foreground"
+              )}>{label}</span>
+            </div>
+          );
+        })}
+      </div>
 
       {/* Pending offline claims */}
       {pendingClaims.length > 0 && (
@@ -744,26 +577,17 @@ export default function SummitClaimPage() {
       {/* STEP 3: Upload Photo + GPS */}
       {step === "upload-photo" && selectedSummit && (
         <div className="space-y-4">
-          {/* Photo guide card */}
-          <PhotoGuideCard />
-
           {/* Info card */}
           <div className="rounded-xl bg-muted/50 p-3 space-y-1.5">
             <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
               <Shield className="h-3.5 w-3.5" /> 인증 안내
             </div>
             <ul className="text-[11px] text-muted-foreground space-y-0.5 ml-5 list-disc">
+              <li>정상 사진 업로드 필수</li>
               <li>GPS는 선택사항 (보조 인증)</li>
               <li>같은 정상 12시간 쿨다운</li>
-              <li>AI 인증: 하루 최대 2회, 60초 간격</li>
               <li>오프라인에서도 저장 가능</li>
             </ul>
-            {aiVerification.remaining !== undefined && (
-              <div className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-primary">
-                <Sparkles className="h-3.5 w-3.5" />
-                오늘 남은 AI 인증 횟수: {aiVerification.remaining}회
-              </div>
-            )}
           </div>
 
           {/* GPS (optional) */}
@@ -891,51 +715,17 @@ export default function SummitClaimPage() {
                   </div>
                 )}
                 {aiVerification.status === "rejected" && (
-                  <div className="space-y-3">
-                    <div
-                      className="p-3.5 space-y-2"
-                      style={{
-                        background: "#FCEBEB",
-                        border: "0.5px solid #F09595",
-                        borderRadius: "var(--radius)",
-                      }}
-                    >
-                      <p style={{ fontSize: 14, fontWeight: 500, color: "#791F1F" }}>
-                        인증에 실패했어요
+                  <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <ShieldX className="h-4 w-4 text-destructive" />
+                      <p className="text-xs font-medium text-destructive">
+                        AI 검증 실패 (신뢰도 {aiVerification.confidence}%)
                       </p>
-                      <p style={{ fontSize: 12, color: "#A32D2D" }}>
-                        아래 이유 중 하나일 수 있어요
-                      </p>
-                      <ul className="space-y-0.5" style={{ fontSize: 12, color: "#A32D2D" }}>
-                        <li>· 정상석이 사진에 보이지 않아요</li>
-                        <li>· 사진이 너무 어둡거나 흐려요</li>
-                        <li>· 12시간이 지난 사진이에요</li>
-                      </ul>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        className="flex-1 flex items-center justify-center rounded-lg text-sm font-medium"
-                        style={{
-                          height: 44,
-                          border: "0.5px solid #A32D2D",
-                          color: "#A32D2D",
-                          background: "transparent",
-                        }}
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        다시 촬영하기
-                      </button>
-                      <button
-                        className="flex-1 flex items-center justify-center rounded-lg text-sm font-medium text-white"
-                        style={{
-                          height: 44,
-                          background: "hsl(var(--brand-forest))",
-                        }}
-                        onClick={handleGetLocation}
-                      >
-                        GPS로 인증하기
-                      </button>
-                    </div>
+                    <p className="text-[11px] text-destructive/80">{aiVerification.reason}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      다른 정상 사진을 선택하거나, 그래도 인증을 진행할 수 있습니다.
+                    </p>
                   </div>
                 )}
                 {aiVerification.status === "error" && (
@@ -944,31 +734,10 @@ export default function SummitClaimPage() {
                     <p className="text-[11px] text-muted-foreground">{aiVerification.reason}</p>
                   </div>
                 )}
-                {aiVerification.status === "blocked" && (
-                  <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <ShieldX className="h-4 w-4 text-destructive" />
-                      <p className="text-xs font-medium text-destructive">일일 AI 인증 횟수 초과</p>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">{aiVerification.reason}</p>
-                    <p className="text-[10px] text-muted-foreground">* AI 검증 없이도 인증 제출은 가능합니다</p>
-                  </div>
-                )}
-                {aiVerification.status === "cooldown" && (
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-900/10 dark:border-amber-800/30 p-3 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                      <p className="text-xs font-medium text-amber-700 dark:text-amber-400">잠시 후 다시 시도해주세요</p>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">{aiVerification.reason}</p>
-                  </div>
-                )}
               </div>
             ) : (
               <>
-                <p className="text-center" style={{ fontSize: 12, color: "hsl(var(--muted-foreground))" }}>
-                  정상 아래에서도 정상석 사진으로 AI 인증이 가능해요
-                </p>
+                <p className="text-[10px] text-muted-foreground mb-1">정상 도달을 인증하기 위해 현장 사진이 필요합니다. 사진은 인증 용도로만 사용됩니다.</p>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     variant="outline"
@@ -1081,47 +850,6 @@ export default function SummitClaimPage() {
             <Clock className="h-3 w-3" />
             같은 정상은 12시간 후 재인증 가능
           </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PhotoGuideCard() {
-  const [expanded, setExpanded] = useState(true);
-  const items = [
-    "정상석이 사진에 포함되어야 해요",
-    "사진이 선명하고 정상석 글자가 읽혀야 해요",
-    "촬영 후 12시간 이내 사진만 인증 가능해요",
-  ];
-  return (
-    <div
-      style={{ background: "hsl(var(--brand-lime))", borderRadius: "var(--radius)", padding: 12 }}
-    >
-      <button
-        className="flex items-center justify-between w-full"
-        onClick={() => setExpanded((v) => !v)}
-      >
-        <span style={{ fontSize: 13, fontWeight: 500, color: "hsl(var(--brand-forest))" }}>
-          어떤 사진이 인증되나요?
-        </span>
-        {expanded ? (
-          <ChevronUp className="h-4 w-4" style={{ color: "hsl(var(--brand-forest))" }} />
-        ) : (
-          <ChevronDown className="h-4 w-4" style={{ color: "hsl(var(--brand-forest))" }} />
-        )}
-      </button>
-      {expanded && (
-        <div className="mt-2 space-y-1">
-          {items.map((text) => (
-            <div key={text} className="flex items-start gap-2" style={{ lineHeight: 1.6 }}>
-              <span
-                className="shrink-0 mt-1 rounded-full"
-                style={{ width: 12, height: 12, background: "hsl(var(--brand-forest))" }}
-              />
-              <span style={{ fontSize: 12, color: "hsl(var(--brand-forest))" }}>{text}</span>
-            </div>
-          ))}
         </div>
       )}
     </div>
