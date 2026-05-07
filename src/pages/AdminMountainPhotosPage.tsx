@@ -222,7 +222,11 @@ export default function AdminMountainPhotosPage() {
           image_license: license,
         })
         .eq("id", target.id);
-      if (updErr) throw updErr;
+      if (updErr) {
+        console.error("[Admin Photo Upload] DB update failed:", updErr);
+        toast.error(`저장 실패: ${updErr.message}`);
+        return;
+      }
 
       setMountains((prev) =>
         prev.map((m) =>
