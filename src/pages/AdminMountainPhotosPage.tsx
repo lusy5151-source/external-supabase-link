@@ -90,6 +90,13 @@ export default function AdminMountainPhotosPage() {
   // Delete confirm
   const [deleteTarget, setDeleteTarget] = useState<MountainRow | null>(null);
 
+  // Position adjust
+  const [posX, setPosX] = useState(50);
+  const [posY, setPosY] = useState(50);
+  const [savingPos, setSavingPos] = useState(false);
+  const dragRef = useRef<HTMLDivElement>(null);
+  const [imgNatural, setImgNatural] = useState<{ w: number; h: number } | null>(null);
+
   const loadMountains = useCallback(async () => {
     setLoading(true);
     const { data, error } = await (supabase as any)
