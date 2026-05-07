@@ -292,7 +292,7 @@ const MountainDetail = () => {
           >
             <ChevronLeft className="h-4 w-4 text-white" />
           </button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" style={{ opacity: actionOpacity, pointerEvents: actionOpacity < 0.1 ? "none" : "auto" }}>
             <button
               onClick={toggleFavorite}
               aria-label="즐겨찾기"
@@ -313,11 +313,21 @@ const MountainDetail = () => {
         </div>
 
         {/* Bottom-left title */}
-        <div style={{ position: "absolute", bottom: 14, left: 14, zIndex: 2 }}>
-          <h1 style={{ fontSize: 26, fontWeight: 700, color: "#fff", lineHeight: 1.1, margin: 0 }}>
+        <div
+          style={{
+            position: "absolute",
+            bottom: nameBottom,
+            left: nameLeft,
+            right: nameLeft,
+            textAlign: nameTextAlign,
+            zIndex: 2,
+            padding: "0 4px",
+          }}
+        >
+          <h1 style={{ fontSize: nameFontSize, fontWeight: 700, color: "#fff", lineHeight: 1.1, margin: 0 }}>
             {mountain.nameKo}
           </h1>
-          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", marginTop: 3 }}>
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", marginTop: 3, opacity: subtitleOpacity }}>
             {[mountain.name, mountain.region].filter(Boolean).join(" · ")}
           </p>
         </div>
@@ -333,6 +343,8 @@ const MountainDetail = () => {
             gap: 4,
             alignItems: "flex-end",
             zIndex: 2,
+            opacity: badgeOpacity,
+            pointerEvents: badgeOpacity < 0.1 ? "none" : "auto",
           }}
         >
           {(() => {
