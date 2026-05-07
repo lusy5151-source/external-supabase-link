@@ -276,6 +276,39 @@ export default function AdminMountainPhotosPage() {
     }
   };
 
+  const savePosition = async () => {
+    if (!target) return;
+    const positionStr = `${Math.round(posX)}% ${Math.round(posY)}%`;
+    setSavingPos(true);
+    try {
+      const { error } = await (supabase as any)
+        .from("mountains")
+        .update({ image_position: positionStr })
+        .eq("id", target.id);
+      if (error) {
+        toast.error(`저장 실패: ${error.message}`);
+        return;
+      }
+      setMountains((prev) =>
+        prev.map((m) => (m.id === target.id ? { ...m, image_position: positionStr } : m))
+      );
+      setTarget((t) => (t ? { ...t, image_position: positionStr } : t));
+      toast.success("위치가 저장되었습니다");
+    } finally {
+      setSavingPos(false);
+    }
+  };
+
+  const handleFrameDrag = (clientX: number, clientY: number) => {
+    const el = dragRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = ((clientX - rect.left) / rect.width) * 100;
+    const y = ((clientY - rect.top) / rect.height) * 100;
+    setPosX(Math.min(100, Math.max(0, x)));
+    setPosY(Math.min(100, Math.max(0, y)));
+  };
+
   const handleDelete = async () => {
     if (!deleteTarget?.image_url) return;
     const m = deleteTarget;
