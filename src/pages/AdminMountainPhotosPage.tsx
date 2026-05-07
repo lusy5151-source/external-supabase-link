@@ -95,7 +95,7 @@ export default function AdminMountainPhotosPage() {
     const { data, error } = await (supabase as any)
       .from("mountains")
       .select(
-        "id, name_ko, name, region, height, image_url, image_credit, image_license, is_bac100, is_bac100_blackyak"
+        "id, name_ko, name, region, height, image_url, image_credit, image_license, image_position, is_bac100, is_bac100_blackyak"
       )
       .order("name_ko", { ascending: true })
       .limit(2000);
