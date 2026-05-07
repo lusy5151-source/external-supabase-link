@@ -165,11 +165,15 @@ export default function AdminMountainPhotosPage() {
     setCreditSource("");
     setCreditCustom("");
     setLicenseInput("");
+    setImgNatural(null);
   };
 
   const openUpload = (m: MountainRow) => {
     resetModal();
     setTarget(m);
+    const { x, y } = parsePosition(m.image_position);
+    setPosX(x);
+    setPosY(y);
     setModalOpen(true);
   };
 
@@ -186,6 +190,7 @@ export default function AdminMountainPhotosPage() {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setFile(f);
     setPreviewUrl(URL.createObjectURL(f));
+    setImgNatural(null);
   };
 
   const computeCredit = (): { credit: string | null; license: string | null } => {
