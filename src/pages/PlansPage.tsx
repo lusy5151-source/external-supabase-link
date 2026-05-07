@@ -89,7 +89,6 @@ function PlanCard({
     <div
       style={{
         background: "hsl(var(--card))",
-        border: "0.5px solid hsl(var(--border))",
         borderRadius: 12,
         padding: "12px 14px",
         marginBottom: 8,
@@ -172,7 +171,7 @@ function PlanCard({
               }}
               style={{
                 fontSize: 12,
-                border: "0.5px solid hsl(var(--brand-forest))",
+                border: "0.5px solid hsl(var(--brand-forest) / 0.15)",
                 color: "#3B6D11",
                 borderRadius: 20,
                 padding: "3px 10px",

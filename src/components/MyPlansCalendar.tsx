@@ -74,7 +74,6 @@ export function MyPlansCalendar({ plans, selectedDate, onSelectDate }: MyPlansCa
     <div
       style={{
         background: "hsl(var(--card))",
-        border: "0.5px solid hsl(var(--border))",
         borderRadius: 12,
         padding: 12,
       }}
