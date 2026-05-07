@@ -581,18 +581,175 @@ export default function AdminMountainPhotosPage() {
               />
             </div>
 
-            {previewUrl && (
-              <div>
-                <Label className="text-xs">미리보기</Label>
-                <div className="mt-1 aspect-video w-full rounded-lg overflow-hidden bg-muted">
-                  <img
-                    src={previewUrl}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
+            {(() => {
+              const activeSrc = previewUrl || target?.image_url || null;
+              if (!activeSrc) return null;
+              const positionStr = `${posX}% ${posY}%`;
+              // Banner is 100% width × 150px → aspect ratio. Compute frame size on natural image.
+              // We'll show original image at fixed height 220px; calc width from natural ratio.
+              const naturalRatio = imgNatural ? imgNatural.w / imgNatural.h : 16 / 9;
+              const origH = 220;
+              const origW = origH * naturalRatio;
+              // Banner aspect ≈ 380/150 ≈ 2.533 (use container actual ratio)
+              const bannerRatio = 380 / 150;
+              // Frame height in original-image coords (px) = how much of natural image fits the banner.
+              // background-size: cover semantics → image scales to cover. Frame represents the visible window.
+              // Compute frame size relative to original image render box:
+              let frameW: number, frameH: number;
+              if (naturalRatio > bannerRatio) {
+                // image wider than banner → full height shown, width cropped
+                frameH = origH;
+                frameW = origH * bannerRatio;
+              } else {
+                frameW = origW;
+                frameH = origW / bannerRatio;
+              }
+              const maxLeft = origW - frameW;
+              const maxTop = origH - frameH;
+              const frameLeft = (posX / 100) * maxLeft;
+              const frameTop = (posY / 100) * maxTop;
+
+              return (
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs">배너 미리보기</Label>
+                    <div
+                      className="mt-1 w-full overflow-hidden bg-muted"
+                      style={{
+                        height: 150,
+                        borderRadius: 12,
+                        backgroundImage: `url(${activeSrc})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: positionStr,
+                        backgroundRepeat: "no-repeat",
+                      }}
+                    />
+                  </div>
+
+                  {/* Presets */}
+                  <div className="flex gap-2">
+                    {[
+                      { label: "상단 중앙", x: 50, y: 15 },
+                      { label: "중앙", x: 50, y: 50 },
+                      { label: "하단 중앙", x: 50, y: 85 },
+                    ].map((p) => (
+                      <Button
+                        key={p.label}
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setPosX(p.x);
+                          setPosY(p.y);
+                        }}
+                      >
+                        {p.label}
+                      </Button>
+                    ))}
+                  </div>
+
+                  {/* Sliders */}
+                  <div className="space-y-2">
+                    <div>
+                      <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                        <span>← 왼쪽</span>
+                        <span>가로 위치 {Math.round(posX)}%</span>
+                        <span>오른쪽 →</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={posX}
+                        onChange={(e) => setPosX(Number(e.target.value))}
+                        className="w-full accent-[#c6d56c]"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                        <span>↑ 위</span>
+                        <span>세로 위치 {Math.round(posY)}%</span>
+                        <span>아래 ↓</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={posY}
+                        onChange={(e) => setPosY(Number(e.target.value))}
+                        className="w-full accent-[#c6d56c]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Original w/ draggable frame */}
+                  <div>
+                    <Label className="text-xs">원본 사진 (프레임 드래그)</Label>
+                    <div className="mt-1 flex justify-center bg-muted rounded-lg p-2">
+                      <div
+                        ref={dragRef}
+                        className="relative select-none"
+                        style={{
+                          width: origW,
+                          height: origH,
+                          backgroundImage: `url(${activeSrc})`,
+                          backgroundSize: "contain",
+                          backgroundRepeat: "no-repeat",
+                          backgroundPosition: "center",
+                        }}
+                        onPointerDown={(e) => {
+                          (e.target as HTMLElement).setPointerCapture(e.pointerId);
+                          handleFrameDrag(e.clientX, e.clientY);
+                        }}
+                        onPointerMove={(e) => {
+                          if (e.buttons === 1) handleFrameDrag(e.clientX, e.clientY);
+                        }}
+                      >
+                        <div className="absolute inset-0 bg-black/30 pointer-events-none" />
+                        <div
+                          className="absolute pointer-events-none border-2 border-white shadow-lg"
+                          style={{
+                            left: frameLeft,
+                            top: frameTop,
+                            width: frameW,
+                            height: frameH,
+                            background: "transparent",
+                            boxShadow: "0 0 0 9999px rgba(0,0,0,0.0)",
+                          }}
+                        />
+                      </div>
+                      <img
+                        src={activeSrc}
+                        alt=""
+                        style={{ display: "none" }}
+                        onLoad={(e) => {
+                          const t = e.currentTarget;
+                          setImgNatural({ w: t.naturalWidth, h: t.naturalHeight });
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Save position only (when editing existing photo without new file) */}
+                  {!file && target?.image_url && (
+                    <Button
+                      onClick={savePosition}
+                      disabled={savingPos}
+                      className="w-full"
+                      style={{ backgroundColor: "#c6d56c", color: "#1a1a1a" }}
+                    >
+                      {savingPos ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-1 animate-spin" /> 저장 중...
+                        </>
+                      ) : (
+                        "위치만 저장"
+                      )}
+                    </Button>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Credit */}
             <div className="space-y-2">
