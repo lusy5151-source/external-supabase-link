@@ -101,6 +101,16 @@ const MountainDetail = () => {
     });
   }, [createdBy]);
 
+  // Favorite (localStorage) — must run before any early return to keep hook order stable
+  const FAV_KEY = "wandeung.favorites";
+  const [isFavorite, setIsFavorite] = useState<boolean>(() => {
+    try {
+      const raw = localStorage.getItem(FAV_KEY);
+      const arr: number[] = raw ? JSON.parse(raw) : [];
+      return mountain ? arr.includes(mountain.id) : false;
+    } catch { return false; }
+  });
+
   if (!mountain) {
     return (
       <div className="py-20 text-center">
