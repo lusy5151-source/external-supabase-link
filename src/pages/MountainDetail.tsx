@@ -101,6 +101,16 @@ const MountainDetail = () => {
     });
   }, [createdBy]);
 
+  // Favorite (localStorage) — must run before any early return to keep hook order stable
+  const FAV_KEY = "wandeung.favorites";
+  const [isFavorite, setIsFavorite] = useState<boolean>(() => {
+    try {
+      const raw = localStorage.getItem(FAV_KEY);
+      const arr: number[] = raw ? JSON.parse(raw) : [];
+      return mountain ? arr.includes(mountain.id) : false;
+    } catch { return false; }
+  });
+
   if (!mountain) {
     return (
       <div className="py-20 text-center">
@@ -129,15 +139,8 @@ const MountainDetail = () => {
     ? `url(${heroImage}) center/cover no-repeat`
     : (gradientByDifficulty[mountain.difficulty] || gradientByDifficulty["보통"]);
 
-  // Favorite (localStorage)
-  const FAV_KEY = "wandeung.favorites";
-  const [isFavorite, setIsFavorite] = useState<boolean>(() => {
-    try {
-      const raw = localStorage.getItem(FAV_KEY);
-      const arr: number[] = raw ? JSON.parse(raw) : [];
-      return arr.includes(mountain.id);
-    } catch { return false; }
-  });
+  // Favorite state declared above
+
   const toggleFavorite = () => {
     try {
       const raw = localStorage.getItem(FAV_KEY);
