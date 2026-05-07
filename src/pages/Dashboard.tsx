@@ -487,7 +487,7 @@ const Dashboard = () => {
                   <Mountain className="h-7 w-7 text-muted-foreground/30 mb-2" />
                   <p className="text-[11px] text-muted-foreground mb-2 leading-snug">어떤 100대 명산을<br />추적할까요?</p>
                   <div className="flex flex-col gap-1.5 w-full">
-                    <button onClick={() => handleHundredTypeSelect("forestry_100")} className="rounded-full bg-coral px-3 py-1.5 text-[10px] font-semibold text-primary-foreground">산림청 100대</button>
+                    <button onClick={() => handleHundredTypeSelect("forestry_100")} className="rounded-full bg-coral px-3 py-1.5 text-[10px] font-semibold text-white">산림청 100대</button>
                     <button onClick={() => handleHundredTypeSelect("bac_100")} className="rounded-full bg-secondary px-3 py-1.5 text-[10px] font-semibold text-secondary-foreground">100대 명산</button>
                   </div>
                 </div>
