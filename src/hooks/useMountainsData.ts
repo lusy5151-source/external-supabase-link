@@ -8,7 +8,7 @@ import type { Mountain } from "@/data/mountains";
  */
 export function useMountainsData() {
   return useQuery<Mountain[]>({
-    queryKey: ["mountains-all", "v2-np"],
+    queryKey: ["mountains-all", "v3-img"],
     queryFn: async () => {
       // Select only columns actually used in the mapping below to minimize
       // payload size and shorten the critical request chain (LCP/perf).
