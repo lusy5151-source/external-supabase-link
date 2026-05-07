@@ -485,6 +485,22 @@ const AdminPage = () => {
             </Button>
           </div>
 
+          {/* 산 사진 관리 페이지 링크 */}
+          <div className="rounded-lg border-2 border-primary/40 bg-primary/5 p-4">
+            <p className="text-sm font-bold text-foreground">📷 산 사진 관리 (Wikipedia)</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              위키피디아 API로 산 대표 사진과 라이선스 정보를 수집·관리합니다.
+            </p>
+            <Button
+              variant="default"
+              size="sm"
+              className="mt-3"
+              onClick={() => navigate("/admin/photos")}
+            >
+              산 사진 관리 페이지 열기 →
+            </Button>
+          </div>
+
           {/* API 테스트 */}
           <div className="space-y-2">
             <p className="text-sm font-medium text-foreground">1. API 테스트</p>
