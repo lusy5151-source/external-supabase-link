@@ -192,6 +192,11 @@ export default function AdminMountainPhotosPage() {
       toast.error("사진을 선택해주세요");
       return;
     }
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error("로그인이 필요합니다");
+      return;
+    }
     setUploading(true);
     try {
       const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
@@ -217,7 +222,11 @@ export default function AdminMountainPhotosPage() {
           image_license: license,
         })
         .eq("id", target.id);
-      if (updErr) throw updErr;
+      if (updErr) {
+        console.error("[Admin Photo Upload] DB update failed:", updErr);
+        toast.error(`저장 실패: ${updErr.message}`);
+        return;
+      }
 
       setMountains((prev) =>
         prev.map((m) =>
