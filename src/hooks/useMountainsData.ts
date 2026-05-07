@@ -42,6 +42,9 @@ export function useMountainsData() {
         province: row.province || "",
         is_national_park: row.is_national_park || false,
         national_park_name: row.national_park_name || undefined,
+        image_url: (row as any).image_url || null,
+        image_credit: (row as any).image_credit || null,
+        image_license: (row as any).image_license || null,
         trails: [],
       }));
     },
