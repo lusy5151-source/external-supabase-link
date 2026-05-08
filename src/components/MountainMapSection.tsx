@@ -28,7 +28,10 @@ const MountainMapSection = () => {
   const markersRef = useRef<any[]>([]);
   const myLocationMarkerRef = useRef<any>(null);
   const navigate = useNavigate();
-  const { isCompleted, completedCount, getRecord } = useStore();
+  const { isCompleted: isCompletedLocal, completedCount: localCompletedCount, getRecord } = useStore();
+  const { claimedIds } = useSummitClaims();
+  const isCompleted = (id: number) => claimedIds.has(id) || isCompletedLocal(id);
+  const completedCount = Math.max(claimedIds.size, localCompletedCount);
   const { user } = useAuth();
   const { fetchSharedCompletions } = useSharedCompletions();
 
