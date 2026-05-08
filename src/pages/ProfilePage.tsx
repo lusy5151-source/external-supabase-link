@@ -9,13 +9,12 @@ import { useHikingJournals, type HikingJournal } from "@/hooks/useHikingJournals
 import { useFriends } from "@/hooks/useFriends";
 import { usePrivacySettings } from "@/hooks/usePrivacySettings";
 import { badges, BadgeCategory } from "@/data/badges";
-import { regions } from "@/data/mountains";
-import { useMountains } from "@/contexts/MountainsContext";
+import { mountains, regions } from "@/data/mountains";
 import { JournalCard, JournalGridCard } from "@/components/JournalCard";
 import { Link } from "react-router-dom";
 import {
   User, Trophy, Mountain, ChevronRight, Star, Camera, MapPin,
-  Settings, LogOut, Shield, Edit3, BookOpen, Users, Globe, Lock, Eye, Trash2, Flag,
+  Settings, LogOut, Shield, Edit3, BookOpen, Users, Heart, Globe, Lock, Eye, Trash2, Flag,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useMemo, useState, useRef, useEffect } from "react";
@@ -27,7 +26,6 @@ import { Separator } from "@/components/ui/separator";
 
 const HIKING_STYLES = [
   { id: "solo", label: "솔로 등산", emoji: "🧍" },
-  
   { id: "trekking", label: "트레킹", emoji: "🥾" },
   { id: "photography", label: "사진촬영", emoji: "📸" },
   { id: "summit", label: "정상 도전", emoji: "⛰️" },
@@ -35,7 +33,6 @@ const HIKING_STYLES = [
 ];
 
 const ProfilePage = () => {
-  const { mountains } = useMountains();
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const { records, completedCount, totalCompletions } = useStore();
@@ -61,7 +58,28 @@ const ProfilePage = () => {
   const [deletingAccount, setDeletingAccount] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const percentage = Math.round((completedCount / mountains.length) * 100);
+  // Fetch certified summit mountains from Supabase to sync with profile stats
+  const [certifiedMountainIds, setCertifiedMountainIds] = useState<number[]>([]);
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("summit_claims")
+      .select("mountain_id")
+      .eq("user_id", user.id)
+      .then(({ data }) => {
+        if (data) {
+          const ids = [...new Set((data as any[]).map((c) => c.mountain_id))] as number[];
+          setCertifiedMountainIds(ids);
+        }
+      });
+  }, [user?.id]);
+
+  // Merge localStorage completions with certified summit completions
+  const localMountainIds = new Set(records.map((r) => r.mountainId));
+  const mergedCompletedCount = new Set([...localMountainIds, ...certifiedMountainIds]).size;
+  const effectiveCompletedCount = Math.max(completedCount, mergedCompletedCount);
+
+  const percentage = Math.round((effectiveCompletedCount / mountains.length) * 100);
 
   useEffect(() => {
     if (user) {
@@ -87,7 +105,7 @@ const ProfilePage = () => {
   useEffect(() => {
     if (recentTaggedFriends.length === 0) return;
     supabase
-      .from("public_profiles")
+      .from("profiles")
       .select("user_id, nickname, avatar_url")
       .in("user_id", recentTaggedFriends)
       .then(({ data }) => {
@@ -277,7 +295,7 @@ const ProfilePage = () => {
           <p className="text-[9px] text-muted-foreground">등산 일지</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-3 text-center shadow-sm">
-          <p className="text-lg font-bold text-primary">{completedCount}</p>
+          <p className="text-lg font-bold text-primary">{effectiveCompletedCount}</p>
           <p className="text-[9px] text-muted-foreground">완등 산</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-3 text-center shadow-sm">
@@ -377,7 +395,7 @@ const ProfilePage = () => {
           <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold text-foreground">전체 진행률</h2>
-              <span className="text-xs text-muted-foreground">{completedCount} / {mountains.length}</span>
+              <span className="text-xs text-muted-foreground">{effectiveCompletedCount} / {mountains.length}</span>
             </div>
             <div className="h-3 w-full rounded-full bg-secondary overflow-hidden">
               <div
@@ -594,6 +612,24 @@ const ProfilePage = () => {
 
       {/* Actions */}
       <div className="space-y-2">
+        <Link
+          to="/feed"
+          className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card p-4 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-secondary/50"
+        >
+          <Heart className="h-4 w-4 text-primary" />
+          친구 피드 보기
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </Link>
+
+        <Link
+          to="/achievements"
+          className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card p-4 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-secondary/50"
+        >
+          <Trophy className="h-4 w-4 text-primary" />
+          전체 업적 보기
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </Link>
+
         {isAdmin && (
           <Link
             to="/admin/announcements"
@@ -700,7 +736,7 @@ const ProfilePage = () => {
               onClick={async () => {
                 setDeletingAccount(true);
                 try {
-                  const { error } = await (supabase as any).rpc('delete_user_account');
+                  const { error } = await supabase.rpc('delete_user_account' as any);
                   if (error) throw error;
                   await signOut();
                 } catch (err: any) {
