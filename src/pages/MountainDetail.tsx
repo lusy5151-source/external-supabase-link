@@ -1,5 +1,5 @@
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { useMountains } from "@/contexts/MountainsContext";
+import { useParams, Link } from "react-router-dom";
+import { mountains } from "@/data/mountains";
 import type { Mountain } from "@/data/mountains";
 import { useUserMountains, toMountain } from "@/hooks/useUserMountains";
 import { usePioneerBadges } from "@/hooks/usePioneerBadges";
@@ -8,25 +8,15 @@ import HikingShareCard from "@/components/HikingShareCard";
 import { useStore } from "@/context/StoreContext";
 import { SummitClaimSection } from "@/components/SummitClaimSection";
 import {
-  ArrowLeft, ChevronLeft, Heart, Share2, Mountain as MountainIcon, MapPin, TrendingUp, CheckCircle2, Circle, Calendar,
+  ArrowLeft, Mountain as MountainIcon, MapPin, TrendingUp, CheckCircle2, Circle, Calendar,
   Sun, Cloud, CloudRain, CloudSnow, CloudFog, CloudSun, ImagePlus, X, Users,
-  Clock, Route, Flag, Save, UserPlus, UserMinus, Globe, Lock, Upload, User, Check, Star,
+  Clock, Route, Flag, Save, UserPlus, UserMinus, Globe, Lock, Upload, User,
 } from "lucide-react";
-import { useSummits } from "@/hooks/useSummits";
 import { useState, useEffect, useRef } from "react";
 import type { WeatherCondition, CompletionRecord } from "@/hooks/useMountainStore";
 import { WeatherCard } from "@/components/WeatherCard";
 import { TrailInfoSection } from "@/components/TrailInfo";
-
-import { TrailRouteMap, ROUTE_COLORS } from "@/components/TrailRouteMap";
-import type { Trail } from "@/hooks/useTrails";
-import { ParkRestrictions } from "@/components/ParkRestrictions";
-import { MountainFacilities } from "@/components/MountainFacilities";
-import WalkingPathsSection from "@/components/WalkingPathsSection";
-import NationalParkCoursesSection from "@/components/NationalParkCoursesSection";
-import CourseList from "@/components/CourseList";
-import { useTrails as useTrailsForLegend } from "@/hooks/useTrails";
-
+import { NearbyPlaces } from "@/components/NearbyPlaces";
 import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingJournals } from "@/hooks/useHikingJournals";
@@ -35,7 +25,6 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { addRecentSearch } from "@/lib/recentSearches";
 
 const weatherOptions: { value: WeatherCondition; label: string; icon: any }[] = [
   { value: "맑음", label: "맑음", icon: Sun },
@@ -65,8 +54,6 @@ async function resizeImage(file: File): Promise<string> {
 
 const MountainDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { mountains } = useMountains();
   const { userMountains } = useUserMountains();
 
   // Try static mountains first, then user-created
@@ -74,9 +61,6 @@ const MountainDetail = () => {
   const staticMountain = mountains.find((m) => m.id === mountainId);
   const userMountainRow = !staticMountain ? userMountains.find((m) => m.mountain_id === mountainId) : null;
   const mountain = staticMountain || (userMountainRow ? toMountain(userMountainRow) : null);
-  useEffect(() => {
-    if (mountain) addRecentSearch({ id: mountain.id, name: mountain.nameKo });
-  }, [mountain?.id]);
   const isUserCreated = !!(mountain as any)?.isUserCreated;
   const createdBy = (mountain as any)?.createdBy as string | undefined;
 
@@ -86,30 +70,31 @@ const MountainDetail = () => {
     updateTaggedFriends, updateCourseInfo, updateDuration, updateDifficulty,
   } = useStore();
 
+  // Also fetch certified summit count from Supabase summit_claims
+  const [certifiedCount, setCertifiedCount] = useState(0);
+  useEffect(() => {
+    if (!mountain || !user) return;
+    supabase
+      .from("summit_claims")
+      .select("id", { count: "exact", head: true })
+      .eq("mountain_id", mountain.id)
+      .eq("user_id", user.id)
+      .then(({ count }) => {
+        if (count && count > 0) setCertifiedCount(count);
+      });
+  }, [mountain?.id, user?.id]);
+
   // Fetch creator profile for user-created mountains
   const [creatorName, setCreatorName] = useState<string | null>(null);
   const [showDuplicateReport, setShowDuplicateReport] = useState(false);
-  const [selectedTrail, setSelectedTrail] = useState<Trail | null>(null);
-  const [activeTab, setActiveTab] = useState<"개요" | "코스" | "날씨·복장" | "편의시설">("개요");
-  const [pendingTriggerSummitId, setPendingTriggerSummitId] = useState<string | null>(null);
   const { pioneerBadges } = usePioneerBadges(createdBy);
 
   useEffect(() => {
     if (!createdBy) return;
-    supabase.from("public_profiles").select("nickname").eq("user_id", createdBy).single().then(({ data }) => {
+    supabase.from("profiles").select("nickname").eq("user_id", createdBy).single().then(({ data }) => {
       setCreatorName(data?.nickname || "사용자");
     });
   }, [createdBy]);
-
-  // Favorite (localStorage) — must run before any early return to keep hook order stable
-  const FAV_KEY = "wandeung.favorites";
-  const [isFavorite, setIsFavorite] = useState<boolean>(() => {
-    try {
-      const raw = localStorage.getItem(FAV_KEY);
-      const arr: number[] = raw ? JSON.parse(raw) : [];
-      return mountain ? arr.includes(mountain.id) : false;
-    } catch { return false; }
-  });
 
   if (!mountain) {
     return (
@@ -122,683 +107,144 @@ const MountainDetail = () => {
     );
   }
 
-  const completed = isCompleted(mountain.id);
+  const completed = isCompleted(mountain.id) || certifiedCount > 0;
   const record = getRecord(mountain.id);
-  const completionCount = getCompletionCount(mountain.id);
-
-  const firstTrail = mountain.trails && mountain.trails.length > 0 ? mountain.trails[0] : undefined;
-  const heroImage = (mountain as any).image_url || (mountain as any).photo_url || null;
-
-  // Difficulty -> gradient fallback (uses brand tokens via CSS vars)
-  const gradientByDifficulty: Record<string, string> = {
-    "쉬움": "linear-gradient(135deg, hsl(var(--brand-lime)), hsl(var(--brand-sky)))",
-    "보통": "linear-gradient(135deg, hsl(var(--brand-sky)), hsl(var(--brand-navy)))",
-    "어려움": "linear-gradient(135deg, hsl(var(--brand-forest)), hsl(var(--brand-navy)))",
-  };
-  const heroBg = heroImage
-    ? `url(${heroImage}) center/cover no-repeat`
-    : (gradientByDifficulty[mountain.difficulty] || gradientByDifficulty["보통"]);
-
-  // Favorite state declared above
-
-  const toggleFavorite = () => {
-    try {
-      const raw = localStorage.getItem(FAV_KEY);
-      const arr: number[] = raw ? JSON.parse(raw) : [];
-      const next = arr.includes(mountain.id) ? arr.filter((x) => x !== mountain.id) : [...arr, mountain.id];
-      localStorage.setItem(FAV_KEY, JSON.stringify(next));
-      setIsFavorite(next.includes(mountain.id));
-    } catch {}
-  };
-  const handleShare = async () => {
-    const url = window.location.href;
-    const title = `${mountain.nameKo} · 완등`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title, url });
-      } else {
-        await navigator.clipboard.writeText(url);
-      }
-    } catch {}
-  };
-
-  const imageCredit = (mountain as any).image_credit as string | null | undefined;
-  const imagePosition = ((mountain as any).image_position as string) || "50% 50%";
-
-  // Scroll-linked banner collapse
-  const BANNER_MAX = heroImage ? 220 : 150;
-  const BANNER_MIN = 80;
-  const COLLAPSE_RANGE = 120;
-  const [scrollY, setScrollY] = useState(0);
-  useEffect(() => {
-    let last = 0;
-    const onScroll = () => {
-      const now = Date.now();
-      if (now - last < 16) return;
-      last = now;
-      setScrollY(window.scrollY || window.pageYOffset || 0);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-  const collapseRatio = Math.min(1, Math.max(0, scrollY / COLLAPSE_RANGE));
-  const bannerHeight = BANNER_MAX - collapseRatio * (BANNER_MAX - BANNER_MIN);
-  const sideMargin = 12 - collapseRatio * 12;
-  const bannerRadius = collapseRatio < 0.8 ? 18 - collapseRatio * 8 : 0;
-  const nameFontSize = 26 - collapseRatio * 8;
-  const nameBottom = 14 - collapseRatio * 14;
-  const nameLeft = 14 - collapseRatio * 14;
-  const nameTextAlign: "left" | "center" = collapseRatio > 0.6 ? "center" : "left";
-  const subtitleOpacity = Math.max(0, 1 - collapseRatio * 2);
-  const actionOpacity = Math.max(0, 1 - collapseRatio * 1.5);
-  const badgeOpacity = Math.max(0, 1 - collapseRatio * 2);
-  const overlayTop = 0.1 + collapseRatio * 0.3;
-  const overlayBottom = 0.5 + collapseRatio * 0.2;
+  const completionCount = Math.max(getCompletionCount(mountain.id), certifiedCount);
 
   return (
-    <div className="mx-auto max-w-2xl">
-      {/* Hero banner — scroll-linked collapse */}
-      <div
-        className="relative"
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-          height: bannerHeight,
-          marginLeft: sideMargin,
-          marginRight: sideMargin,
-          borderRadius: bannerRadius,
-          overflow: "hidden",
-          marginBottom: 12,
-          transition: "border-radius 0.2s",
-          background: heroImage
-            ? "#1e3a5f"
-            : "linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 60%, #4a7ba8 100%)",
-        }}
-      >
-        {/* Parallax photo layer */}
-        {heroImage && (
-          <img
-            src={heroImage}
-            alt={mountain.nameKo}
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: BANNER_MAX,
-              objectFit: "cover",
-              objectPosition: imagePosition,
-              transform: `translateY(${scrollY * 0.4}px)`,
-              willChange: "transform",
-              pointerEvents: "none",
-            }}
-          />
-        )}
-        {/* Photo overlay for text legibility */}
-        {heroImage && (
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: `linear-gradient(to bottom, rgba(0,0,0,${overlayTop}) 0%, rgba(0,0,0,${overlayBottom}) 100%)`,
-              pointerEvents: "none",
-            }}
-          />
-        )}
+    <div className="mx-auto max-w-2xl space-y-6">
+      <Link to="/mountains" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="h-4 w-4" />
+        산 목록
+      </Link>
 
-        {/* Mountain silhouette decoration */}
-        <svg
-          viewBox="0 0 380 100"
-          preserveAspectRatio="none"
-          style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: 75, opacity: heroImage ? 0 : 0.5 }}
-        >
-          <path d="M0 100 L50 55 L95 75 L150 30 L195 60 L240 38 L290 65 L340 45 L380 55 L380 100 Z" fill="rgba(255,255,255,0.1)" />
-          <path d="M0 100 L70 65 L120 45 L175 70 L225 50 L275 75 L325 55 L380 70 L380 100 Z" fill="rgba(255,255,255,0.16)" />
-        </svg>
-
-        {/* Image credit */}
-        {heroImage && imageCredit && (
-          <div
-            style={{
-              position: "absolute",
-              bottom: 8,
-              right: 10,
-              fontSize: 9,
-              color: "rgba(255,255,255,0.75)",
-              background: "rgba(0,0,0,0.35)",
-              padding: "2px 7px",
-              borderRadius: 4,
-              backdropFilter: "blur(4px)",
-              WebkitBackdropFilter: "blur(4px)",
-              zIndex: 2,
-              maxWidth: "70%",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-          >
-            {imageCredit}
+      {/* Header */}
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">{mountain.nameKo}</h1>
+            <p className="mt-0.5 text-sm text-muted-foreground">{mountain.name}</p>
           </div>
-        )}
-
-        {/* Top bar */}
-        <div className="relative flex items-center justify-between" style={{ padding: "10px 12px", zIndex: 2 }}>
-          <button
-            onClick={() => navigate(-1)}
-            aria-label="뒤로"
-            className="flex items-center justify-center rounded-full"
-            style={{ width: 30, height: 30, background: "rgba(0,0,0,0.35)" }}
-          >
-            <ChevronLeft className="h-4 w-4 text-white" />
-          </button>
-          <div className="flex items-center gap-2" style={{ opacity: actionOpacity, pointerEvents: actionOpacity < 0.1 ? "none" : "auto" }}>
-            <button
-              onClick={toggleFavorite}
-              aria-label="즐겨찾기"
-              className="flex items-center justify-center rounded-full"
-              style={{ width: 30, height: 30, background: "rgba(0,0,0,0.35)" }}
-            >
-              <Heart size={14} className="text-white" fill={isFavorite ? "#fff" : "none"} />
-            </button>
-            <button
-              onClick={handleShare}
-              aria-label="공유"
-              className="flex items-center justify-center rounded-full"
-              style={{ width: 30, height: 30, background: "rgba(0,0,0,0.35)" }}
-            >
-              <Share2 size={14} className="text-white" />
-            </button>
-          </div>
-        </div>
-
-        {/* Bottom-left title */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: nameBottom,
-            left: nameLeft,
-            right: nameLeft,
-            textAlign: nameTextAlign,
-            zIndex: 2,
-            padding: "0 4px",
-          }}
-        >
-          <h1 style={{ fontSize: nameFontSize, fontWeight: 700, color: "#fff", lineHeight: 1.1, margin: 0 }}>
-            {mountain.nameKo}
-          </h1>
-          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", marginTop: 3, opacity: subtitleOpacity }}>
-            {[mountain.name, mountain.region].filter(Boolean).join(" · ")}
-          </p>
-        </div>
-
-        {/* Bottom-right badges */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: 12,
-            right: 12,
-            display: "flex",
-            flexDirection: "column",
-            gap: 4,
-            alignItems: "flex-end",
-            zIndex: 2,
-            opacity: badgeOpacity,
-            pointerEvents: badgeOpacity < 0.1 ? "none" : "auto",
-          }}
-        >
-          {(() => {
-            const baseBadge: React.CSSProperties = {
-              background: "#fff",
-              fontSize: 10,
-              fontWeight: 500,
-              padding: "3px 9px",
-              borderRadius: 10,
-              whiteSpace: "nowrap",
-              boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
-              display: "inline-flex",
-              alignItems: "center",
-            };
-            return (
-              <>
-                {(mountain as any).is_bac100_blackyak && (
-                  <span style={{ ...baseBadge, color: "#633806", border: "0.5px solid #FAC775" }}>
-                    <Star size={10} fill="#FAC775" stroke="#FAC775" strokeWidth={1} style={{ marginRight: 4 }} />
-                    100대 명산
-                  </span>
-                )}
-                {mountain.is_bac100 && (
-                  <span style={{ ...baseBadge, color: "#173404", border: "0.5px solid #c6d56c" }}>
-                    산림청 100대 명산
-                  </span>
-                )}
-                {mountain.is_national_park && (
-                  <span style={{ ...baseBadge, color: "#04342C", border: "0.5px solid #9FE1CB" }}>
-                    {mountain.national_park_name || "국립공원"}
-                  </span>
-                )}
-              </>
-            );
-          })()}
-        </div>
-      </div>
-
-      {/* Stat card */}
-      {(() => {
-        const diffStyles: Record<string, { bg: string; fg: string }> = {
-          "쉬움": { bg: "#EAF3DE", fg: "#173404" },
-          "보통": { bg: "#FAEEDA", fg: "#412402" },
-          "어려움": { bg: "#FCEBEB", fg: "#501313" },
-        };
-        const ds = diffStyles[mountain.difficulty] || diffStyles["보통"];
-        const colCss: React.CSSProperties = {
-          textAlign: "center",
-          borderRight: "0.5px solid #f1efe8",
-        };
-        const lastColCss: React.CSSProperties = { textAlign: "center" };
-        const labelCss: React.CSSProperties = { fontSize: 10, color: "#888780", marginBottom: 2 };
-        const valNumCss: React.CSSProperties = { fontSize: 14, fontWeight: 700, color: "#173404" };
-        const iconStyle: React.CSSProperties = { display: "block", margin: "0 auto 3px" };
-        const duration = firstTrail?.duration;
-        return (
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 16,
-              padding: "12px 4px",
-              marginLeft: 12,
-              marginRight: 12,
-              marginTop: 10,
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: 0,
-            }}
-          >
-            <div style={colCss}>
-              <MountainIcon size={14} color="#888780" strokeWidth={2} style={iconStyle} />
-              <div style={labelCss}>높이</div>
-              <div style={valNumCss}>{mountain.height}m</div>
-            </div>
-            <div style={colCss}>
-              <TrendingUp size={14} color="#888780" strokeWidth={2} style={iconStyle} />
-              <div style={labelCss}>난이도</div>
-              <span
-                style={{
-                  display: "inline-block",
-                  background: ds.bg,
-                  color: ds.fg,
-                  fontSize: 11,
-                  fontWeight: 600,
-                  padding: "1px 8px",
-                  borderRadius: 6,
-                }}
-              >
-                {mountain.difficulty}
+          <div className="flex items-center gap-2">
+            {completed && (
+              <span className="rounded-full bg-primary px-2.5 py-1.5 text-xs font-bold text-foreground">
+                완등 {completionCount}회
               </span>
-            </div>
-            <div style={lastColCss}>
-              <Clock size={14} color="#888780" strokeWidth={2} style={iconStyle} />
-              <div style={labelCss}>소요</div>
-              {duration ? (
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#173404" }}>{duration}</div>
-              ) : (
-                <div style={{ fontSize: 11, color: "#aaa", fontStyle: "italic" }}>정보 없음</div>
-              )}
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Tab bar */}
-      <div
-        style={{
-          background: "#f7faf2",
-          border: "0.5px solid #e3efcc",
-          borderRadius: 14,
-          padding: 3,
-          margin: "12px 12px",
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 2,
-        }}
-      >
-        {(["개요", "코스", "날씨·복장", "편의시설"] as const).map((tab) => {
-          const isActive = activeTab === tab;
-          const label = tab === "날씨·복장" ? "날씨" : tab;
-          return (
+            )}
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              style={{
-                padding: "7px 4px",
-                textAlign: "center",
-                fontSize: 11,
-                cursor: "pointer",
-                transition: "all 0.2s",
-                background: isActive ? "#c6d56c" : "transparent",
-                borderRadius: isActive ? 11 : 0,
-                color: isActive ? "#173404" : "#666",
-                fontWeight: isActive ? 600 : 400,
-              }}
+              onClick={() => completed ? addCompletion(mountain.id) : toggleComplete(mountain.id)}
+              className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                completed
+                  ? "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                  : "bg-primary/10 text-primary hover:bg-primary/20"
+              }`}
             >
-              {label}
+              {completed ? (
+                <><TrendingUp className="h-4 w-4" /> 재등반</>
+              ) : (
+                <><Circle className="h-4 w-4" /> 완등 기록</>
+              )}
             </button>
-          );
-        })}
-      </div>
+          </div>
+        </div>
 
-      <div className="overflow-hidden mt-6">
-        <div
-          className="flex"
-          style={{
-            width: "400%",
-            transform: `translateX(-${["개요", "코스", "날씨·복장", "편의시설"].indexOf(activeTab) * 25}%)`,
-            transition: "transform 200ms ease-out",
-          }}
-        >
-          {/* 개요 */}
-          <div className="space-y-4" style={{ width: "25%", flexShrink: 0, paddingRight: 8 }}>
-            {isUserCreated && creatorName && (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <User className="h-3.5 w-3.5" />
-                <span>등록자: {creatorName}</span>
-                {pioneerBadges.some((p) => p.mountainId === mountainId) && (
-                  <span title="개척자">🗺️</span>
-                )}
-              </div>
-            )}
-            {isUserCreated && (
-              <div>
-                <button
-                  onClick={() => setShowDuplicateReport(true)}
-                  className="text-xs text-muted-foreground hover:text-destructive transition-colors underline underline-offset-2"
-                >
-                  이 산은 이미 목록에 있어요
-                </button>
-              </div>
-            )}
-            {isUserCreated && (
-              <DuplicateReportModal
-                reportedMountainId={mountainId}
-                open={showDuplicateReport}
-                onOpenChange={setShowDuplicateReport}
-              />
-            )}
+        <div className="mt-5 grid grid-cols-3 gap-4">
+          <InfoItem icon={MountainIcon} label="높이" value={`${mountain.height}m`} />
+          <InfoItem icon={MapPin} label="지역" value={mountain.region} />
+          <InfoItem icon={TrendingUp} label="난이도" value={mountain.difficulty} />
+        </div>
 
-            {/* Block 1: 산 소개 */}
-            <OverviewIntroBlock text={mountain.overview || mountain.description || ""} />
+        <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{mountain.description}</p>
 
-            {/* Block 2: 정상 정복 */}
-            <OverviewSummitsBlock
-              mountainId={mountain.id}
-              mountainName={mountain.nameKo}
-              onTriggerSummit={setPendingTriggerSummitId}
-            />
-
-            {/* Block 3: 위치 */}
-            <OverviewLocationBlock mountain={mountain} />
-
-            {/* Hidden claim handler — opens dialog when a peak is tapped above */}
-            <SummitClaimSection
-              mountainId={mountain.id}
-              mountainName={mountain.nameKo}
-              hideList
-              triggerSummitId={pendingTriggerSummitId}
-              onTriggerHandled={() => setPendingTriggerSummitId(null)}
-            />
-
-            {isUserCreated && pioneerBadges.some((p) => p.mountainId === mountainId) && (
-              <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">🗺️</span>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">이 산의 개척자</p>
-                    <p className="text-xs text-muted-foreground">{creatorName} 🗺️</p>
-                  </div>
-                </div>
-              </div>
-            )}
-            {completed && record && (
-              <JournalSection
-                record={record}
-                mountainId={mountain.id}
-                mountainName={mountain.nameKo}
-                mountainTrails={mountain.trails}
-                updateNotes={updateNotes}
-                updateDate={updateDate}
-                updateWeather={updateWeather}
-                addPhotos={addPhotos}
-                removePhoto={removePhoto}
-                updateTaggedFriends={updateTaggedFriends}
-                updateCourseInfo={updateCourseInfo}
-                updateDuration={updateDuration}
-                updateDifficulty={updateDifficulty}
-              />
-            )}
-            {completed && record && (
-              <div className="space-y-3">
-                <h2 className="text-lg font-bold text-foreground">📤 공유 카드</h2>
-                <HikingShareCard
-                  mountain={mountain}
-                  record={record}
-                  photoUrl={record.photos && record.photos.length > 0 ? record.photos[0] : undefined}
-                />
-              </div>
+        {isUserCreated && creatorName && (
+          <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <User className="h-3.5 w-3.5" />
+            <span>등록자: {creatorName}</span>
+            {pioneerBadges.some((p) => p.mountainId === mountainId) && (
+              <span title="개척자">🗺️</span>
             )}
           </div>
+        )}
 
-          {/* 코스 */}
-          <div className="space-y-4" style={{ width: "25%", flexShrink: 0, paddingRight: 8 }}>
-            <CourseList
-              mountainId={mountain.id}
-              isNationalPark={mountain.is_national_park}
-              onSelectTrail={setSelectedTrail}
-            />
-            <div style={{ height: 200 }} className="overflow-hidden rounded-[12px]">
-              <TrailRouteMap
-                mountainName={mountain.nameKo}
-                mountainId={mountain.id}
-                lat={mountain.lat}
-                lng={mountain.lng}
-                selectedTrail={selectedTrail}
-              />
+        {isUserCreated && (
+          <div className="mt-3">
+            <button
+              onClick={() => setShowDuplicateReport(true)}
+              className="text-xs text-muted-foreground hover:text-destructive transition-colors underline underline-offset-2"
+            >
+              이 산은 이미 목록에 있어요
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Pioneer badge display for user-created mountains */}
+      {isUserCreated && pioneerBadges.some((p) => p.mountainId === mountainId) && (
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🗺️</span>
+            <div>
+              <p className="text-sm font-medium text-foreground">이 산의 개척자</p>
+              <p className="text-xs text-muted-foreground">{creatorName} 🗺️</p>
             </div>
-            
-            <WalkingPathsSection mountainId={mountain.id} />
-          </div>
-
-          {/* 날씨·복장 */}
-          <div className="space-y-6" style={{ width: "25%", flexShrink: 0, paddingRight: 8 }}>
-            <WeatherCard mountainId={mountain.id} />
-          </div>
-
-          {/* 편의시설 */}
-          <div className="space-y-6" style={{ width: "25%", flexShrink: 0, paddingRight: 8 }}>
-            <ParkRestrictions mountainId={mountain.id} />
-            <MountainFacilities mountainId={mountain.id} />
           </div>
         </div>
-      </div>
-    </div>
-  );
-};
-
-const sectionCardStyle: React.CSSProperties = {
-  background: "#fff",
-  borderRadius: 16,
-  padding: 12,
-  margin: "0 12px 8px",
-};
-const sectionTitleStyle: React.CSSProperties = {
-  fontSize: 12,
-  fontWeight: 600,
-  color: "#173404",
-  marginBottom: 8,
-  borderLeft: "2.5px solid #c6d56c",
-  paddingLeft: 8,
-};
-const sectionBodyStyle: React.CSSProperties = {
-  fontSize: 12,
-  color: "#444",
-  lineHeight: 1.6,
-};
-
-function OverviewIntroBlock({ text }: { text: string }) {
-  const [expanded, setExpanded] = useState(false);
-  if (!text) return null;
-  return (
-    <div style={sectionCardStyle}>
-      <div style={sectionTitleStyle}>산 소개</div>
-      <p
-        style={{
-          ...sectionBodyStyle,
-          display: expanded ? "block" : "-webkit-box",
-          WebkitLineClamp: expanded ? "unset" : 4,
-          WebkitBoxOrient: "vertical",
-          overflow: "hidden",
-        }}
-      >
-        {text}
-      </p>
-      {text.length > 120 && (
-        <button
-          onClick={() => setExpanded((v) => !v)}
-          style={{ marginTop: 4, fontSize: 12, color: "#639922", fontWeight: 500 }}
-        >
-          {expanded ? "접기" : "더 보기"}
-        </button>
       )}
-    </div>
-  );
-}
 
-function OverviewSummitsBlock({
-  mountainId,
-  mountainName,
-  onTriggerSummit,
-}: {
-  mountainId: number;
-  mountainName: string;
-  onTriggerSummit: (id: string) => void;
-}) {
-  const { summits, claims, loading } = useSummits(mountainId);
-  const { user } = useAuth();
-  const myClaimedIds = new Set(
-    (claims || []).filter((c) => user && c.user_id === user.id).map((c) => c.summit_id)
-  );
+      {/* Duplicate Report Modal */}
+      {isUserCreated && (
+        <DuplicateReportModal
+          reportedMountainId={mountainId}
+          open={showDuplicateReport}
+          onOpenChange={setShowDuplicateReport}
+        />
+      )}
 
-  const list = summits && summits.length > 0
-    ? summits
-    : [{ id: `fallback-${mountainId}`, mountain_id: mountainId, summit_name: `${mountainName} 정상`, latitude: 0, longitude: 0, elevation: 0 }];
+      {/* Summit Claim */}
+      <SummitClaimSection mountainId={mountain.id} mountainName={mountain.nameKo} />
 
-  const completedCount = list.filter((s) => myClaimedIds.has(s.id)).length;
+      {/* Trail info */}
+      <TrailInfoSection mountainId={mountain.id} fallbackTrails={mountain.trails} />
 
-  return (
-    <div style={sectionCardStyle}>
-      <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
-        <div style={sectionTitleStyle}>정상 정복</div>
-        <span style={{ fontSize: 11, color: "#666" }}>
-          {completedCount} / {list.length}
-        </span>
-      </div>
-      {loading ? (
-        <p style={{ ...sectionBodyStyle, color: "#888" }}>불러오는 중…</p>
-      ) : (
-        <div>
-          {list.map((s, idx) => {
-            const checked = myClaimedIds.has(s.id);
-            const isLast = idx === list.length - 1;
-            return (
-              <button
-                key={s.id}
-                onClick={() => onTriggerSummit(s.id)}
-                className="w-full flex items-center text-left"
-                style={{
-                  padding: "8px 4px",
-                  gap: 10,
-                  borderBottom: isLast ? "none" : "0.5px solid #f1efe8",
-                }}
-              >
-                <span
-                  className="flex items-center justify-center shrink-0"
-                  style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: 999,
-                    background: checked ? "#c6d56c" : "transparent",
-                    border: checked ? "none" : "1.5px solid #c6d56c",
-                  }}
-                >
-                  {checked && <Check style={{ width: 11, height: 11, strokeWidth: 3, color: "#173404" }} />}
-                </span>
-                <span style={{ fontSize: 12, flex: 1, color: "#173404" }}>
-                  {s.summit_name}
-                </span>
-                {s.elevation > 0 && (
-                  <span style={{ fontSize: 11, color: "#666" }}>
-                    {s.elevation.toLocaleString()}m
-                  </span>
-                )}
-              </button>
-            );
-          })}
+      {/* Weather & outfit */}
+      <WeatherCard mountainId={mountain.id} />
+
+      {/* Nearby places */}
+      <NearbyPlaces lat={mountain.lat} lng={mountain.lng} mountainName={mountain.nameKo} />
+
+      {/* Hiking Journal */}
+      {completed && record && (
+        <JournalSection
+          record={record}
+          mountainId={mountain.id}
+          mountainName={mountain.nameKo}
+          mountainTrails={mountain.trails}
+          updateNotes={updateNotes}
+          updateDate={updateDate}
+          updateWeather={updateWeather}
+          addPhotos={addPhotos}
+          removePhoto={removePhoto}
+          updateTaggedFriends={updateTaggedFriends}
+          updateCourseInfo={updateCourseInfo}
+          updateDuration={updateDuration}
+          updateDifficulty={updateDifficulty}
+        />
+      )}
+
+      {/* Share Card */}
+      {completed && record && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-bold text-foreground">📤 공유 카드</h2>
+          <HikingShareCard
+            mountain={mountain}
+            record={record}
+            photoUrl={record.photos && record.photos.length > 0 ? record.photos[0] : undefined}
+          />
         </div>
       )}
     </div>
   );
-}
-
-function OverviewLocationBlock({ mountain }: { mountain: Mountain }) {
-  const address = [mountain.province, mountain.address].filter(Boolean).join(" ");
-  const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(mountain.nameKo)}`;
-  return (
-    <div style={sectionCardStyle}>
-      <div style={sectionTitleStyle}>위치</div>
-      {address && (
-        <p style={{ ...sectionBodyStyle, marginBottom: 8 }}>{address}</p>
-      )}
-      <a
-        href={naverUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block relative overflow-hidden"
-        style={{
-          height: 90,
-          borderRadius: 10,
-          background: "linear-gradient(180deg, #d5e8c8 0%, #c8d8b9 100%)",
-        }}
-        aria-label="네이버 지도에서 보기"
-      >
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span
-            style={{
-              background: "#639922",
-              color: "#fff",
-              padding: "4px 10px",
-              borderRadius: 12,
-              fontSize: 11,
-              fontWeight: 500,
-            }}
-          >
-            {mountain.nameKo}
-          </span>
-        </div>
-      </a>
-    </div>
-  );
-}
-
-function StatCell({ label, value, divider }: { label: string; value: string; divider?: boolean }) {
-  return (
-    <div
-      className="flex flex-col items-center justify-center"
-      style={divider ? { borderLeft: "0.5px solid hsl(var(--border) / 0.12)" } : undefined}
-    >
-      <p className="text-muted-foreground" style={{ fontSize: 11 }}>{label}</p>
-      <p className="text-foreground" style={{ fontSize: 14, fontWeight: 500, marginTop: 2 }}>{value}</p>
-    </div>
-  );
-}
+};
 
 function InfoItem({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
   return (
@@ -872,7 +318,7 @@ function JournalSection({
   useEffect(() => {
     if (taggedFriends.length === 0) return;
     supabase
-      .from("public_profiles")
+      .from("profiles")
       .select("user_id, nickname, avatar_url")
       .in("user_id", taggedFriends)
       .then(({ data }) => {
