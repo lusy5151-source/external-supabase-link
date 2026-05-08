@@ -113,7 +113,6 @@ export function JournalCard({ journal, showAuthor = true, onRefresh }: JournalCa
       className="overflow-hidden mb-2.5"
       style={{
         background: "hsl(var(--card))",
-        border: "0.5px solid hsl(var(--border))",
         borderRadius: "var(--radius)",
       }}
     >
@@ -334,7 +333,7 @@ export function JournalGridCard({ journal, onClick }: { journal: HikingJournal; 
   return (
     <button
       onClick={onClick}
-      className="text-left rounded-xl border border-border bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+      className="text-left rounded-xl bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow"
     >
       <div className="aspect-square bg-secondary/30 relative">
         {photo ? (
