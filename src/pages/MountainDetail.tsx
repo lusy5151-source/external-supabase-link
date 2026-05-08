@@ -54,7 +54,6 @@ async function resizeImage(file: File): Promise<string> {
 
 const MountainDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
   const { userMountains } = useUserMountains();
 
   // Try static mountains first, then user-created
@@ -70,6 +69,8 @@ const MountainDetail = () => {
     updateNotes, updateDate, updateWeather, addPhotos, removePhoto,
     updateTaggedFriends, updateCourseInfo, updateDuration, updateDifficulty,
   } = useStore();
+
+  const { user } = useAuth();
 
   // Also fetch certified summit count from Supabase summit_claims
   const [certifiedCount, setCertifiedCount] = useState(0);
