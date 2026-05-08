@@ -131,111 +131,153 @@ const MountainDetail = () => {
     return "bg-amber-500";
   };
 
+  const imageUrl = (mountain as any).image_url as string | null;
+  const isBlackyak = (mountain as any).is_bac100_blackyak;
+  const isBac100 = (mountain as any).is_bac100;
+  const isNP = (mountain as any).is_national_park;
+  const npName = (mountain as any).national_park_name;
+  const address = (mountain as any).address;
+
+  const diffStyle =
+    mountain.difficulty === "쉬움" ? { background: "#EAF3DE", color: "#173404" } :
+    mountain.difficulty === "어려움" ? { background: "#FCEBEB", color: "#501313" } :
+    { background: "#FAEEDA", color: "#412402" };
+
+  const bannerHeight = imageUrl ? 220 : 150;
+
   return (
-    <div className="flex flex-col min-h-screen pb-24">
+    <div className="flex flex-col min-h-screen pb-24" style={{ background: "#e6ede0" }}>
 
-      {/* ── 헤더 ── */}
-      <div className="relative h-56 flex flex-col justify-end overflow-hidden" style={{ background: "linear-gradient(160deg, #013F92 0%, #2F403A 100%)" }}>
-        {mountain.image_url && (
-          <img src={mountain.image_url} alt={mountain.nameKo} className="absolute inset-0 h-full w-full object-cover opacity-40" />
+      {/* ── 배너 ── */}
+      <div
+        style={{
+          margin: "12px 12px 0",
+          height: bannerHeight,
+          borderRadius: 18,
+          position: "relative",
+          overflow: "hidden",
+          background: "linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 60%, #4a7ba8 100%)",
+        }}
+      >
+        {imageUrl && (
+          <img
+            src={imageUrl}
+            alt={mountain.nameKo}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.55 }}
+          />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+        {!imageUrl && (
+          <svg viewBox="0 0 380 100" preserveAspectRatio="none"
+               style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: 75, opacity: 0.5 }}>
+            <path d="M0 100 L50 55 L95 75 L150 30 L195 60 L240 38 L290 65 L340 45 L380 55 L380 100 Z"
+                  fill="rgba(255,255,255,0.1)"/>
+            <path d="M0 100 L70 65 L120 45 L175 70 L225 50 L275 75 L325 55 L380 70 L380 100 Z"
+                  fill="rgba(255,255,255,0.16)"/>
+          </svg>
+        )}
 
-        {/* 상단 버튼 */}
-        <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
-          <Link to="/mountains" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white">
-            <ArrowLeft className="h-5 w-5" />
+        {/* 상단 버튼 줄 */}
+        <div style={{ position: "absolute", top: 10, left: 10, right: 10, display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 2 }}>
+          <Link to="/mountains"
+                style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}>
+            <ArrowLeft size={16} />
           </Link>
-          <div className="flex items-center gap-2">
-            {completed && (
-              <button
-                onClick={() => addCompletion(mountain.id)}
-                className="flex items-center gap-1.5 rounded-full bg-primary/90 px-3 py-1.5 text-xs font-bold text-foreground backdrop-blur-sm"
-              >
-                재등반
-              </button>
-            )}
-            {!completed && (
-              <button
-                onClick={() => toggleComplete(mountain.id)}
-                className="flex items-center gap-1.5 rounded-full bg-white/20 backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-white"
-              >
-                완등 기록
-              </button>
-            )}
+          <div style={{ display: "flex", gap: 6 }}>
+            <button
+              aria-label="좋아요"
+              style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", border: "none" }}
+            >
+              <Heart size={15} />
+            </button>
+            <button
+              aria-label="공유"
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({ title: mountain.nameKo, url: window.location.href }).catch(() => {});
+                }
+              }}
+              style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", border: "none" }}
+            >
+              <Share2 size={15} />
+            </button>
           </div>
         </div>
 
-        {/* 산 이름 + 완등 뱃지 */}
-        <div className="relative z-10 px-5 pb-4">
-          <div className="flex items-end justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-white">{mountain.nameKo}</h1>
-              <p className="mt-0.5 text-sm text-white/70">{mountain.name} · {mountain.region}</p>
-            </div>
-            {completed && (
-              <div className="flex flex-col items-end gap-1">
-                <span className="rounded-full bg-primary/90 px-2.5 py-1 text-xs font-bold text-foreground">
-                  완등 {completionCount}회
-                </span>
-              </div>
-            )}
-          </div>
+        {/* 산 이름 */}
+        <div style={{ position: "absolute", bottom: 14, left: 14, zIndex: 2 }}>
+          <h1 style={{ fontSize: 26, fontWeight: 700, color: "white", margin: 0 }}>{mountain.nameKo}</h1>
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", marginTop: 3, margin: 0 }}>
+            {mountain.name}{mountain.region ? ` · ${mountain.region}` : ""}
+          </p>
+        </div>
 
-          {/* 뱃지 */}
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {(mountain as any).is_bac100 && (
-              <span className="rounded-full bg-amber-400/90 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900">⭐ 100대 명산</span>
-            )}
-            {(mountain as any).is_bac100_blackyak && (
-              <span className="rounded-full bg-white/20 backdrop-blur-sm px-2.5 py-0.5 text-[11px] font-medium text-white">신림청 100대 명산</span>
-            )}
-            {(mountain as any).is_national_park && (mountain as any).national_park_name && (
-              <span className="rounded-full bg-white/20 backdrop-blur-sm px-2.5 py-0.5 text-[11px] font-medium text-white">{(mountain as any).national_park_name}</span>
-            )}
-            {isUserCreated && (
-              <span className="rounded-full bg-white/20 backdrop-blur-sm px-2.5 py-0.5 text-[11px] font-medium text-white">🗺️ 사용자 등록</span>
-            )}
-          </div>
+        {/* 배지 */}
+        <div style={{ position: "absolute", bottom: 12, right: 12, display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end", zIndex: 2 }}>
+          {isBlackyak && (
+            <span style={{ background: "white", color: "#633806", border: "0.5px solid #FAC775", fontSize: 10, fontWeight: 500, padding: "3px 9px", borderRadius: 10, whiteSpace: "nowrap", boxShadow: "0 2px 6px rgba(0,0,0,0.12)" }}>
+              100대 명산
+            </span>
+          )}
+          {isBac100 && (
+            <span style={{ background: "white", color: "#173404", border: "0.5px solid #c6d56c", fontSize: 10, fontWeight: 500, padding: "3px 9px", borderRadius: 10, whiteSpace: "nowrap", boxShadow: "0 2px 6px rgba(0,0,0,0.12)" }}>
+              산림청 100대 명산
+            </span>
+          )}
+          {isNP && npName && (
+            <span style={{ background: "white", color: "#04342C", border: "0.5px solid #9FE1CB", fontSize: 10, fontWeight: 500, padding: "3px 9px", borderRadius: 10, whiteSpace: "nowrap", boxShadow: "0 2px 6px rgba(0,0,0,0.12)" }}>
+              {npName}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* ── 스탯 바 ── */}
-      <div className="flex items-stretch bg-card border-b border-border">
-        {[
-          { label: "높이", value: `${mountain.height}m` },
-          { label: "난이도", value: mountain.difficulty, badge: true },
-          { label: "소요", value: "정보 없음" },
-        ].map((item, i) => (
-          <div key={i} className={cn("flex-1 flex flex-col items-center justify-center py-3 gap-0.5", i > 0 && "border-l border-border")}>
-            <span className="text-[11px] text-muted-foreground">{item.label}</span>
-            {item.badge ? (
-              <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold text-white", getDifficultyColor(item.value))}>
-                {item.value}
-              </span>
-            ) : (
-              <span className="text-sm font-bold text-foreground">{item.value}</span>
-            )}
+      {/* ── 정보 카드 (높이/난이도/소요) ── */}
+      <div style={{ background: "white", borderRadius: 16, margin: "10px 12px 8px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", padding: "12px 4px" }}>
+        <div style={{ textAlign: "center", borderRight: "0.5px solid #f1efe8" }}>
+          <MountainIcon size={14} color="#888780" strokeWidth={2} style={{ display: "inline-block" }} />
+          <div style={{ fontSize: 10, color: "#888780", marginTop: 2 }}>높이</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#173404", marginTop: 2 }}>{mountain.height}m</div>
+        </div>
+        <div style={{ textAlign: "center", borderRight: "0.5px solid #f1efe8" }}>
+          <TrendingUp size={14} color="#888780" strokeWidth={2} style={{ display: "inline-block" }} />
+          <div style={{ fontSize: 10, color: "#888780", marginTop: 2 }}>난이도</div>
+          <div style={{ marginTop: 2 }}>
+            <span style={{ ...diffStyle, fontSize: 11, fontWeight: 600, padding: "1px 8px", borderRadius: 6, display: "inline-block" }}>
+              {mountain.difficulty}
+            </span>
           </div>
-        ))}
+        </div>
+        <div style={{ textAlign: "center" }}>
+          <Clock size={14} color="#888780" strokeWidth={2} style={{ display: "inline-block" }} />
+          <div style={{ fontSize: 10, color: "#888780", marginTop: 2 }}>소요</div>
+          <div style={{ fontSize: 11, color: "#aaa", fontStyle: "italic", marginTop: 2 }}>정보 없음</div>
+        </div>
       </div>
 
-      {/* ── 탭 네비게이션 ── */}
-      <div className="sticky top-0 z-10 flex bg-card border-b border-border">
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={cn(
-              "flex-1 py-3 text-sm font-medium transition-colors",
-              activeTab === tab
-                ? "text-primary border-b-2 border-primary"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {tab}
-          </button>
-        ))}
+      {/* ── 탭바 (알약형) ── */}
+      <div style={{ background: "#f7faf2", border: "0.5px solid #e3efcc", borderRadius: 14, padding: 3, margin: "12px 12px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2 }}>
+        {tabs.map((tab) => {
+          const active = activeTab === tab;
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                padding: "7px 4px",
+                textAlign: "center",
+                fontSize: 11,
+                cursor: "pointer",
+                background: active ? "#c6d56c" : "transparent",
+                borderRadius: active ? 11 : 0,
+                color: active ? "#173404" : "#666",
+                fontWeight: active ? 600 : 400,
+                border: "none",
+              }}
+            >
+              {tab}
+            </button>
+          );
+        })}
       </div>
 
       {/* ── 탭 콘텐츠 ── */}
@@ -243,83 +285,90 @@ const MountainDetail = () => {
 
         {/* 개요 탭 */}
         {activeTab === "개요" && (
-          <div className="space-y-4 p-4">
-
+          <>
             {/* 산 소개 */}
-            <div className="rounded-2xl border border-border bg-card p-5">
-              <h2 className="mb-2 text-sm font-semibold text-foreground flex items-center gap-1.5">
-                <span className="h-4 w-1 rounded-full bg-primary inline-block" />
+            <div style={{ background: "white", borderRadius: 16, padding: 12, margin: "0 12px 8px" }}>
+              <h2 style={{ fontSize: 12, fontWeight: 600, color: "#173404", borderLeft: "2.5px solid #c6d56c", paddingLeft: 8, marginBottom: 8 }}>
                 산 소개
               </h2>
-              <p className="text-sm leading-relaxed text-muted-foreground">
+              <p style={{ fontSize: 12, color: "#444", lineHeight: 1.6, margin: 0 }}>
                 {(mountain as any).overview || mountain.description || "소개 정보가 없습니다."}
               </p>
             </div>
 
             {/* 정상 정복 */}
-            <SummitClaimSection mountainId={mountain.id} mountainName={mountain.nameKo} />
+            <div style={{ background: "white", borderRadius: 16, padding: 12, margin: "0 12px 8px" }}>
+              <SummitClaimSection mountainId={mountain.id} mountainName={mountain.nameKo} />
+            </div>
 
             {/* 위치 */}
-            {(mountain as any).address && (
-              <div className="rounded-2xl border border-border bg-card p-5">
-                <h2 className="mb-2 text-sm font-semibold text-foreground flex items-center gap-1.5">
-                  <span className="h-4 w-1 rounded-full bg-primary inline-block" />
+            {address && (
+              <div style={{ background: "white", borderRadius: 16, padding: 12, margin: "0 12px 8px" }}>
+                <h2 style={{ fontSize: 12, fontWeight: 600, color: "#173404", borderLeft: "2.5px solid #c6d56c", paddingLeft: 8, marginBottom: 8 }}>
                   위치
                 </h2>
-                <p className="text-sm text-muted-foreground mb-3">{(mountain as any).address}</p>
+                <p style={{ fontSize: 11, color: "#666", marginBottom: 8 }}>{address}</p>
                 <button
                   onClick={() => window.open(`https://map.kakao.com/?q=${encodeURIComponent(mountain.nameKo)}`, "_blank")}
-                  className="w-full rounded-xl bg-[#FEE500] py-2.5 text-sm font-semibold text-[#3C1E1E] flex items-center justify-center gap-2"
+                  style={{
+                    width: "100%",
+                    height: 90,
+                    borderRadius: 10,
+                    background: "linear-gradient(180deg, #d5e8c8 0%, #c8d8b9 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
                 >
-                  <MapPin className="h-4 w-4" />
-                  {mountain.nameKo}
+                  <span style={{ background: "#639922", color: "white", padding: "4px 10px", borderRadius: 12, fontSize: 11, fontWeight: 500 }}>
+                    {mountain.nameKo}
+                  </span>
                 </button>
               </div>
             )}
 
             {/* 등산 일지 (완등 기록 있을 때만) */}
             {completed && record && (
-              <JournalSection
-                record={record}
-                mountainId={mountain.id}
-                mountainName={mountain.nameKo}
-                mountainTrails={mountain.trails}
-                updateNotes={updateNotes}
-                updateDate={updateDate}
-                updateWeather={updateWeather}
-                addPhotos={addPhotos}
-                removePhoto={removePhoto}
-                updateTaggedFriends={updateTaggedFriends}
-                updateCourseInfo={updateCourseInfo}
-                updateDuration={updateDuration}
-                updateDifficulty={updateDifficulty}
-              />
+              <div style={{ margin: "0 12px 8px" }}>
+                <JournalSection
+                  record={record}
+                  mountainId={mountain.id}
+                  mountainName={mountain.nameKo}
+                  mountainTrails={mountain.trails}
+                  updateNotes={updateNotes}
+                  updateDate={updateDate}
+                  updateWeather={updateWeather}
+                  addPhotos={addPhotos}
+                  removePhoto={removePhoto}
+                  updateTaggedFriends={updateTaggedFriends}
+                  updateCourseInfo={updateCourseInfo}
+                  updateDuration={updateDuration}
+                  updateDifficulty={updateDifficulty}
+                />
+              </div>
             )}
 
             {/* 공유 카드 */}
             {completed && record && (
-              <div className="space-y-3">
-                <h2 className="text-base font-bold text-foreground px-1">📤 공유 카드</h2>
-                <HikingShareCard
-                  mountain={mountain}
-                  record={record}
-                  photoUrl={record.photos?.[0]}
-                />
+              <div style={{ margin: "0 12px 8px" }}>
+                <HikingShareCard mountain={mountain} record={record} photoUrl={record.photos?.[0]} />
               </div>
             )}
 
             {/* 사용자 등록 산 관련 */}
             {isUserCreated && creatorName && (
-              <div className="rounded-2xl border border-border bg-card p-4 flex items-center gap-2 text-xs text-muted-foreground">
-                <User className="h-3.5 w-3.5" />
+              <div style={{ background: "white", borderRadius: 16, padding: 12, margin: "0 12px 8px", display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "#666" }}>
+                <User size={14} />
                 <span>등록자: {creatorName}</span>
               </div>
             )}
             {isUserCreated && (
-              <>
+              <div style={{ margin: "0 12px 8px" }}>
                 <button
                   onClick={() => setShowDuplicateReport(true)}
-                  className="w-full text-xs text-muted-foreground hover:text-destructive text-center underline underline-offset-2"
+                  style={{ width: "100%", fontSize: 11, color: "#888", textAlign: "center", textDecoration: "underline", background: "transparent", border: "none", cursor: "pointer" }}
                 >
                   이 산은 이미 목록에 있어요
                 </button>
@@ -328,28 +377,28 @@ const MountainDetail = () => {
                   open={showDuplicateReport}
                   onOpenChange={setShowDuplicateReport}
                 />
-              </>
+              </div>
             )}
-          </div>
+          </>
         )}
 
         {/* 코스 탭 */}
         {activeTab === "코스" && (
-          <div className="p-4">
+          <div style={{ margin: "0 12px" }}>
             <TrailInfoSection mountainId={mountain.id} fallbackTrails={mountain.trails} />
           </div>
         )}
 
         {/* 날씨 탭 */}
         {activeTab === "날씨" && (
-          <div className="p-4">
+          <div style={{ margin: "0 12px" }}>
             <WeatherCard mountainId={mountain.id} />
           </div>
         )}
 
         {/* 편의시설 탭 */}
         {activeTab === "편의시설" && (
-          <div className="p-4">
+          <div style={{ margin: "0 12px" }}>
             <NearbyPlaces lat={mountain.lat} lng={mountain.lng} mountainName={mountain.nameKo} />
           </div>
         )}
