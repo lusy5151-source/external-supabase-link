@@ -55,7 +55,14 @@ const MapView = () => {
   const safemapLayerRef = useRef<any>(null);
   const navigate = useNavigate();
   const { mountains } = useMountains();
-  const { isCompleted, completedCount } = useStore();
+  const { isCompleted: isCompletedLocal, completedCount: localCompletedCount } = useStore();
+  const { claimedIds } = useSummitClaims();
+  const isCompleted = (id: number) => claimedIds.has(id) || isCompletedLocal(id);
+  const completedCount = (() => {
+    const ids = new Set<number>(claimedIds);
+    // include local records by iterating mountains and checking
+    return Math.max(ids.size, localCompletedCount);
+  })();
   const { user } = useAuth();
   const { fetchSharedCompletions } = useSharedCompletions();
   const [sharedMountains, setSharedMountains] = useState<Set<number>>(new Set());
