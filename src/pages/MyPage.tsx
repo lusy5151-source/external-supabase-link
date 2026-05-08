@@ -38,7 +38,14 @@ const menuItems = [
 
 const MyPage = () => {
   const { user, signOut } = useAuth();
-  const { records, completedCount } = useStore();
+  const { records, completedCount: localCompletedCount } = useStore();
+  const { claimedIds } = useSummitClaims();
+  // Merge localStorage records + Supabase summit claims (정상 인증)
+  const completedCount = (() => {
+    const ids = new Set<number>(claimedIds);
+    records.forEach((r) => ids.add(r.mountainId));
+    return ids.size || localCompletedCount;
+  })();
   const { profile } = useProfile();
   const { friends } = useFriends();
   const { items: gearItems } = useGearStore();
