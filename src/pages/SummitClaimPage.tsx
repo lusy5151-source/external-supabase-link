@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { mountains } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingPlans } from "@/hooks/useHikingPlans";
 import { useHikingGroups } from "@/hooks/useHikingGroups";
@@ -46,6 +46,7 @@ export default function SummitClaimPage() {
   const { myGroups } = useHikingGroups();
   const { pendingClaims, addOfflineClaim, markSynced, removeOfflineClaim } = useOfflineClaims();
   const { addCompletion, isCompleted } = useStore();
+  const { mountains } = useMountains();
 
   // Steps: select-mountain → select-summit → upload-photo → review
   const [step, setStep] = useState<"select-mountain" | "select-summit" | "upload-photo" | "review">("select-mountain");

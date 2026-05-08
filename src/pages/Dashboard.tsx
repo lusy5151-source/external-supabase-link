@@ -2,7 +2,6 @@ import { useStore } from "@/context/StoreContext";
 import PasswordSetupBanner from "@/components/PasswordSetupBanner";
 import { GuestSignupBanner } from "@/components/GuestSignupBanner";
 import { useMountains } from "@/contexts/MountainsContext";
-import { baekduMountains } from "@/data/mountains";
 import { demoJournals, demoSummitClaims, demoKingOfDay, demoActivityFeed, demoProgress, type DemoJournal } from "@/data/demoFeed";
 import { badges } from "@/data/badges";
 import { useWeather } from "@/hooks/useWeather";
@@ -91,6 +90,7 @@ const Dashboard = () => {
   const hundredPercent = Math.min(Math.round((hundredCompleted / hundredTotal) * 100), 100);
   const hundredLabel = activeHundredType === "forestry_100" ? "산림청 100대 명산" : "100대 명산";
 
+  const baekduMountains = useMemo(() => mountains.filter((m) => m.is_baekdu), [mountains]);
   const baekduCount = baekduMountains.length;
   const baekduCompleted = isDemo ? demoProgress.baekduCompleted : baekduMountains.filter((m) => isCompleted(m.id)).length;
   const displayCompletedCount = isDemo ? demoProgress.completedCount : completedCount;

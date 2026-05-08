@@ -9,7 +9,8 @@ import { useHikingJournals, type HikingJournal } from "@/hooks/useHikingJournals
 import { useFriends } from "@/hooks/useFriends";
 import { usePrivacySettings } from "@/hooks/usePrivacySettings";
 import { badges, BadgeCategory } from "@/data/badges";
-import { mountains, regions } from "@/data/mountains";
+import { regions } from "@/data/mountains";
+import { useMountains } from "@/contexts/MountainsContext";
 import { JournalCard, JournalGridCard } from "@/components/JournalCard";
 import { Link } from "react-router-dom";
 import {
@@ -45,6 +46,7 @@ const ProfilePage = () => {
   const { friends } = useFriends();
   const { toast } = useToast();
   const { settings: privacySettings, updateSettings: updatePrivacy, isPrivateAccount } = usePrivacySettings();
+  const { mountains } = useMountains();
 
   const [editing, setEditing] = useState(false);
   const [nickname, setNickname] = useState("");
