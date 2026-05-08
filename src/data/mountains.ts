@@ -11,13 +11,26 @@ export interface Mountain {
   nameKo: string;
   height: number;
   region: string;
-  difficulty: "쉬움" | "보통" | "어려움";
+  difficulty: "쉬움" | "보통" | "어려움" | string;
   description: string;
   lat: number;
   lng: number;
   is_baekdu: boolean;
   popularity?: number; // 1-5 scale
   trails?: TrailInfo[];
+  // Optional fields populated from Supabase `mountains` table
+  is_bac100?: boolean;
+  is_bac100_blackyak?: boolean;
+  bac100_label?: string;
+  overview?: string;
+  address?: string;
+  province?: string;
+  is_national_park?: boolean;
+  national_park_name?: string;
+  image_url?: string | null;
+  image_credit?: string | null;
+  image_license?: string | null;
+  image_position?: string | null;
 }
 
 export const regions = [
