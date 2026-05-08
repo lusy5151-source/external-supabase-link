@@ -57,7 +57,7 @@ async function resizeImage(file: File): Promise<string> {
 const MountainDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { userMountains } = useUserMountains();
-  const { getMountain, loading: mountainsLoading } = useMountains();
+  const { getMountain, isLoading: mountainsLoading } = useMountains();
 
   const mountainId = Number(id);
   const dbMountain = getMountain(mountainId);
