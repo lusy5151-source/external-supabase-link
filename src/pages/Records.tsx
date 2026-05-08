@@ -162,7 +162,7 @@ function LoadingSkeleton() {
 
 function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
-    <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
+    <div className="rounded-2xl bg-card p-12 text-center">
       <MountainMascot size={90} mood="waving" className="mx-auto" />
       <p className="mt-4 text-muted-foreground">아직 등산 기록이 없습니다</p>
       <Button variant="outline" size="sm" className="mt-3 rounded-xl" onClick={onAdd}>기록 작성하기</Button>
