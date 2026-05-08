@@ -30,7 +30,7 @@ const RecordsHub = () => {
   return (
     <div className="pb-24">
       {/* Underline segment tabs */}
-      <div className="flex border-b" style={{ borderColor: "hsl(var(--border))" }}>
+      <div className="flex" style={{ borderColor: "hsl(var(--border))" }}>
         {segments.map(({ key, label }) => (
           <button
             key={key}
