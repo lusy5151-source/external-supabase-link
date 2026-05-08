@@ -182,7 +182,7 @@ function DemoRecordsView() {
         {demoJournals.map((j) => {
           const mt = mountains.find((m) => m.id === j.mountain_id);
           return (
-            <div key={j.id} className="rounded-2xl bg-card border border-border p-4 shadow-sm">
+            <div key={j.id} className="rounded-2xl bg-card p-4 shadow-sm">
               {j.photos.length > 0 && <img src={j.photos[0]} alt="" className="w-full h-48 rounded-xl object-cover mb-3" loading="lazy" />}
               <div className="flex items-center gap-2 mb-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm">{j.profile.nickname.charAt(0)}</div>
