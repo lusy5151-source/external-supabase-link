@@ -148,7 +148,7 @@ const MountainMapSection = () => {
 
       markersRef.current.push(marker);
     });
-  }, [mountains, filter, sharedMountains]);
+  }, [mountains, filter, sharedMountains, claimedIds]);
 
   const handleShowMyLocation = () => {
     if (!navigator.geolocation || !window.naver?.maps) return;
