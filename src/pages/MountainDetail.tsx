@@ -60,7 +60,38 @@ const MountainDetail = () => {
   const mountainId = Number(id);
   const staticMountain = mountains.find((m) => m.id === mountainId);
   const userMountainRow = !staticMountain ? userMountains.find((m) => m.mountain_id === mountainId) : null;
-  const mountain = staticMountain || (userMountainRow ? toMountain(userMountainRow) : null);
+  const baseMountain = staticMountain || (userMountainRow ? toMountain(userMountainRow) : null);
+
+  // Fallback: fetch from Supabase mountains table for DB-only mountains (id > 140)
+  const [dbMountain, setDbMountain] = useState<Mountain | null>(null);
+  useEffect(() => {
+    if (baseMountain || !mountainId) return;
+    supabase
+      .from("mountains" as any)
+      .select("id, name_ko, name, height, region, difficulty, description, lat, lng, is_bac100, popularity, overview, province, is_national_park, national_park_name")
+      .eq("id", mountainId)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setDbMountain({
+            id: (data as any).id,
+            name: (data as any).name || (data as any).name_ko,
+            nameKo: (data as any).name_ko,
+            height: (data as any).height,
+            region: (data as any).region,
+            difficulty: (data as any).difficulty || "보통",
+            description: (data as any).description || (data as any).overview || "",
+            lat: (data as any).lat || 0,
+            lng: (data as any).lng || 0,
+            is_baekdu: (data as any).is_bac100 || false,
+            popularity: (data as any).popularity || 1,
+            trails: [],
+          });
+        }
+      });
+  }, [mountainId, baseMountain]);
+
+  const mountain = baseMountain || dbMountain;
   const isUserCreated = !!(mountain as any)?.isUserCreated;
   const createdBy = (mountain as any)?.createdBy as string | undefined;
 
@@ -99,6 +130,14 @@ const MountainDetail = () => {
   }, [createdBy]);
 
   if (!mountain) {
+    // Still loading from DB
+    if (!baseMountain && !dbMountain) {
+      return (
+        <div className="py-20 text-center">
+          <p className="text-muted-foreground animate-pulse">산 정보를 불러오는 중...</p>
+        </div>
+      );
+    }
     return (
       <div className="py-20 text-center">
         <p className="text-muted-foreground">산을 찾을 수 없습니다</p>
