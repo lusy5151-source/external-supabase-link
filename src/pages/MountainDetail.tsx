@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import { mountains as staticMountains } from "@/data/mountains";
 import type { Mountain } from "@/data/mountains";
 import { useMountains } from "@/contexts/MountainsContext";
 import { useUserMountains, toMountain } from "@/hooks/useUserMountains";
@@ -55,13 +56,12 @@ async function resizeImage(file: File): Promise<string> {
 const MountainDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { userMountains } = useUserMountains();
-  const { getMountain, isLoading: mountainsLoading } = useMountains();
+  const { getMountain, loading: mountainsLoading } = useMountains();
 
-  // Try DB mountains (via context) first, then user-created
   const mountainId = Number(id);
   const dbMountain = getMountain(mountainId);
   const userMountainRow = !dbMountain ? userMountains.find((m) => m.mountain_id === mountainId) : null;
-  const mountain: Mountain | null = dbMountain || (userMountainRow ? toMountain(userMountainRow) : null);
+  const mountain = dbMountain || (userMountainRow ? toMountain(userMountainRow) : null);
   const isUserCreated = !!(mountain as any)?.isUserCreated;
   const createdBy = (mountain as any)?.createdBy as string | undefined;
 
@@ -121,137 +121,239 @@ const MountainDetail = () => {
   const record = getRecord(mountain.id);
   const completionCount = Math.max(getCompletionCount(mountain.id), certifiedCount);
 
-  return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <Link to="/mountains" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-4 w-4" />
-        산 목록
-      </Link>
+  const [activeTab, setActiveTab] = useState<"개요" | "코스" | "날씨" | "편의시설">("개요");
+  const tabs = ["개요", "코스", "날씨", "편의시설"] as const;
 
-      {/* Header */}
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">{mountain.nameKo}</h1>
-            <p className="mt-0.5 text-sm text-muted-foreground">{mountain.name}</p>
-          </div>
+  const getDifficultyColor = (d: string) => {
+    if (d === "쉬움") return "bg-green-500";
+    if (d === "어려움") return "bg-red-500";
+    return "bg-amber-500";
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen pb-24">
+
+      {/* ── 헤더 ── */}
+      <div className="relative h-56 flex flex-col justify-end overflow-hidden" style={{ background: "linear-gradient(160deg, #013F92 0%, #2F403A 100%)" }}>
+        {mountain.image_url && (
+          <img src={mountain.image_url} alt={mountain.nameKo} className="absolute inset-0 h-full w-full object-cover opacity-40" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+
+        {/* 상단 버튼 */}
+        <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
+          <Link to="/mountains" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
           <div className="flex items-center gap-2">
             {completed && (
-              <span className="rounded-full bg-primary px-2.5 py-1.5 text-xs font-bold text-foreground">
-                완등 {completionCount}회
-              </span>
+              <button
+                onClick={() => addCompletion(mountain.id)}
+                className="flex items-center gap-1.5 rounded-full bg-primary/90 px-3 py-1.5 text-xs font-bold text-foreground backdrop-blur-sm"
+              >
+                재등반
+              </button>
             )}
-            <button
-              onClick={() => completed ? addCompletion(mountain.id) : toggleComplete(mountain.id)}
-              className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                completed
-                  ? "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                  : "bg-primary/10 text-primary hover:bg-primary/20"
-              }`}
-            >
-              {completed ? (
-                <><TrendingUp className="h-4 w-4" /> 재등반</>
-              ) : (
-                <><Circle className="h-4 w-4" /> 완등 기록</>
-              )}
-            </button>
+            {!completed && (
+              <button
+                onClick={() => toggleComplete(mountain.id)}
+                className="flex items-center gap-1.5 rounded-full bg-white/20 backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-white"
+              >
+                완등 기록
+              </button>
+            )}
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-3 gap-4">
-          <InfoItem icon={MountainIcon} label="높이" value={`${mountain.height}m`} />
-          <InfoItem icon={MapPin} label="지역" value={mountain.region} />
-          <InfoItem icon={TrendingUp} label="난이도" value={mountain.difficulty} />
-        </div>
-
-        <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{mountain.description}</p>
-
-        {isUserCreated && creatorName && (
-          <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-            <User className="h-3.5 w-3.5" />
-            <span>등록자: {creatorName}</span>
-            {pioneerBadges.some((p) => p.mountainId === mountainId) && (
-              <span title="개척자">🗺️</span>
+        {/* 산 이름 + 완등 뱃지 */}
+        <div className="relative z-10 px-5 pb-4">
+          <div className="flex items-end justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-white">{mountain.nameKo}</h1>
+              <p className="mt-0.5 text-sm text-white/70">{mountain.name} · {mountain.region}</p>
+            </div>
+            {completed && (
+              <div className="flex flex-col items-end gap-1">
+                <span className="rounded-full bg-primary/90 px-2.5 py-1 text-xs font-bold text-foreground">
+                  완등 {completionCount}회
+                </span>
+              </div>
             )}
           </div>
-        )}
 
-        {isUserCreated && (
-          <div className="mt-3">
-            <button
-              onClick={() => setShowDuplicateReport(true)}
-              className="text-xs text-muted-foreground hover:text-destructive transition-colors underline underline-offset-2"
-            >
-              이 산은 이미 목록에 있어요
-            </button>
+          {/* 뱃지 */}
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {(mountain as any).is_bac100 && (
+              <span className="rounded-full bg-amber-400/90 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900">⭐ 100대 명산</span>
+            )}
+            {(mountain as any).is_bac100_blackyak && (
+              <span className="rounded-full bg-white/20 backdrop-blur-sm px-2.5 py-0.5 text-[11px] font-medium text-white">신림청 100대 명산</span>
+            )}
+            {(mountain as any).is_national_park && (mountain as any).national_park_name && (
+              <span className="rounded-full bg-white/20 backdrop-blur-sm px-2.5 py-0.5 text-[11px] font-medium text-white">{(mountain as any).national_park_name}</span>
+            )}
+            {isUserCreated && (
+              <span className="rounded-full bg-white/20 backdrop-blur-sm px-2.5 py-0.5 text-[11px] font-medium text-white">🗺️ 사용자 등록</span>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Pioneer badge display for user-created mountains */}
-      {isUserCreated && pioneerBadges.some((p) => p.mountainId === mountainId) && (
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🗺️</span>
-            <div>
-              <p className="text-sm font-medium text-foreground">이 산의 개척자</p>
-              <p className="text-xs text-muted-foreground">{creatorName} 🗺️</p>
-            </div>
+      {/* ── 스탯 바 ── */}
+      <div className="flex items-stretch bg-card border-b border-border">
+        {[
+          { label: "높이", value: `${mountain.height}m` },
+          { label: "난이도", value: mountain.difficulty, badge: true },
+          { label: "소요", value: "정보 없음" },
+        ].map((item, i) => (
+          <div key={i} className={cn("flex-1 flex flex-col items-center justify-center py-3 gap-0.5", i > 0 && "border-l border-border")}>
+            <span className="text-[11px] text-muted-foreground">{item.label}</span>
+            {item.badge ? (
+              <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold text-white", getDifficultyColor(item.value))}>
+                {item.value}
+              </span>
+            ) : (
+              <span className="text-sm font-bold text-foreground">{item.value}</span>
+            )}
           </div>
-        </div>
-      )}
+        ))}
+      </div>
 
-      {/* Duplicate Report Modal */}
-      {isUserCreated && (
-        <DuplicateReportModal
-          reportedMountainId={mountainId}
-          open={showDuplicateReport}
-          onOpenChange={setShowDuplicateReport}
-        />
-      )}
+      {/* ── 탭 네비게이션 ── */}
+      <div className="sticky top-0 z-10 flex bg-card border-b border-border">
+        {tabs.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={cn(
+              "flex-1 py-3 text-sm font-medium transition-colors",
+              activeTab === tab
+                ? "text-primary border-b-2 border-primary"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
 
-      {/* Summit Claim */}
-      <SummitClaimSection mountainId={mountain.id} mountainName={mountain.nameKo} />
+      {/* ── 탭 콘텐츠 ── */}
+      <div className="flex-1">
 
-      {/* Trail info */}
-      <TrailInfoSection mountainId={mountain.id} fallbackTrails={mountain.trails} />
+        {/* 개요 탭 */}
+        {activeTab === "개요" && (
+          <div className="space-y-4 p-4">
 
-      {/* Weather & outfit */}
-      <WeatherCard mountainId={mountain.id} />
+            {/* 산 소개 */}
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <h2 className="mb-2 text-sm font-semibold text-foreground flex items-center gap-1.5">
+                <span className="h-4 w-1 rounded-full bg-primary inline-block" />
+                산 소개
+              </h2>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {(mountain as any).overview || mountain.description || "소개 정보가 없습니다."}
+              </p>
+            </div>
 
-      {/* Nearby places */}
-      <NearbyPlaces lat={mountain.lat} lng={mountain.lng} mountainName={mountain.nameKo} />
+            {/* 정상 정복 */}
+            <SummitClaimSection mountainId={mountain.id} mountainName={mountain.nameKo} />
 
-      {/* Hiking Journal */}
-      {completed && record && (
-        <JournalSection
-          record={record}
-          mountainId={mountain.id}
-          mountainName={mountain.nameKo}
-          mountainTrails={mountain.trails}
-          updateNotes={updateNotes}
-          updateDate={updateDate}
-          updateWeather={updateWeather}
-          addPhotos={addPhotos}
-          removePhoto={removePhoto}
-          updateTaggedFriends={updateTaggedFriends}
-          updateCourseInfo={updateCourseInfo}
-          updateDuration={updateDuration}
-          updateDifficulty={updateDifficulty}
-        />
-      )}
+            {/* 위치 */}
+            {(mountain as any).address && (
+              <div className="rounded-2xl border border-border bg-card p-5">
+                <h2 className="mb-2 text-sm font-semibold text-foreground flex items-center gap-1.5">
+                  <span className="h-4 w-1 rounded-full bg-primary inline-block" />
+                  위치
+                </h2>
+                <p className="text-sm text-muted-foreground mb-3">{(mountain as any).address}</p>
+                <button
+                  onClick={() => window.open(`https://map.kakao.com/?q=${encodeURIComponent(mountain.nameKo)}`, "_blank")}
+                  className="w-full rounded-xl bg-[#FEE500] py-2.5 text-sm font-semibold text-[#3C1E1E] flex items-center justify-center gap-2"
+                >
+                  <MapPin className="h-4 w-4" />
+                  {mountain.nameKo}
+                </button>
+              </div>
+            )}
 
-      {/* Share Card */}
-      {completed && record && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-bold text-foreground">📤 공유 카드</h2>
-          <HikingShareCard
-            mountain={mountain}
-            record={record}
-            photoUrl={record.photos && record.photos.length > 0 ? record.photos[0] : undefined}
-          />
-        </div>
-      )}
+            {/* 등산 일지 (완등 기록 있을 때만) */}
+            {completed && record && (
+              <JournalSection
+                record={record}
+                mountainId={mountain.id}
+                mountainName={mountain.nameKo}
+                mountainTrails={mountain.trails}
+                updateNotes={updateNotes}
+                updateDate={updateDate}
+                updateWeather={updateWeather}
+                addPhotos={addPhotos}
+                removePhoto={removePhoto}
+                updateTaggedFriends={updateTaggedFriends}
+                updateCourseInfo={updateCourseInfo}
+                updateDuration={updateDuration}
+                updateDifficulty={updateDifficulty}
+              />
+            )}
+
+            {/* 공유 카드 */}
+            {completed && record && (
+              <div className="space-y-3">
+                <h2 className="text-base font-bold text-foreground px-1">📤 공유 카드</h2>
+                <HikingShareCard
+                  mountain={mountain}
+                  record={record}
+                  photoUrl={record.photos?.[0]}
+                />
+              </div>
+            )}
+
+            {/* 사용자 등록 산 관련 */}
+            {isUserCreated && creatorName && (
+              <div className="rounded-2xl border border-border bg-card p-4 flex items-center gap-2 text-xs text-muted-foreground">
+                <User className="h-3.5 w-3.5" />
+                <span>등록자: {creatorName}</span>
+              </div>
+            )}
+            {isUserCreated && (
+              <>
+                <button
+                  onClick={() => setShowDuplicateReport(true)}
+                  className="w-full text-xs text-muted-foreground hover:text-destructive text-center underline underline-offset-2"
+                >
+                  이 산은 이미 목록에 있어요
+                </button>
+                <DuplicateReportModal
+                  reportedMountainId={mountainId}
+                  open={showDuplicateReport}
+                  onOpenChange={setShowDuplicateReport}
+                />
+              </>
+            )}
+          </div>
+        )}
+
+        {/* 코스 탭 */}
+        {activeTab === "코스" && (
+          <div className="p-4">
+            <TrailInfoSection mountainId={mountain.id} fallbackTrails={mountain.trails} />
+          </div>
+        )}
+
+        {/* 날씨 탭 */}
+        {activeTab === "날씨" && (
+          <div className="p-4">
+            <WeatherCard mountainId={mountain.id} />
+          </div>
+        )}
+
+        {/* 편의시설 탭 */}
+        {activeTab === "편의시설" && (
+          <div className="p-4">
+            <NearbyPlaces lat={mountain.lat} lng={mountain.lng} mountainName={mountain.nameKo} />
+          </div>
+        )}
+
+      </div>
     </div>
   );
 };
