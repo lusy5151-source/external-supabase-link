@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/context/StoreContext";
+import { useSummitClaims } from "@/hooks/useSummitClaims";
 import { useProfile } from "@/hooks/useProfile";
 import { useFriends } from "@/hooks/useFriends";
 import { useAchievementStore } from "@/hooks/useAchievementStore";
