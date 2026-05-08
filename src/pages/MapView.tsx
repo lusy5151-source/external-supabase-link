@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMountains } from "@/contexts/MountainsContext";
 import { useStore } from "@/context/StoreContext";
+import { useSummitClaims } from "@/hooks/useSummitClaims";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSharedCompletions, type SharedCompletion } from "@/hooks/useSharedCompletions";
 import { Progress } from "@/components/ui/progress";
@@ -54,7 +55,14 @@ const MapView = () => {
   const safemapLayerRef = useRef<any>(null);
   const navigate = useNavigate();
   const { mountains } = useMountains();
-  const { isCompleted, completedCount } = useStore();
+  const { isCompleted: isCompletedLocal, completedCount: localCompletedCount } = useStore();
+  const { claimedIds } = useSummitClaims();
+  const isCompleted = (id: number) => claimedIds.has(id) || isCompletedLocal(id);
+  const completedCount = (() => {
+    const ids = new Set<number>(claimedIds);
+    // include local records by iterating mountains and checking
+    return Math.max(ids.size, localCompletedCount);
+  })();
   const { user } = useAuth();
   const { fetchSharedCompletions } = useSharedCompletions();
   const [sharedMountains, setSharedMountains] = useState<Set<number>>(new Set());

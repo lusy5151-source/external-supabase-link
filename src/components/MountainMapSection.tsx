@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useMountains } from "@/contexts/MountainsContext";
 import type { Mountain } from "@/data/mountains";
 import { useStore } from "@/context/StoreContext";
+import { useSummitClaims } from "@/hooks/useSummitClaims";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSharedCompletions, type SharedCompletion } from "@/hooks/useSharedCompletions";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,7 +28,10 @@ const MountainMapSection = () => {
   const markersRef = useRef<any[]>([]);
   const myLocationMarkerRef = useRef<any>(null);
   const navigate = useNavigate();
-  const { isCompleted, completedCount, getRecord } = useStore();
+  const { isCompleted: isCompletedLocal, completedCount: localCompletedCount, getRecord } = useStore();
+  const { claimedIds } = useSummitClaims();
+  const isCompleted = (id: number) => claimedIds.has(id) || isCompletedLocal(id);
+  const completedCount = Math.max(claimedIds.size, localCompletedCount);
   const { user } = useAuth();
   const { fetchSharedCompletions } = useSharedCompletions();
 
@@ -144,7 +148,7 @@ const MountainMapSection = () => {
 
       markersRef.current.push(marker);
     });
-  }, [mountains, filter, sharedMountains]);
+  }, [mountains, filter, sharedMountains, claimedIds]);
 
   const handleShowMyLocation = () => {
     if (!navigator.geolocation || !window.naver?.maps) return;
