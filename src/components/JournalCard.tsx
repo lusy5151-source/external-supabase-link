@@ -113,7 +113,6 @@ export function JournalCard({ journal, showAuthor = true, onRefresh }: JournalCa
       className="overflow-hidden mb-2.5"
       style={{
         background: "hsl(var(--card))",
-        border: "0.5px solid hsl(var(--border))",
         borderRadius: "var(--radius)",
       }}
     >
