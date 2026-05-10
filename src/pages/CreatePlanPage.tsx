@@ -143,6 +143,11 @@ const CreatePlanPage = () => {
     const { data, error } = await createPlan({
       mountain_id: mountainId,
       trail_name: trailName || undefined,
+      trail_id: selectedTrailId,
+      waypoints,
+      route_notes: routeNotes || null,
+      estimated_distance_km: estDistance,
+      estimated_duration_minutes: estDuration,
       planned_date: format(date, "yyyy-MM-dd"),
       start_time: startTime || undefined,
       notes: notes || undefined,
