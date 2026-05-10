@@ -39,11 +39,11 @@ const MountainList = () => {
   const toggleClaim = useCallback(async (mountainId: number, mountainName?: string) => {
     const result = await toggleClaimRaw(mountainId, mountainName);
     if (result?.ok && result.action === "marked") {
-      try { toggleCompleteLocal(mountainId); } catch {}
+      try { if (!isCompletedLocal(mountainId)) addCompletionLocal(mountainId); } catch {}
       suggest(mountainId, mountainName);
     }
     return result;
-  }, [toggleClaimRaw, suggest, toggleCompleteLocal]);
+  }, [toggleClaimRaw, suggest, isCompletedLocal, addCompletionLocal]);
   const isCompleted = useCallback((id: number) => claimedIds.has(id) || isCompletedLocal(id), [claimedIds, isCompletedLocal]);
   const completedCount = useMemo(() => {
     const s = new Set<number>(claimedIds);
