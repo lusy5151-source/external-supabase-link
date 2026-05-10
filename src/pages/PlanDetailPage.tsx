@@ -15,6 +15,7 @@ import {
   ArrowLeft, Calendar, Clock, Mountain, Users,
   Cloud, Sun, CloudRain, CloudSnow, CloudSun, Wind, Droplets,
   Edit3, History, Save, X, MessageCircle, Trophy, UserPlus,
+  Route, Flag, MapPin,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -24,6 +25,8 @@ import PlanChat from "@/components/PlanChat";
 import PlanApplicationManager from "@/components/PlanApplicationManager";
 import InviteFriendsSheet from "@/components/InviteFriendsSheet";
 import { usePlanNotifications } from "@/hooks/usePlanNotifications";
+import { TrailRouteMap } from "@/components/TrailRouteMap";
+import { useTrails, type Trail } from "@/hooks/useTrails";
 
 const conditionIcons: Record<string, any> = {
   "맑음": Sun, "구름": CloudSun, "흐림": Cloud, "비": CloudRain, "눈": CloudSnow,
