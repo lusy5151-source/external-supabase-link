@@ -16,7 +16,7 @@ import {
   Clock, Route, Flag, Save, UserPlus, UserMinus, Globe, Lock, Upload, User,
   Heart, Share2, Check,
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import type { WeatherCondition, CompletionRecord } from "@/hooks/useMountainStore";
 import { WeatherCard } from "@/components/WeatherCard";
 import { TrailInfoSection } from "@/components/TrailInfo";
