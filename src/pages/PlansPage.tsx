@@ -295,6 +295,8 @@ const PlansPage = () => {
           creator_id: r.creator_id,
           mountain_id: r.mountain_id,
           trail_name: r.trail_name,
+          estimated_distance_km: r.estimated_distance_km ?? null,
+          estimated_duration_minutes: r.estimated_duration_minutes ?? null,
           planned_date: r.planned_date,
           start_time: r.start_time,
           status: r.status,
