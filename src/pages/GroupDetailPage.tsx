@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Users, Globe, Lock, ArrowLeft, Crown, UserPlus, LogOut, Search,
-  UserMinus, Settings, CheckCircle, XCircle, Clock, Trash2, Flag, Mountain, Camera, Image as ImageIcon, Pencil,
+  UserMinus, Settings, CheckCircle, XCircle, Clock, Trash2, Flag, Mountain, Camera, Pencil,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ClubChat from "@/components/ClubChat";
