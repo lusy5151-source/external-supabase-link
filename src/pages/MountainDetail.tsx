@@ -5,9 +5,11 @@ import { useMountains } from "@/contexts/MountainsContext";
 import { useUserMountains, toMountain } from "@/hooks/useUserMountains";
 import { usePioneerBadges } from "@/hooks/usePioneerBadges";
 import DuplicateReportModal from "@/components/DuplicateReportModal";
-import HikingShareCard from "@/components/HikingShareCard";
 import { useStore } from "@/context/StoreContext";
 import { SummitClaimSection } from "@/components/SummitClaimSection";
+import { useSummits } from "@/hooks/useSummits";
+import { useMountains as useMountainsCtx } from "@/contexts/MountainsContext";
+import { createPortal } from "react-dom";
 import {
   ArrowLeft, Mountain as MountainIcon, MapPin, TrendingUp, CheckCircle2, Circle, Calendar,
   Sun, Cloud, CloudRain, CloudSnow, CloudFog, CloudSun, ImagePlus, X, Users,
