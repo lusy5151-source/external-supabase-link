@@ -14,7 +14,7 @@ import {
   ArrowLeft, Mountain as MountainIcon, MapPin, TrendingUp, CheckCircle2, Circle, Calendar,
   Sun, Cloud, CloudRain, CloudSnow, CloudFog, CloudSun, ImagePlus, X, Users,
   Clock, Route, Flag, Save, UserPlus, UserMinus, Globe, Lock, Upload, User,
-  Heart, Share2, Check,
+  Heart, Share2, Check, Camera,
 } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import type { WeatherCondition, CompletionRecord } from "@/hooks/useMountainStore";
