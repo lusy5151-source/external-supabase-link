@@ -212,6 +212,32 @@ const PlanDetailPage = () => {
     }
   };
 
+          {!isCreator && !myParticipation && (
+            <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+              {pendingInvitationId ? (
+                <>
+                  <p className="text-sm font-medium text-foreground">✉️ 초대받은 일정이에요</p>
+                  <p className="text-xs text-muted-foreground">참가 여부를 선택해주세요</p>
+                  <div className="flex gap-2">
+                    <Button className="flex-1" onClick={handleAcceptInvitation} disabled={joiningPlan}>
+                      초대 수락
+                    </Button>
+                    <Button variant="outline" className="flex-1" onClick={handleRejectInvitation} disabled={joiningPlan}>
+                      거절
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-medium text-foreground">이 일정에 참가해 보세요</p>
+                  <Button className="w-full gap-2" onClick={handleJoinPlan} disabled={joiningPlan}>
+                    <UserPlus className="h-4 w-4" />
+                    {joiningPlan ? "신청 중..." : "참가 신청하기"}
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
 
   const handleDelete = async () => {
     if (!id) return;
