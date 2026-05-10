@@ -117,6 +117,78 @@ const PlanDetailPage = () => {
     checkAccess();
   }, [user, id, participants]);
 
+  useEffect(() => {
+    if (!user || !id) return;
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("plan_invitations")
+        .select("id, status")
+        .eq("plan_id", id)
+        .eq("invitee_id", user.id)
+        .eq("status", "pending")
+        .maybeSingle();
+      setPendingInvitationId(data?.id || null);
+    })();
+  }, [user, id]);
+
+  const handleJoinPlan = async () => {
+    if (!id) return;
+    setJoiningPlan(true);
+    const { error } = await joinPlan(id);
+    setJoiningPlan(false);
+    if (error && (error as any).code !== "23505") {
+      toast({ title: "참가 신청 실패", description: (error as any).message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "참가 신청이 완료되었습니다" });
+    fetchParticipants(id).then(setParticipants);
+  };
+
+  const handleAcceptInvitation = async () => {
+    if (!id || !user) return;
+    setJoiningPlan(true);
+    const { error } = await joinPlan(id);
+    if (error && (error as any).code !== "23505") {
+      setJoiningPlan(false);
+      toast({ title: "수락 실패", description: (error as any).message, variant: "destructive" });
+      return;
+    }
+    if (pendingInvitationId) {
+      await (supabase as any)
+        .from("plan_invitations")
+        .update({ status: "accepted" })
+        .eq("id", pendingInvitationId);
+    }
+    await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("user_id", user.id)
+      .eq("type", "plan_invitation")
+      .eq("related_id", pendingInvitationId || "");
+    setPendingInvitationId(null);
+    setJoiningPlan(false);
+    toast({ title: "초대를 수락했어요 🎉" });
+    fetchParticipants(id).then(setParticipants);
+  };
+
+  const handleRejectInvitation = async () => {
+    if (!user) return;
+    if (pendingInvitationId) {
+      await (supabase as any)
+        .from("plan_invitations")
+        .update({ status: "rejected" })
+        .eq("id", pendingInvitationId);
+      await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("user_id", user.id)
+        .eq("type", "plan_invitation")
+        .eq("related_id", pendingInvitationId);
+    }
+    setPendingInvitationId(null);
+    toast({ title: "초대를 거절했어요" });
+  };
+
   const mountain = useMemo(
     () => (plan ? mountains.find((m) => m.id === plan.mountain_id) : null),
     [plan]
