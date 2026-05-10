@@ -367,7 +367,7 @@ const NotificationsPage = () => {
                           {formatRelativeTime(n.created_at)}
                         </p>
                       </div>
-                      {n.type === "group_invitation" ? (
+                      {n.type === "group_invitation" || n.type === "plan_invitation" ? (
                         <div
                           style={{
                             display: "flex",
@@ -380,7 +380,8 @@ const NotificationsPage = () => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleAccept(n);
+                              if (n.type === "plan_invitation") handlePlanAccept(n);
+                              else handleAccept(n);
                             }}
                             style={{
                               background: "hsl(var(--brand-lime))",
@@ -396,7 +397,8 @@ const NotificationsPage = () => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleReject(n);
+                              if (n.type === "plan_invitation") handlePlanReject(n);
+                              else handleReject(n);
                             }}
                             style={{
                               border: "0.5px solid hsl(var(--color-border-secondary))",
