@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { mountains as staticMountains } from "@/data/mountains";
 import type { Mountain } from "@/data/mountains";
 import { useMountains } from "@/contexts/MountainsContext";
@@ -87,6 +87,22 @@ const MountainDetail = () => {
         if (count && count > 0) setCertifiedCount(count);
       });
   }, [mountain?.id, user?.id]);
+
+  // Auto-scroll to journal section when ?focusJournal=1
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get("focusJournal") !== "1") return;
+    const tryScroll = (attempt = 0) => {
+      const el = document.getElementById("mountain-journal-section");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else if (attempt < 10) {
+        setTimeout(() => tryScroll(attempt + 1), 200);
+      }
+    };
+    tryScroll();
+  }, [searchParams, mountain?.id]);
+
 
   // Fetch creator profile for user-created mountains
   const [creatorName, setCreatorName] = useState<string | null>(null);

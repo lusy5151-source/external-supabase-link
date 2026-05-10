@@ -700,32 +700,38 @@ export type Database = {
       hiking_group: {
         Row: {
           avatar_url: string | null
+          cover_image_url: string | null
           created_at: string | null
           creator_id: string
           description: string | null
           id: string
           is_public: boolean | null
           name: string
+          representative_mountain_id: number | null
           updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
+          cover_image_url?: string | null
           created_at?: string | null
           creator_id: string
           description?: string | null
           id?: string
           is_public?: boolean | null
           name: string
+          representative_mountain_id?: number | null
           updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
+          cover_image_url?: string | null
           created_at?: string | null
           creator_id?: string
           description?: string | null
           id?: string
           is_public?: boolean | null
           name?: string
+          representative_mountain_id?: number | null
           updated_at?: string | null
         }
         Relationships: [
@@ -742,6 +748,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles_safe"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "hiking_group_representative_mountain_id_fkey"
+            columns: ["representative_mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -820,6 +833,8 @@ export type Database = {
         Row: {
           created_at: string | null
           creator_id: string
+          estimated_distance_km: number | null
+          estimated_duration_minutes: number | null
           group_id: string | null
           id: string
           is_public: boolean | null
@@ -828,14 +843,19 @@ export type Database = {
           mountain_id: number | null
           notes: string | null
           planned_date: string | null
+          route_notes: string | null
           start_time: string | null
           status: string | null
+          trail_id: string | null
           trail_name: string | null
           updated_at: string | null
+          waypoints: Json | null
         }
         Insert: {
           created_at?: string | null
           creator_id?: string
+          estimated_distance_km?: number | null
+          estimated_duration_minutes?: number | null
           group_id?: string | null
           id?: string
           is_public?: boolean | null
@@ -844,14 +864,19 @@ export type Database = {
           mountain_id?: number | null
           notes?: string | null
           planned_date?: string | null
+          route_notes?: string | null
           start_time?: string | null
           status?: string | null
+          trail_id?: string | null
           trail_name?: string | null
           updated_at?: string | null
+          waypoints?: Json | null
         }
         Update: {
           created_at?: string | null
           creator_id?: string
+          estimated_distance_km?: number | null
+          estimated_duration_minutes?: number | null
           group_id?: string | null
           id?: string
           is_public?: boolean | null
@@ -860,10 +885,13 @@ export type Database = {
           mountain_id?: number | null
           notes?: string | null
           planned_date?: string | null
+          route_notes?: string | null
           start_time?: string | null
           status?: string | null
+          trail_id?: string | null
           trail_name?: string | null
           updated_at?: string | null
+          waypoints?: Json | null
         }
         Relationships: [
           {
@@ -885,6 +913,13 @@ export type Database = {
             columns: ["group_id"]
             isOneToOne: false
             referencedRelation: "hiking_group"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiking_plans_trail_id_fkey"
+            columns: ["trail_id"]
+            isOneToOne: false
+            referencedRelation: "trails"
             referencedColumns: ["id"]
           },
         ]
