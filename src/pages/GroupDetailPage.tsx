@@ -254,6 +254,49 @@ const GroupDetailPage = () => {
     loadData();
   };
 
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !id) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "5MB 이하 이미지만 업로드 가능합니다", variant: "destructive" });
+      return;
+    }
+    setUploadingCover(true);
+    const { compressImage } = await import("@/lib/imageUpload");
+    const compressed = await compressImage(file, "general");
+    if (!compressed) { setUploadingCover(false); return; }
+    const path = `${id}/cover.jpg`;
+    const { error: uploadErr } = await supabase.storage.from("club-logos").upload(path, compressed, { upsert: true, contentType: "image/jpeg" });
+    if (uploadErr) {
+      toast({ title: "커버 업로드에 실패했습니다", variant: "destructive" });
+      setUploadingCover(false);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from("club-logos").getPublicUrl(path);
+    const cacheBusted = `${urlData.publicUrl}?t=${Date.now()}`;
+    await (supabase as any).from("hiking_group").update({ cover_image_url: cacheBusted, updated_at: new Date().toISOString() }).eq("id", id);
+    setUploadingCover(false);
+    toast({ title: "저장되었습니다" });
+    loadData();
+  };
+
+  const handleSetRepresentative = async (mountainId: number) => {
+    if (!id) return;
+    const { error } = await (supabase as any)
+      .from("hiking_group")
+      .update({ representative_mountain_id: mountainId, updated_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) {
+      toast({ title: "저장에 실패했습니다", variant: "destructive" });
+      return;
+    }
+    toast({ title: "저장되었습니다" });
+    setShowMtPicker(false);
+    setMtSearch("");
+    loadData();
+  };
+
+
   if (loading) return <div className="flex items-center justify-center py-20"><p className="text-sm text-muted-foreground">불러오는 중...</p></div>;
 
   if (!group) {
