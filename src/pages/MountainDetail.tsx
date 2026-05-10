@@ -304,52 +304,67 @@ const MountainDetail = () => {
         {/* 개요 탭 */}
         {activeTab === "개요" && (
           <>
-            {/* 산 소개 */}
-            <div style={{ background: "white", borderRadius: 16, padding: 12, margin: "0 12px 8px" }}>
-              <h2 style={{ fontSize: 12, fontWeight: 600, color: "#173404", borderLeft: "2.5px solid #c6d56c", paddingLeft: 8, marginBottom: 8 }}>
-                산 소개
-              </h2>
-              <p style={{ fontSize: 12, color: "#444", lineHeight: 1.6, margin: 0 }}>
-                {(mountain as any).overview || mountain.description || "소개 정보가 없습니다."}
-              </p>
+            {/* 1. 산 소개 */}
+            <OverviewIntroCard text={(mountain as any).overview || mountain.description || "소개 정보가 없습니다."} />
+
+            {/* 2. 정상 정복 (그리드 + 접기) */}
+            <div style={sectionCardStyle}>
+              <SummitGridSection mountainId={mountain.id} mountainName={mountain.nameKo} />
             </div>
 
-            {/* 정상 정복 */}
-            <div style={{ background: "white", borderRadius: 16, padding: 12, margin: "0 12px 8px" }}>
-              <SummitClaimSection mountainId={mountain.id} mountainName={mountain.nameKo} />
-            </div>
-
-            {/* 위치 */}
+            {/* 3. 위치 */}
             {address && (
-              <div style={{ background: "white", borderRadius: 16, padding: 12, margin: "0 12px 8px" }}>
-                <h2 style={{ fontSize: 12, fontWeight: 600, color: "#173404", borderLeft: "2.5px solid #c6d56c", paddingLeft: 8, marginBottom: 8 }}>
-                  위치
-                </h2>
-                <p style={{ fontSize: 11, color: "#666", marginBottom: 8 }}>{address}</p>
+              <div style={sectionCardStyle}>
+                <h2 style={sectionTitleStyle}>위치</h2>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+                  <p style={{ fontSize: 12, color: "hsl(var(--muted-foreground))", margin: 0, flex: 1, lineHeight: 1.5 }}>{address}</p>
+                  <button
+                    onClick={() => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(mountain.nameKo)}`, "_blank")}
+                    style={{
+                      background: "#03C75A",
+                      color: "white",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      padding: "5px 10px",
+                      borderRadius: 8,
+                      border: "none",
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      whiteSpace: "nowrap",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <MapPin size={11} /> 네이버지도
+                  </button>
+                </div>
                 <button
                   onClick={() => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(mountain.nameKo)}`, "_blank")}
                   style={{
                     width: "100%",
-                    height: 90,
+                    height: 80,
                     borderRadius: 10,
-                    background: "#03C75A",
+                    background: "linear-gradient(135deg, #C7D66D 0%, #8FB856 60%, #4F7A3A 100%)",
+                    border: "none",
+                    cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    border: "none",
-                    cursor: "pointer",
+                    color: "white",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    boxShadow: "inset 0 -10px 20px rgba(0,0,0,0.1)",
                   }}
                 >
-                  <span style={{ color: "white", padding: "4px 10px", fontSize: 12, fontWeight: 600 }}>
-                    네이버지도에서 보기 — {mountain.nameKo}
-                  </span>
+                  <MapPin size={14} style={{ marginRight: 4 }} /> 지도에서 보기
                 </button>
               </div>
             )}
 
-            {/* 등산 일지 (완등 기록 있을 때만) */}
+            {/* 4. 등산 일지 (완등 기록 있을 때만) */}
             {completed && record && (
-              <div id="mountain-journal-section" style={{ margin: "0 12px 8px", scrollMarginTop: 80 }}>
+              <div id="mountain-journal-section" style={{ margin: "0 12px 10px", scrollMarginTop: 80 }}>
                 <JournalSection
                   record={record}
                   mountainId={mountain.id}
@@ -368,10 +383,13 @@ const MountainDetail = () => {
               </div>
             )}
 
-            {/* 공유 카드 */}
+            {/* 5. 공유 카드 (완등 기록 있을 때만) */}
             {completed && record && (
-              <div style={{ margin: "0 12px 8px" }}>
-                <HikingShareCard mountain={mountain} record={record} photoUrl={record.photos?.[0]} />
+              <div style={{ margin: "0 12px 10px" }}>
+                <ShareCardSection
+                  mountain={mountain}
+                  record={record}
+                />
               </div>
             )}
 
