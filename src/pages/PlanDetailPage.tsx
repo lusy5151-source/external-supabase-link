@@ -50,6 +50,7 @@ const PlanDetailPage = () => {
   const {
     plans, fetchParticipants, updateRsvp,
     deletePlan, updatePlanWithHistory, fetchEditHistory,
+    joinPlan,
   } = useHikingPlans();
   const { toast } = useToast();
   const { isDdayEnabled } = usePlanNotifications();
