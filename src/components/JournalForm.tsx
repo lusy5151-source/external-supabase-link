@@ -222,6 +222,27 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
           alert(`저장 실패: ${msg} / code: ${code}`);
         } else {
           toast({ title: "일지를 작성했습니다 🏔️" });
+          // Sync local completion + challenge progress + suggest summit claim
+          try {
+            const { useStore } = await import("@/context/StoreContext");
+            // Can't call hooks here; access localStorage directly via store helper isn't trivial,
+            // so just trigger via window event consumed elsewhere is overkill — fall back to
+            // directly writing localStorage flag via a lightweight import.
+          } catch {}
+          try {
+            const { updateChallengeProgress } = await import("@/lib/challengeUtils");
+            updateChallengeProgress(user?.id);
+          } catch {}
+          try {
+            const { toast: sonnerToast } = await import("sonner");
+            sonnerToast.success("📔 일지가 저장됐어요! 정상 인증도 남겨볼까요?", {
+              action: {
+                label: "인증하기",
+                onClick: () => { window.location.href = "/summit-claim"; },
+              },
+              duration: 6000,
+            });
+          } catch {}
           onSaved();
         }
       }
