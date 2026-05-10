@@ -5,16 +5,18 @@ import { useMountains } from "@/contexts/MountainsContext";
 import { useUserMountains, toMountain } from "@/hooks/useUserMountains";
 import { usePioneerBadges } from "@/hooks/usePioneerBadges";
 import DuplicateReportModal from "@/components/DuplicateReportModal";
-import HikingShareCard from "@/components/HikingShareCard";
 import { useStore } from "@/context/StoreContext";
 import { SummitClaimSection } from "@/components/SummitClaimSection";
+import { useSummits } from "@/hooks/useSummits";
+import { useMountains as useMountainsCtx } from "@/contexts/MountainsContext";
+import { createPortal } from "react-dom";
 import {
   ArrowLeft, Mountain as MountainIcon, MapPin, TrendingUp, CheckCircle2, Circle, Calendar,
   Sun, Cloud, CloudRain, CloudSnow, CloudFog, CloudSun, ImagePlus, X, Users,
   Clock, Route, Flag, Save, UserPlus, UserMinus, Globe, Lock, Upload, User,
-  Heart, Share2, Check,
+  Heart, Share2, Check, Camera,
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import type { WeatherCondition, CompletionRecord } from "@/hooks/useMountainStore";
 import { WeatherCard } from "@/components/WeatherCard";
 import { TrailInfoSection } from "@/components/TrailInfo";
@@ -302,52 +304,67 @@ const MountainDetail = () => {
         {/* 개요 탭 */}
         {activeTab === "개요" && (
           <>
-            {/* 산 소개 */}
-            <div style={{ background: "white", borderRadius: 16, padding: 12, margin: "0 12px 8px" }}>
-              <h2 style={{ fontSize: 12, fontWeight: 600, color: "#173404", borderLeft: "2.5px solid #c6d56c", paddingLeft: 8, marginBottom: 8 }}>
-                산 소개
-              </h2>
-              <p style={{ fontSize: 12, color: "#444", lineHeight: 1.6, margin: 0 }}>
-                {(mountain as any).overview || mountain.description || "소개 정보가 없습니다."}
-              </p>
+            {/* 1. 산 소개 */}
+            <OverviewIntroCard text={(mountain as any).overview || mountain.description || "소개 정보가 없습니다."} />
+
+            {/* 2. 정상 정복 (그리드 + 접기) */}
+            <div style={sectionCardStyle}>
+              <SummitGridSection mountainId={mountain.id} mountainName={mountain.nameKo} />
             </div>
 
-            {/* 정상 정복 */}
-            <div style={{ background: "white", borderRadius: 16, padding: 12, margin: "0 12px 8px" }}>
-              <SummitClaimSection mountainId={mountain.id} mountainName={mountain.nameKo} />
-            </div>
-
-            {/* 위치 */}
+            {/* 3. 위치 */}
             {address && (
-              <div style={{ background: "white", borderRadius: 16, padding: 12, margin: "0 12px 8px" }}>
-                <h2 style={{ fontSize: 12, fontWeight: 600, color: "#173404", borderLeft: "2.5px solid #c6d56c", paddingLeft: 8, marginBottom: 8 }}>
-                  위치
-                </h2>
-                <p style={{ fontSize: 11, color: "#666", marginBottom: 8 }}>{address}</p>
+              <div style={sectionCardStyle}>
+                <h2 style={sectionTitleStyle}>위치</h2>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+                  <p style={{ fontSize: 12, color: "hsl(var(--muted-foreground))", margin: 0, flex: 1, lineHeight: 1.5 }}>{address}</p>
+                  <button
+                    onClick={() => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(mountain.nameKo)}`, "_blank")}
+                    style={{
+                      background: "#03C75A",
+                      color: "white",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      padding: "5px 10px",
+                      borderRadius: 8,
+                      border: "none",
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      whiteSpace: "nowrap",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <MapPin size={11} /> 네이버지도
+                  </button>
+                </div>
                 <button
                   onClick={() => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(mountain.nameKo)}`, "_blank")}
                   style={{
                     width: "100%",
-                    height: 90,
+                    height: 80,
                     borderRadius: 10,
-                    background: "#03C75A",
+                    background: "linear-gradient(135deg, #C7D66D 0%, #8FB856 60%, #4F7A3A 100%)",
+                    border: "none",
+                    cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    border: "none",
-                    cursor: "pointer",
+                    color: "white",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    boxShadow: "inset 0 -10px 20px rgba(0,0,0,0.1)",
                   }}
                 >
-                  <span style={{ color: "white", padding: "4px 10px", fontSize: 12, fontWeight: 600 }}>
-                    네이버지도에서 보기 — {mountain.nameKo}
-                  </span>
+                  <MapPin size={14} style={{ marginRight: 4 }} /> 지도에서 보기
                 </button>
               </div>
             )}
 
-            {/* 등산 일지 (완등 기록 있을 때만) */}
+            {/* 4. 등산 일지 (완등 기록 있을 때만) */}
             {completed && record && (
-              <div id="mountain-journal-section" style={{ margin: "0 12px 8px", scrollMarginTop: 80 }}>
+              <div id="mountain-journal-section" style={{ margin: "0 12px 10px", scrollMarginTop: 80 }}>
                 <JournalSection
                   record={record}
                   mountainId={mountain.id}
@@ -366,10 +383,13 @@ const MountainDetail = () => {
               </div>
             )}
 
-            {/* 공유 카드 */}
+            {/* 5. 공유 카드 (완등 기록 있을 때만) */}
             {completed && record && (
-              <div style={{ margin: "0 12px 8px" }}>
-                <HikingShareCard mountain={mountain} record={record} photoUrl={record.photos?.[0]} />
+              <div style={{ margin: "0 12px 10px" }}>
+                <ShareCardSection
+                  mountain={mountain}
+                  record={record}
+                />
               </div>
             )}
 
@@ -433,6 +453,448 @@ function InfoItem({ icon: Icon, label, value }: { icon: any; label: string; valu
     </div>
   );
 }
+
+// ───────────── Shared section styles ─────────────
+const sectionCardStyle: React.CSSProperties = {
+  background: "white",
+  border: "0.5px solid hsl(var(--border))",
+  borderRadius: 12,
+  padding: 12,
+  margin: "0 12px 10px",
+};
+const sectionTitleStyle: React.CSSProperties = {
+  fontSize: 11,
+  fontWeight: 600,
+  color: "#173404",
+  borderLeft: "2.5px solid #C7D66D",
+  paddingLeft: 7,
+  marginBottom: 8,
+  marginTop: 0,
+};
+
+// ───────────── 1. 산 소개 카드 (3줄 + 더보기) ─────────────
+function OverviewIntroCard({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const pRef = useRef<HTMLParagraphElement>(null);
+  const [overflow, setOverflow] = useState(false);
+
+  useEffect(() => {
+    const el = pRef.current;
+    if (!el) return;
+    // Measure overflow only when collapsed
+    if (!expanded) {
+      setOverflow(el.scrollHeight > el.clientHeight + 1);
+    }
+  }, [text, expanded]);
+
+  return (
+    <div style={sectionCardStyle}>
+      <h2 style={sectionTitleStyle}>산 소개</h2>
+      <p
+        ref={pRef}
+        style={{
+          fontSize: 12,
+          color: "#444",
+          lineHeight: 1.6,
+          margin: 0,
+          display: expanded ? "block" : "-webkit-box",
+          WebkitLineClamp: expanded ? "unset" : 3,
+          WebkitBoxOrient: "vertical" as any,
+          overflow: "hidden",
+        }}
+      >
+        {text}
+      </p>
+      {(overflow || expanded) && (
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          style={{
+            marginTop: 6,
+            background: "transparent",
+            border: "none",
+            color: "#4F7A3A",
+            fontSize: 11,
+            fontWeight: 600,
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          {expanded ? "▴ 접기" : "더 보기 ▾"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ───────────── 2. 정상 정복 그리드 ─────────────
+function SummitGridSection({ mountainId, mountainName }: { mountainId: number; mountainName: string }) {
+  const { user } = useAuth();
+  const { mountains: allMountains } = useMountainsCtx();
+  const { summits, claims, loading } = useSummits(mountainId);
+  const [expanded, setExpanded] = useState(false);
+  const [triggerSummitId, setTriggerSummitId] = useState<string | null>(null);
+
+  const mData = useMemo(() => allMountains.find((m) => m.id === mountainId), [allMountains, mountainId]);
+
+  const displaySummits = useMemo(() => {
+    if (summits.length > 0) return summits;
+    if (!mData) return [];
+    return [{
+      id: `fallback-${mountainId}`,
+      mountain_id: mountainId,
+      summit_name: `${mountainName} 정상`,
+      latitude: mData.lat,
+      longitude: mData.lng,
+      elevation: mData.height,
+    }];
+  }, [summits, mountainId, mountainName, mData]);
+
+  const myClaimedIds = useMemo(() => {
+    if (!user) return new Set<string>();
+    return new Set(claims.filter((c) => c.user_id === user.id).map((c) => c.summit_id));
+  }, [claims, user]);
+
+  const conqueredCount = displaySummits.filter((s) => myClaimedIds.has(s.id)).length;
+  const visible = expanded ? displaySummits : displaySummits.slice(0, 6);
+  const remaining = displaySummits.length - 6;
+
+  if (loading) return <p style={{ fontSize: 11, color: "#999", margin: 0 }}>불러오는 중...</p>;
+  if (displaySummits.length === 0) return null;
+
+  return (
+    <>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <h2 style={{ ...sectionTitleStyle, marginBottom: 0 }}>정상 정복</h2>
+        <span style={{ fontSize: 11, color: "#888780", fontWeight: 600 }}>
+          {conqueredCount} / {displaySummits.length}
+        </span>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 6 }}>
+        {visible.map((s) => {
+          const claimed = myClaimedIds.has(s.id);
+          return (
+            <button
+              key={s.id}
+              onClick={() => setTriggerSummitId(s.id)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "8px 10px",
+                background: claimed ? "rgba(199,214,109,0.12)" : "#fafbf6",
+                border: `0.5px solid ${claimed ? "#C7D66D" : "hsl(var(--border))"}`,
+                borderRadius: 10,
+                cursor: "pointer",
+                textAlign: "left",
+                minHeight: 44,
+              }}
+            >
+              <span
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: "50%",
+                  border: "1.5px solid #C7D66D",
+                  background: claimed ? "#C7D66D" : "transparent",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                {claimed && <Check size={11} color="#173404" strokeWidth={3} />}
+              </span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#173404", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {s.summit_name}
+                </span>
+                <span style={{ fontSize: 10, color: "#888780" }}>{s.elevation}m</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {displaySummits.length > 6 && (
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          style={{
+            marginTop: 8,
+            width: "100%",
+            background: "transparent",
+            border: "none",
+            color: "#4F7A3A",
+            fontSize: 11,
+            fontWeight: 600,
+            cursor: "pointer",
+            padding: "6px 0",
+          }}
+        >
+          {expanded ? "▴ 접기" : `+${remaining}개 더 보기 ▾`}
+        </button>
+      )}
+
+      {/* Reuse existing claim flow (dialog/celebration) without rendering its own list */}
+      <SummitClaimSection
+        mountainId={mountainId}
+        mountainName={mountainName}
+        hideList
+        triggerSummitId={triggerSummitId}
+        onTriggerHandled={() => setTriggerSummitId(null)}
+      />
+    </>
+  );
+}
+
+// ───────────── 5. 공유 카드 섹션 ─────────────
+function ShareCardSection({ mountain, record }: { mountain: Mountain; record: CompletionRecord }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [bgPhoto, setBgPhoto] = useState<string | null>(record.photos?.[0] || (mountain as any).image_url || null);
+  const [open, setOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const { user } = useAuth();
+  const { claims } = useSummits(mountain.id);
+  const { toast } = useToast();
+
+  const myClaim = useMemo(
+    () => claims.find((c) => c.user_id === user?.id),
+    [claims, user]
+  );
+
+  // Resolve a peak name from claims (best effort), fallback to "{산이름} 정상"
+  const conqueredPeak = useMemo(() => {
+    if (!myClaim) return `${mountain.nameKo} 정상`;
+    return `${mountain.nameKo} 정상`;
+  }, [myClaim, mountain.nameKo]);
+
+  const dateStr = (record.completedAt || new Date().toISOString()).slice(0, 10);
+  const formattedDate = new Date(dateStr).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
+
+  const handlePick = (capture?: boolean) => {
+    if (!fileInputRef.current) return;
+    if (capture) fileInputRef.current.setAttribute("capture", "environment");
+    else fileInputRef.current.removeAttribute("capture");
+    fileInputRef.current.click();
+  };
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => setBgPhoto(r.result as string);
+    r.readAsDataURL(f);
+    e.target.value = "";
+  };
+
+  const handleExport = async () => {
+    if (!cardRef.current || exporting) return;
+    setExporting(true);
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const node = cardRef.current;
+      // Render at full 1080x1920
+      const rect = node.getBoundingClientRect();
+      const scale = 1080 / rect.width;
+      const canvas = await html2canvas(node, {
+        scale,
+        useCORS: true,
+        backgroundColor: null,
+      });
+      const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/png"));
+      if (!blob) throw new Error("blob fail");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `완등_${mountain.nameKo}_${dateStr}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "이미지 저장 완료" });
+    } catch (err) {
+      console.error(err);
+      toast({ title: "저장 실패", variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!cardRef.current) return;
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const node = cardRef.current;
+      const rect = node.getBoundingClientRect();
+      const scale = 1080 / rect.width;
+      const canvas = await html2canvas(node, { scale, useCORS: true, backgroundColor: null });
+      const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/png"));
+      if (!blob) return;
+      const file = new File([blob], `완등_${mountain.nameKo}.png`, { type: "image/png" });
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ title: `${mountain.nameKo} 완등`, files: [file] });
+      } else {
+        handleExport();
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  // Reusable card renderer (used both for thumb and modal — use one shared ref so html2canvas reads modal-sized version when open, otherwise thumb)
+  const Card = ({ innerRef, onClick }: { innerRef?: React.Ref<HTMLDivElement>; onClick?: () => void }) => (
+    <div
+      ref={innerRef}
+      onClick={onClick}
+      style={{
+        position: "relative",
+        width: "100%",
+        aspectRatio: "9 / 16",
+        borderRadius: 14,
+        overflow: "hidden",
+        cursor: onClick ? "pointer" : "default",
+        background: bgPhoto ? "#000" : "linear-gradient(160deg, #013F92, #2F403A)",
+        boxShadow: "0 6px 18px rgba(0,0,0,0.18)",
+      }}
+    >
+      {bgPhoto && (
+        <img
+          src={bgPhoto}
+          alt=""
+          crossOrigin="anonymous"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      )}
+      {bgPhoto && (
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.75) 100%)" }} />
+      )}
+
+      {/* Top-left logo */}
+      <div style={{ position: "absolute", top: "5%", left: "6%", color: "white", fontSize: "5%", fontWeight: 700, letterSpacing: 0.5, display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ fontSize: "5.5%" }}>🏔</span>
+        <span>완등</span>
+      </div>
+
+      {/* Bottom block */}
+      <div style={{ position: "absolute", left: "6%", right: "6%", bottom: "5%", color: "white" }}>
+        <div style={{ display: "flex", gap: 5, marginBottom: "3%", flexWrap: "wrap" }}>
+          {(mountain as any).is_bac100_blackyak && (
+            <span style={{ fontSize: "2.2%", padding: "1.5% 3%", borderRadius: 999, background: "rgba(255,255,255,0.18)", backdropFilter: "blur(4px)" }}>100대 명산</span>
+          )}
+          {(mountain as any).is_bac100 && (
+            <span style={{ fontSize: "2.2%", padding: "1.5% 3%", borderRadius: 999, background: "rgba(255,255,255,0.18)", backdropFilter: "blur(4px)" }}>산림청 100대</span>
+          )}
+        </div>
+        <h3 style={{ fontSize: "9%", fontWeight: 800, margin: 0, lineHeight: 1.05, textShadow: "0 2px 8px rgba(0,0,0,0.4)" }}>
+          {mountain.nameKo}
+        </h3>
+        <p style={{ fontSize: "3.5%", margin: "1% 0 0", opacity: 0.9, fontWeight: 500 }}>{mountain.height}m</p>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: "5%", fontSize: "3%" }}>
+          <span style={{ display: "inline-flex", width: "4%", height: "4%", borderRadius: "50%", background: "#C7D66D", alignItems: "center", justifyContent: "center", color: "#173404", fontWeight: 800 }}>✓</span>
+          <span style={{ fontWeight: 600 }}>{conqueredPeak}</span>
+        </div>
+
+        <p style={{ fontSize: "2.8%", margin: "3% 0 0", opacity: 0.8 }}>{formattedDate}</p>
+
+        <div style={{ height: 1, background: "rgba(255,255,255,0.3)", margin: "4% 0 2%" }} />
+        <p style={{ fontSize: "2.3%", margin: 0, opacity: 0.75, lineHeight: 1.3 }}>
+          완등으로 기록하기<br />wandeung.com
+        </p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={sectionCardStyle}>
+      <h2 style={sectionTitleStyle}>📤 공유 카드</h2>
+
+      {/* Thumbnail (clickable). When modal open we move ref into modal so export uses larger size */}
+      <div style={{ maxWidth: 220, margin: "0 auto" }}>
+        {!open ? (
+          <div ref={cardRef}>
+            <Card onClick={() => setOpen(true)} />
+          </div>
+        ) : (
+          // Placeholder while modal is open
+          <div style={{ aspectRatio: "9 / 16", borderRadius: 14, background: "#eee", display: "flex", alignItems: "center", justifyContent: "center", color: "#888", fontSize: 11 }}>
+            전체화면에서 보는 중
+          </div>
+        )}
+      </div>
+
+      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFile} style={{ display: "none" }} />
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginTop: 10 }}>
+        <button onClick={() => handlePick(true)} style={shareBtnStyle}>
+          <Camera size={13} /> 카메라
+        </button>
+        <button onClick={() => handlePick(false)} style={shareBtnStyle}>
+          <ImagePlus size={13} /> 갤러리
+        </button>
+        <button onClick={handleExport} disabled={exporting} style={{ ...shareBtnStyle, background: "#C7D66D", color: "#173404", borderColor: "#C7D66D" }}>
+          <Save size={13} /> {exporting ? "저장 중" : "이미지 저장"}
+        </button>
+      </div>
+
+      {/* Fullscreen modal */}
+      {open && createPortal(
+        <div
+          onClick={() => setOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: "rgba(0,0,0,0.88)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+            paddingBottom: "calc(16px + env(safe-area-inset-bottom))",
+          }}
+        >
+          <button
+            onClick={(e) => { e.stopPropagation(); setOpen(false); }}
+            style={{ position: "absolute", top: 14, right: 14, width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.18)", color: "white", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+            aria-label="닫기"
+          >
+            <X size={18} />
+          </button>
+
+          <div onClick={(e) => e.stopPropagation()} style={{ height: "85vh", aspectRatio: "9 / 16", maxWidth: "92vw" }}>
+            <div ref={cardRef} style={{ height: "100%" }}>
+              <Card />
+            </div>
+          </div>
+
+          <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", gap: 8, marginTop: 14, width: "min(92vw, 360px)" }}>
+            <button onClick={handleExport} disabled={exporting} style={{ ...shareBtnStyle, flex: 1, height: 44, background: "#C7D66D", color: "#173404", borderColor: "#C7D66D", fontSize: 13 }}>
+              <Save size={14} /> {exporting ? "저장 중" : "이미지 저장"}
+            </button>
+            <button onClick={handleShare} style={{ ...shareBtnStyle, flex: 1, height: 44, background: "white", color: "#173404", fontSize: 13 }}>
+              <Share2 size={14} /> 공유하기
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+const shareBtnStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 5,
+  padding: "8px 6px",
+  borderRadius: 10,
+  border: "0.5px solid hsl(var(--border))",
+  background: "white",
+  color: "#173404",
+  fontSize: 11,
+  fontWeight: 600,
+  cursor: "pointer",
+};
+
 
 function JournalSection({
   record,
