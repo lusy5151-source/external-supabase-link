@@ -246,36 +246,96 @@ const CreatePlanPage = () => {
         </div>
       </div>
 
-      {/* Trail / Summit name */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">코스 / 정상</label>
-        {selectedMountain?.trails && selectedMountain.trails.length > 0 && (
-          <div className="space-y-1.5">
-            {selectedMountain.trails.map((trail) => (
-              <button
-                key={trail.name}
-                onClick={() => setTrailName(trail.name)}
-                className={cn(
-                  "w-full rounded-xl border p-3 text-left transition-colors",
-                  trailName === trail.name
-                    ? "border-primary bg-primary/5"
-                    : "border-input bg-card hover:bg-secondary/50"
-                )}
-              >
-                <p className="text-sm font-medium text-foreground">{trail.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {trail.distance} · ⏱ {trail.duration} · 📍 {trail.startingPoint}
-                </p>
-              </button>
-            ))}
+      {/* Course / Trail selection */}
+      {mountainId && (
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+            <Route className="h-4 w-4 text-primary" /> 등산 코스 선택 (선택)
+          </label>
+          {trailsLoading ? (
+            <p className="text-xs text-muted-foreground">코스를 불러오는 중...</p>
+          ) : dbTrails.length === 0 ? (
+            <p className="text-xs text-muted-foreground">등록된 코스가 없습니다. 코스 이름을 직접 입력할 수 있어요.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {dbTrails.map((t) => {
+                const active = selectedTrailId === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => handleSelectTrail(t)}
+                    className={cn(
+                      "w-full rounded-xl border p-3 text-left transition-colors",
+                      active ? "border-primary bg-primary/5" : "border-input bg-card hover:bg-secondary/50"
+                    )}
+                  >
+                    <p className="text-sm font-medium text-foreground">{t.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {t.distance_km != null && <>📏 {t.distance_km}km</>}
+                      {t.duration_minutes != null && <> · ⏱ {Math.floor(t.duration_minutes / 60)}시간 {t.duration_minutes % 60}분</>}
+                      {t.difficulty && <> · 🥾 {t.difficulty}</>}
+                    </p>
+                    {t.starting_point && (
+                      <p className="text-[11px] text-muted-foreground mt-0.5 truncate">📍 {t.starting_point}</p>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <Input
+            value={trailName}
+            onChange={(e) => { setTrailName(e.target.value); if (selectedTrailId) setSelectedTrailId(null); }}
+            placeholder="또는 코스 이름 직접 입력"
+            className="mt-1"
+          />
+        </div>
+      )}
+
+      {/* Waypoints */}
+      {mountainId && (
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+            <Flag className="h-4 w-4 text-primary" /> 경유지 (선택)
+          </label>
+          {waypoints.length > 0 && (
+            <ol className="space-y-1.5">
+              {waypoints.map((w, i) => (
+                <li key={i} className="flex items-center gap-2 rounded-xl border border-input bg-card p-2.5">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary shrink-0">{i + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{w.name}</p>
+                    {w.note && <p className="text-[11px] text-muted-foreground truncate">{w.note}</p>}
+                  </div>
+                  <button onClick={() => removeWaypoint(i)} className="text-muted-foreground hover:text-destructive p-1">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ol>
+          )}
+          <div className="rounded-xl border border-dashed border-input bg-card p-3 space-y-2">
+            <Input value={newWpName} onChange={(e) => setNewWpName(e.target.value)} placeholder="경유지 이름 (예: 위문)" className="h-9" />
+            <Input value={newWpNote} onChange={(e) => setNewWpNote(e.target.value)} placeholder="메모 (선택)" className="h-9" />
+            <Button type="button" variant="outline" size="sm" onClick={addWaypoint} disabled={!newWpName.trim()} className="w-full gap-1.5">
+              <Plus className="h-3.5 w-3.5" /> 경유지 추가
+            </Button>
           </div>
-        )}
-        <Input
-          value={trailName}
-          onChange={(e) => setTrailName(e.target.value)}
-          placeholder="예: 백운대 코스 / 정상"
-        />
-      </div>
+        </div>
+      )}
+
+      {/* Route notes */}
+      {mountainId && (
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-foreground">루트 메모 (선택)</Label>
+          <Textarea
+            value={routeNotes}
+            onChange={(e) => setRouteNotes(e.target.value)}
+            placeholder="대피소, 식수 위치, 우회 코스 등..."
+            className="min-h-[60px]"
+          />
+        </div>
+      )}
 
       {/* Date */}
       <div className="space-y-2">
