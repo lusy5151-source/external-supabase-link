@@ -10,6 +10,7 @@ import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import { TutorialProvider } from "@/contexts/TutorialContext";
 import { MountainsProvider } from "@/contexts/MountainsContext";
 import { UnreadChatProvider } from "@/contexts/UnreadChatContext";
+import { CompletionSuggestionProvider } from "@/context/CompletionSuggestionContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Layout from "@/components/Layout";
 import SplashScreen from "@/components/SplashScreen";
