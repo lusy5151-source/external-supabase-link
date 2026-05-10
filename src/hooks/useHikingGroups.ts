@@ -8,6 +8,8 @@ export interface HikingGroup {
   description: string | null;
   creator_id: string;
   avatar_url: string | null;
+  cover_image_url: string | null;
+  representative_mountain_id: number | null;
   is_public: boolean;
   created_at: string;
   updated_at: string;
