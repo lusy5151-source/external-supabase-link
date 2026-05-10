@@ -2,11 +2,23 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+export interface PlanWaypoint {
+  name: string;
+  lat?: number | null;
+  lng?: number | null;
+  note?: string | null;
+}
+
 export interface HikingPlan {
   id: string;
   creator_id: string;
   mountain_id: number;
   trail_name: string | null;
+  trail_id: string | null;
+  waypoints: PlanWaypoint[] | null;
+  route_notes: string | null;
+  estimated_distance_km: number | null;
+  estimated_duration_minutes: number | null;
   planned_date: string;
   start_time: string | null;
   notes: string | null;
