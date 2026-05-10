@@ -34,7 +34,16 @@ const MountainList = () => {
   const { mountains: dbMountains } = useMountains();
   const { isCompleted: isCompletedLocal, toggleComplete: toggleCompleteLocal } = useStore();
   const { user } = useAuth();
-  const { claimedIds, toggleClaim } = useSummitClaims();
+  const { claimedIds, toggleClaim: toggleClaimRaw } = useSummitClaims();
+  const { suggest } = useCompletionSuggestion();
+  const toggleClaim = useCallback(async (mountainId: number, mountainName?: string) => {
+    const result = await toggleClaimRaw(mountainId, mountainName);
+    if (result?.ok && result.action === "marked") {
+      try { toggleCompleteLocal(mountainId); } catch {}
+      suggest(mountainId, mountainName);
+    }
+    return result;
+  }, [toggleClaimRaw, suggest, toggleCompleteLocal]);
   const isCompleted = useCallback((id: number) => claimedIds.has(id) || isCompletedLocal(id), [claimedIds, isCompletedLocal]);
   const completedCount = useMemo(() => {
     const s = new Set<number>(claimedIds);
