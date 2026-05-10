@@ -243,7 +243,7 @@ const PlansPage = () => {
     (async () => {
       try {
         const PLAN_COLS =
-          "id, creator_id, mountain_id, trail_name, planned_date, start_time, status, is_public, meeting_location, group_id, hiking_group:group_id (name)";
+          "id, creator_id, mountain_id, trail_name, estimated_distance_km, estimated_duration_minutes, planned_date, start_time, status, is_public, meeting_location, group_id, hiking_group:group_id (name)";
 
         const { data: created, error: e1 } = await (supabase as any)
           .from("hiking_plans")
