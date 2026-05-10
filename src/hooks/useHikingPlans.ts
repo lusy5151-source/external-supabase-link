@@ -140,6 +140,11 @@ export function useHikingPlans() {
   const createPlan = async (plan: {
     mountain_id: number;
     trail_name?: string;
+    trail_id?: string | null;
+    waypoints?: PlanWaypoint[] | null;
+    route_notes?: string | null;
+    estimated_distance_km?: number | null;
+    estimated_duration_minutes?: number | null;
     planned_date: string;
     start_time?: string;
     notes?: string;
@@ -164,6 +169,11 @@ export function useHikingPlans() {
       creator_id: authUser.id,
       mountain_id: plan.mountain_id,
       trail_name: plan.trail_name ?? null,
+      trail_id: plan.trail_id ?? null,
+      waypoints: plan.waypoints ?? [],
+      route_notes: plan.route_notes ?? null,
+      estimated_distance_km: plan.estimated_distance_km ?? null,
+      estimated_duration_minutes: plan.estimated_duration_minutes ?? null,
       planned_date: plan.planned_date,
       start_time: plan.start_time ?? null,
       notes: plan.notes ?? null,
