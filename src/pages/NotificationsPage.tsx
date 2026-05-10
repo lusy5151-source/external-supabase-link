@@ -40,6 +40,7 @@ const typeStyle: Record<string, { emoji: string; bg: string }> = {
   plan_deleted: { emoji: "🗑", bg: "#FCEBEB" },
   plan_cancelled: { emoji: "❌", bg: "#FCEBEB" },
   plan_status_changed: { emoji: "🏔", bg: "hsl(var(--brand-lime))" },
+  plan_invitation: { emoji: "✉️", bg: "hsl(var(--brand-lime))" },
 };
 
 const getStyle = (type: string) =>
