@@ -15,7 +15,7 @@ export interface HikingPlan {
   mountain_id: number;
   trail_name: string | null;
   trail_id: string | null;
-  waypoints: PlanWaypoint[] | null;
+  waypoints: any;
   route_notes: string | null;
   estimated_distance_km: number | null;
   estimated_duration_minutes: number | null;
