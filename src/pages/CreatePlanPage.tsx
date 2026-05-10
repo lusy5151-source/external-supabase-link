@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMountains } from "@/contexts/MountainsContext";
 import { getMockWeather } from "@/data/mockWeather";
-import { useHikingPlans } from "@/hooks/useHikingPlans";
+import { useHikingPlans, type PlanWaypoint } from "@/hooks/useHikingPlans";
+import { useTrails, type Trail } from "@/hooks/useTrails";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   Mountain, CalendarIcon, Clock, Cloud, Sun, CloudRain, CloudSnow, CloudSun,
   Wind, Droplets, ArrowLeft, MapPin, ChevronDown, Search, Users, AlertCircle,
+  Route, Plus, Trash2, Flag,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
