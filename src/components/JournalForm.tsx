@@ -223,11 +223,20 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
         } else {
           toast({ title: "일지를 작성했습니다 🏔️" });
           // Sync local completion + challenge progress + suggest summit claim
+          // Sync local completion (localStorage) so achievements/dashboard reflect immediately
           try {
-            const { useStore } = await import("@/context/StoreContext");
-            // Can't call hooks here; access localStorage directly via store helper isn't trivial,
-            // so just trigger via window event consumed elsewhere is overkill — fall back to
-            // directly writing localStorage flag via a lightweight import.
+            const STORAGE_KEY = "korea-100-mountains";
+            const raw = localStorage.getItem(STORAGE_KEY);
+            const records: any[] = raw ? JSON.parse(raw) : [];
+            const mid = Number(mountainIds[0]);
+            if (mid && !records.some((r) => r.mountainId === mid)) {
+              records.push({
+                id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+                mountainId: mid, completedAt: new Date().toISOString(),
+                notes: "", weather: "", photos: [], taggedFriends: [],
+              });
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+            }
           } catch {}
           try {
             const { updateChallengeProgress } = await import("@/lib/challengeUtils");
