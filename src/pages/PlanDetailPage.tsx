@@ -333,8 +333,9 @@ const PlanDetailPage = () => {
       </div>
 
       <Tabs defaultValue="info" className="w-full">
-        <TabsList className={cn("w-full", canChat ? "grid grid-cols-3" : "grid grid-cols-2")}>
-          <TabsTrigger value="info">계획 정보</TabsTrigger>
+        <TabsList className={cn("w-full grid", canChat ? "grid-cols-4" : "grid-cols-3")}>
+          <TabsTrigger value="info">정보</TabsTrigger>
+          <TabsTrigger value="route"><Route className="h-3.5 w-3.5 mr-1" /> 루트</TabsTrigger>
           <TabsTrigger value="participants">
             <Users className="h-3.5 w-3.5 mr-1" /> 참가자
           </TabsTrigger>
