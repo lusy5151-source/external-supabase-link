@@ -25,6 +25,8 @@ interface MyPlan {
   creator_id: string;
   mountain_id: number;
   trail_name: string | null;
+  estimated_distance_km: number | null;
+  estimated_duration_minutes: number | null;
   planned_date: string;
   start_time: string | null;
   status: string | null;
