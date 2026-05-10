@@ -64,6 +64,41 @@ const CreatePlanPage = () => {
     [mountainId, mountains]
   );
 
+  const { trails: dbTrails, loading: trailsLoading } = useTrails(mountainId ?? 0);
+
+  // Reset trail/route state when the mountain changes
+  useEffect(() => {
+    setSelectedTrailId(null);
+    setEstDistance(null);
+    setEstDuration(null);
+    setWaypoints([]);
+    setRouteNotes("");
+  }, [mountainId]);
+
+  const selectedTrail: Trail | undefined = useMemo(
+    () => dbTrails.find((t) => t.id === selectedTrailId),
+    [dbTrails, selectedTrailId]
+  );
+
+  const handleSelectTrail = (t: Trail) => {
+    setSelectedTrailId(t.id);
+    setTrailName(t.name);
+    setEstDistance(t.distance_km ?? null);
+    setEstDuration(t.duration_minutes ?? null);
+  };
+
+  const addWaypoint = () => {
+    const name = newWpName.trim();
+    if (!name) return;
+    setWaypoints((prev) => [...prev, { name, note: newWpNote.trim() || null }]);
+    setNewWpName("");
+    setNewWpNote("");
+  };
+
+  const removeWaypoint = (idx: number) => {
+    setWaypoints((prev) => prev.filter((_, i) => i !== idx));
+  };
+
   const weather = selectedMountain ? getMockWeather(selectedMountain.id) : null;
   const CondIcon = weather ? conditionIcons[weather.condition] || Cloud : Cloud;
 
