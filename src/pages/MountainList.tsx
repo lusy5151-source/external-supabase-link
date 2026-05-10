@@ -22,6 +22,7 @@ import RegisterMountainModal from "@/components/RegisterMountainModal";
 import { NearbyClubs } from "@/components/NearbyClubs";
 import StickySearchBar from "@/components/StickySearchBar";
 import MountainFilterBar, { DEFAULT_FILTERS, type MountainFilterState } from "@/components/MountainFilterBar";
+import { useCompletionSuggestion } from "@/context/CompletionSuggestionContext";
 
 const MountainMapSection = lazy(() => import("@/components/MountainMapSection"));
 
