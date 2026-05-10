@@ -77,6 +77,7 @@ const NotificationsPage = () => {
     deleteAll,
     deleteOne,
   } = useNotifications();
+  const { joinPlan } = useHikingPlans();
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
 
   const grouped = useMemo(() => groupByDate(notifications), [notifications]);
