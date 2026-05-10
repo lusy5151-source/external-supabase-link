@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Users, Globe, Lock, ArrowLeft, Crown, UserPlus, LogOut, Search,
-  UserMinus, Settings, CheckCircle, XCircle, Clock, Trash2, Flag, Mountain, Camera,
+  UserMinus, Settings, CheckCircle, XCircle, Clock, Trash2, Flag, Mountain, Camera, Pencil,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ClubChat from "@/components/ClubChat";
@@ -76,7 +76,11 @@ const GroupDetailPage = () => {
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const logoFileRef = useRef<HTMLInputElement>(null);
+  const coverFileRef = useRef<HTMLInputElement>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [showMtPicker, setShowMtPicker] = useState(false);
+  const [mtSearch, setMtSearch] = useState("");
 
   // Invite search
   const [searchQuery, setSearchQuery] = useState("");
@@ -250,6 +254,49 @@ const GroupDetailPage = () => {
     loadData();
   };
 
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !id) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "5MB 이하 이미지만 업로드 가능합니다", variant: "destructive" });
+      return;
+    }
+    setUploadingCover(true);
+    const { compressImage } = await import("@/lib/imageUpload");
+    const compressed = await compressImage(file, "general");
+    if (!compressed) { setUploadingCover(false); return; }
+    const path = `${id}/cover.jpg`;
+    const { error: uploadErr } = await supabase.storage.from("club-logos").upload(path, compressed, { upsert: true, contentType: "image/jpeg" });
+    if (uploadErr) {
+      toast({ title: "커버 업로드에 실패했습니다", variant: "destructive" });
+      setUploadingCover(false);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from("club-logos").getPublicUrl(path);
+    const cacheBusted = `${urlData.publicUrl}?t=${Date.now()}`;
+    await (supabase as any).from("hiking_group").update({ cover_image_url: cacheBusted, updated_at: new Date().toISOString() }).eq("id", id);
+    setUploadingCover(false);
+    toast({ title: "저장되었습니다" });
+    loadData();
+  };
+
+  const handleSetRepresentative = async (mountainId: number) => {
+    if (!id) return;
+    const { error } = await (supabase as any)
+      .from("hiking_group")
+      .update({ representative_mountain_id: mountainId, updated_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) {
+      toast({ title: "저장에 실패했습니다", variant: "destructive" });
+      return;
+    }
+    toast({ title: "저장되었습니다" });
+    setShowMtPicker(false);
+    setMtSearch("");
+    loadData();
+  };
+
+
   if (loading) return <div className="flex items-center justify-center py-20"><p className="text-sm text-muted-foreground">불러오는 중...</p></div>;
 
   if (!group) {
@@ -263,10 +310,38 @@ const GroupDetailPage = () => {
   }
 
   const joinRequests = invitations.filter((i) => i.inviter_id === i.invitee_id);
+  const repMountain = group.representative_mountain_id
+    ? mountains.find((m) => m.id === group.representative_mountain_id) || null
+    : null;
+  const filteredMountains = mtSearch.trim()
+    ? mountains.filter((m) => (m.nameKo || m.name || "").toLowerCase().includes(mtSearch.trim().toLowerCase())).slice(0, 50)
+    : mountains.slice(0, 50);
 
   return (
     <div className="space-y-6 pb-24 max-w-lg mx-auto">
+      {/* Cover Banner */}
+      <div className="relative -mx-4 sm:mx-0 sm:rounded-2xl overflow-hidden h-40 sm:h-48 bg-gradient-to-br from-[#5B7C3A] via-[#7BA05B] to-[#C7D66D]">
+        {group.cover_image_url && (
+          <img src={group.cover_image_url} alt={`${group.name} 커버`} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+        {isLeader && (
+          <>
+            <input type="file" accept=".jpg,.jpeg,.png,.webp,.heic,.heif" ref={coverFileRef} onChange={handleCoverUpload} className="hidden" />
+            <button
+              onClick={() => coverFileRef.current?.click()}
+              disabled={uploadingCover}
+              className="absolute top-3 right-3 flex items-center gap-1.5 rounded-full bg-black/55 backdrop-blur px-3 py-1.5 text-[11px] font-medium text-white hover:bg-black/70 transition-colors disabled:opacity-60"
+            >
+              <Camera className="h-3.5 w-3.5" />
+              {uploadingCover ? "업로드 중..." : "커버 사진"}
+            </button>
+          </>
+        )}
+      </div>
+
       {/* Header */}
+
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/social")} className="shrink-0">
           <ArrowLeft className="h-5 w-5" />
@@ -293,10 +368,10 @@ const GroupDetailPage = () => {
                 <input type="file" accept=".jpg,.jpeg,.png,.webp,.heic,.heif" ref={logoFileRef} onChange={handleLogoUpload} className="hidden" />
                 <button
                   onClick={() => logoFileRef.current?.click()}
-                  className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md hover:bg-primary/90 transition-colors disabled:opacity-60"
                   disabled={uploadingLogo}
                 >
-                  <Camera className="h-5 w-5 text-white" />
+                  <Pencil className="h-3.5 w-3.5" />
                 </button>
               </>
             )}
@@ -314,6 +389,26 @@ const GroupDetailPage = () => {
             <p className="text-[10px] text-muted-foreground mt-2">{members.length}명 멤버 · {new Date(group.created_at).toLocaleDateString("ko-KR")} 생성</p>
           </div>
         </div>
+
+        {/* Representative mountain */}
+        {(repMountain || isLeader) && (
+          <div className="flex items-center gap-2 rounded-xl bg-primary/5 border border-primary/15 px-3 py-2">
+            <Mountain className="h-4 w-4 text-primary shrink-0" />
+            {repMountain ? (
+              <Link to={`/mountains/${repMountain.id}`} className="flex-1 min-w-0 text-xs font-medium text-foreground hover:text-primary truncate">
+                🏔 대표 산: <span className="font-semibold">{repMountain.nameKo || repMountain.name}</span>
+                {repMountain.height ? <span className="text-muted-foreground font-normal"> · {repMountain.height}m</span> : null}
+              </Link>
+            ) : (
+              <span className="flex-1 text-xs text-muted-foreground">아직 대표 산이 지정되지 않았어요</span>
+            )}
+            {isLeader && (
+              <Button size="sm" variant="ghost" className="h-7 px-2 text-[11px] rounded-lg shrink-0" onClick={() => setShowMtPicker(true)}>
+                {repMountain ? "변경" : "설정"}
+              </Button>
+            )}
+          </div>
+        )}
 
         {/* Action buttons */}
         <div className="flex gap-2">
@@ -575,6 +670,50 @@ const GroupDetailPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Representative Mountain Picker */}
+      <Dialog open={showMtPicker} onOpenChange={(o) => { setShowMtPicker(o); if (!o) setMtSearch(""); }}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader><DialogTitle>대표 산 설정</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="산 이름 검색"
+                value={mtSearch}
+                onChange={(e) => setMtSearch(e.target.value)}
+                className="pl-9 rounded-xl"
+                autoFocus
+              />
+            </div>
+            <div className="space-y-1.5 max-h-80 overflow-y-auto">
+              {filteredMountains.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-6">검색 결과가 없습니다</p>
+              ) : (
+                filteredMountains.map((m) => {
+                  const isCurrent = group.representative_mountain_id === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => handleSetRepresentative(m.id)}
+                      className={`w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-colors ${isCurrent ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"}`}
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 shrink-0">
+                        <Mountain className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{m.nameKo || m.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{m.region} · {m.height}m</p>
+                      </div>
+                      {isCurrent && <CheckCircle className="h-4 w-4 text-primary shrink-0" />}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
