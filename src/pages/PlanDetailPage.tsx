@@ -32,6 +32,21 @@ const conditionIcons: Record<string, any> = {
   "맑음": Sun, "구름": CloudSun, "흐림": Cloud, "비": CloudRain, "눈": CloudSnow,
 };
 
+function PlanRouteMapBlock({ mountain, trailId }: { mountain: any; trailId: string }) {
+  const { trails } = useTrails(mountain?.id);
+  const selectedTrail = useMemo(() => trails.find((t) => t.id === trailId) || null, [trails, trailId]);
+  if (!mountain) return null;
+  return (
+    <TrailRouteMap
+      mountainName={mountain.name_ko || mountain.name}
+      mountainId={mountain.id}
+      lat={mountain.lat}
+      lng={mountain.lng}
+      selectedTrail={selectedTrail}
+    />
+  );
+}
+
 const rsvpLabels: Record<string, { label: string; color: string }> = {
   going: { label: "참석", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
   interested: { label: "관심", color: "bg-primary/20 text-primary" },
