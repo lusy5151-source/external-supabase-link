@@ -371,7 +371,7 @@ const GroupDetailPage = () => {
                   className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md hover:bg-primary/90 transition-colors disabled:opacity-60"
                   disabled={uploadingLogo}
                 >
-                  <Camera className="h-5 w-5 text-white" />
+                  <Pencil className="h-3.5 w-3.5" />
                 </button>
               </>
             )}
