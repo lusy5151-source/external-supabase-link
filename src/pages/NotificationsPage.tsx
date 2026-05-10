@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Bell, X, ChevronRight } from "lucide-react";
 import { useNotifications, type AppNotification } from "@/hooks/useNotifications";
+import { useHikingPlans } from "@/hooks/useHikingPlans";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
