@@ -149,10 +149,10 @@ function PlaceSection({
               size="sm"
               variant="outline"
               className="w-full text-xs h-8 mt-1"
-              onClick={() => window.open(place.place_url, "_blank")}
+              onClick={() => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(place.name)}`, "_blank")}
             >
               <ExternalLink className="h-3 w-3 mr-1" />
-              카카오맵에서 보기
+              네이버지도에서 보기
             </Button>
           </div>
         ))}

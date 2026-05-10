@@ -325,12 +325,12 @@ const MountainDetail = () => {
                 </h2>
                 <p style={{ fontSize: 11, color: "#666", marginBottom: 8 }}>{address}</p>
                 <button
-                  onClick={() => window.open(`https://map.kakao.com/?q=${encodeURIComponent(mountain.nameKo)}`, "_blank")}
+                  onClick={() => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(mountain.nameKo)}`, "_blank")}
                   style={{
                     width: "100%",
                     height: 90,
                     borderRadius: 10,
-                    background: "linear-gradient(180deg, #d5e8c8 0%, #c8d8b9 100%)",
+                    background: "#03C75A",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -338,8 +338,8 @@ const MountainDetail = () => {
                     cursor: "pointer",
                   }}
                 >
-                  <span style={{ background: "#639922", color: "white", padding: "4px 10px", borderRadius: 12, fontSize: 11, fontWeight: 500 }}>
-                    {mountain.nameKo}
+                  <span style={{ color: "white", padding: "4px 10px", fontSize: 12, fontWeight: 600 }}>
+                    네이버지도에서 보기 — {mountain.nameKo}
                   </span>
                 </button>
               </div>
