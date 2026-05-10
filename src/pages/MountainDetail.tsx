@@ -273,7 +273,7 @@ const MountainDetail = () => {
       </div>
 
       {/* ── 탭바 (알약형) ── */}
-      <div style={{ background: "#f7faf2", border: "0.5px solid #e3efcc", borderRadius: 14, padding: 3, margin: "12px 12px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2 }}>
+      <div style={{ background: "#f7faf2", borderRadius: 14, padding: 3, margin: "12px 12px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2 }}>
         {tabs.map((tab) => {
           const active = activeTab === tab;
           return (
@@ -457,7 +457,7 @@ function InfoItem({ icon: Icon, label, value }: { icon: any; label: string; valu
 // ───────────── Shared section styles ─────────────
 const sectionCardStyle: React.CSSProperties = {
   background: "white",
-  border: "0.5px solid hsl(var(--border))",
+  border: "none",
   borderRadius: 12,
   padding: 12,
   margin: "0 12px 10px",
@@ -583,7 +583,7 @@ function SummitGridSection({ mountainId, mountainName }: { mountainId: number; m
                 gap: 8,
                 padding: "8px 10px",
                 background: claimed ? "rgba(199,214,109,0.12)" : "#fafbf6",
-                border: `0.5px solid ${claimed ? "#C7D66D" : "hsl(var(--border))"}`,
+                border: claimed ? "0.5px solid #C7D66D" : "none",
                 borderRadius: 10,
                 cursor: "pointer",
                 textAlign: "left",
@@ -887,7 +887,7 @@ const shareBtnStyle: React.CSSProperties = {
   gap: 5,
   padding: "8px 6px",
   borderRadius: 10,
-  border: "0.5px solid hsl(var(--border))",
+  border: "none",
   background: "white",
   color: "#173404",
   fontSize: 11,
