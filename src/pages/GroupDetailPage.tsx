@@ -310,10 +310,38 @@ const GroupDetailPage = () => {
   }
 
   const joinRequests = invitations.filter((i) => i.inviter_id === i.invitee_id);
+  const repMountain = group.representative_mountain_id
+    ? mountains.find((m) => m.id === group.representative_mountain_id) || null
+    : null;
+  const filteredMountains = mtSearch.trim()
+    ? mountains.filter((m) => (m.nameKo || m.name || "").toLowerCase().includes(mtSearch.trim().toLowerCase())).slice(0, 50)
+    : mountains.slice(0, 50);
 
   return (
     <div className="space-y-6 pb-24 max-w-lg mx-auto">
+      {/* Cover Banner */}
+      <div className="relative -mx-4 sm:mx-0 sm:rounded-2xl overflow-hidden h-40 sm:h-48 bg-gradient-to-br from-[#5B7C3A] via-[#7BA05B] to-[#C7D66D]">
+        {group.cover_image_url && (
+          <img src={group.cover_image_url} alt={`${group.name} 커버`} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+        {isLeader && (
+          <>
+            <input type="file" accept=".jpg,.jpeg,.png,.webp,.heic,.heif" ref={coverFileRef} onChange={handleCoverUpload} className="hidden" />
+            <button
+              onClick={() => coverFileRef.current?.click()}
+              disabled={uploadingCover}
+              className="absolute top-3 right-3 flex items-center gap-1.5 rounded-full bg-black/55 backdrop-blur px-3 py-1.5 text-[11px] font-medium text-white hover:bg-black/70 transition-colors disabled:opacity-60"
+            >
+              <Camera className="h-3.5 w-3.5" />
+              {uploadingCover ? "업로드 중..." : "커버 사진"}
+            </button>
+          </>
+        )}
+      </div>
+
       {/* Header */}
+
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/social")} className="shrink-0">
           <ArrowLeft className="h-5 w-5" />
