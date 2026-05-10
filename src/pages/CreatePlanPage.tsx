@@ -34,6 +34,13 @@ const CreatePlanPage = () => {
 
   const [mountainId, setMountainId] = useState<number | null>(null);
   const [trailName, setTrailName] = useState("");
+  const [selectedTrailId, setSelectedTrailId] = useState<string | null>(null);
+  const [estDistance, setEstDistance] = useState<number | null>(null);
+  const [estDuration, setEstDuration] = useState<number | null>(null);
+  const [routeNotes, setRouteNotes] = useState("");
+  const [waypoints, setWaypoints] = useState<PlanWaypoint[]>([]);
+  const [newWpName, setNewWpName] = useState("");
+  const [newWpNote, setNewWpNote] = useState("");
   const [date, setDate] = useState<Date>();
   const [startTime, setStartTime] = useState("");
   const [notes, setNotes] = useState("");
