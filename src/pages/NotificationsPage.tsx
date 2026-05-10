@@ -118,6 +118,45 @@ const NotificationsPage = () => {
     fetchNotifications();
   };
 
+  const handlePlanAccept = async (n: AppNotification) => {
+    if (!n.related_id) return;
+    // related_id refers to plan_invitations.id — resolve to plan_id
+    const { data: inv } = await (supabase as any)
+      .from("plan_invitations")
+      .select("plan_id")
+      .eq("id", n.related_id)
+      .maybeSingle();
+    const planId = inv?.plan_id;
+    if (!planId) {
+      toast({ title: "초대를 찾을 수 없어요", variant: "destructive" });
+      return;
+    }
+    const { error } = await joinPlan(planId);
+    if (error && (error as any).code !== "23505") {
+      toast({ title: "참가 신청 실패", description: (error as any).message, variant: "destructive" });
+      return;
+    }
+    await (supabase as any)
+      .from("plan_invitations")
+      .update({ status: "accepted" })
+      .eq("id", n.related_id);
+    await supabase.from("notifications").update({ is_read: true }).eq("id", n.id);
+    toast({ title: "참가 신청 완료" });
+    fetchNotifications();
+  };
+
+  const handlePlanReject = async (n: AppNotification) => {
+    if (n.related_id) {
+      await (supabase as any)
+        .from("plan_invitations")
+        .update({ status: "rejected" })
+        .eq("id", n.related_id);
+    }
+    await supabase.from("notifications").update({ is_read: true }).eq("id", n.id);
+    toast({ title: "초대를 거절했어요" });
+    fetchNotifications();
+  };
+
   const handleCardClick = async (n: AppNotification) => {
     if (!n.is_read) {
       await supabase.from("notifications").update({ is_read: true }).eq("id", n.id);
