@@ -670,6 +670,50 @@ const GroupDetailPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Representative Mountain Picker */}
+      <Dialog open={showMtPicker} onOpenChange={(o) => { setShowMtPicker(o); if (!o) setMtSearch(""); }}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader><DialogTitle>대표 산 설정</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="산 이름 검색"
+                value={mtSearch}
+                onChange={(e) => setMtSearch(e.target.value)}
+                className="pl-9 rounded-xl"
+                autoFocus
+              />
+            </div>
+            <div className="space-y-1.5 max-h-80 overflow-y-auto">
+              {filteredMountains.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-6">검색 결과가 없습니다</p>
+              ) : (
+                filteredMountains.map((m) => {
+                  const isCurrent = group.representative_mountain_id === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => handleSetRepresentative(m.id)}
+                      className={`w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-colors ${isCurrent ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"}`}
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 shrink-0">
+                        <Mountain className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{m.nameKo || m.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{m.region} · {m.height}m</p>
+                      </div>
+                      {isCurrent && <CheckCircle className="h-4 w-4 text-primary shrink-0" />}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
