@@ -50,6 +50,7 @@ const PlanDetailPage = () => {
   const {
     plans, fetchParticipants, updateRsvp,
     deletePlan, updatePlanWithHistory, fetchEditHistory,
+    joinPlan,
   } = useHikingPlans();
   const { toast } = useToast();
   const { isDdayEnabled } = usePlanNotifications();
@@ -70,6 +71,8 @@ const PlanDetailPage = () => {
   const [saving, setSaving] = useState(false);
 
   const [canChat, setCanChat] = useState(false);
+  const [pendingInvitationId, setPendingInvitationId] = useState<string | null>(null);
+  const [joiningPlan, setJoiningPlan] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -113,6 +116,78 @@ const PlanDetailPage = () => {
     };
     checkAccess();
   }, [user, id, participants]);
+
+  useEffect(() => {
+    if (!user || !id) return;
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("plan_invitations")
+        .select("id, status")
+        .eq("plan_id", id)
+        .eq("invitee_id", user.id)
+        .eq("status", "pending")
+        .maybeSingle();
+      setPendingInvitationId(data?.id || null);
+    })();
+  }, [user, id]);
+
+  const handleJoinPlan = async () => {
+    if (!id) return;
+    setJoiningPlan(true);
+    const { error } = await joinPlan(id);
+    setJoiningPlan(false);
+    if (error && (error as any).code !== "23505") {
+      toast({ title: "참가 신청 실패", description: (error as any).message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "참가 신청이 완료되었습니다" });
+    fetchParticipants(id).then(setParticipants);
+  };
+
+  const handleAcceptInvitation = async () => {
+    if (!id || !user) return;
+    setJoiningPlan(true);
+    const { error } = await joinPlan(id);
+    if (error && (error as any).code !== "23505") {
+      setJoiningPlan(false);
+      toast({ title: "수락 실패", description: (error as any).message, variant: "destructive" });
+      return;
+    }
+    if (pendingInvitationId) {
+      await (supabase as any)
+        .from("plan_invitations")
+        .update({ status: "accepted" })
+        .eq("id", pendingInvitationId);
+    }
+    await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("user_id", user.id)
+      .eq("type", "plan_invitation")
+      .eq("related_id", pendingInvitationId || "");
+    setPendingInvitationId(null);
+    setJoiningPlan(false);
+    toast({ title: "초대를 수락했어요 🎉" });
+    fetchParticipants(id).then(setParticipants);
+  };
+
+  const handleRejectInvitation = async () => {
+    if (!user) return;
+    if (pendingInvitationId) {
+      await (supabase as any)
+        .from("plan_invitations")
+        .update({ status: "rejected" })
+        .eq("id", pendingInvitationId);
+      await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("user_id", user.id)
+        .eq("type", "plan_invitation")
+        .eq("related_id", pendingInvitationId);
+    }
+    setPendingInvitationId(null);
+    toast({ title: "초대를 거절했어요" });
+  };
 
   const mountain = useMemo(
     () => (plan ? mountains.find((m) => m.id === plan.mountain_id) : null),
@@ -371,6 +446,33 @@ const PlanDetailPage = () => {
               </p>
             )}
           </div>
+
+          {!isCreator && !myParticipation && (
+            <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+              {pendingInvitationId ? (
+                <>
+                  <p className="text-sm font-medium text-foreground">✉️ 초대받은 일정이에요</p>
+                  <p className="text-xs text-muted-foreground">참가 여부를 선택해주세요</p>
+                  <div className="flex gap-2">
+                    <Button className="flex-1" onClick={handleAcceptInvitation} disabled={joiningPlan}>
+                      초대 수락
+                    </Button>
+                    <Button variant="outline" className="flex-1" onClick={handleRejectInvitation} disabled={joiningPlan}>
+                      거절
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-medium text-foreground">이 일정에 참가해 보세요</p>
+                  <Button className="w-full gap-2" onClick={handleJoinPlan} disabled={joiningPlan}>
+                    <UserPlus className="h-4 w-4" />
+                    {joiningPlan ? "신청 중..." : "참가 신청하기"}
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
 
           {isCreator && (
             <button

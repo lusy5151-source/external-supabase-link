@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Bell, X, ChevronRight } from "lucide-react";
 import { useNotifications, type AppNotification } from "@/hooks/useNotifications";
+import { useHikingPlans } from "@/hooks/useHikingPlans";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -39,6 +40,7 @@ const typeStyle: Record<string, { emoji: string; bg: string }> = {
   plan_deleted: { emoji: "🗑", bg: "#FCEBEB" },
   plan_cancelled: { emoji: "❌", bg: "#FCEBEB" },
   plan_status_changed: { emoji: "🏔", bg: "hsl(var(--brand-lime))" },
+  plan_invitation: { emoji: "✉️", bg: "hsl(var(--brand-lime))" },
 };
 
 const getStyle = (type: string) =>
@@ -75,6 +77,7 @@ const NotificationsPage = () => {
     deleteAll,
     deleteOne,
   } = useNotifications();
+  const { joinPlan } = useHikingPlans();
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
 
   const grouped = useMemo(() => groupByDate(notifications), [notifications]);
@@ -111,6 +114,45 @@ const NotificationsPage = () => {
       return;
     }
     await supabase.from("notifications").delete().eq("id", n.id);
+    toast({ title: "초대를 거절했어요" });
+    fetchNotifications();
+  };
+
+  const handlePlanAccept = async (n: AppNotification) => {
+    if (!n.related_id) return;
+    // related_id refers to plan_invitations.id — resolve to plan_id
+    const { data: inv } = await (supabase as any)
+      .from("plan_invitations")
+      .select("plan_id")
+      .eq("id", n.related_id)
+      .maybeSingle();
+    const planId = inv?.plan_id;
+    if (!planId) {
+      toast({ title: "초대를 찾을 수 없어요", variant: "destructive" });
+      return;
+    }
+    const { error } = await joinPlan(planId);
+    if (error && (error as any).code !== "23505") {
+      toast({ title: "참가 신청 실패", description: (error as any).message, variant: "destructive" });
+      return;
+    }
+    await (supabase as any)
+      .from("plan_invitations")
+      .update({ status: "accepted" })
+      .eq("id", n.related_id);
+    await supabase.from("notifications").update({ is_read: true }).eq("id", n.id);
+    toast({ title: "참가 신청 완료" });
+    fetchNotifications();
+  };
+
+  const handlePlanReject = async (n: AppNotification) => {
+    if (n.related_id) {
+      await (supabase as any)
+        .from("plan_invitations")
+        .update({ status: "rejected" })
+        .eq("id", n.related_id);
+    }
+    await supabase.from("notifications").update({ is_read: true }).eq("id", n.id);
     toast({ title: "초대를 거절했어요" });
     fetchNotifications();
   };
@@ -325,7 +367,7 @@ const NotificationsPage = () => {
                           {formatRelativeTime(n.created_at)}
                         </p>
                       </div>
-                      {n.type === "group_invitation" ? (
+                      {n.type === "group_invitation" || n.type === "plan_invitation" ? (
                         <div
                           style={{
                             display: "flex",
@@ -338,7 +380,8 @@ const NotificationsPage = () => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleAccept(n);
+                              if (n.type === "plan_invitation") handlePlanAccept(n);
+                              else handleAccept(n);
                             }}
                             style={{
                               background: "hsl(var(--brand-lime))",
@@ -354,7 +397,8 @@ const NotificationsPage = () => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleReject(n);
+                              if (n.type === "plan_invitation") handlePlanReject(n);
+                              else handleReject(n);
                             }}
                             style={{
                               border: "0.5px solid hsl(var(--color-border-secondary))",
