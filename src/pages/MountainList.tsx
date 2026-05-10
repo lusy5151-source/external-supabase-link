@@ -32,7 +32,7 @@ type Segment = "list" | "map";
 
 const MountainList = () => {
   const { mountains: dbMountains } = useMountains();
-  const { isCompleted: isCompletedLocal, toggleComplete: toggleCompleteLocal } = useStore();
+  const { isCompleted: isCompletedLocal, toggleComplete: toggleCompleteLocal, addCompletion: addCompletionLocal } = useStore();
   const { user } = useAuth();
   const { claimedIds, toggleClaim: toggleClaimRaw } = useSummitClaims();
   const { suggest } = useCompletionSuggestion();
