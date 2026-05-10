@@ -222,6 +222,36 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
           alert(`저장 실패: ${msg} / code: ${code}`);
         } else {
           toast({ title: "일지를 작성했습니다 🏔️" });
+          // Sync local completion + challenge progress + suggest summit claim
+          // Sync local completion (localStorage) so achievements/dashboard reflect immediately
+          try {
+            const STORAGE_KEY = "korea-100-mountains";
+            const raw = localStorage.getItem(STORAGE_KEY);
+            const records: any[] = raw ? JSON.parse(raw) : [];
+            const mid = Number(mountainIds[0]);
+            if (mid && !records.some((r) => r.mountainId === mid)) {
+              records.push({
+                id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+                mountainId: mid, completedAt: new Date().toISOString(),
+                notes: "", weather: "", photos: [], taggedFriends: [],
+              });
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+            }
+          } catch {}
+          try {
+            const { updateChallengeProgress } = await import("@/lib/challengeUtils");
+            updateChallengeProgress(user?.id);
+          } catch {}
+          try {
+            const { toast: sonnerToast } = await import("sonner");
+            sonnerToast.success("📔 일지가 저장됐어요! 정상 인증도 남겨볼까요?", {
+              action: {
+                label: "인증하기",
+                onClick: () => { window.location.href = "/summit-claim"; },
+              },
+              duration: 6000,
+            });
+          } catch {}
           onSaved();
         }
       }

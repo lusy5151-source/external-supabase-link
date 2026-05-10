@@ -10,6 +10,7 @@ import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import { TutorialProvider } from "@/contexts/TutorialContext";
 import { MountainsProvider } from "@/contexts/MountainsContext";
 import { UnreadChatProvider } from "@/contexts/UnreadChatContext";
+import { CompletionSuggestionProvider } from "@/context/CompletionSuggestionContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Layout from "@/components/Layout";
 import SplashScreen from "@/components/SplashScreen";
@@ -193,12 +194,14 @@ const App = () => {
               <BrowserRouter>
                 <GuestProvider>
                 <UnreadChatProvider>
+                <CompletionSuggestionProvider>
                 {!showSplash && <MigrationNoticeModal />}
                 <Layout>
                   <ErrorBoundary fallbackMessage="데이터를 불러오는 중 오류가 발생했습니다.">
                     <AppRoutes />
                   </ErrorBoundary>
                 </Layout>
+                </CompletionSuggestionProvider>
                 </UnreadChatProvider>
                 </GuestProvider>
               </BrowserRouter>

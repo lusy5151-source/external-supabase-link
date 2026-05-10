@@ -331,7 +331,7 @@ const MountainDetail = () => {
 
             {/* 등산 일지 (완등 기록 있을 때만) */}
             {completed && record && (
-              <div style={{ margin: "0 12px 8px" }}>
+              <div id="mountain-journal-section" style={{ margin: "0 12px 8px", scrollMarginTop: 80 }}>
                 <JournalSection
                   record={record}
                   mountainId={mountain.id}

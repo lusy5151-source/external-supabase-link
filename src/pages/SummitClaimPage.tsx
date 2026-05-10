@@ -256,6 +256,23 @@ export default function SummitClaimPage() {
       if (!isCompleted(selectedMountain.id)) {
         addCompletion(selectedMountain.id);
       }
+      // Update challenges combining summit_claims + journals
+      try {
+        const { updateChallengeProgress } = await import("@/lib/challengeUtils");
+        updateChallengeProgress(user?.id);
+      } catch {}
+      // Suggest journal write via sonner toast
+      try {
+        const { toast: sonnerToast } = await import("sonner");
+        const mtId = selectedMountain.id;
+        sonnerToast.success("✅ 정상 인증 완료! 등산 일지도 작성해볼까요?", {
+          action: {
+            label: "일지 쓰기",
+            onClick: () => { window.location.href = `/mountains/${mtId}?focusJournal=1`; },
+          },
+          duration: 6000,
+        });
+      } catch {}
       setShowCelebration(true);
       setTimeout(() => {
         setShowCelebration(false);
