@@ -2,11 +2,23 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+export interface PlanWaypoint {
+  name: string;
+  lat?: number | null;
+  lng?: number | null;
+  note?: string | null;
+}
+
 export interface HikingPlan {
   id: string;
   creator_id: string;
   mountain_id: number;
   trail_name: string | null;
+  trail_id: string | null;
+  waypoints: any;
+  route_notes: string | null;
+  estimated_distance_km: number | null;
+  estimated_duration_minutes: number | null;
   planned_date: string;
   start_time: string | null;
   notes: string | null;
@@ -128,6 +140,11 @@ export function useHikingPlans() {
   const createPlan = async (plan: {
     mountain_id: number;
     trail_name?: string;
+    trail_id?: string | null;
+    waypoints?: PlanWaypoint[] | null;
+    route_notes?: string | null;
+    estimated_distance_km?: number | null;
+    estimated_duration_minutes?: number | null;
     planned_date: string;
     start_time?: string;
     notes?: string;
@@ -152,6 +169,11 @@ export function useHikingPlans() {
       creator_id: authUser.id,
       mountain_id: plan.mountain_id,
       trail_name: plan.trail_name ?? null,
+      trail_id: plan.trail_id ?? null,
+      waypoints: plan.waypoints ?? [],
+      route_notes: plan.route_notes ?? null,
+      estimated_distance_km: plan.estimated_distance_km ?? null,
+      estimated_duration_minutes: plan.estimated_duration_minutes ?? null,
       planned_date: plan.planned_date,
       start_time: plan.start_time ?? null,
       notes: plan.notes ?? null,

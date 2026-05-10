@@ -15,6 +15,7 @@ import {
   ArrowLeft, Calendar, Clock, Mountain, Users,
   Cloud, Sun, CloudRain, CloudSnow, CloudSun, Wind, Droplets,
   Edit3, History, Save, X, MessageCircle, Trophy, UserPlus,
+  Route, Flag, MapPin,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -24,6 +25,8 @@ import PlanChat from "@/components/PlanChat";
 import PlanApplicationManager from "@/components/PlanApplicationManager";
 import InviteFriendsSheet from "@/components/InviteFriendsSheet";
 import { usePlanNotifications } from "@/hooks/usePlanNotifications";
+import { TrailRouteMap } from "@/components/TrailRouteMap";
+import { useTrails, type Trail } from "@/hooks/useTrails";
 
 const conditionIcons: Record<string, any> = {
   "맑음": Sun, "구름": CloudSun, "흐림": Cloud, "비": CloudRain, "눈": CloudSnow,
@@ -330,8 +333,9 @@ const PlanDetailPage = () => {
       </div>
 
       <Tabs defaultValue="info" className="w-full">
-        <TabsList className={cn("w-full", canChat ? "grid grid-cols-3" : "grid grid-cols-2")}>
-          <TabsTrigger value="info">계획 정보</TabsTrigger>
+        <TabsList className={cn("w-full grid", canChat ? "grid-cols-4" : "grid-cols-3")}>
+          <TabsTrigger value="info">정보</TabsTrigger>
+          <TabsTrigger value="route"><Route className="h-3.5 w-3.5 mr-1" /> 루트</TabsTrigger>
           <TabsTrigger value="participants">
             <Users className="h-3.5 w-3.5 mr-1" /> 참가자
           </TabsTrigger>
@@ -555,6 +559,60 @@ const PlanDetailPage = () => {
             <Calendar className="h-4 w-4" />
             <span>나의 일정 보기</span>
           </button>
+        </TabsContent>
+
+        <TabsContent value="route" className="space-y-4 mt-4">
+          {(() => {
+            const planAny = plan as any;
+            const trailId: string | null = planAny.trail_id || null;
+            const waypoints: Array<{ name: string; note?: string | null }> = Array.isArray(planAny.waypoints) ? planAny.waypoints : [];
+            const distKm = planAny.estimated_distance_km;
+            const durMin = planAny.estimated_duration_minutes;
+            return (
+              <>
+                {trailId && mountain ? (
+                  <PlanRouteMapBlock mountain={mountain} trailId={trailId} />
+                ) : (
+                  <div className="rounded-2xl border border-border bg-card p-5 text-center text-sm text-muted-foreground">
+                    🗺 코스가 선택되지 않았습니다
+                  </div>
+                )}
+
+                <div className="rounded-2xl border border-border bg-card p-4 space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> 코스 정보</p>
+                  {plan.trail_name ? (
+                    <p className="text-sm font-medium text-foreground">{plan.trail_name}</p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">코스 이름 없음</p>
+                  )}
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    {distKm != null && <span>📏 {distKm}km</span>}
+                    {durMin != null && <span>⏱ {Math.floor(durMin / 60)}시간 {durMin % 60 > 0 ? `${durMin % 60}분` : ""}</span>}
+                  </div>
+                  {planAny.route_notes && (
+                    <p className="text-xs text-foreground whitespace-pre-wrap pt-1 border-t border-border/60">{planAny.route_notes}</p>
+                  )}
+                </div>
+
+                {waypoints.length > 0 && (
+                  <div className="rounded-2xl border border-border bg-card p-4 space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground flex items-center gap-1"><Flag className="h-3 w-3" /> 경유지</p>
+                    <ol className="space-y-1.5">
+                      {waypoints.map((w, i) => (
+                        <li key={i} className="flex items-center gap-2">
+                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary shrink-0">{i + 1}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">{w.name}</p>
+                            {w.note && <p className="text-[11px] text-muted-foreground truncate">{w.note}</p>}
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </TabsContent>
 
         <TabsContent value="participants" className="space-y-4 mt-4">

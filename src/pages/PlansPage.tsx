@@ -25,6 +25,8 @@ interface MyPlan {
   creator_id: string;
   mountain_id: number;
   trail_name: string | null;
+  estimated_distance_km: number | null;
+  estimated_duration_minutes: number | null;
   planned_date: string;
   start_time: string | null;
   status: string | null;
@@ -134,6 +136,17 @@ function PlanCard({
           {plan.meeting_location && <span>📍 {plan.meeting_location}</span>}
         </div>
 
+        {/* Row 2b: route summary */}
+        {plan.trail_name && (
+          <div className="mt-1" style={{ fontSize: 12, color: "hsl(var(--muted-foreground))" }}>
+            🗺 {plan.trail_name}
+            {plan.estimated_distance_km != null && <> · {plan.estimated_distance_km}km</>}
+            {plan.estimated_duration_minutes != null && (
+              <> · {Math.floor(plan.estimated_duration_minutes / 60)}시간 {plan.estimated_duration_minutes % 60 > 0 ? `${plan.estimated_duration_minutes % 60}분` : ""}</>
+            )}
+          </div>
+        )}
+
         {/* Row 3: group name */}
         {plan.group_id && plan.group_name && (
           <div className="mt-1.5">
@@ -241,7 +254,7 @@ const PlansPage = () => {
     (async () => {
       try {
         const PLAN_COLS =
-          "id, creator_id, mountain_id, trail_name, planned_date, start_time, status, is_public, meeting_location, group_id, hiking_group:group_id (name)";
+          "id, creator_id, mountain_id, trail_name, estimated_distance_km, estimated_duration_minutes, planned_date, start_time, status, is_public, meeting_location, group_id, hiking_group:group_id (name)";
 
         const { data: created, error: e1 } = await (supabase as any)
           .from("hiking_plans")
@@ -293,6 +306,8 @@ const PlansPage = () => {
           creator_id: r.creator_id,
           mountain_id: r.mountain_id,
           trail_name: r.trail_name,
+          estimated_distance_km: r.estimated_distance_km ?? null,
+          estimated_duration_minutes: r.estimated_duration_minutes ?? null,
           planned_date: r.planned_date,
           start_time: r.start_time,
           status: r.status,
