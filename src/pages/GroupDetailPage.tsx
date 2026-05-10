@@ -390,6 +390,26 @@ const GroupDetailPage = () => {
           </div>
         </div>
 
+        {/* Representative mountain */}
+        {(repMountain || isLeader) && (
+          <div className="flex items-center gap-2 rounded-xl bg-primary/5 border border-primary/15 px-3 py-2">
+            <Mountain className="h-4 w-4 text-primary shrink-0" />
+            {repMountain ? (
+              <Link to={`/mountains/${repMountain.id}`} className="flex-1 min-w-0 text-xs font-medium text-foreground hover:text-primary truncate">
+                🏔 대표 산: <span className="font-semibold">{repMountain.nameKo || repMountain.name}</span>
+                {repMountain.height ? <span className="text-muted-foreground font-normal"> · {repMountain.height}m</span> : null}
+              </Link>
+            ) : (
+              <span className="flex-1 text-xs text-muted-foreground">아직 대표 산이 지정되지 않았어요</span>
+            )}
+            {isLeader && (
+              <Button size="sm" variant="ghost" className="h-7 px-2 text-[11px] rounded-lg shrink-0" onClick={() => setShowMtPicker(true)}>
+                {repMountain ? "변경" : "설정"}
+              </Button>
+            )}
+          </div>
+        )}
+
         {/* Action buttons */}
         <div className="flex gap-2">
           {!isMember && !isLeader && (
