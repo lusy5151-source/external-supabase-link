@@ -71,6 +71,8 @@ const PlanDetailPage = () => {
   const [saving, setSaving] = useState(false);
 
   const [canChat, setCanChat] = useState(false);
+  const [pendingInvitationId, setPendingInvitationId] = useState<string | null>(null);
+  const [joiningPlan, setJoiningPlan] = useState(false);
 
   useEffect(() => {
     if (!id) return;
