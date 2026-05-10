@@ -136,6 +136,17 @@ function PlanCard({
           {plan.meeting_location && <span>📍 {plan.meeting_location}</span>}
         </div>
 
+        {/* Row 2b: route summary */}
+        {plan.trail_name && (
+          <div className="mt-1" style={{ fontSize: 12, color: "hsl(var(--muted-foreground))" }}>
+            🗺 {plan.trail_name}
+            {plan.estimated_distance_km != null && <> · {plan.estimated_distance_km}km</>}
+            {plan.estimated_duration_minutes != null && (
+              <> · {Math.floor(plan.estimated_duration_minutes / 60)}시간 {plan.estimated_duration_minutes % 60 > 0 ? `${plan.estimated_duration_minutes % 60}분` : ""}</>
+            )}
+          </div>
+        )}
+
         {/* Row 3: group name */}
         {plan.group_id && plan.group_name && (
           <div className="mt-1.5">
