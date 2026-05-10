@@ -368,7 +368,7 @@ const GroupDetailPage = () => {
                 <input type="file" accept=".jpg,.jpeg,.png,.webp,.heic,.heif" ref={logoFileRef} onChange={handleLogoUpload} className="hidden" />
                 <button
                   onClick={() => logoFileRef.current?.click()}
-                  className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md hover:bg-primary/90 transition-colors disabled:opacity-60"
                   disabled={uploadingLogo}
                 >
                   <Camera className="h-5 w-5 text-white" />
