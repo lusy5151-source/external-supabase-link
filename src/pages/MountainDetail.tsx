@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { mountains as staticMountains } from "@/data/mountains";
 import type { Mountain } from "@/data/mountains";
 import { useMountains } from "@/contexts/MountainsContext";
