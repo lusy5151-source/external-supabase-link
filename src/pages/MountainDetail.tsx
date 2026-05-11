@@ -480,6 +480,57 @@ function OverviewIntroCard({ text }: { text: string }) {
   );
 }
 
+// ───────────── 3. 위치 + 봉우리 마커 지도 ─────────────
+function OverviewLocationBlock({ mountain, address }: { mountain: any; address: string }) {
+  const { summits, claims } = useSummits(mountain?.id);
+  const { user } = useAuth();
+  const summitsWithStatus = useMemo(
+    () =>
+      summits.map((s) => ({
+        ...s,
+        isCompleted: claims.some((c) => c.summit_id === s.id && c.user_id === user?.id),
+      })),
+    [summits, claims, user?.id]
+  );
+  if (!mountain) return null;
+  return (
+    <div style={sectionCardStyle}>
+      <h2 style={sectionTitleStyle}>위치</h2>
+      {address && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+          <p style={{ fontSize: 12, color: "hsl(var(--muted-foreground))", margin: 0, flex: 1, lineHeight: 1.5 }}>{address}</p>
+          <a
+            href={`https://map.naver.com/v5/search/${encodeURIComponent(mountain.nameKo)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              background: "#03C75A", color: "white", fontSize: 11, fontWeight: 600,
+              padding: "5px 10px", borderRadius: 8, whiteSpace: "nowrap",
+              textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4, flexShrink: 0,
+            }}
+          >
+            <MapPin size={11} /> 네이버지도
+          </a>
+        </div>
+      )}
+      <SummitMarkerMap
+        mountain={{ lat: mountain.lat, lng: mountain.lng, nameKo: mountain.nameKo }}
+        summits={summitsWithStatus as any}
+      />
+      <div style={{ display: "flex", gap: 12, marginTop: 8, fontSize: 10, color: "#666" }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+          <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 14, height: 14, borderRadius: "50%", background: "#C7D66D", color: "#173404", fontSize: 9, fontWeight: 700 }}>▲</span>
+          미정복 봉우리
+        </span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+          <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 14, height: 14, borderRadius: "50%", background: "#FF696C", color: "white", fontSize: 9, fontWeight: 700 }}>✓</span>
+          정복한 봉우리
+        </span>
+      </div>
+    </div>
+  );
+}
+
 // ───────────── 2. 정상 정복 그리드 ─────────────
 function SummitGridSection({ mountainId, mountainName }: { mountainId: number; mountainName: string }) {
   const { user } = useAuth();
