@@ -272,7 +272,7 @@ export function useChallenges() {
       const [{ data: journals }, { data: claims }, { data: mountains }] = await Promise.all([
         supabase.from("hiking_journals").select("*").eq("user_id", user.id),
         (supabase as any).from("summit_claims").select("*").eq("user_id", user.id),
-        supabase.from("mountains").select("id, height, region, province, name_ko, is_bac100, is_bac100_blackyak, is_national_park"),
+        supabase.from("mountains").select("id, name_ko, height, region, province, difficulty, is_bac100, is_bac100_blackyak, is_national_park"),
       ]);
       const allJournals = journals || [];
       const allClaims = claims || [];
