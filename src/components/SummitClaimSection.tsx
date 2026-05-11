@@ -222,7 +222,7 @@ export function SummitClaimSection({ mountainId, mountainName, hideList, trigger
         const res = await validateSummitPhoto(file, selectedSummit.latitude, selectedSummit.longitude);
         setExifResult(res);
         setExifStatus("done");
-        if (!res.isValid && res.errorMessage) {
+        if (res.status === "fail") {
           setPhotoFile(null);
           setPhotoPreview(null);
           if (fileInputRef.current) fileInputRef.current.value = "";
@@ -232,12 +232,18 @@ export function SummitClaimSection({ mountainId, mountainName, hideList, trigger
         setExifStatus("done");
       }
     }
+    // AI 검증은 사용자가 버튼을 눌러야 실행 (자동 실행 안 함)
+  };
 
+  const handleStartAiVerify = async () => {
+    if (!photoFile) return;
+    const { compressImageToDataUrl, resizeImageForAI } = await import("@/lib/imageUpload");
     try {
-      const aiDataUrl = await resizeImageForAI(file);
+      const aiDataUrl = await resizeImageForAI(photoFile);
       verifyPhotoWithAI(aiDataUrl);
     } catch {
-      verifyPhotoWithAI(dataUrl);
+      const dataUrl = await compressImageToDataUrl(photoFile, "summit");
+      if (dataUrl) verifyPhotoWithAI(dataUrl);
     }
   };
 
@@ -553,21 +559,33 @@ export function SummitClaimSection({ mountainId, mountainName, hideList, trigger
             {exifStatus === "checking" && (
               <p className="text-xs text-muted-foreground">사진 정보 확인 중...</p>
             )}
-            {exifStatus === "done" && exifResult && !exifResult.isValid && exifResult.errorMessage && (
+            {exifStatus === "done" && exifResult?.status === "fail" && exifResult.errorMessage && (
               <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3">
-                <p className="text-xs text-destructive">{exifResult.errorMessage}</p>
+                <p className="text-xs text-destructive whitespace-pre-line">{exifResult.errorMessage}</p>
               </div>
             )}
-            {exifStatus === "done" && exifResult?.isValid && exifResult.warningMessage && (
+            {exifStatus === "done" && exifResult?.status === "warn" && exifResult.warnMessage && (
               <div className="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-900/20 p-3">
-                <p className="text-xs text-amber-800 dark:text-amber-300">{exifResult.warningMessage}</p>
+                <p className="text-xs text-amber-800 dark:text-amber-300 whitespace-pre-line">{exifResult.warnMessage}</p>
               </div>
             )}
-            {exifStatus === "done" && exifResult?.isValid && !exifResult.warningMessage && (
+            {exifStatus === "done" && exifResult?.status === "pass" && (
               <p className="text-xs text-green-600 dark:text-green-400">
                 ✓ {exifResult.photoDate ? `촬영 ${exifResult.photoDate.toLocaleDateString("ko-KR")}` : "촬영 정보 확인"}
                 {exifResult.distanceKm !== null ? ` · 정상에서 ${exifResult.distanceKm.toFixed(1)}km` : ""}
               </p>
+            )}
+
+            {/* AI 검증 시작 버튼: EXIF 통과(pass/warn)이고 아직 AI 검증 전일 때 */}
+            {photoFile && exifStatus === "done" && exifResult && exifResult.status !== "fail"
+              && aiVerification.status === "idle" && (
+              <Button
+                variant="outline"
+                className="w-full rounded-xl gap-2"
+                onClick={handleStartAiVerify}
+              >
+                <Sparkles className="h-4 w-4 text-primary" /> AI로 정상 인증하기
+              </Button>
             )}
 
             {/* AI Verification Result */}
