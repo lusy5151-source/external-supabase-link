@@ -12,12 +12,11 @@ interface TrailRouteMapProps {
 
 // Brand-token derived stroke colors (forest, navy, coral, lavender, lime, sky)
 export const ROUTE_COLORS = [
-  "#2F403A", // brand-forest
+  "#C7D66D", // brand-lime
   "#013F92", // brand-navy
   "#FF696C", // brand-coral
   "#C2B6DE", // brand-lavender
-  "#C7D66D", // brand-lime
-  "#C6DBF0", // brand-sky
+  "#2F403A", // brand-forest
 ];
 
 const NO_GEOMETRY_COLOR = "#AAAAAA";
