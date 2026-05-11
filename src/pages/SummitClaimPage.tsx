@@ -657,22 +657,24 @@ export default function SummitClaimPage() {
             <label className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
               <Camera className="h-3.5 w-3.5" /> 정상 사진 <span className="text-destructive">*</span>
             </label>
-            {/* Camera capture input */}
+            {/* Hidden inputs (kept accessible for iOS — do NOT use display:none) */}
             <input
               ref={fileInputRef}
+              id="summit-camera-input"
               type="file"
               accept="image/*"
               capture="environment"
-              className="hidden"
               onChange={handlePhotoChange}
+              style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
             />
-            {/* Gallery input (no capture attribute) */}
             <input
               ref={galleryInputRef}
+              id="summit-gallery-input"
               type="file"
               accept="image/*"
-              className="hidden"
+              multiple
               onChange={handlePhotoChange}
+              style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
             />
             {photoPreview ? (
               <div className="space-y-3">
