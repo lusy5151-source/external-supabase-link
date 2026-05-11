@@ -45,6 +45,8 @@ export default function ChallengeMountainsPage() {
 
   const [mountains, setMountains] = useState<MountainRow[]>([]);
   const [claimedIds, setClaimedIds] = useState<Set<number>>(new Set());
+  const [photoMap, setPhotoMap] = useState<Map<number, string>>(new Map());
+  const [animateIds, setAnimateIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterMode>("all");
   const [sort, setSort] = useState<SortMode>("rank");
