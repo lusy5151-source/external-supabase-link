@@ -97,18 +97,18 @@ export function useChallenges() {
     summitClaims: any[],
     mountainMap: Map<number, any>,
   ): number => {
-    // Combine claim mountain ids and journal mountain ids for "completed mountain" semantics
-    const claimedMountainIds = new Set<number>();
-    summitClaims.forEach((sc: any) => { if (sc.mountain_id != null) claimedMountainIds.add(sc.mountain_id); });
+    // Combined unique mountain ids from claims + journals
+    const completedMountainIds = new Set<number>();
+    summitClaims.forEach((sc: any) => { if (sc.mountain_id != null) completedMountainIds.add(sc.mountain_id); });
     journals.forEach((j: any) => {
-      if (j.mountain_id != null) claimedMountainIds.add(j.mountain_id);
-      (j.mountain_ids || []).forEach((id: number) => claimedMountainIds.add(id));
+      if (j.mountain_id != null) completedMountainIds.add(j.mountain_id);
+      (j.mountain_ids || []).forEach((id: number) => completedMountainIds.add(id));
     });
 
     const mountainsOf = (ids: Iterable<number>) =>
       Array.from(ids).map((id) => mountainMap.get(id)).filter(Boolean);
 
-    const monthOf = (d: Date) => d.getMonth(); // 0-11
+    const dateOf = (row: any) => new Date(row.claimed_at || row.hiked_at || row.created_at);
     const seasonOf = (d: Date) => {
       const m = d.getMonth();
       if (m >= 2 && m <= 4) return "spring";
@@ -117,60 +117,101 @@ export function useChallenges() {
       return "winter";
     };
 
+    const allEvents = [...summitClaims, ...journals];
+
     switch (goalType) {
       case "mountain":
       case "count":
-        return claimedMountainIds.size;
+        return completedMountainIds.size;
+
       case "monthly_count": {
         const now = new Date();
-        return summitClaims.filter((sc: any) => {
-          const d = new Date(sc.claimed_at);
-          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-        }).length;
+        const days = new Set<string>();
+        allEvents.forEach((r: any) => {
+          const d = dateOf(r);
+          if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+            days.add(d.toDateString());
+          }
+        });
+        return days.size;
       }
-      case "photo_verify":
-        return summitClaims.filter((sc: any) => sc.photo_url).length;
-      case "bac100":
-        return mountainsOf(claimedMountainIds).filter((m: any) => m.is_bac100_blackyak || m.is_bac100).length;
-      case "national_park":
-        return mountainsOf(claimedMountainIds).filter((m: any) => m.is_national_park).length;
-      case "single_elevation":
-        return mountainsOf(claimedMountainIds).reduce((max: number, m: any) => Math.max(max, m.height || 0), 0);
-      case "elevation_total":
-        return mountainsOf(claimedMountainIds).reduce((sum: number, m: any) => sum + (m.height || 0), 0);
-      case "seasonal_spring":
-      case "seasonal_summer":
-      case "seasonal_autumn":
-      case "seasonal_winter": {
-        const target = goalType.replace("seasonal_", "");
-        return summitClaims.filter((sc: any) => seasonOf(new Date(sc.claimed_at)) === target).length;
-      }
-      case "all_seasons": {
-        const seasons = new Set(summitClaims.map((sc: any) => seasonOf(new Date(sc.claimed_at))));
-        return seasons.size;
-      }
-      case "monthly_streak": {
+
+      case "monthly_streak":
+      case "streak": {
         const months = new Set(
-          summitClaims.map((sc: any) => {
-            const d = new Date(sc.claimed_at);
+          allEvents.map((r: any) => {
+            const d = dateOf(r);
             return `${d.getFullYear()}-${d.getMonth()}`;
           })
         );
-        // Longest consecutive months ending now
         let streak = 0;
-        const now = new Date();
-        const cur = new Date(now.getFullYear(), now.getMonth(), 1);
+        const cur = new Date();
+        cur.setDate(1);
         while (months.has(`${cur.getFullYear()}-${cur.getMonth()}`)) {
           streak += 1;
           cur.setMonth(cur.getMonth() - 1);
         }
         return streak;
       }
+
+      case "elevation_total":
+        return mountainsOf(completedMountainIds).reduce((sum: number, m: any) => sum + (m.height || 0), 0);
+
+      case "single_elevation":
+        return mountainsOf(completedMountainIds).reduce((max: number, m: any) => Math.max(max, m.height || 0), 0);
+
+      case "bac100":
+        return mountainsOf(completedMountainIds).filter((m: any) => m.is_bac100_blackyak || m.is_bac100).length;
+
+      case "national_park":
+        return mountainsOf(completedMountainIds).filter((m: any) => m.is_national_park).length;
+
+      case "bukhansan_4": {
+        const summitIds = new Set<string>();
+        summitClaims.forEach((sc: any) => {
+          if (sc.mountain_id === 6 && sc.summit_id) summitIds.add(sc.summit_id);
+        });
+        return summitIds.size;
+      }
+
+      case "jirisan_cheonwang": {
+        const has = allEvents.some((r: any) => {
+          if (r.mountain_id === 2) return true;
+          if (Array.isArray(r.mountain_ids) && r.mountain_ids.includes(2)) return true;
+          return false;
+        });
+        return has ? 1 : 0;
+      }
+
+      case "seasonal_spring":
+      case "seasonal_summer":
+      case "seasonal_autumn":
+      case "seasonal_winter": {
+        const target = goalType.replace("seasonal_", "");
+        return allEvents.some((r: any) => seasonOf(dateOf(r)) === target) ? 1 : 0;
+      }
+
+      case "all_seasons": {
+        const seasons = new Set(allEvents.map((r: any) => seasonOf(dateOf(r))));
+        return seasons.size;
+      }
+
+      case "weather_rain":
+        return journals.some((j: any) => j.weather === "비") ? 1 : 0;
+
+      case "weather_snow":
+        return journals.some((j: any) => j.weather === "눈") ? 1 : 0;
+
+      case "photo_verify":
+        return summitClaims.filter((sc: any) => sc.photo_url).length;
+
+      case "region_specific":
       case "region_count":
       case "region_all": {
-        const regions = new Set(mountainsOf(claimedMountainIds).map((m: any) => m.region).filter(Boolean));
+        const regions = new Set(mountainsOf(completedMountainIds).map((m: any) => m.region).filter(Boolean));
         return regions.size;
       }
+
       case "region_seoul":
       case "region_gangwon":
       case "region_jiri": {
@@ -181,25 +222,39 @@ export function useChallenges() {
           jiri: ["지리"],
         };
         const needles = matchers[key] || [];
-        return mountainsOf(claimedMountainIds).filter((m: any) => {
+        return mountainsOf(completedMountainIds).filter((m: any) => {
           const haystack = `${m.region || ""} ${m.province || ""} ${m.name_ko || ""}`;
           return needles.some((n) => haystack.includes(n));
         }).length;
       }
+
+      case "difficulty_count": {
+        const diffs = new Set(
+          mountainsOf(completedMountainIds).map((m: any) => m.difficulty).filter(Boolean)
+        );
+        return diffs.size;
+      }
+
       case "repeat_mountain": {
         const counts = new Map<number, number>();
-        summitClaims.forEach((sc: any) => {
-          if (sc.mountain_id == null) return;
-          counts.set(sc.mountain_id, (counts.get(sc.mountain_id) || 0) + 1);
+        allEvents.forEach((r: any) => {
+          if (r.mountain_id == null) return;
+          counts.set(r.mountain_id, (counts.get(r.mountain_id) || 0) + 1);
         });
         return counts.size === 0 ? 0 : Math.max(...counts.values());
       }
+
       case "new_year": {
-        return summitClaims.filter((sc: any) => {
-          const d = new Date(sc.claimed_at);
+        return allEvents.some((r: any) => {
+          const d = dateOf(r);
           return d.getMonth() === 0 && d.getDate() === 1;
-        }).length;
+        }) ? 1 : 0;
       }
+
+      case "distance":
+        // Not auto-computable without trail distance data
+        return -1;
+
       default:
         return -1;
     }
