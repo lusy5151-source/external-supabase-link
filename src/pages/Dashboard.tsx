@@ -376,11 +376,11 @@ const Dashboard = () => {
 
         <div className="space-y-4 px-5 pt-5">
 
-          {/* ── 1. 지금 이 산에 있어요 🔥 ── */}
+          {/* ── 1. 완등 실시간 소식 🏔 ── */}
           <section>
             <div className="mb-3 flex items-center gap-2">
               <Flame className="h-4 w-4 text-coral" />
-              <h2 className="text-base font-bold text-foreground">지금 이 산에 있어요 🔥</h2>
+              <h2 className="text-base font-bold text-foreground">완등 실시간 소식 🏔</h2>
             </div>
             <div className="rounded-2xl bg-card border border-border p-3 shadow-sm space-y-2">
               {!isDemo && liveFeedLoading ? (
@@ -405,7 +405,13 @@ const Dashboard = () => {
                       <div className="flex-1 min-w-0 flex items-center gap-1.5 text-sm">
                         <span className="font-medium text-foreground truncate">{claim.nickname || "등산러"}</span>
                         <span className="text-muted-foreground">·</span>
-                        <span className="text-foreground truncate">{mt?.nameKo || claim.summit_name}</span>
+                        <span className="text-foreground truncate">{mt?.nameKo}</span>
+                        {claim.summit_name && (
+                          <>
+                            <span className="text-muted-foreground">·</span>
+                            <span className="text-muted-foreground truncate">{claim.summit_name}</span>
+                          </>
+                        )}
                       </div>
                       <span className="text-[10px] text-muted-foreground shrink-0">{timeAgo}</span>
                     </div>

@@ -41,7 +41,7 @@ export function useLiveSummitFeed() {
 
     return rawClaims.map((c) => ({
       ...c,
-      summit_name: summitMap.get(c.summit_id) || "정상",
+      summit_name: summitMap.get(c.summit_id) || null,
       nickname: profileMap.get(c.user_id)?.nickname || null,
       avatar_url: profileMap.get(c.user_id)?.avatar_url || null,
     }));
