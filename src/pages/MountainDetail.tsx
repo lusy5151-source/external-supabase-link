@@ -209,9 +209,13 @@ const MountainDetail = () => {
     BANNER_MAX - scrollY * ((BANNER_MAX - BANNER_MIN) / COLLAPSE_RANGE)
   );
   const collapseRatio = Math.min(1, scrollY / COLLAPSE_RANGE);
-  const nameBottom = 20 - collapseRatio * 20;
+  const nameBottomBase = imageUrl ? 20 : 14;
+  const nameLeftBase = imageUrl ? 16 : 14;
+  const nameBottom = nameBottomBase - collapseRatio * nameBottomBase;
   const nameFontSize = 26 - collapseRatio * 8;
-  const nameLeft = 16 - collapseRatio * 16;
+  const nameLeft = nameLeftBase - collapseRatio * nameLeftBase;
+  const badgeBottom = imageUrl ? 20 : 12;
+  const badgeRight = imageUrl ? 14 : 12;
   const nameTextAlign: "left" | "center" = collapseRatio > 0.6 ? "center" : "left";
   const subtitleOpacity = Math.max(0, 1 - collapseRatio * 2);
   const actionOpacity = Math.max(0, 1 - collapseRatio * 1.5);
