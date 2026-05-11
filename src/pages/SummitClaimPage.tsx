@@ -70,6 +70,8 @@ export default function SummitClaimPage() {
     reason: string;
     elements: string[];
   }>({ status: "idle", confidence: 0, reason: "", elements: [] });
+  const [exifStatus, setExifStatus] = useState<"idle" | "checking" | "done">("idle");
+  const [exifResult, setExifResult] = useState<import("@/utils/exifValidation").ExifValidationResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
