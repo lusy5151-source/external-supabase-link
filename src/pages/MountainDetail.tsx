@@ -313,54 +313,8 @@ const MountainDetail = () => {
             </div>
 
             {/* 3. 위치 */}
-            {address && (
-              <div style={sectionCardStyle}>
-                <h2 style={sectionTitleStyle}>위치</h2>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
-                  <p style={{ fontSize: 12, color: "hsl(var(--muted-foreground))", margin: 0, flex: 1, lineHeight: 1.5 }}>{address}</p>
-                  <button
-                    onClick={() => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(mountain.nameKo)}`, "_blank")}
-                    style={{
-                      background: "#03C75A",
-                      color: "white",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      padding: "5px 10px",
-                      borderRadius: 8,
-                      border: "none",
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 4,
-                      whiteSpace: "nowrap",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <MapPin size={11} /> 네이버지도
-                  </button>
-                </div>
-                <button
-                  onClick={() => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(mountain.nameKo)}`, "_blank")}
-                  style={{
-                    width: "100%",
-                    height: 80,
-                    borderRadius: 10,
-                    background: "linear-gradient(135deg, #C7D66D 0%, #8FB856 60%, #4F7A3A 100%)",
-                    border: "none",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "white",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    boxShadow: "inset 0 -10px 20px rgba(0,0,0,0.1)",
-                  }}
-                >
-                  <MapPin size={14} style={{ marginRight: 4 }} /> 지도에서 보기
-                </button>
-              </div>
-            )}
+            <OverviewLocationBlock mountain={mountain} address={address} />
+
 
             {/* 4. 등산 일지 (완등 기록 있을 때만) */}
             {completed && record && (
