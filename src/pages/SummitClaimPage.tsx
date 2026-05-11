@@ -723,6 +723,22 @@ export default function SummitClaimPage() {
                   </div>
                 </div>
 
+                {/* EXIF Validation Status */}
+                {exifStatus === "checking" && (
+                  <p className="text-xs text-muted-foreground">사진 정보 확인 중...</p>
+                )}
+                {exifStatus === "done" && exifResult?.isValid && exifResult.warningMessage && (
+                  <div className="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-900/20 p-3">
+                    <p className="text-xs text-amber-800 dark:text-amber-300">{exifResult.warningMessage}</p>
+                  </div>
+                )}
+                {exifStatus === "done" && exifResult?.isValid && !exifResult.warningMessage && (
+                  <p className="text-xs text-green-600 dark:text-green-400">
+                    ✓ {exifResult.photoDate ? `촬영 ${exifResult.photoDate.toLocaleDateString("ko-KR")}` : "촬영 정보 확인"}
+                    {exifResult.distanceKm !== null ? ` · 정상에서 ${exifResult.distanceKm.toFixed(1)}km` : ""}
+                  </p>
+                )}
+
                 {/* AI Verification Status */}
                 {aiVerification.status === "verifying" && (
                   <div className="rounded-xl bg-muted/50 p-3 flex items-center gap-3">
