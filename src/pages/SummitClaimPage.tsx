@@ -813,6 +813,14 @@ export default function SummitClaimPage() {
                     <span className="text-xs text-muted-foreground">앨범에서 선택</span>
                   </label>
                 </div>
+                {exifStatus === "checking" && (
+                  <p className="text-xs text-muted-foreground mt-2">사진 정보 확인 중...</p>
+                )}
+                {exifStatus === "done" && exifResult && !exifResult.isValid && exifResult.errorMessage && (
+                  <div className="mt-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3">
+                    <p className="text-xs text-destructive">{exifResult.errorMessage}</p>
+                  </div>
+                )}
               </>
             )}
           </div>
