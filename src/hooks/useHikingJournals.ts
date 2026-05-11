@@ -220,6 +220,11 @@ export function useHikingJournals() {
       await supabase.from("plan_notifications").insert(notifications as any);
     }
 
+    // Notify achievement system to recheck (cross-component)
+    if (!error) {
+      try { window.dispatchEvent(new Event("wandeung_journal_changed")); } catch {}
+    }
+
     // Auto-update challenge progress
     if (!error) {
       try {
