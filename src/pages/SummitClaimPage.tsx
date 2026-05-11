@@ -70,6 +70,8 @@ export default function SummitClaimPage() {
     reason: string;
     elements: string[];
   }>({ status: "idle", confidence: 0, reason: "", elements: [] });
+  const [exifStatus, setExifStatus] = useState<"idle" | "checking" | "done">("idle");
+  const [exifResult, setExifResult] = useState<import("@/utils/exifValidation").ExifValidationResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -159,15 +161,37 @@ export default function SummitClaimPage() {
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const { compressImageToDataUrl } = await import("@/lib/imageUpload");
-      const dataUrl = await compressImageToDataUrl(file, "summit");
-      if (!dataUrl) return;
-      setPhotoFile(file);
-      setAiVerification({ status: "idle", confidence: 0, reason: "", elements: [] });
-      setPhotoPreview(dataUrl);
-      verifyPhotoWithAI(dataUrl);
+    if (!file) return;
+    const { compressImageToDataUrl } = await import("@/lib/imageUpload");
+    const dataUrl = await compressImageToDataUrl(file, "summit");
+    if (!dataUrl) return;
+    setPhotoFile(file);
+    setAiVerification({ status: "idle", confidence: 0, reason: "", elements: [] });
+    setPhotoPreview(dataUrl);
+
+    // EXIF validation
+    if (selectedSummit) {
+      setExifStatus("checking");
+      setExifResult(null);
+      try {
+        const { validateSummitPhoto } = await import("@/utils/exifValidation");
+        const res = await validateSummitPhoto(file, selectedSummit.latitude, selectedSummit.longitude);
+        setExifResult(res);
+        setExifStatus("done");
+        if (!res.isValid && res.errorMessage) {
+          // reset photo selection
+          setPhotoFile(null);
+          setPhotoPreview(null);
+          if (fileInputRef.current) fileInputRef.current.value = "";
+          if (galleryInputRef.current) galleryInputRef.current.value = "";
+          return;
+        }
+      } catch {
+        setExifStatus("done");
+      }
     }
+
+    verifyPhotoWithAI(dataUrl);
   };
 
   const verifyPhotoWithAI = async (imageDataUrl: string) => {
@@ -699,6 +723,22 @@ export default function SummitClaimPage() {
                   </div>
                 </div>
 
+                {/* EXIF Validation Status */}
+                {exifStatus === "checking" && (
+                  <p className="text-xs text-muted-foreground">사진 정보 확인 중...</p>
+                )}
+                {exifStatus === "done" && exifResult?.isValid && exifResult.warningMessage && (
+                  <div className="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-900/20 p-3">
+                    <p className="text-xs text-amber-800 dark:text-amber-300">{exifResult.warningMessage}</p>
+                  </div>
+                )}
+                {exifStatus === "done" && exifResult?.isValid && !exifResult.warningMessage && (
+                  <p className="text-xs text-green-600 dark:text-green-400">
+                    ✓ {exifResult.photoDate ? `촬영 ${exifResult.photoDate.toLocaleDateString("ko-KR")}` : "촬영 정보 확인"}
+                    {exifResult.distanceKm !== null ? ` · 정상에서 ${exifResult.distanceKm.toFixed(1)}km` : ""}
+                  </p>
+                )}
+
                 {/* AI Verification Status */}
                 {aiVerification.status === "verifying" && (
                   <div className="rounded-xl bg-muted/50 p-3 flex items-center gap-3">
@@ -773,6 +813,14 @@ export default function SummitClaimPage() {
                     <span className="text-xs text-muted-foreground">앨범에서 선택</span>
                   </label>
                 </div>
+                {exifStatus === "checking" && (
+                  <p className="text-xs text-muted-foreground mt-2">사진 정보 확인 중...</p>
+                )}
+                {exifStatus === "done" && exifResult && !exifResult.isValid && exifResult.errorMessage && (
+                  <div className="mt-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3">
+                    <p className="text-xs text-destructive">{exifResult.errorMessage}</p>
+                  </div>
+                )}
               </>
             )}
           </div>
