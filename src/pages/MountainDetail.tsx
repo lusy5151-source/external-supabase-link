@@ -1018,6 +1018,41 @@ function ShareCardSection({ mountain, record }: { mountain: Mountain; record: Co
             </div>
           </div>
 
+          {bgPhoto && (
+            <div onClick={(e) => e.stopPropagation()} style={{ marginTop: 12, width: "min(92vw, 360px)", color: "white" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, opacity: 0.8, marginBottom: 4 }}>
+                <span>↑ 하늘 더보기</span>
+                <span>전경 더보기 ↓</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={posY}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  setPosY(v);
+                  setImgPosition(`50% ${v}%`);
+                }}
+                style={{ width: "100%", accentColor: "#C7D66D" }}
+              />
+              <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                {[
+                  { label: "하늘 위주", v: 20 },
+                  { label: "중간", v: 50 },
+                  { label: "전경 위주", v: 75 },
+                ].map((p) => (
+                  <button
+                    key={p.v}
+                    onClick={() => { setPosY(p.v); setImgPosition(`50% ${p.v}%`); }}
+                    style={{ flex: 1, padding: "6px 0", borderRadius: 8, border: "1px solid rgba(255,255,255,0.3)", background: posY === p.v ? "rgba(199,214,109,0.25)" : "rgba(255,255,255,0.08)", color: "white", fontSize: 11, cursor: "pointer" }}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", gap: 8, marginTop: 14, width: "min(92vw, 360px)" }}>
             <button onClick={handleExport} disabled={exporting} style={{ ...shareBtnStyle, flex: 1, height: 44, background: "#C7D66D", color: "#173404", borderColor: "#C7D66D", fontSize: 13 }}>
               <Save size={14} /> {exporting ? "저장 중" : "이미지 저장"}
