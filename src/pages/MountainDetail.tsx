@@ -769,7 +769,10 @@ function SummitGridSection({ mountainId, mountainName }: { mountainId: number; m
 function ShareCardSection({ mountain, record }: { mountain: Mountain; record: CompletionRecord }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [bgPhoto, setBgPhoto] = useState<string | null>(record.photos?.[0] || (mountain as any).image_url || null);
+  const [bgPhoto, setBgPhoto] = useState<string | null>(null);
+  const [userPicked, setUserPicked] = useState(false);
+  const [imgPosition, setImgPosition] = useState("50% 40%");
+  const [posY, setPosY] = useState(40);
   const [open, setOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const { user } = useAuth();
@@ -780,6 +783,15 @@ function ShareCardSection({ mountain, record }: { mountain: Mountain; record: Co
     () => claims.find((c) => c.user_id === user?.id),
     [claims, user]
   );
+
+  // Auto-resolve background priority: user-pick > summit_claim photo > mountain image > null (gradient)
+  useEffect(() => {
+    if (userPicked) return;
+    const claimPhoto = myClaim?.photo_url;
+    const recordPhoto = record.photos?.[0];
+    const mtnPhoto = (mountain as any).image_url;
+    setBgPhoto(claimPhoto || recordPhoto || mtnPhoto || null);
+  }, [myClaim, record.photos, mountain, userPicked]);
 
   // Resolve a peak name from claims (best effort), fallback to "{산이름} 정상"
   const conqueredPeak = useMemo(() => {
@@ -800,10 +812,24 @@ function ShareCardSection({ mountain, record }: { mountain: Mountain; record: Co
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
+    if (f.size > 20 * 1024 * 1024) {
+      sonnerToast.error("20MB 이하 사진을 선택해주세요");
+      e.target.value = "";
+      return;
+    }
     const r = new FileReader();
-    r.onload = () => setBgPhoto(r.result as string);
+    r.onload = () => {
+      setBgPhoto(r.result as string);
+      setUserPicked(true);
+      sonnerToast.success("사진이 적용되었어요!");
+    };
     r.readAsDataURL(f);
     e.target.value = "";
+  };
+
+  const handleRemovePhoto = () => {
+    setBgPhoto(null);
+    setUserPicked(true);
   };
 
   const handleExport = async () => {
@@ -877,11 +903,20 @@ function ShareCardSection({ mountain, record }: { mountain: Mountain; record: Co
           src={bgPhoto}
           alt=""
           crossOrigin="anonymous"
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: imgPosition }}
         />
       )}
       {bgPhoto && (
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.75) 100%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.75) 70%, rgba(0,0,0,0.85) 100%)" }} />
+      )}
+      {bgPhoto && onClick == null && (
+        <button
+          onClick={(e) => { e.stopPropagation(); handleRemovePhoto(); }}
+          aria-label="사진 제거"
+          style={{ position: "absolute", top: 8, right: 8, width: 26, height: 26, borderRadius: "50%", background: "rgba(0,0,0,0.45)", border: "none", color: "white", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 5 }}
+        >
+          <X size={14} />
+        </button>
       )}
 
       {/* Top-left logo */}
@@ -983,6 +1018,41 @@ function ShareCardSection({ mountain, record }: { mountain: Mountain; record: Co
             </div>
           </div>
 
+          {bgPhoto && (
+            <div onClick={(e) => e.stopPropagation()} style={{ marginTop: 12, width: "min(92vw, 360px)", color: "white" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, opacity: 0.8, marginBottom: 4 }}>
+                <span>↑ 하늘 더보기</span>
+                <span>전경 더보기 ↓</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={posY}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  setPosY(v);
+                  setImgPosition(`50% ${v}%`);
+                }}
+                style={{ width: "100%", accentColor: "#C7D66D" }}
+              />
+              <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                {[
+                  { label: "하늘 위주", v: 20 },
+                  { label: "중간", v: 50 },
+                  { label: "전경 위주", v: 75 },
+                ].map((p) => (
+                  <button
+                    key={p.v}
+                    onClick={() => { setPosY(p.v); setImgPosition(`50% ${p.v}%`); }}
+                    style={{ flex: 1, padding: "6px 0", borderRadius: 8, border: "1px solid rgba(255,255,255,0.3)", background: posY === p.v ? "rgba(199,214,109,0.25)" : "rgba(255,255,255,0.08)", color: "white", fontSize: 11, cursor: "pointer" }}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", gap: 8, marginTop: 14, width: "min(92vw, 360px)" }}>
             <button onClick={handleExport} disabled={exporting} style={{ ...shareBtnStyle, flex: 1, height: 44, background: "#C7D66D", color: "#173404", borderColor: "#C7D66D", fontSize: 13 }}>
               <Save size={14} /> {exporting ? "저장 중" : "이미지 저장"}
