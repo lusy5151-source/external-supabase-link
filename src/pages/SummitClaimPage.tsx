@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useHikingPlans } from "@/hooks/useHikingPlans";
 import { useHikingGroups } from "@/hooks/useHikingGroups";
 import { useSummits, type Summit } from "@/hooks/useSummits";
+import { useChallenges } from "@/hooks/useChallenges";
 import { useOfflineClaims } from "@/hooks/useOfflineClaims";
 import { useStore } from "@/context/StoreContext";
 import { useToast } from "@/hooks/use-toast";
@@ -42,6 +43,7 @@ function dataURLtoFile(dataUrl: string, filename: string): File {
 export default function SummitClaimPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { recalculateProgress } = useChallenges();
   const { plans } = useHikingPlans();
   const { myGroups } = useHikingGroups();
   const { pendingClaims, addOfflineClaim, markSynced, removeOfflineClaim } = useOfflineClaims();
@@ -261,6 +263,7 @@ export default function SummitClaimPage() {
         const { updateChallengeProgress } = await import("@/lib/challengeUtils");
         updateChallengeProgress(user?.id);
       } catch {}
+      try { recalculateProgress(); } catch {}
       // Suggest journal write via sonner toast
       try {
         const { toast: sonnerToast } = await import("sonner");

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMountains } from "@/contexts/MountainsContext";
 import { useHikingJournals, type HikingJournal } from "@/hooks/useHikingJournals";
+import { useChallenges } from "@/hooks/useChallenges";
 import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePrivacySettings } from "@/hooks/usePrivacySettings";
@@ -35,6 +36,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
   const { mountains } = useMountains();
   const { user } = useAuth();
   const { createJournal, updateJournal, uploadPhoto } = useHikingJournals();
+  const { recalculateProgress } = useChallenges();
   const { friends } = useFriends();
   const { toast } = useToast();
   const { isPrivateAccount, defaultJournalVisibility } = usePrivacySettings();
@@ -266,6 +268,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
             const { updateChallengeProgress } = await import("@/lib/challengeUtils");
             updateChallengeProgress(user?.id);
           } catch {}
+          try { recalculateProgress(); } catch {}
           try {
             const { toast: sonnerToast } = await import("sonner");
             sonnerToast.success("📔 일지가 저장됐어요! 정상 인증도 남겨볼까요?", {
