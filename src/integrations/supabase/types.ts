@@ -51,7 +51,7 @@ export type Database = {
           achievement_type: string | null
           description: string | null
           id: number
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           achieved_at?: string | null
@@ -59,7 +59,7 @@ export type Database = {
           achievement_type?: string | null
           description?: string | null
           id?: never
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           achieved_at?: string | null
@@ -67,7 +67,7 @@ export type Database = {
           achievement_type?: string | null
           description?: string | null
           id?: never
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -775,7 +775,7 @@ export type Database = {
           plan_id: string | null
           tagged_friends: string[] | null
           updated_at: string | null
-          user_id: string | null
+          user_id: string
           visibility: string | null
           weather: string | null
         }
@@ -795,7 +795,7 @@ export type Database = {
           plan_id?: string | null
           tagged_friends?: string[] | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
           visibility?: string | null
           weather?: string | null
         }
@@ -815,7 +815,7 @@ export type Database = {
           plan_id?: string | null
           tagged_friends?: string[] | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
           visibility?: string | null
           weather?: string | null
         }

@@ -57,6 +57,10 @@ export function JournalCard({ journal, showAuthor = true, onRefresh, slider = fa
   const [showLikers, setShowLikers] = useState(false);
   const [likers, setLikers] = useState<{ user_id: string; nickname: string | null; avatar_url: string | null }[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [startX, setStartX] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [dragDelta, setDragDelta] = useState(0);
 
   const vis = visibilityConfig[journal.visibility] || visibilityConfig.public;
   const VisIcon = vis.icon;
@@ -150,19 +154,95 @@ export function JournalCard({ journal, showAuthor = true, onRefresh, slider = fa
       ) : (
         <>
           {photos.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setLightboxIndex(0)}
-              className="w-full relative overflow-hidden focus:outline-none bg-secondary/30"
-              style={{ maxHeight: 320 }}
-            >
-              <img src={photos[0]} alt="" className="w-full object-contain" style={{ maxHeight: 320 }} />
-              {photos.length > 1 && (
-                <div className="absolute bottom-2 right-2 rounded-full bg-foreground/50 px-2 py-0.5 text-[10px] text-white font-medium">
-                  +{photos.length - 1}
+            photos.length === 1 ? (
+              <button
+                type="button"
+                onClick={() => setLightboxIndex(0)}
+                className="w-full relative overflow-hidden focus:outline-none bg-secondary/30"
+                style={{ maxHeight: 320 }}
+              >
+                <img src={photos[0]} alt="" className="w-full object-contain" style={{ maxHeight: 320 }} />
+              </button>
+            ) : (
+              <div
+                className="w-full relative overflow-hidden bg-secondary/30"
+                style={{ maxHeight: 320 }}
+                onTouchStart={(e) => {
+                  setStartX(e.touches[0].clientX);
+                  setDragging(true);
+                }}
+                onTouchMove={(e) => {
+                  if (!dragging) return;
+                  setDragDelta(e.touches[0].clientX - startX);
+                }}
+                onTouchEnd={() => {
+                  if (dragDelta < -50 && currentIdx < photos.length - 1)
+                    setCurrentIdx(i => i + 1);
+                  if (dragDelta > 50 && currentIdx > 0)
+                    setCurrentIdx(i => i - 1);
+                  setDragging(false);
+                  setDragDelta(0);
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    transform: `translateX(calc(-${currentIdx * 100}% + ${dragging ? dragDelta : 0}px))`,
+                    transition: dragging ? 'none' : 'transform 0.25s ease',
+                  }}
+                >
+                  {photos.map((url, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setLightboxIndex(i)}
+                      className="focus:outline-none"
+                      style={{ flex: '0 0 100%', width: '100%' }}
+                    >
+                      <img
+                        src={url}
+                        alt=""
+                        style={{
+                          width: '100%',
+                          aspectRatio: '1',
+                          objectFit: 'cover',
+                          pointerEvents: 'none',
+                        }}
+                      />
+                    </button>
+                  ))}
                 </div>
-              )}
-            </button>
+                {/* Counter */}
+                <div style={{
+                  position: 'absolute', top: 8, right: 8,
+                  background: 'rgba(0,0,0,0.45)',
+                  backdropFilter: 'blur(4px)',
+                  borderRadius: 20,
+                  padding: '2px 8px',
+                  color: 'white',
+                  fontSize: 11,
+                  fontWeight: 500,
+                }}>
+                  {currentIdx + 1} / {photos.length}
+                </div>
+                {/* Dots */}
+                <div style={{
+                  position: 'absolute', bottom: 8, left: '50%',
+                  transform: 'translateX(-50%)',
+                  display: 'flex', gap: 4,
+                }}>
+                  {photos.map((_, i) => (
+                    <div key={i} style={{
+                      width: i === currentIdx ? 14 : 5,
+                      height: 5,
+                      borderRadius: 3,
+                      background: i === currentIdx ? '#c6d56c' : 'rgba(255,255,255,0.55)',
+                      transition: 'all 0.2s',
+                    }} />
+                  ))}
+                </div>
+              </div>
+            )
           )}
           <PhotoLightbox
             photos={photos}
