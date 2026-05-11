@@ -341,18 +341,18 @@ const ChallengePage = () => {
             try {
               const { data: { user: authUser } } = await supabase.auth.getUser();
               if (!authUser) { toast.error("로그인이 필요합니다"); return; }
-              const { count, error } = await (supabase as any)
-                .from("summit_claims")
-                .select("*", { count: "exact", head: true })
-                .eq("user_id", authUser.id);
-              if (error) throw error;
-              toast.success(`현재 로그인 유저(${authUser.id.slice(0, 8)}…)의 정상 인증 수: ${count ?? 0}건`);
-              console.log("챌린지 동기화 - auth user_id:", authUser.id, "summit_claims count:", count);
+              setRefreshing(true);
+              await recalculateProgress();
+              await load();
+              toast.success("챌린지 진행도를 동기화했어요");
             } catch (e: any) {
               toast.error(e.message ?? "동기화 실패");
+            } finally {
+              setRefreshing(false);
             }
           }}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition disabled:opacity-50"
+          disabled={refreshing}
         >
           🔄 챌린지 동기화
         </button>
