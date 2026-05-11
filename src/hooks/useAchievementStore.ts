@@ -40,41 +40,43 @@ export function useAchievementStore(
   const [userId, setUserId] = useState<string | null>(null);
 
   // Fetch summit_claims, hiking_journals, and existing user_achievements
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || cancelled) return;
-      setUserId(user.id);
+  const refetch = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    setUserId(user.id);
 
-      const [{ data: claims }, { data: js }, { data: ua }] = await Promise.all([
-        (supabase as any).from("summit_claims").select("mountain_id").eq("user_id", user.id),
-        (supabase as any).from("hiking_journals").select("mountain_id, notes, photos, hiked_at").eq("user_id", user.id),
-        (supabase as any).from("user_achievements").select("badge_id, earned_at").eq("user_id", user.id),
-      ]);
-      if (cancelled) return;
+    const [{ data: claims }, { data: js }, { data: ua }] = await Promise.all([
+      (supabase as any).from("summit_claims").select("mountain_id").eq("user_id", user.id),
+      (supabase as any).from("hiking_journals").select("mountain_id, notes, photos, hiked_at").eq("user_id", user.id),
+      (supabase as any).from("user_achievements").select("badge_id, earned_at").eq("user_id", user.id),
+    ]);
 
-      if (claims) {
-        const ids = new Set<number>((claims as any[]).map((c) => c.mountain_id).filter((v) => v != null));
-        setClaimedMountainIds(ids);
-      }
-      if (js) setJournals(js as JournalLite[]);
+    if (claims) {
+      const ids = new Set<number>((claims as any[]).map((c) => c.mountain_id).filter((v) => v != null));
+      setClaimedMountainIds(ids);
+    }
+    if (js) setJournals(js as JournalLite[]);
 
-      // Merge remote earned badges into local state
-      if (ua && (ua as any[]).length > 0) {
-        const remote: EarnedBadge[] = (ua as any[]).map((r) => ({
-          badgeId: r.badge_id,
-          earnedAt: r.earned_at || new Date().toISOString(),
-        }));
-        setEarned((prev) => {
-          const map = new Map<string, EarnedBadge>();
-          [...prev, ...remote].forEach((e) => { if (!map.has(e.badgeId)) map.set(e.badgeId, e); });
-          return Array.from(map.values());
-        });
-      }
-    })();
-    return () => { cancelled = true; };
+    if (ua && (ua as any[]).length > 0) {
+      const remote: EarnedBadge[] = (ua as any[]).map((r) => ({
+        badgeId: r.badge_id,
+        earnedAt: r.earned_at || new Date().toISOString(),
+      }));
+      setEarned((prev) => {
+        const map = new Map<string, EarnedBadge>();
+        [...prev, ...remote].forEach((e) => { if (!map.has(e.badgeId)) map.set(e.badgeId, e); });
+        return Array.from(map.values());
+      });
+    }
   }, []);
+
+  useEffect(() => {
+    refetch();
+    const onJournalChange = () => refetch();
+    window.addEventListener("wandeung_journal_changed", onJournalChange);
+    return () => window.removeEventListener("wandeung_journal_changed", onJournalChange);
+  }, [refetch]);
+
 
   useEffect(() => { saveEarned(earned); }, [earned]);
   useEffect(() => {
