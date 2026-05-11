@@ -177,7 +177,7 @@ const MountainDetail = () => {
   const isBac100 = (mountain as any).is_bac100;
   const isNP = (mountain as any).is_national_park;
   const npName = (mountain as any).national_park_name;
-  const address = (mountain as any).address;
+  const address = detailFields?.address ?? (mountain as any).address;
 
   const diffStyle =
     mountain.difficulty === "쉬움" ? { background: "#EAF3DE", color: "#173404" } :
