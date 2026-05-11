@@ -21,6 +21,8 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import type { WeatherCondition, CompletionRecord } from "@/hooks/useMountainStore";
 import { WeatherCard } from "@/components/WeatherCard";
 import { TrailInfoSection } from "@/components/TrailInfo";
+import { TrailRouteMap } from "@/components/TrailRouteMap";
+import type { Trail } from "@/hooks/useTrails";
 import { NearbyPlaces } from "@/components/NearbyPlaces";
 import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
@@ -166,6 +168,7 @@ const MountainDetail = () => {
 
   const [activeTab, setActiveTab] = useState<"개요" | "코스" | "날씨" | "편의시설">("개요");
   const tabs = ["개요", "코스", "날씨", "편의시설"] as const;
+  const [selectedCourseTrail, setSelectedCourseTrail] = useState<Trail | null>(null);
 
   const getDifficultyColor = (d: string) => {
     if (d === "쉬움") return "bg-green-500";
@@ -556,8 +559,20 @@ const MountainDetail = () => {
 
         {/* 코스 탭 */}
         {activeTab === "코스" && (
-          <div style={{ margin: "0 12px" }}>
-            <TrailInfoSection mountainId={mountain.id} fallbackTrails={mountain.trails} />
+          <div style={{ margin: "0 12px" }} className="space-y-4">
+            <TrailRouteMap
+              mountainName={mountain.nameKo}
+              mountainId={mountain.id}
+              lat={mountain.lat}
+              lng={mountain.lng}
+              selectedTrail={selectedCourseTrail}
+            />
+            <TrailInfoSection
+              mountainId={mountain.id}
+              fallbackTrails={mountain.trails}
+              selectedTrailId={selectedCourseTrail?.id ?? null}
+              onSelectTrail={(t) => setSelectedCourseTrail((prev) => (prev?.id === t.id ? null : t))}
+            />
           </div>
         )}
 
