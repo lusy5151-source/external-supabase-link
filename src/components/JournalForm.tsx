@@ -67,8 +67,31 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
   const [mountainSearch, setMountainSearch] = useState("");
   const [showMountainSearch, setShowMountainSearch] = useState(false);
   const [showOptional, setShowOptional] = useState(!!editJournal);
+  const [plannedItems, setPlannedItems] = useState<{ mountain: any; plan: any }[]>([]);
 
   const MAX_PHOTOS = 5;
+
+  useEffect(() => {
+    if (!user?.id || mountains.length === 0) return;
+    (async () => {
+      const today = new Date().toISOString().split("T")[0];
+      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      const { data } = await (supabase as any)
+        .from("hiking_plans")
+        .select("id, mountain_id, trail_name, planned_date, trail_id")
+        .eq("creator_id", user.id)
+        .lte("planned_date", today)
+        .gte("planned_date", since)
+        .order("planned_date", { ascending: false })
+        .limit(10);
+      if (!data) return;
+      const items = data
+        .map((plan: any) => ({ mountain: mountains.find((m) => m.id === plan.mountain_id), plan }))
+        .filter((it: any) => it.mountain);
+      setPlannedItems(items);
+    })();
+  }, [user?.id, mountains]);
+
 
   const isEdit = !!editJournal;
 
