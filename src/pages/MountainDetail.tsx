@@ -168,6 +168,7 @@ const MountainDetail = () => {
 
   const [activeTab, setActiveTab] = useState<"개요" | "코스" | "날씨" | "편의시설">("개요");
   const tabs = ["개요", "코스", "날씨", "편의시설"] as const;
+  const [selectedCourseTrail, setSelectedCourseTrail] = useState<Trail | null>(null);
 
   const getDifficultyColor = (d: string) => {
     if (d === "쉬움") return "bg-green-500";
