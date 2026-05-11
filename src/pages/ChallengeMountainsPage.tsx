@@ -576,6 +576,64 @@ export default function ChallengeMountainsPage() {
                     border: "1.5px dashed #aaa",
                   }} />
                 )}
+
+                {/* User photo upload / edit button (logged-in users only) */}
+                {user && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleOpenPicker(m.id);
+                    }}
+                    aria-label={hasPhoto ? "사진 변경" : "사진 추가"}
+                    style={{
+                      position: "absolute", bottom: 4, right: 4,
+                      width: 24, height: 24, borderRadius: "50%",
+                      background: hasPhoto ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.92)",
+                      color: hasPhoto ? "white" : "#27500A",
+                      border: "none", cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
+                      padding: 0,
+                    }}
+                  >
+                    {uploadingId === m.id ? (
+                      <span style={{
+                        width: 10, height: 10, borderRadius: "50%",
+                        border: "2px solid currentColor", borderTopColor: "transparent",
+                        animation: "spin 0.8s linear infinite",
+                      }} />
+                    ) : hasPhoto ? (
+                      <Pencil size={11} strokeWidth={2.5} />
+                    ) : (
+                      <Camera size={12} strokeWidth={2.2} />
+                    )}
+                  </button>
+                )}
+
+                {/* Remove user-uploaded photo */}
+                {user && hasPhoto && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleRemovePhoto(m.id);
+                    }}
+                    aria-label="사진 삭제"
+                    style={{
+                      position: "absolute", bottom: 4, left: 4,
+                      width: 22, height: 22, borderRadius: "50%",
+                      background: "rgba(0,0,0,0.5)", color: "white",
+                      border: "none", cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.25)", padding: 0,
+                    }}
+                  >
+                    <X size={11} strokeWidth={2.5} />
+                  </button>
+                )}
               </div>
             );
 
