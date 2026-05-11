@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useHikingPlans } from "@/hooks/useHikingPlans";
 import { useHikingGroups } from "@/hooks/useHikingGroups";
 import { useSummits, type Summit } from "@/hooks/useSummits";
+import { useChallenges } from "@/hooks/useChallenges";
 import { useOfflineClaims } from "@/hooks/useOfflineClaims";
 import { useStore } from "@/context/StoreContext";
 import { useToast } from "@/hooks/use-toast";
