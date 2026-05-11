@@ -69,7 +69,7 @@ export default function JournalDetailPage() {
             <p className="mt-3 text-sm text-muted-foreground">일지를 찾을 수 없습니다</p>
           </div>
         ) : (
-          <JournalCard journal={journal} showAuthor onRefresh={load} />
+          <JournalCard journal={journal} showAuthor onRefresh={load} slider />
         )}
       </div>
     </div>
