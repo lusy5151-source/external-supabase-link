@@ -293,6 +293,7 @@ const MountainDetail = () => {
           <Clock size={14} color="#888780" strokeWidth={2} style={{ display: "inline-block" }} />
           <div style={{ fontSize: 10, color: "#888780", marginTop: 2 }}>소요</div>
           <div style={{ fontSize: 11, color: "#aaa", fontStyle: "italic", marginTop: 2 }}>정보 없음</div>
+        </div>
       </div>
 
       {/* ── 완등 상태 / 재등반 ── */}
