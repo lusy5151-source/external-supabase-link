@@ -405,7 +405,13 @@ const Dashboard = () => {
                       <div className="flex-1 min-w-0 flex items-center gap-1.5 text-sm">
                         <span className="font-medium text-foreground truncate">{claim.nickname || "등산러"}</span>
                         <span className="text-muted-foreground">·</span>
-                        <span className="text-foreground truncate">{mt?.nameKo || claim.summit_name}</span>
+                        <span className="text-foreground truncate">{mt?.nameKo}</span>
+                        {claim.summit_name && (
+                          <>
+                            <span className="text-muted-foreground">·</span>
+                            <span className="text-muted-foreground truncate">{claim.summit_name}</span>
+                          </>
+                        )}
                       </div>
                       <span className="text-[10px] text-muted-foreground shrink-0">{timeAgo}</span>
                     </div>
