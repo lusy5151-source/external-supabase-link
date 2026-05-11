@@ -65,13 +65,24 @@ export default function ChallengeMountainsPage() {
   }, [challengeType]);
 
   const fetchClaims = useCallback(async () => {
-    if (!user) return new Set<number>();
-    const { data } = await (supabase as any)
-      .from("summit_claims")
-      .select("mountain_id")
-      .eq("user_id", user.id);
-    return new Set(((data || []) as any[]).map((c) => c.mountain_id));
-  }, [user]);
+    if (!user) return { ids: new Set<number>(), photos: new Map<number, string>() };
+    const challengeKey = challengeType === "bac100" ? "bac_100" : "forestry_100";
+    const [claimsRes, umcRes] = await Promise.all([
+      (supabase as any).from("summit_claims").select("mountain_id").eq("user_id", user.id),
+      (supabase as any)
+        .from("user_mountain_challenges")
+        .select("mountain_id, photo_url, is_completed")
+        .eq("user_id", user.id)
+        .eq("challenge_type", challengeKey),
+    ]);
+    const ids = new Set<number>(((claimsRes.data || []) as any[]).map((c) => c.mountain_id));
+    const photos = new Map<number, string>();
+    ((umcRes.data || []) as any[]).forEach((r) => {
+      if (r.is_completed) ids.add(r.mountain_id);
+      if (r.photo_url) photos.set(r.mountain_id, r.photo_url);
+    });
+    return { ids, photos };
+  }, [user, challengeType]);
 
   // Track previous claim count to detect new completions for celebration toast
   const prevClaimCountRef = useRef<number | null>(null);
@@ -81,23 +92,27 @@ export default function ChallengeMountainsPage() {
     const [mtns, claims] = await Promise.all([fetchMountains(), fetchClaims()]);
     setMountains(mtns);
 
-    // Detect newly claimed mountain (in this challenge) for celebration toast
+    // Detect newly claimed mountain (in this challenge) for celebration toast + flip animation
     const prevIds = prevClaimedIdsRef.current;
-    const newlyClaimed = [...claims].filter((id) => !prevIds.has(id));
+    const newlyClaimed = [...claims.ids].filter((id) => !prevIds.has(id));
     if (prevClaimCountRef.current !== null && newlyClaimed.length > 0) {
       const newlyInChallenge = mtns.find((m) => newlyClaimed.includes(m.id));
       if (newlyInChallenge) {
-        const completedInChallenge = mtns.filter((m) => claims.has(m.id)).length;
+        const completedInChallenge = mtns.filter((m) => claims.ids.has(m.id)).length;
         toast(
           `🎉 ${newlyInChallenge.name_ko || newlyInChallenge.name} 완등! 100대 명산 ${completedInChallenge}/100 진행 중`,
           { duration: 5000 },
         );
       }
+      // Mark newly claimed cards for flip animation
+      setAnimateIds(new Set(newlyClaimed));
+      setTimeout(() => setAnimateIds(new Set()), 1200);
     }
-    prevClaimedIdsRef.current = claims;
-    prevClaimCountRef.current = claims.size;
+    prevClaimedIdsRef.current = claims.ids;
+    prevClaimCountRef.current = claims.ids.size;
 
-    setClaimedIds(claims);
+    setClaimedIds(claims.ids);
+    setPhotoMap(claims.photos);
     setLoading(false);
   }, [fetchMountains, fetchClaims]);
 
