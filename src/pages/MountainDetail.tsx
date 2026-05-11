@@ -322,7 +322,7 @@ const MountainDetail = () => {
 
         {/* 배지 */}
         {badgeOpacity > 0 && (
-          <div style={{ position: "absolute", bottom: 12, right: 12, display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end", zIndex: 2, opacity: badgeOpacity, pointerEvents: badgeOpacity < 0.1 ? "none" : "auto" }}>
+          <div style={{ position: "absolute", bottom: badgeBottom, right: badgeRight, display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end", zIndex: 2, opacity: badgeOpacity, pointerEvents: badgeOpacity < 0.1 ? "none" : "auto" }}>
             {isBlackyak && (
               <span style={{ background: "white", color: "#633806", border: "0.5px solid #FAC775", fontSize: 10, fontWeight: 500, padding: "3px 9px", borderRadius: 10, whiteSpace: "nowrap", boxShadow: "0 2px 6px rgba(0,0,0,0.12)" }}>
                 100대 명산
