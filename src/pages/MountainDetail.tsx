@@ -769,7 +769,10 @@ function SummitGridSection({ mountainId, mountainName }: { mountainId: number; m
 function ShareCardSection({ mountain, record }: { mountain: Mountain; record: CompletionRecord }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [bgPhoto, setBgPhoto] = useState<string | null>(record.photos?.[0] || (mountain as any).image_url || null);
+  const [bgPhoto, setBgPhoto] = useState<string | null>(null);
+  const [userPicked, setUserPicked] = useState(false);
+  const [imgPosition, setImgPosition] = useState("50% 40%");
+  const [posY, setPosY] = useState(40);
   const [open, setOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const { user } = useAuth();
@@ -780,6 +783,15 @@ function ShareCardSection({ mountain, record }: { mountain: Mountain; record: Co
     () => claims.find((c) => c.user_id === user?.id),
     [claims, user]
   );
+
+  // Auto-resolve background priority: user-pick > summit_claim photo > mountain image > null (gradient)
+  useEffect(() => {
+    if (userPicked) return;
+    const claimPhoto = myClaim?.photo_url;
+    const recordPhoto = record.photos?.[0];
+    const mtnPhoto = (mountain as any).image_url;
+    setBgPhoto(claimPhoto || recordPhoto || mtnPhoto || null);
+  }, [myClaim, record.photos, mountain, userPicked]);
 
   // Resolve a peak name from claims (best effort), fallback to "{산이름} 정상"
   const conqueredPeak = useMemo(() => {
@@ -800,10 +812,24 @@ function ShareCardSection({ mountain, record }: { mountain: Mountain; record: Co
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
+    if (f.size > 20 * 1024 * 1024) {
+      sonnerToast.error("20MB 이하 사진을 선택해주세요");
+      e.target.value = "";
+      return;
+    }
     const r = new FileReader();
-    r.onload = () => setBgPhoto(r.result as string);
+    r.onload = () => {
+      setBgPhoto(r.result as string);
+      setUserPicked(true);
+      sonnerToast.success("사진이 적용되었어요!");
+    };
     r.readAsDataURL(f);
     e.target.value = "";
+  };
+
+  const handleRemovePhoto = () => {
+    setBgPhoto(null);
+    setUserPicked(true);
   };
 
   const handleExport = async () => {
