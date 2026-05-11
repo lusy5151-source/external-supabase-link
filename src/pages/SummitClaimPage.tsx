@@ -161,15 +161,37 @@ export default function SummitClaimPage() {
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const { compressImageToDataUrl } = await import("@/lib/imageUpload");
-      const dataUrl = await compressImageToDataUrl(file, "summit");
-      if (!dataUrl) return;
-      setPhotoFile(file);
-      setAiVerification({ status: "idle", confidence: 0, reason: "", elements: [] });
-      setPhotoPreview(dataUrl);
-      verifyPhotoWithAI(dataUrl);
+    if (!file) return;
+    const { compressImageToDataUrl } = await import("@/lib/imageUpload");
+    const dataUrl = await compressImageToDataUrl(file, "summit");
+    if (!dataUrl) return;
+    setPhotoFile(file);
+    setAiVerification({ status: "idle", confidence: 0, reason: "", elements: [] });
+    setPhotoPreview(dataUrl);
+
+    // EXIF validation
+    if (selectedSummit) {
+      setExifStatus("checking");
+      setExifResult(null);
+      try {
+        const { validateSummitPhoto } = await import("@/utils/exifValidation");
+        const res = await validateSummitPhoto(file, selectedSummit.latitude, selectedSummit.longitude);
+        setExifResult(res);
+        setExifStatus("done");
+        if (!res.isValid && res.errorMessage) {
+          // reset photo selection
+          setPhotoFile(null);
+          setPhotoPreview(null);
+          if (fileInputRef.current) fileInputRef.current.value = "";
+          if (galleryInputRef.current) galleryInputRef.current.value = "";
+          return;
+        }
+      } catch {
+        setExifStatus("done");
+      }
     }
+
+    verifyPhotoWithAI(dataUrl);
   };
 
   const verifyPhotoWithAI = async (imageDataUrl: string) => {
