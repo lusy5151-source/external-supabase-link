@@ -273,7 +273,7 @@ export function useChallenges() {
 
           if (joinedItem.uc.completed) continue;
 
-          const newProgress = computeProgress(rung.goal_type, allJournals, allClaims);
+          const newProgress = computeProgress(rung.goal_type, allJournals, allClaims, mountainMap);
           if (newProgress < 0) continue;
 
           const completed = newProgress >= (rung.goal_value || 1);
