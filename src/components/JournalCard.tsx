@@ -27,9 +27,10 @@ interface JournalCardProps {
   journal: HikingJournal;
   showAuthor?: boolean;
   onRefresh?: () => void;
+  slider?: boolean;
 }
 
-export function JournalCard({ journal, showAuthor = true, onRefresh }: JournalCardProps) {
+export function JournalCard({ journal, showAuthor = true, onRefresh, slider = false }: JournalCardProps) {
   const { mountains } = useMountains();
   const { user } = useAuth();
   const { toggleLike, fetchComments, addComment, deleteComment } = useHikingJournals();
