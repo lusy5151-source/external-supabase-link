@@ -294,6 +294,14 @@ export default function ChallengeMountainsPage() {
 
   return (
     <div style={{ background: "#e6ede0", minHeight: "100vh", paddingBottom: 40 }}>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: "none" }}
+        onChange={handleFileChange}
+      />
       {/* Back bar */}
       <Link
         to="/mountains"
