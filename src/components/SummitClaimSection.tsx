@@ -174,6 +174,8 @@ export function SummitClaimSection({ mountainId, mountainName, hideList, trigger
     setUserLocation(null);
     setSelectedGroupId("");
     setAiVerification({ status: "idle", confidence: 0, reason: "", detected_elements: [] });
+    setExifStatus("idle");
+    setExifResult(null);
     setShowClaimDialog(true);
   };
 
