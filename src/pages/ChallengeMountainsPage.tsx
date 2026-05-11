@@ -50,6 +50,9 @@ export default function ChallengeMountainsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterMode>("all");
   const [sort, setSort] = useState<SortMode>("rank");
+  const [uploadingId, setUploadingId] = useState<number | null>(null);
+  const [pendingMountainId, setPendingMountainId] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch mountains for the active challenge
   const fetchMountains = useCallback(async () => {
