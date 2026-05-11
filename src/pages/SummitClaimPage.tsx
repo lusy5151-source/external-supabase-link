@@ -263,6 +263,7 @@ export default function SummitClaimPage() {
         const { updateChallengeProgress } = await import("@/lib/challengeUtils");
         updateChallengeProgress(user?.id);
       } catch {}
+      try { recalculateProgress(); } catch {}
       // Suggest journal write via sonner toast
       try {
         const { toast: sonnerToast } = await import("sonner");
