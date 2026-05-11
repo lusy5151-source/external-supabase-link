@@ -376,11 +376,11 @@ const Dashboard = () => {
 
         <div className="space-y-4 px-5 pt-5">
 
-          {/* ── 1. 지금 이 산에 있어요 🔥 ── */}
+          {/* ── 1. 완등 실시간 소식 🏔 ── */}
           <section>
             <div className="mb-3 flex items-center gap-2">
               <Flame className="h-4 w-4 text-coral" />
-              <h2 className="text-base font-bold text-foreground">지금 이 산에 있어요 🔥</h2>
+              <h2 className="text-base font-bold text-foreground">완등 실시간 소식 🏔</h2>
             </div>
             <div className="rounded-2xl bg-card border border-border p-3 shadow-sm space-y-2">
               {!isDemo && liveFeedLoading ? (
