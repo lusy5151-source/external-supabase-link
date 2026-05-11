@@ -419,6 +419,8 @@ const MountainCard = React.memo(function MountainCard({ m, isCompleted: complete
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isGuest, showLoginPrompt } = useGuest();
+  const { getCompletionCount, addCompletion } = useStore();
+  const completionCount = getCompletionCount(m.id);
   const [busy, setBusy] = useState(false);
   const isUserCreated = !!(m as any).isUserCreated;
 
