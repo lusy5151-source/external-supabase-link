@@ -110,6 +110,8 @@ export function SummitClaimSection({ mountainId, mountainName, hideList, trigger
   const [aiVerification, setAiVerification] = useState<AiVerification>({
     status: "idle", confidence: 0, reason: "", detected_elements: [],
   });
+  const [exifStatus, setExifStatus] = useState<"idle" | "checking" | "done">("idle");
+  const [exifResult, setExifResult] = useState<import("@/utils/exifValidation").ExifValidationResult | null>(null);
   const [showRejectWarning, setShowRejectWarning] = useState(false);
 
   const leader = getMountainLeader();
