@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useMountains } from "@/contexts/MountainsContext";
 import { useHikingJournals, type HikingJournal } from "@/hooks/useHikingJournals";
 import { useFriends } from "@/hooks/useFriends";
@@ -66,8 +67,31 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
   const [mountainSearch, setMountainSearch] = useState("");
   const [showMountainSearch, setShowMountainSearch] = useState(false);
   const [showOptional, setShowOptional] = useState(!!editJournal);
+  const [plannedItems, setPlannedItems] = useState<{ mountain: any; plan: any }[]>([]);
 
   const MAX_PHOTOS = 5;
+
+  useEffect(() => {
+    if (!user?.id || mountains.length === 0) return;
+    (async () => {
+      const today = new Date().toISOString().split("T")[0];
+      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      const { data } = await (supabase as any)
+        .from("hiking_plans")
+        .select("id, mountain_id, trail_name, planned_date, trail_id")
+        .eq("creator_id", user.id)
+        .lte("planned_date", today)
+        .gte("planned_date", since)
+        .order("planned_date", { ascending: false })
+        .limit(10);
+      if (!data) return;
+      const items = data
+        .map((plan: any) => ({ mountain: mountains.find((m) => m.id === plan.mountain_id), plan }))
+        .filter((it: any) => it.mountain);
+      setPlannedItems(items);
+    })();
+  }, [user?.id, mountains]);
+
 
   const isEdit = !!editJournal;
 
@@ -312,6 +336,37 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
             )}
             {showMountainSearch ? (
               <div>
+                {plannedItems.filter(({ mountain }) => !mountainIds.includes(mountain.id)).length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">🗓 계획한 등산</p>
+                    <div className="rounded-lg border border-border bg-primary/5 overflow-hidden">
+                      {plannedItems
+                        .filter(({ mountain }) => !mountainIds.includes(mountain.id))
+                        .map(({ mountain, plan }) => (
+                          <button
+                            key={plan.id}
+                            onClick={() => {
+                              setMountainIds((prev) => [...prev, mountain.id]);
+                              if (plan.trail_name && !courseName) setCourseName(plan.trail_name);
+                              if (plan.planned_date) setHikedAt(plan.planned_date);
+                              setMountainSearch("");
+                              setShowMountainSearch(false);
+                            }}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-primary/10 flex items-center gap-2 border-b border-border/40 last:border-b-0"
+                          >
+                            <Mountain className="h-3.5 w-3.5 text-primary shrink-0" />
+                            <span className="text-foreground font-medium">{mountain.nameKo}</span>
+                            <span className="text-[10px] text-muted-foreground ml-auto truncate">
+                              {plan.planned_date}{plan.trail_name ? ` · ${plan.trail_name}` : ""}
+                            </span>
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                )}
+                {plannedItems.length > 0 && (
+                  <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">🔍 전체 산 검색</p>
+                )}
                 <Input
                   placeholder="산 이름 검색..."
                   value={mountainSearch}
@@ -320,6 +375,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
                   autoFocus
                 />
                 {mountainSearch && (
+
                   <div className="max-h-32 overflow-y-auto rounded-lg border border-border bg-background mb-2">
                     {filteredMountains.slice(0, 10).map((m) => (
                       <button
