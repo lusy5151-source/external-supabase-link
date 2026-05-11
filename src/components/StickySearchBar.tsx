@@ -1,26 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { Search, X as XIcon } from "lucide-react";
-
-const KEY = "wandeung.recentSearches";
-const MAX = 5;
-
-function loadRecent(): string[] {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((x): x is string => typeof x === "string").slice(0, MAX);
-  } catch {
-    return [];
-  }
-}
-
-function saveRecent(list: string[]) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(list.slice(0, MAX)));
-  } catch {}
-}
+import { Search, X as XIcon, Clock } from "lucide-react";
+import {
+  getRecentSearches,
+  addRecentSearch,
+  removeRecentSearch,
+  clearRecentSearches,
+  type RecentSearch,
+} from "@/lib/recentSearches";
 
 interface Props {
   search: string;
@@ -29,11 +15,21 @@ interface Props {
 
 export default function StickySearchBar({ search, setSearch }: Props) {
   const [focused, setFocused] = useState(false);
-  const [recents, setRecents] = useState<string[]>(() => loadRecent());
+  const [recents, setRecents] = useState<RecentSearch[]>(() => getRecentSearches());
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Click outside to close dropdown
+  // Sync with global recent-searches updates (e.g. mountain click anywhere)
+  useEffect(() => {
+    const update = () => setRecents(getRecentSearches());
+    window.addEventListener("wandeung_recent_searches_updated", update);
+    window.addEventListener("storage", update);
+    return () => {
+      window.removeEventListener("wandeung_recent_searches_updated", update);
+      window.removeEventListener("storage", update);
+    };
+  }, []);
+
   useEffect(() => {
     if (!focused) return;
     const handler = (e: MouseEvent) => {
@@ -43,31 +39,16 @@ export default function StickySearchBar({ search, setSearch }: Props) {
     return () => document.removeEventListener("mousedown", handler);
   }, [focused]);
 
-  const commitSearch = (q: string) => {
-    const trimmed = q.trim();
-    if (!trimmed) return;
-    const next = [trimmed, ...recents.filter((r) => r !== trimmed)].slice(0, MAX);
-    setRecents(next);
-    saveRecent(next);
-  };
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      commitSearch(search);
+      const trimmed = search.trim();
+      if (trimmed) {
+        // Persist as a name-only entry (id 0 = query-based)
+        addRecentSearch({ id: -Date.now(), name: trimmed });
+      }
       setFocused(false);
       inputRef.current?.blur();
     }
-  };
-
-  const removeOne = (q: string) => {
-    const next = recents.filter((r) => r !== q);
-    setRecents(next);
-    saveRecent(next);
-  };
-
-  const clearAll = () => {
-    setRecents([]);
-    saveRecent([]);
   };
 
   const showDropdown = focused && search.trim() === "" && recents.length > 0;
@@ -75,12 +56,7 @@ export default function StickySearchBar({ search, setSearch }: Props) {
   return (
     <div
       className="sticky"
-      style={{
-        top: 60,
-        zIndex: 20,
-        marginTop: 8,
-        marginBottom: 12,
-      }}
+      style={{ top: 60, zIndex: 20, marginTop: 8, marginBottom: 12 }}
     >
       <div ref={wrapperRef} className="relative">
         <div
@@ -103,10 +79,7 @@ export default function StickySearchBar({ search, setSearch }: Props) {
             onKeyDown={handleKeyDown}
             placeholder="산 이름으로 검색..."
             className="ml-2 flex-1 bg-transparent outline-none placeholder:text-gray-400"
-            style={{
-              fontSize: 14,
-              color: "#111827",
-            }}
+            style={{ fontSize: 14, color: "#111827" }}
           />
           {search && (
             <button
@@ -132,7 +105,7 @@ export default function StickySearchBar({ search, setSearch }: Props) {
               background: "#FFFFFF",
               border: "0.5px solid rgba(47,64,58,0.12)",
               borderRadius: 12,
-              maxHeight: 240,
+              maxHeight: 280,
               overflowY: "auto",
               boxShadow: "0 6px 18px rgba(47,64,58,0.08)",
               zIndex: 30,
@@ -142,12 +115,14 @@ export default function StickySearchBar({ search, setSearch }: Props) {
               className="flex items-center justify-between"
               style={{ padding: "10px 12px 6px" }}
             >
-              <span style={{ fontSize: 11, color: "rgba(47,64,58,0.6)" }}>최근 검색</span>
+              <span style={{ fontSize: 11, color: "rgba(47,64,58,0.6)", fontWeight: 600 }}>
+                최근 검색한 산
+              </span>
               <button
                 type="button"
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  clearAll();
+                  clearRecentSearches();
                 }}
                 style={{
                   fontSize: 11,
@@ -162,18 +137,18 @@ export default function StickySearchBar({ search, setSearch }: Props) {
               </button>
             </div>
             <ul>
-              {recents.slice(0, MAX).map((q) => (
+              {recents.map((r) => (
                 <li
-                  key={q}
-                  className="flex items-center justify-between"
+                  key={`${r.id}-${r.name}`}
+                  className="flex items-center justify-between hover:bg-gray-50"
                   style={{ padding: "8px 12px" }}
                 >
                   <button
                     type="button"
                     onMouseDown={(e) => {
                       e.preventDefault();
-                      setSearch(q);
-                      commitSearch(q);
+                      setSearch(r.name);
+                      addRecentSearch(r);
                       setFocused(false);
                       inputRef.current?.blur();
                     }}
@@ -186,17 +161,21 @@ export default function StickySearchBar({ search, setSearch }: Props) {
                       flex: 1,
                       textAlign: "left",
                       padding: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
                     }}
                   >
-                    {q}
+                    <Clock size={13} style={{ color: "#9CA3AF", flexShrink: 0 }} />
+                    {r.name}
                   </button>
                   <button
                     type="button"
                     onMouseDown={(e) => {
                       e.preventDefault();
-                      removeOne(q);
+                      removeRecentSearch(r.id);
                     }}
-                    aria-label={`${q} 삭제`}
+                    aria-label={`${r.name} 삭제`}
                     style={{
                       color: "rgba(47,64,58,0.5)",
                       background: "transparent",
