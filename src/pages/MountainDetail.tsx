@@ -384,7 +384,6 @@ const MountainDetail = () => {
           </button>
         )}
       </div>
-      </div>
 
       {/* ── 탭바 (알약형) ── */}
       <div style={{ background: "#f7faf2", borderRadius: 14, padding: 3, margin: "12px 12px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2 }}>
