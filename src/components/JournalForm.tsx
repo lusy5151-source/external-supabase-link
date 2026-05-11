@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMountains } from "@/contexts/MountainsContext";
 import { useHikingJournals, type HikingJournal } from "@/hooks/useHikingJournals";
+import { useChallenges } from "@/hooks/useChallenges";
 import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePrivacySettings } from "@/hooks/usePrivacySettings";
