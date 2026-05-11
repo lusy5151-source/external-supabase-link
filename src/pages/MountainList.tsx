@@ -404,7 +404,6 @@ const MountainList = () => {
                   key={m.id}
                   m={m}
                   isCompleted={isCompleted(m.id)}
-                  completionCount={isCompletedLocal(m.id) ? Math.max(1, (typeof (window as any) !== "undefined" ? 0 : 0)) : 0}
                   onToggleClaim={toggleClaim}
                 />
               ))
