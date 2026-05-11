@@ -328,7 +328,7 @@ const MountainDetail = () => {
         {activeTab === "개요" && (
           <>
             {/* 1. 산 소개 */}
-            <OverviewIntroCard text={(mountain as any).overview || mountain.description || "소개 정보가 없습니다."} />
+            <OverviewIntroCard text={detailFields?.overview || detailFields?.description || (mountain as any).overview || mountain.description || "소개 정보가 없습니다."} />
 
             {/* 2. 정상 정복 (그리드 + 접기) */}
             <div style={sectionCardStyle}>
