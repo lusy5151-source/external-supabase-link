@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { ContentMenu } from "@/components/ContentMenu";
 import PhotoLightbox from "@/components/PhotoLightbox";
+import { JournalPhotoSlider } from "@/components/JournalPhotoSlider";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { cn } from "@/lib/utils";
