@@ -29,6 +29,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { toast as sonnerToast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const weatherOptions: { value: WeatherCondition; label: string; icon: any }[] = [
@@ -293,6 +294,95 @@ const MountainDetail = () => {
           <div style={{ fontSize: 10, color: "#888780", marginTop: 2 }}>소요</div>
           <div style={{ fontSize: 11, color: "#aaa", fontStyle: "italic", marginTop: 2 }}>정보 없음</div>
         </div>
+      </div>
+
+      {/* ── 완등 상태 / 재등반 ── */}
+      <div
+        style={{
+          background: "white",
+          borderRadius: 14,
+          margin: "0 12px 8px",
+          padding: "10px 14px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+          border: completed ? "1px solid #c6d56c" : "0.5px solid #efece4",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+          <div
+            style={{
+              width: 28, height: 28, borderRadius: "50%",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: completed ? "#C7D66D" : "#f1efe8",
+              color: completed ? "#173404" : "#999",
+              flexShrink: 0,
+            }}
+          >
+            {completed ? <Check size={15} strokeWidth={3} /> : <MountainIcon size={14} />}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 12, color: "#666", lineHeight: 1.2 }}>
+              {completed ? "이미 완등한 산이에요" : "아직 완등 기록이 없어요"}
+            </div>
+            {completed && (
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#173404", marginTop: 2 }}>
+                완등 {completionCount}회
+              </div>
+            )}
+          </div>
+        </div>
+
+        {completed ? (
+          <button
+            onClick={() => {
+              addCompletion(mountain.id);
+              const next = completionCount + 1;
+              sonnerToast.success(`🏔 재등반 기록 완료! ${next}번째 등반이에요`);
+            }}
+            style={{
+              border: "none",
+              background: "#173404",
+              color: "white",
+              fontSize: 12,
+              fontWeight: 600,
+              padding: "7px 12px",
+              borderRadius: 9999,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              whiteSpace: "nowrap",
+            }}
+          >
+            <TrendingUp size={13} /> 재등반
+          </button>
+        ) : (
+          <button
+            onClick={() => {
+              if (!user) {
+                sonnerToast("로그인 후 완등을 기록할 수 있어요");
+                return;
+              }
+              toggleComplete(mountain.id);
+              sonnerToast.success(`🎉 ${mountain.nameKo} 완등!`);
+            }}
+            style={{
+              border: "none",
+              background: "#C7D66D",
+              color: "#173404",
+              fontSize: 12,
+              fontWeight: 700,
+              padding: "7px 14px",
+              borderRadius: 9999,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            완등 기록
+          </button>
+        )}
       </div>
 
       {/* ── 탭바 (알약형) ── */}

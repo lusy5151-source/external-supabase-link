@@ -419,6 +419,8 @@ const MountainCard = React.memo(function MountainCard({ m, isCompleted: complete
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isGuest, showLoginPrompt } = useGuest();
+  const { getCompletionCount, addCompletion } = useStore();
+  const completionCount = getCompletionCount(m.id);
   const [busy, setBusy] = useState(false);
   const isUserCreated = !!(m as any).isUserCreated;
 
@@ -531,8 +533,17 @@ const MountainCard = React.memo(function MountainCard({ m, isCompleted: complete
             {m.nameKo}
           </p>
           {completed && (
-            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 9999, background: "#6B9E2F", color: "#FFFFFF", fontWeight: 500 }}>
-              완등
+            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 9999, background: "#6B9E2F", color: "#FFFFFF", fontWeight: 500, display: "inline-flex", alignItems: "center", gap: 4 }}>
+              완등{completionCount > 1 ? ` ${completionCount}회` : ""}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  addCompletion(m.id);
+                  toast(`🏔 재등반 기록! ${completionCount + 1}번째`);
+                }}
+                aria-label="재등반"
+                style={{ border: "none", background: "rgba(255,255,255,0.25)", color: "white", borderRadius: 9999, padding: "0 6px", fontSize: 10, cursor: "pointer", lineHeight: 1.4 }}
+              >+1</button>
             </span>
           )}
           {m.is_bac100_blackyak && (
