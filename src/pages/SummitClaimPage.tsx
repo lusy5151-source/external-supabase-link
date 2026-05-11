@@ -43,6 +43,7 @@ function dataURLtoFile(dataUrl: string, filename: string): File {
 export default function SummitClaimPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { recalculateProgress } = useChallenges();
   const { plans } = useHikingPlans();
   const { myGroups } = useHikingGroups();
   const { pendingClaims, addOfflineClaim, markSynced, removeOfflineClaim } = useOfflineClaims();
