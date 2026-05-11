@@ -209,9 +209,13 @@ const MountainDetail = () => {
     BANNER_MAX - scrollY * ((BANNER_MAX - BANNER_MIN) / COLLAPSE_RANGE)
   );
   const collapseRatio = Math.min(1, scrollY / COLLAPSE_RANGE);
-  const nameBottom = 20 - collapseRatio * 20;
+  const nameBottomBase = imageUrl ? 20 : 14;
+  const nameLeftBase = imageUrl ? 16 : 14;
+  const nameBottom = nameBottomBase - collapseRatio * nameBottomBase;
   const nameFontSize = 26 - collapseRatio * 8;
-  const nameLeft = 16 - collapseRatio * 16;
+  const nameLeft = nameLeftBase - collapseRatio * nameLeftBase;
+  const badgeBottom = imageUrl ? 20 : 12;
+  const badgeRight = imageUrl ? 14 : 12;
   const nameTextAlign: "left" | "center" = collapseRatio > 0.6 ? "center" : "left";
   const subtitleOpacity = Math.max(0, 1 - collapseRatio * 2);
   const actionOpacity = Math.max(0, 1 - collapseRatio * 1.5);
@@ -318,7 +322,7 @@ const MountainDetail = () => {
 
         {/* 배지 */}
         {badgeOpacity > 0 && (
-          <div style={{ position: "absolute", bottom: 12, right: 12, display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end", zIndex: 2, opacity: badgeOpacity, pointerEvents: badgeOpacity < 0.1 ? "none" : "auto" }}>
+          <div style={{ position: "absolute", bottom: badgeBottom, right: badgeRight, display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end", zIndex: 2, opacity: badgeOpacity, pointerEvents: badgeOpacity < 0.1 ? "none" : "auto" }}>
             {isBlackyak && (
               <span style={{ background: "white", color: "#633806", border: "0.5px solid #FAC775", fontSize: 10, fontWeight: 500, padding: "3px 9px", borderRadius: 10, whiteSpace: "nowrap", boxShadow: "0 2px 6px rgba(0,0,0,0.12)" }}>
                 100대 명산
