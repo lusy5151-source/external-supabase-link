@@ -657,44 +657,42 @@ export default function SummitClaimPage() {
             <label className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
               <Camera className="h-3.5 w-3.5" /> 정상 사진 <span className="text-destructive">*</span>
             </label>
-            {/* Camera capture input */}
+            {/* Hidden inputs (kept accessible for iOS — do NOT use display:none) */}
             <input
               ref={fileInputRef}
+              id="summit-camera-input"
               type="file"
               accept="image/*"
               capture="environment"
-              className="hidden"
               onChange={handlePhotoChange}
+              style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
             />
-            {/* Gallery input (no capture attribute) */}
             <input
               ref={galleryInputRef}
+              id="summit-gallery-input"
               type="file"
               accept="image/*"
-              className="hidden"
+              multiple
               onChange={handlePhotoChange}
+              style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
             />
             {photoPreview ? (
               <div className="space-y-3">
                 <div className="relative">
                   <img src={photoPreview} alt="Summit" className="w-full h-48 object-cover rounded-xl" />
                   <div className="absolute bottom-2 right-2 flex gap-1.5">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="rounded-full text-xs gap-1"
-                      onClick={() => fileInputRef.current?.click()}
+                    <label
+                      htmlFor="summit-camera-input"
+                      className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground shadow cursor-pointer min-h-[36px]"
                     >
                       <Camera className="h-3 w-3" /> 촬영
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="rounded-full text-xs gap-1"
-                      onClick={() => galleryInputRef.current?.click()}
+                    </label>
+                    <label
+                      htmlFor="summit-gallery-input"
+                      className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground shadow cursor-pointer min-h-[36px]"
                     >
                       <ImagePlus className="h-3 w-3" /> 앨범
-                    </Button>
+                    </label>
                   </div>
                 </div>
 
@@ -756,23 +754,21 @@ export default function SummitClaimPage() {
             ) : (
               <>
                 <p className="text-[10px] text-muted-foreground mb-1">정상 도달을 인증하기 위해 현장 사진이 필요합니다. 사진은 인증 용도로만 사용됩니다.</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    variant="outline"
-                    className="rounded-xl h-28 flex-col gap-2 border-dashed"
-                    onClick={() => fileInputRef.current?.click()}
+                <div className="grid grid-cols-2 gap-2" style={{ overflow: "visible" }}>
+                  <label
+                    htmlFor="summit-camera-input"
+                    className="rounded-xl h-28 flex flex-col items-center justify-center gap-2 border border-dashed border-border bg-background cursor-pointer min-h-[44px] hover:bg-secondary/50 transition-colors"
                   >
                     <Camera className="h-6 w-6 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">카메라 촬영</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="rounded-xl h-28 flex-col gap-2 border-dashed"
-                    onClick={() => galleryInputRef.current?.click()}
+                  </label>
+                  <label
+                    htmlFor="summit-gallery-input"
+                    className="rounded-xl h-28 flex flex-col items-center justify-center gap-2 border border-dashed border-border bg-background cursor-pointer min-h-[44px] hover:bg-secondary/50 transition-colors"
                   >
                     <ImagePlus className="h-6 w-6 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">앨범에서 선택</span>
-                  </Button>
+                  </label>
                 </div>
               </>
             )}
