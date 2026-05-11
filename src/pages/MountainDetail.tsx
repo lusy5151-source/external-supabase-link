@@ -559,8 +559,20 @@ const MountainDetail = () => {
 
         {/* 코스 탭 */}
         {activeTab === "코스" && (
-          <div style={{ margin: "0 12px" }}>
-            <TrailInfoSection mountainId={mountain.id} fallbackTrails={mountain.trails} />
+          <div style={{ margin: "0 12px" }} className="space-y-4">
+            <TrailRouteMap
+              mountainName={mountain.nameKo}
+              mountainId={mountain.id}
+              lat={mountain.lat}
+              lng={mountain.lng}
+              selectedTrail={selectedCourseTrail}
+            />
+            <TrailInfoSection
+              mountainId={mountain.id}
+              fallbackTrails={mountain.trails}
+              selectedTrailId={selectedCourseTrail?.id ?? null}
+              onSelectTrail={(t) => setSelectedCourseTrail((prev) => (prev?.id === t.id ? null : t))}
+            />
           </div>
         )}
 
