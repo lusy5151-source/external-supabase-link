@@ -178,7 +178,7 @@ export default function SummitClaimPage() {
         const res = await validateSummitPhoto(file, selectedSummit.latitude, selectedSummit.longitude);
         setExifResult(res);
         setExifStatus("done");
-        if (!res.isValid && res.errorMessage) {
+        if (res.status === "fail") {
           // reset photo selection
           setPhotoFile(null);
           setPhotoPreview(null);
@@ -190,8 +190,14 @@ export default function SummitClaimPage() {
         setExifStatus("done");
       }
     }
+    // AI 검증은 사용자가 버튼을 눌러야 실행
+  };
 
-    verifyPhotoWithAI(dataUrl);
+  const handleStartAiVerify = async () => {
+    if (!photoFile) return;
+    const { compressImageToDataUrl } = await import("@/lib/imageUpload");
+    const dataUrl = await compressImageToDataUrl(photoFile, "summit");
+    if (dataUrl) verifyPhotoWithAI(dataUrl);
   };
 
   const verifyPhotoWithAI = async (imageDataUrl: string) => {
@@ -727,16 +733,31 @@ export default function SummitClaimPage() {
                 {exifStatus === "checking" && (
                   <p className="text-xs text-muted-foreground">사진 정보 확인 중...</p>
                 )}
-                {exifStatus === "done" && exifResult?.isValid && exifResult.warningMessage && (
+                {exifStatus === "done" && exifResult?.status === "warn" && exifResult.warnMessage && (
                   <div className="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-900/20 p-3">
-                    <p className="text-xs text-amber-800 dark:text-amber-300">{exifResult.warningMessage}</p>
+                    <p className="text-xs text-amber-800 dark:text-amber-300 whitespace-pre-line">{exifResult.warnMessage}</p>
                   </div>
                 )}
-                {exifStatus === "done" && exifResult?.isValid && !exifResult.warningMessage && (
+                {exifStatus === "done" && exifResult?.status === "pass" && (
                   <p className="text-xs text-green-600 dark:text-green-400">
                     ✓ {exifResult.photoDate ? `촬영 ${exifResult.photoDate.toLocaleDateString("ko-KR")}` : "촬영 정보 확인"}
                     {exifResult.distanceKm !== null ? ` · 정상에서 ${exifResult.distanceKm.toFixed(1)}km` : ""}
                   </p>
+                )}
+
+                {/* AI 검증 시작 버튼: EXIF 통과 후 사용자가 직접 트리거 */}
+                {exifStatus === "done" && exifResult && exifResult.status !== "fail"
+                  && aiVerification.status === "idle" && (
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-xl gap-2"
+                    onClick={handleStartAiVerify}
+                  >
+                    <Sparkles className="h-4 w-4 text-primary" /> AI로 정상 인증하기
+                  </Button>
+                )}
+                {aiVerification.status === "verifying" && (
+                  <p className="text-xs text-muted-foreground text-center">AI가 사진을 분석하고 있어요...</p>
                 )}
 
                 {/* AI Verification Status */}
@@ -816,9 +837,9 @@ export default function SummitClaimPage() {
                 {exifStatus === "checking" && (
                   <p className="text-xs text-muted-foreground mt-2">사진 정보 확인 중...</p>
                 )}
-                {exifStatus === "done" && exifResult && !exifResult.isValid && exifResult.errorMessage && (
+                {exifStatus === "done" && exifResult?.status === "fail" && exifResult.errorMessage && (
                   <div className="mt-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3">
-                    <p className="text-xs text-destructive">{exifResult.errorMessage}</p>
+                    <p className="text-xs text-destructive whitespace-pre-line">{exifResult.errorMessage}</p>
                   </div>
                 )}
               </>
