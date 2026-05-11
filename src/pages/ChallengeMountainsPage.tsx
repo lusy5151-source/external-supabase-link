@@ -181,6 +181,117 @@ export default function ChallengeMountainsPage() {
     rank: "순위순", name: "가나다순", height: "높이순", claimed: "완등순",
   }[sort];
 
+  // Open file picker for a given mountain card
+  const handleOpenPicker = (mountainId: number) => {
+    if (!user) {
+      toast.error("로그인이 필요해요");
+      return;
+    }
+    setPendingMountainId(mountainId);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const mountainId = pendingMountainId;
+    // reset so same file can be reselected later
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setPendingMountainId(null);
+    if (!file || !mountainId || !user) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("10MB 이하 이미지만 업로드할 수 있어요");
+      return;
+    }
+
+    setUploadingId(mountainId);
+    try {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `${user.id}/challenge-cards/${challengeType}-${mountainId}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("summit-photos")
+        .upload(path, file, { cacheControl: "3600", upsert: true });
+      if (upErr) throw upErr;
+      const { data: urlData } = supabase.storage.from("summit-photos").getPublicUrl(path);
+      const photoUrl = urlData.publicUrl;
+
+      const challengeKey = challengeType === "bac100" ? "bac_100" : "forestry_100";
+      // Find existing row
+      const { data: existing } = await (supabase as any)
+        .from("user_mountain_challenges")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("challenge_type", challengeKey)
+        .eq("mountain_id", mountainId)
+        .maybeSingle();
+
+      if (existing?.id) {
+        const { error } = await (supabase as any)
+          .from("user_mountain_challenges")
+          .update({
+            photo_url: photoUrl,
+            is_completed: true,
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase as any)
+          .from("user_mountain_challenges")
+          .insert({
+            user_id: user.id,
+            challenge_type: challengeKey,
+            mountain_id: mountainId,
+            photo_url: photoUrl,
+            is_completed: true,
+            completed_at: new Date().toISOString(),
+          });
+        if (error) throw error;
+      }
+
+      // Optimistic local update so the user sees it instantly
+      setPhotoMap((prev) => {
+        const m = new Map(prev);
+        m.set(mountainId, photoUrl);
+        return m;
+      });
+      setClaimedIds((prev) => {
+        const s = new Set(prev);
+        s.add(mountainId);
+        return s;
+      });
+      toast.success("사진을 등록했어요 📸");
+    } catch (err: any) {
+      console.error("[ChallengeMountains] upload error", err);
+      toast.error(err?.message || "사진 업로드에 실패했어요");
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
+  const handleRemovePhoto = async (mountainId: number) => {
+    if (!user) return;
+    const challengeKey = challengeType === "bac100" ? "bac_100" : "forestry_100";
+    try {
+      const { error } = await (supabase as any)
+        .from("user_mountain_challenges")
+        .update({ photo_url: null })
+        .eq("user_id", user.id)
+        .eq("challenge_type", challengeKey)
+        .eq("mountain_id", mountainId);
+      if (error) throw error;
+      setPhotoMap((prev) => {
+        const m = new Map(prev);
+        m.delete(mountainId);
+        return m;
+      });
+      toast.success("사진을 삭제했어요");
+    } catch (err: any) {
+      toast.error(err?.message || "삭제에 실패했어요");
+    }
+  };
+
+
   return (
     <div style={{ background: "#e6ede0", minHeight: "100vh", paddingBottom: 40 }}>
       {/* Back bar */}
