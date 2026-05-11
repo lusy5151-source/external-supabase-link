@@ -185,30 +185,75 @@ const MountainDetail = () => {
     mountain.difficulty === "어려움" ? { background: "#FCEBEB", color: "#501313" } :
     { background: "#FAEEDA", color: "#412402" };
 
-  const bannerHeight = imageUrl ? 220 : 150;
+  const BANNER_MAX = imageUrl ? 220 : 150;
+  const BANNER_MIN = 80;
+  const COLLAPSE_RANGE = 120;
+  const imagePos = (mountain as any).image_position || "50% 50%";
+
+  // ── 스크롤 연동 배너 ──
+  const [scrollY, setScrollY] = useState(0);
+  useEffect(() => {
+    let lastTs = 0;
+    const onScroll = () => {
+      const now = Date.now();
+      if (now - lastTs < 16) return;
+      lastTs = now;
+      setScrollY(window.scrollY || window.pageYOffset || 0);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const bannerHeight = Math.max(
+    BANNER_MIN,
+    BANNER_MAX - scrollY * ((BANNER_MAX - BANNER_MIN) / COLLAPSE_RANGE)
+  );
+  const collapseRatio = Math.min(1, scrollY / COLLAPSE_RANGE);
+  const nameBottom = 20 - collapseRatio * 20;
+  const nameFontSize = 26 - collapseRatio * 8;
+  const nameLeft = 16 - collapseRatio * 16;
+  const nameTextAlign: "left" | "center" = collapseRatio > 0.6 ? "center" : "left";
+  const subtitleOpacity = Math.max(0, 1 - collapseRatio * 2);
+  const actionOpacity = Math.max(0, 1 - collapseRatio * 1.5);
+  const badgeOpacity = Math.max(0, 1 - collapseRatio * 2);
+  const overlayTop = 0.1 + collapseRatio * 0.3;
+  const overlayBottom = 0.5 + collapseRatio * 0.2;
 
   return (
     <div className="flex flex-col min-h-screen pb-24" style={{ background: "#e6ede0" }}>
 
-      {/* ── 배너 ── */}
+      {/* ── 배너 (스크롤 연동) ── */}
       <div
         style={{
-          margin: "12px 12px 0",
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          margin: collapseRatio < 0.8 ? "12px 12px 0" : "0",
           height: bannerHeight,
-          borderRadius: 18,
-          position: "relative",
+          borderRadius: collapseRatio < 0.8 ? 18 : 0,
           overflow: "hidden",
           background: "linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 60%, #4a7ba8 100%)",
+          transition: "border-radius 0.2s, margin 0.2s",
+          willChange: "height",
         }}
       >
-        {imageUrl && (
+        {imageUrl ? (
           <img
             src={imageUrl}
             alt={mountain.nameKo}
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.55 }}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: BANNER_MAX,
+              objectFit: "cover",
+              objectPosition: imagePos,
+              transform: `translateY(${scrollY * 0.4}px)`,
+              willChange: "transform",
+            }}
           />
-        )}
-        {!imageUrl && (
+        ) : (
           <svg viewBox="0 0 380 100" preserveAspectRatio="none"
                style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: 75, opacity: 0.5 }}>
             <path d="M0 100 L50 55 L95 75 L150 30 L195 60 L240 38 L290 65 L340 45 L380 55 L380 100 Z"
@@ -218,13 +263,23 @@ const MountainDetail = () => {
           </svg>
         )}
 
+        {/* 그라디언트 오버레이 */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: `linear-gradient(to bottom, rgba(0,0,0,${overlayTop}) 0%, rgba(0,0,0,${overlayBottom}) 100%)`,
+            pointerEvents: "none",
+          }}
+        />
+
         {/* 상단 버튼 줄 */}
-        <div style={{ position: "absolute", top: 10, left: 10, right: 10, display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 2 }}>
+        <div style={{ position: "absolute", top: 10, left: 12, right: 12, display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 2 }}>
           <Link to="/mountains"
                 style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}>
             <ArrowLeft size={16} />
           </Link>
-          <div style={{ display: "flex", gap: 6 }}>
+          <div style={{ display: "flex", gap: 6, opacity: actionOpacity, pointerEvents: actionOpacity < 0.1 ? "none" : "auto" }}>
             <button
               aria-label="좋아요"
               style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", border: "none" }}
@@ -246,31 +301,41 @@ const MountainDetail = () => {
         </div>
 
         {/* 산 이름 */}
-        <div style={{ position: "absolute", bottom: 14, left: 14, zIndex: 2 }}>
-          <h1 style={{ fontSize: 26, fontWeight: 700, color: "white", margin: 0 }}>{mountain.nameKo}</h1>
-          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", marginTop: 3, margin: 0 }}>
+        <div style={{
+          position: "absolute",
+          bottom: nameBottom,
+          left: nameLeft > 0 ? nameLeft : 0,
+          right: 0,
+          textAlign: nameTextAlign,
+          padding: "0 14px",
+          zIndex: 2,
+        }}>
+          <h1 style={{ fontSize: nameFontSize, fontWeight: 700, color: "white", margin: 0, lineHeight: 1.2 }}>{mountain.nameKo}</h1>
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", margin: "3px 0 0", opacity: subtitleOpacity }}>
             {mountain.name}{mountain.region ? ` · ${mountain.region}` : ""}
           </p>
         </div>
 
         {/* 배지 */}
-        <div style={{ position: "absolute", bottom: 12, right: 12, display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end", zIndex: 2 }}>
-          {isBlackyak && (
-            <span style={{ background: "white", color: "#633806", border: "0.5px solid #FAC775", fontSize: 10, fontWeight: 500, padding: "3px 9px", borderRadius: 10, whiteSpace: "nowrap", boxShadow: "0 2px 6px rgba(0,0,0,0.12)" }}>
-              100대 명산
-            </span>
-          )}
-          {isBac100 && (
-            <span style={{ background: "white", color: "#173404", border: "0.5px solid #c6d56c", fontSize: 10, fontWeight: 500, padding: "3px 9px", borderRadius: 10, whiteSpace: "nowrap", boxShadow: "0 2px 6px rgba(0,0,0,0.12)" }}>
-              산림청 100대 명산
-            </span>
-          )}
-          {isNP && npName && (
-            <span style={{ background: "white", color: "#04342C", border: "0.5px solid #9FE1CB", fontSize: 10, fontWeight: 500, padding: "3px 9px", borderRadius: 10, whiteSpace: "nowrap", boxShadow: "0 2px 6px rgba(0,0,0,0.12)" }}>
-              {npName}
-            </span>
-          )}
-        </div>
+        {badgeOpacity > 0 && (
+          <div style={{ position: "absolute", bottom: 12, right: 12, display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end", zIndex: 2, opacity: badgeOpacity, pointerEvents: badgeOpacity < 0.1 ? "none" : "auto" }}>
+            {isBlackyak && (
+              <span style={{ background: "white", color: "#633806", border: "0.5px solid #FAC775", fontSize: 10, fontWeight: 500, padding: "3px 9px", borderRadius: 10, whiteSpace: "nowrap", boxShadow: "0 2px 6px rgba(0,0,0,0.12)" }}>
+                100대 명산
+              </span>
+            )}
+            {isBac100 && (
+              <span style={{ background: "white", color: "#173404", border: "0.5px solid #c6d56c", fontSize: 10, fontWeight: 500, padding: "3px 9px", borderRadius: 10, whiteSpace: "nowrap", boxShadow: "0 2px 6px rgba(0,0,0,0.12)" }}>
+                산림청 100대 명산
+              </span>
+            )}
+            {isNP && npName && (
+              <span style={{ background: "white", color: "#04342C", border: "0.5px solid #9FE1CB", fontSize: 10, fontWeight: 500, padding: "3px 9px", borderRadius: 10, whiteSpace: "nowrap", boxShadow: "0 2px 6px rgba(0,0,0,0.12)" }}>
+                {npName}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── 정보 카드 (높이/난이도/소요) ── */}
