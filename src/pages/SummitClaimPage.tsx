@@ -754,23 +754,21 @@ export default function SummitClaimPage() {
             ) : (
               <>
                 <p className="text-[10px] text-muted-foreground mb-1">정상 도달을 인증하기 위해 현장 사진이 필요합니다. 사진은 인증 용도로만 사용됩니다.</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    variant="outline"
-                    className="rounded-xl h-28 flex-col gap-2 border-dashed"
-                    onClick={() => fileInputRef.current?.click()}
+                <div className="grid grid-cols-2 gap-2" style={{ overflow: "visible" }}>
+                  <label
+                    htmlFor="summit-camera-input"
+                    className="rounded-xl h-28 flex flex-col items-center justify-center gap-2 border border-dashed border-border bg-background cursor-pointer min-h-[44px] hover:bg-secondary/50 transition-colors"
                   >
                     <Camera className="h-6 w-6 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">카메라 촬영</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="rounded-xl h-28 flex-col gap-2 border-dashed"
-                    onClick={() => galleryInputRef.current?.click()}
+                  </label>
+                  <label
+                    htmlFor="summit-gallery-input"
+                    className="rounded-xl h-28 flex flex-col items-center justify-center gap-2 border border-dashed border-border bg-background cursor-pointer min-h-[44px] hover:bg-secondary/50 transition-colors"
                   >
                     <ImagePlus className="h-6 w-6 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">앨범에서 선택</span>
-                  </Button>
+                  </label>
                 </div>
               </>
             )}
