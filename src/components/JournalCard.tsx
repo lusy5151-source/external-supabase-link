@@ -57,6 +57,10 @@ export function JournalCard({ journal, showAuthor = true, onRefresh, slider = fa
   const [showLikers, setShowLikers] = useState(false);
   const [likers, setLikers] = useState<{ user_id: string; nickname: string | null; avatar_url: string | null }[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [startX, setStartX] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [dragDelta, setDragDelta] = useState(0);
 
   const vis = visibilityConfig[journal.visibility] || visibilityConfig.public;
   const VisIcon = vis.icon;
