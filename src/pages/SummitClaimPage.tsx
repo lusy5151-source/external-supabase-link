@@ -681,22 +681,18 @@ export default function SummitClaimPage() {
                 <div className="relative">
                   <img src={photoPreview} alt="Summit" className="w-full h-48 object-cover rounded-xl" />
                   <div className="absolute bottom-2 right-2 flex gap-1.5">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="rounded-full text-xs gap-1"
-                      onClick={() => fileInputRef.current?.click()}
+                    <label
+                      htmlFor="summit-camera-input"
+                      className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground shadow cursor-pointer min-h-[36px]"
                     >
                       <Camera className="h-3 w-3" /> 촬영
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="rounded-full text-xs gap-1"
-                      onClick={() => galleryInputRef.current?.click()}
+                    </label>
+                    <label
+                      htmlFor="summit-gallery-input"
+                      className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground shadow cursor-pointer min-h-[36px]"
                     >
                       <ImagePlus className="h-3 w-3" /> 앨범
-                    </Button>
+                    </label>
                   </div>
                 </div>
 
