@@ -91,6 +91,28 @@ const MountainDetail = () => {
       });
   }, [mountain?.id, user?.id]);
 
+  // Lazy-load heavy detail-only fields (overview/description/address) which
+  // are stripped from the global mountains list to keep initial load fast.
+  const [detailFields, setDetailFields] = useState<{ overview?: string; description?: string; address?: string } | null>(null);
+  useEffect(() => {
+    if (!mountain?.id) return;
+    let cancelled = false;
+    supabase
+      .from("mountains")
+      .select("overview, description, address")
+      .eq("id", mountain.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        setDetailFields({
+          overview: (data as any).overview || "",
+          description: (data as any).description || "",
+          address: (data as any).address || "",
+        });
+      });
+    return () => { cancelled = true; };
+  }, [mountain?.id]);
+
   // Auto-scroll to journal section when ?focusJournal=1
   const [searchParams] = useSearchParams();
   useEffect(() => {
