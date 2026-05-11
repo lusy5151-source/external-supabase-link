@@ -268,6 +268,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
             const { updateChallengeProgress } = await import("@/lib/challengeUtils");
             updateChallengeProgress(user?.id);
           } catch {}
+          try { recalculateProgress(); } catch {}
           try {
             const { toast: sonnerToast } = await import("sonner");
             sonnerToast.success("📔 일지가 저장됐어요! 정상 인증도 남겨볼까요?", {
