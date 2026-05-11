@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ChevronLeft, Check } from "lucide-react";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -44,6 +45,8 @@ export default function ChallengeMountainsPage() {
 
   const [mountains, setMountains] = useState<MountainRow[]>([]);
   const [claimedIds, setClaimedIds] = useState<Set<number>>(new Set());
+  const [photoMap, setPhotoMap] = useState<Map<number, string>>(new Map());
+  const [animateIds, setAnimateIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterMode>("all");
   const [sort, setSort] = useState<SortMode>("rank");
@@ -62,13 +65,24 @@ export default function ChallengeMountainsPage() {
   }, [challengeType]);
 
   const fetchClaims = useCallback(async () => {
-    if (!user) return new Set<number>();
-    const { data } = await (supabase as any)
-      .from("summit_claims")
-      .select("mountain_id")
-      .eq("user_id", user.id);
-    return new Set(((data || []) as any[]).map((c) => c.mountain_id));
-  }, [user]);
+    if (!user) return { ids: new Set<number>(), photos: new Map<number, string>() };
+    const challengeKey = challengeType === "bac100" ? "bac_100" : "forestry_100";
+    const [claimsRes, umcRes] = await Promise.all([
+      (supabase as any).from("summit_claims").select("mountain_id").eq("user_id", user.id),
+      (supabase as any)
+        .from("user_mountain_challenges")
+        .select("mountain_id, photo_url, is_completed")
+        .eq("user_id", user.id)
+        .eq("challenge_type", challengeKey),
+    ]);
+    const ids = new Set<number>(((claimsRes.data || []) as any[]).map((c) => c.mountain_id));
+    const photos = new Map<number, string>();
+    ((umcRes.data || []) as any[]).forEach((r) => {
+      if (r.is_completed) ids.add(r.mountain_id);
+      if (r.photo_url) photos.set(r.mountain_id, r.photo_url);
+    });
+    return { ids, photos };
+  }, [user, challengeType]);
 
   // Track previous claim count to detect new completions for celebration toast
   const prevClaimCountRef = useRef<number | null>(null);
@@ -78,23 +92,27 @@ export default function ChallengeMountainsPage() {
     const [mtns, claims] = await Promise.all([fetchMountains(), fetchClaims()]);
     setMountains(mtns);
 
-    // Detect newly claimed mountain (in this challenge) for celebration toast
+    // Detect newly claimed mountain (in this challenge) for celebration toast + flip animation
     const prevIds = prevClaimedIdsRef.current;
-    const newlyClaimed = [...claims].filter((id) => !prevIds.has(id));
+    const newlyClaimed = [...claims.ids].filter((id) => !prevIds.has(id));
     if (prevClaimCountRef.current !== null && newlyClaimed.length > 0) {
       const newlyInChallenge = mtns.find((m) => newlyClaimed.includes(m.id));
       if (newlyInChallenge) {
-        const completedInChallenge = mtns.filter((m) => claims.has(m.id)).length;
+        const completedInChallenge = mtns.filter((m) => claims.ids.has(m.id)).length;
         toast(
           `🎉 ${newlyInChallenge.name_ko || newlyInChallenge.name} 완등! 100대 명산 ${completedInChallenge}/100 진행 중`,
           { duration: 5000 },
         );
       }
+      // Mark newly claimed cards for flip animation
+      setAnimateIds(new Set(newlyClaimed));
+      setTimeout(() => setAnimateIds(new Set()), 1200);
     }
-    prevClaimedIdsRef.current = claims;
-    prevClaimCountRef.current = claims.size;
+    prevClaimedIdsRef.current = claims.ids;
+    prevClaimCountRef.current = claims.ids.size;
 
-    setClaimedIds(claims);
+    setClaimedIds(claims.ids);
+    setPhotoMap(claims.photos);
     setLoading(false);
   }, [fetchMountains, fetchClaims]);
 
@@ -340,8 +358,113 @@ export default function ChallengeMountainsPage() {
         }}>
           {filtered.map((m, i) => {
             const done = claimedIds.has(m.id);
+            const cardPhoto = photoMap.get(m.id) || null;
+            const hasPhoto = done && !!cardPhoto;
             const rank = m.bac100_rank ?? null;
             const silhouette = SILHOUETTE_PATHS[i % SILHOUETTE_PATHS.length];
+            const shouldFlip = animateIds.has(m.id);
+            const imageSquareInner = (
+              <div style={{
+                position: "relative",
+                width: "100%",
+                aspectRatio: "1",
+                borderRadius: 10,
+                overflow: "hidden",
+                marginBottom: 6,
+                background: hasPhoto
+                  ? "#000"
+                  : done
+                    ? "linear-gradient(135deg, #C0DD97 0%, #c6d56c 100%)"
+                    : "linear-gradient(135deg, #ECEAE3 0%, #DCDAD3 100%)",
+                filter: done ? undefined : "grayscale(0.3)",
+              }}>
+                {/* Photo background (state C) */}
+                {hasPhoto && (
+                  <>
+                    <img
+                      src={cardPhoto!}
+                      alt={m.name_ko || m.name || ""}
+                      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                      loading="lazy"
+                    />
+                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 50%)" }} />
+                  </>
+                )}
+
+                {/* Silhouette (states A & B only) */}
+                {!hasPhoto && (
+                  <svg
+                    viewBox="0 0 100 70"
+                    preserveAspectRatio="none"
+                    style={{
+                      position: "absolute", bottom: 0, left: 0,
+                      width: "100%", height: "70%",
+                      opacity: done ? 0.6 : 0.4,
+                    }}
+                  >
+                    <path d={silhouette} fill="rgba(255,255,255,0.6)" />
+                  </svg>
+                )}
+
+                {/* Center white check (state B) */}
+                {done && !hasPhoto && (
+                  <div style={{
+                    position: "absolute", inset: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    pointerEvents: "none",
+                  }}>
+                    <Check size={36} color="white" strokeWidth={3} style={{ opacity: 0.9, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.15))" }} />
+                  </div>
+                )}
+
+                {/* Photo bottom mountain name (state C) */}
+                {hasPhoto && (
+                  <div style={{
+                    position: "absolute", left: 6, right: 6, bottom: 6,
+                    color: "white", fontSize: 11, fontWeight: 600,
+                    textShadow: "0 1px 3px rgba(0,0,0,0.6)",
+                    whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                  }}>
+                    {m.name_ko || m.name}
+                  </div>
+                )}
+
+                {/* Rank badge */}
+                {challengeType === "bac100" && rank && (
+                  <span style={{
+                    position: "absolute", top: 4, left: 4,
+                    background: done ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.85)",
+                    color: done ? "#27500A" : "#173404",
+                    fontSize: 9, fontWeight: 700,
+                    padding: "1px 5px", borderRadius: 5,
+                    backdropFilter: "blur(4px)",
+                  }}>
+                    #{rank}
+                  </span>
+                )}
+
+                {/* Status badge */}
+                {done ? (
+                  <div style={{
+                    position: "absolute", top: 4, right: 4,
+                    width: 22, height: 22, borderRadius: "50%",
+                    background: "#97C459", border: "1.5px solid white",
+                    boxShadow: hasPhoto ? "0 2px 6px rgba(0,0,0,0.4)" : "0 2px 6px rgba(151,196,89,0.5)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <Check size={11} color="white" strokeWidth={3.5} />
+                  </div>
+                ) : (
+                  <div style={{
+                    position: "absolute", top: 4, right: 4,
+                    width: 22, height: 22, borderRadius: "50%",
+                    background: "rgba(255,255,255,0.5)",
+                    border: "1.5px dashed #aaa",
+                  }} />
+                )}
+              </div>
+            );
+
             return (
               <Link
                 key={m.id}
@@ -354,70 +477,24 @@ export default function ChallengeMountainsPage() {
                   border: done ? "1.5px solid #c6d56c" : "0.5px solid transparent",
                   boxShadow: done ? "0 0 0 3px rgba(198, 213, 108, 0.18)" : undefined,
                   transition: "transform 120ms ease",
+                  perspective: 800,
                 }}
                 onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.97)")}
                 onMouseUp={(e) => (e.currentTarget.style.transform = "")}
                 onMouseLeave={(e) => (e.currentTarget.style.transform = "")}
               >
-                <div style={{
-                  position: "relative",
-                  width: "100%",
-                  aspectRatio: "1",
-                  borderRadius: 10,
-                  overflow: "hidden",
-                  marginBottom: 6,
-                  background: done
-                    ? "linear-gradient(135deg, #C0DD97 0%, #c6d56c 100%)"
-                    : "linear-gradient(135deg, #ECEAE3 0%, #DCDAD3 100%)",
-                  filter: done ? undefined : "grayscale(0.3)",
-                }}>
-                  {/* Silhouette */}
-                  <svg
-                    viewBox="0 0 100 70"
-                    preserveAspectRatio="none"
-                    style={{
-                      position: "absolute", bottom: 0, left: 0,
-                      width: "100%", height: "70%",
-                      opacity: done ? 0.6 : 0.4,
-                    }}
+                {shouldFlip ? (
+                  <motion.div
+                    initial={{ rotateY: 180, opacity: 0 }}
+                    animate={{ rotateY: 0, opacity: 1 }}
+                    transition={{ duration: 0.6, ease: "backOut" }}
+                    style={{ transformStyle: "preserve-3d" }}
                   >
-                    <path d={silhouette} fill="rgba(255,255,255,0.6)" />
-                  </svg>
-
-                  {/* Rank badge */}
-                  {challengeType === "bac100" && rank && (
-                    <span style={{
-                      position: "absolute", top: 4, left: 4,
-                      background: done ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.85)",
-                      color: done ? "#27500A" : "#173404",
-                      fontSize: 9, fontWeight: 700,
-                      padding: "1px 5px", borderRadius: 5,
-                      backdropFilter: "blur(4px)",
-                    }}>
-                      #{rank}
-                    </span>
-                  )}
-
-                  {/* Status badge */}
-                  {done ? (
-                    <div style={{
-                      position: "absolute", top: 4, right: 4,
-                      width: 22, height: 22, borderRadius: "50%",
-                      background: "#97C459", border: "1.5px solid white",
-                      boxShadow: "0 2px 6px rgba(151,196,89,0.5)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                      <Check size={11} color="white" strokeWidth={3.5} />
-                    </div>
-                  ) : (
-                    <div style={{
-                      position: "absolute", top: 4, right: 4,
-                      width: 22, height: 22, borderRadius: "50%",
-                      background: "rgba(255,255,255,0.5)",
-                      border: "1.5px dashed #aaa",
-                    }} />
-                  )}
-                </div>
+                    {imageSquareInner}
+                  </motion.div>
+                ) : (
+                  imageSquareInner
+                )}
 
                 <div style={{
                   fontSize: 11, fontWeight: 600,
