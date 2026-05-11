@@ -10,6 +10,7 @@ import { SummitClaimSection } from "@/components/SummitClaimSection";
 import { useSummits } from "@/hooks/useSummits";
 import { useMountains as useMountainsCtx } from "@/contexts/MountainsContext";
 import { createPortal } from "react-dom";
+import SummitMarkerMap from "@/components/SummitMarkerMap";
 import {
   ArrowLeft, Mountain as MountainIcon, MapPin, TrendingUp, CheckCircle2, Circle, Calendar,
   Sun, Cloud, CloudRain, CloudSnow, CloudFog, CloudSun, ImagePlus, X, Users,
