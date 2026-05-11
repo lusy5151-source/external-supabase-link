@@ -903,11 +903,20 @@ function ShareCardSection({ mountain, record }: { mountain: Mountain; record: Co
           src={bgPhoto}
           alt=""
           crossOrigin="anonymous"
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: imgPosition }}
         />
       )}
       {bgPhoto && (
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.75) 100%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.75) 70%, rgba(0,0,0,0.85) 100%)" }} />
+      )}
+      {bgPhoto && onClick == null && (
+        <button
+          onClick={(e) => { e.stopPropagation(); handleRemovePhoto(); }}
+          aria-label="사진 제거"
+          style={{ position: "absolute", top: 8, right: 8, width: 26, height: 26, borderRadius: "50%", background: "rgba(0,0,0,0.45)", border: "none", color: "white", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 5 }}
+        >
+          <X size={14} />
+        </button>
       )}
 
       {/* Top-left logo */}
