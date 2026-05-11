@@ -142,28 +142,36 @@ export function JournalCard({ journal, showAuthor = true, onRefresh, slider = fa
         </div>
       )}
 
-      {/* Photo variant: full-width photo on top */}
-      {photos.length > 0 && (
-        <button
-          type="button"
-          onClick={() => setLightboxIndex(0)}
-          className="w-full relative overflow-hidden focus:outline-none bg-secondary/30"
-          style={{ maxHeight: 320 }}
-        >
-          <img src={photos[0]} alt="" className="w-full object-contain" style={{ maxHeight: 320 }} />
-          {photos.length > 1 && (
-            <div className="absolute bottom-2 right-2 rounded-full bg-foreground/50 px-2 py-0.5 text-[10px] text-white font-medium">
-              +{photos.length - 1}
-            </div>
+      {/* Photo: slider on detail page, single photo + lightbox on feed */}
+      {slider ? (
+        <div className="px-0">
+          <JournalPhotoSlider photos={photos} />
+        </div>
+      ) : (
+        <>
+          {photos.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setLightboxIndex(0)}
+              className="w-full relative overflow-hidden focus:outline-none bg-secondary/30"
+              style={{ maxHeight: 320 }}
+            >
+              <img src={photos[0]} alt="" className="w-full object-contain" style={{ maxHeight: 320 }} />
+              {photos.length > 1 && (
+                <div className="absolute bottom-2 right-2 rounded-full bg-foreground/50 px-2 py-0.5 text-[10px] text-white font-medium">
+                  +{photos.length - 1}
+                </div>
+              )}
+            </button>
           )}
-        </button>
+          <PhotoLightbox
+            photos={photos}
+            initialIndex={lightboxIndex ?? 0}
+            open={lightboxIndex !== null}
+            onClose={() => setLightboxIndex(null)}
+          />
+        </>
       )}
-      <PhotoLightbox
-        photos={photos}
-        initialIndex={lightboxIndex ?? 0}
-        open={lightboxIndex !== null}
-        onClose={() => setLightboxIndex(null)}
-      />
 
       {/* Content area */}
       <div className={cn("p-3 space-y-1.5", photos.length === 0 && "border-l-[3px]")} style={photos.length === 0 ? { borderLeftColor: "hsl(var(--brand-lime))" } : undefined}>
