@@ -8,15 +8,15 @@ import type { Mountain } from "@/data/mountains";
  */
 export function useMountainsData() {
   return useQuery<Mountain[]>({
-    queryKey: ["mountains-all", "v3-img"],
+    queryKey: ["mountains-all", "v4-lite"],
     queryFn: async () => {
-      // Select only columns actually used in the mapping below to minimize
-      // payload size and shorten the critical request chain (LCP/perf).
-      // Supabase default limit is 1000, our table has ~120 rows so no pagination needed.
+      // Lite payload for app-wide list/map use. Heavy text columns
+      // (description, overview, address, image credit/license) are fetched
+      // on-demand inside MountainDetail to keep initial load small.
       const { data, error } = await supabase
         .from("mountains")
         .select(
-          "id,name,name_ko,height,region,lat,lng,difficulty,description,is_bac100,is_bac100_blackyak,bac100_label,popularity,overview,address,province,is_national_park,national_park_name,image_url,image_credit,image_license,image_position"
+          "id,name,name_ko,height,region,lat,lng,difficulty,is_bac100,is_bac100_blackyak,bac100_label,popularity,province,is_national_park,national_park_name,image_url,image_position"
         )
         .order("id", { ascending: true });
 
@@ -31,24 +31,26 @@ export function useMountainsData() {
         lat: row.lat || 0,
         lng: row.lng || 0,
         difficulty: row.difficulty || "보통",
-        description: row.description || "",
+        description: "",
         is_baekdu: row.is_bac100 || false,
         is_bac100: row.is_bac100 || false,
         is_bac100_blackyak: (row as any).is_bac100_blackyak || false,
         bac100_label: row.bac100_label || undefined,
         popularity: row.popularity || 0,
-        overview: row.overview || "",
-        address: row.address || "",
+        overview: "",
+        address: "",
         province: row.province || "",
         is_national_park: row.is_national_park || false,
         national_park_name: row.national_park_name || undefined,
         image_url: (row as any).image_url || null,
-        image_credit: (row as any).image_credit || null,
-        image_license: (row as any).image_license || null,
+        image_credit: null,
+        image_license: null,
         image_position: (row as any).image_position || null,
         trails: [],
       }));
     },
     staleTime: 1000 * 60 * 30, // 30 min cache
+    gcTime: 1000 * 60 * 60, // keep for 1h
+    refetchOnWindowFocus: false,
   });
 }
