@@ -36,6 +36,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
   const { mountains } = useMountains();
   const { user } = useAuth();
   const { createJournal, updateJournal, uploadPhoto } = useHikingJournals();
+  const { recalculateProgress } = useChallenges();
   const { friends } = useFriends();
   const { toast } = useToast();
   const { isPrivateAccount, defaultJournalVisibility } = usePrivacySettings();
