@@ -702,6 +702,8 @@ export type Database = {
           elevation_gain_m: number | null
           end_lat: number | null
           end_lng: number | null
+          end_place_name: string | null
+          endpoints_matched_at: string | null
           gpx_filename: string | null
           id: number
           imported_at: string | null
@@ -719,6 +721,7 @@ export type Database = {
           source: string | null
           start_lat: number | null
           start_lng: number | null
+          start_place_name: string | null
           summit_elevation_m: number | null
           summit_lat: number
           summit_lng: number
@@ -731,6 +734,8 @@ export type Database = {
           elevation_gain_m?: number | null
           end_lat?: number | null
           end_lng?: number | null
+          end_place_name?: string | null
+          endpoints_matched_at?: string | null
           gpx_filename?: string | null
           id?: number
           imported_at?: string | null
@@ -748,6 +753,7 @@ export type Database = {
           source?: string | null
           start_lat?: number | null
           start_lng?: number | null
+          start_place_name?: string | null
           summit_elevation_m?: number | null
           summit_lat: number
           summit_lng: number
@@ -760,6 +766,8 @@ export type Database = {
           elevation_gain_m?: number | null
           end_lat?: number | null
           end_lng?: number | null
+          end_place_name?: string | null
+          endpoints_matched_at?: string | null
           gpx_filename?: string | null
           id?: number
           imported_at?: string | null
@@ -777,6 +785,7 @@ export type Database = {
           source?: string | null
           start_lat?: number | null
           start_lng?: number | null
+          start_place_name?: string | null
           summit_elevation_m?: number | null
           summit_lat?: number
           summit_lng?: number
