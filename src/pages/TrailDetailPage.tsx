@@ -174,6 +174,7 @@ export default function TrailDetailPage() {
         geometry={trail.geometry}
         difficulty={trail.difficulty}
         waypoints={trail.waypoints}
+        mountainName={mountain?.nameKo ?? null}
         mountainLat={mountain?.lat ?? null}
         mountainLng={mountain?.lng ?? null}
         waypointsJson={(trail as any).waypoints_json ?? null}
