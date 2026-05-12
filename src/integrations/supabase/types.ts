@@ -2944,6 +2944,7 @@ export type Database = {
           gpx_quality: string | null
           gpx_source: string | null
           gpx_synced_at: string | null
+          hiking_center_peak_id: number | null
           hiking_tips: string | null
           id: string
           is_popular: boolean | null
@@ -2980,6 +2981,7 @@ export type Database = {
           gpx_quality?: string | null
           gpx_source?: string | null
           gpx_synced_at?: string | null
+          hiking_center_peak_id?: number | null
           hiking_tips?: string | null
           id?: string
           is_popular?: boolean | null
@@ -3016,6 +3018,7 @@ export type Database = {
           gpx_quality?: string | null
           gpx_source?: string | null
           gpx_synced_at?: string | null
+          hiking_center_peak_id?: number | null
           hiking_tips?: string | null
           id?: string
           is_popular?: boolean | null
@@ -3040,6 +3043,13 @@ export type Database = {
             columns: ["mountain_id"]
             isOneToOne: false
             referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trails_hiking_center_peak_id_fkey"
+            columns: ["hiking_center_peak_id"]
+            isOneToOne: false
+            referencedRelation: "hiking_center_peaks"
             referencedColumns: ["id"]
           },
         ]
@@ -3609,6 +3619,7 @@ export type Database = {
       }
     }
     Functions: {
+      calc_route_distance: { Args: { coords: Json }; Returns: number }
       can_access_group: {
         Args: { _group_id: string; _user_id?: string }
         Returns: boolean
