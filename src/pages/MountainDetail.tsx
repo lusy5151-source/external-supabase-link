@@ -459,7 +459,7 @@ const MountainDetail = () => {
       </div>
 
       {/* ── 탭바 (알약형) ── */}
-      <div style={{ background: "#f7faf2", borderRadius: 14, padding: 3, margin: "12px 12px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2 }}>
+      <div style={{ background: "white", margin: "12px 12px 0", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", borderBottom: "1px solid #EEF1E8" }}>
         {tabs.map((tab) => {
           const active = activeTab === tab;
           return (
@@ -467,15 +467,16 @@ const MountainDetail = () => {
               key={tab}
               onClick={() => setActiveTab(tab)}
               style={{
-                padding: "7px 4px",
+                padding: "10px 4px",
                 textAlign: "center",
-                fontSize: 11,
+                fontSize: 13,
                 cursor: "pointer",
-                background: active ? "#c6d56c" : "transparent",
-                borderRadius: active ? 11 : 0,
-                color: active ? "#173404" : "#666",
-                fontWeight: active ? 600 : 400,
+                background: "transparent",
+                color: active ? "#2F403A" : "#8A958F",
+                fontWeight: active ? 600 : 500,
                 border: "none",
+                borderBottom: active ? "3px solid #C7D66D" : "3px solid transparent",
+                marginBottom: -1,
               }}
             >
               {tab}
@@ -560,17 +561,11 @@ const MountainDetail = () => {
 
         {/* 코스 탭 */}
         {activeTab === "코스" && (
-          <div style={{ margin: "0 12px" }} className="space-y-4">
+          <div style={{ margin: "12px 12px 0" }}>
             <HikingCenterRouteMap
               mountainName={mountain.nameKo}
               lat={mountain.lat}
               lng={mountain.lng}
-            />
-            <TrailInfoSection
-              mountainId={mountain.id}
-              fallbackTrails={mountain.trails}
-              selectedTrailId={selectedCourseTrail?.id ?? null}
-              onSelectTrail={(t) => setSelectedCourseTrail((prev) => (prev?.id === t.id ? null : t))}
             />
           </div>
         )}
