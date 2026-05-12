@@ -22,6 +22,7 @@ import type { WeatherCondition, CompletionRecord } from "@/hooks/useMountainStor
 import { WeatherCard } from "@/components/WeatherCard";
 import { TrailInfoSection } from "@/components/TrailInfo";
 import { TrailRouteMap } from "@/components/TrailRouteMap";
+import { HikingCenterRouteMap } from "@/components/HikingCenterRouteMap";
 import type { Trail } from "@/hooks/useTrails";
 import { NearbyPlaces } from "@/components/NearbyPlaces";
 import { useFriends } from "@/hooks/useFriends";
@@ -560,12 +561,10 @@ const MountainDetail = () => {
         {/* 코스 탭 */}
         {activeTab === "코스" && (
           <div style={{ margin: "0 12px" }} className="space-y-4">
-            <TrailRouteMap
+            <HikingCenterRouteMap
               mountainName={mountain.nameKo}
-              mountainId={mountain.id}
               lat={mountain.lat}
               lng={mountain.lng}
-              selectedTrail={selectedCourseTrail}
             />
             <TrailInfoSection
               mountainId={mountain.id}
