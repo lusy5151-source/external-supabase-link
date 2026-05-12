@@ -564,6 +564,7 @@ const MountainDetail = () => {
           <div style={{ margin: "12px 12px 0" }}>
             <HikingCenterRouteMap
               mountainName={mountain.nameKo}
+              mountainId={mountain.id}
               lat={mountain.lat}
               lng={mountain.lng}
             />

@@ -1,11 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bookmark, CalendarPlus, ChevronRight, Clock, Info, Loader2, Mountain, Ruler, Star, TrendingUp, Zap } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Bookmark, CalendarPlus, ChevronRight, Clock, Info, Loader2, Ruler, Star, TrendingUp, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface HikingCenterRouteMapProps {
   mountainName: string;
+  mountainId: number;
   lat: number;
   lng: number;
+}
+
+interface TrailRow {
+  id: string;
+  name: string;
+  distance_km: number | null;
+  duration_minutes: number | null;
+  difficulty: string | null;
+  elevation_gain_m: number | null;
+  starting_point: string | null;
+  ending_point: string | null;
+  is_popular: boolean | null;
+  course_type: string | null;
 }
 
 interface PeakRow {
@@ -17,19 +32,19 @@ interface PeakRow {
   start_lng: number | null;
   end_lat: number | null;
   end_lng: number | null;
-  start_place_name: string | null;
-  end_place_name: string | null;
   route_coordinates: any;
   kakao_nearby_places: any;
   summit_elevation_m: number | null;
-  elevation_gain_m: number | null;
-  total_distance_m: number | null;
 }
 
 const ROUTE_COLORS = ["#013F92", "#C7D66D", "#FF696C", "#C2B6DE", "#2F403A"];
 const DARK_GREEN = "#2F403A";
 const LIME = "#C7D66D";
 const colorAt = (i: number) => ROUTE_COLORS[i % ROUTE_COLORS.length];
+
+function normName(s?: string | null) {
+  return (s ?? "").toLowerCase().replace(/\s+/g, "").replace(/코스$/, "");
+}
 
 function toLatLngArray(rc: any): Array<[number, number]> {
   if (!Array.isArray(rc)) return [];
@@ -60,21 +75,6 @@ function branchDot() {
   return `<div style="transform:translate(-50%,-50%);width:8px;height:8px;border-radius:50%;background:#9CA3AF;border:1.5px solid white;box-shadow:0 1px 2px rgba(0,0,0,0.3);"></div>`;
 }
 
-function estimateDuration(distanceKm: number | null, gainM: number | null): number | null {
-  if (distanceKm == null && gainM == null) return null;
-  const d = distanceKm ?? 0;
-  const g = gainM ?? 0;
-  const m = Math.round(d * 20 + (g / 100) * 10);
-  return m > 0 ? m : null;
-}
-function estimateDifficulty(distanceKm: number | null, gainM: number | null): "쉬움" | "보통" | "어려움" {
-  const d = distanceKm ?? 0;
-  const g = gainM ?? 0;
-  const score = d * 1.2 + g / 150;
-  if (score < 5) return "쉬움";
-  if (score < 9) return "보통";
-  return "어려움";
-}
 function fmtDuration(min: number | null): string {
   if (min == null) return "-";
   const h = Math.floor(min / 60);
@@ -83,13 +83,14 @@ function fmtDuration(min: number | null): string {
   if (m === 0) return `${h}시간`;
   return `${h}시간${m}분`;
 }
-function difficultyFg(d: string): string {
+function difficultyFg(d: string | null): string {
   if (d === "쉬움") return "#3F5C0E";
   if (d === "어려움") return "#B91C28";
   return "#92400E";
 }
 
-export function HikingCenterRouteMap({ mountainName, lat, lng }: HikingCenterRouteMapProps) {
+export function HikingCenterRouteMap({ mountainName, mountainId, lat, lng }: HikingCenterRouteMapProps) {
+  const navigate = useNavigate();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const overlaysRef = useRef<any[]>([]);
@@ -97,34 +98,43 @@ export function HikingCenterRouteMap({ mountainName, lat, lng }: HikingCenterRou
   const startMarkersRef = useRef<any[]>([]);
   const [mapReady, setMapReady] = useState(false);
 
-  const [rows, setRows] = useState<PeakRow[]>([]);
+  const [trails, setTrails] = useState<TrailRow[]>([]);
+  const [peaks, setPeaks] = useState<PeakRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedIdx, setSelectedIdx] = useState(0);
 
-  // Fetch
+  // Fetch trails (cards) + peaks (map)
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     (async () => {
-      const { data, error } = await (supabase as any)
-        .from("hiking_center_peaks")
-        .select(
-          "trail_name, summit_name, summit_lat, summit_lng, start_lat, start_lng, end_lat, end_lng, start_place_name, end_place_name, route_coordinates, kakao_nearby_places, summit_elevation_m, elevation_gain_m, total_distance_m"
-        )
-        .eq("peak_name", mountainName)
-        .order("trail_name", { ascending: true });
+      const [tRes, pRes] = await Promise.all([
+        supabase
+          .from("trails")
+          .select("id, name, distance_km, duration_minutes, difficulty, elevation_gain_m, starting_point, ending_point, is_popular, course_type")
+          .eq("mountain_id", mountainId)
+          .order("is_popular", { ascending: false })
+          .order("name"),
+        (supabase as any)
+          .from("hiking_center_peaks")
+          .select("trail_name, summit_name, summit_lat, summit_lng, start_lat, start_lng, end_lat, end_lng, route_coordinates, kakao_nearby_places, summit_elevation_m")
+          .eq("peak_name", mountainName),
+      ]);
       if (cancelled) return;
-      if (error) {
-        console.warn("[HikingCenterRouteMap] fetch error", error);
-        setRows([]);
-      } else {
-        setRows((data ?? []) as PeakRow[]);
-      }
-      setSelectedIdx(0);
+      if (tRes.error) console.warn("[trails] fetch error", tRes.error);
+      if (pRes.error) console.warn("[peaks] fetch error", pRes.error);
+      setTrails(((tRes.data ?? []) as any[]) as TrailRow[]);
+      setPeaks(((pRes.data ?? []) as any[]) as PeakRow[]);
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [mountainName]);
+  }, [mountainId, mountainName]);
+
+  // Map of normalized trail name -> card color index
+  const trailColorByName = useMemo(() => {
+    const m = new Map<string, string>();
+    trails.forEach((t, i) => m.set(normName(t.name), colorAt(i)));
+    return m;
+  }, [trails]);
 
   // Init map once
   useEffect(() => {
@@ -158,14 +168,13 @@ export function HikingCenterRouteMap({ mountainName, lat, lng }: HikingCenterRou
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lat, lng]);
 
-  // Render ALL routes (multi-polyline)
+  // Render ALL routes from peaks
   useEffect(() => {
     if (!mapReady) return;
     const map = mapInstanceRef.current;
     if (!map || !window.naver?.maps) return;
     const naver = window.naver;
 
-    // Clear
     overlaysRef.current.forEach((o) => o.setMap?.(null));
     polylinesRef.current.forEach((o) => o.setMap?.(null));
     startMarkersRef.current.forEach((o) => o.setMap?.(null));
@@ -173,12 +182,14 @@ export function HikingCenterRouteMap({ mountainName, lat, lng }: HikingCenterRou
     polylinesRef.current = [];
     startMarkersRef.current = [];
 
-    if (rows.length === 0) return;
+    if (peaks.length === 0) return;
 
     const allPts: Array<[number, number]> = [];
+    let summitShown = false;
 
-    rows.forEach((r, i) => {
-      const color = colorAt(i);
+    peaks.forEach((r, i) => {
+      const matched = trailColorByName.get(normName(r.trail_name));
+      const color = matched ?? colorAt(i);
       const path = toLatLngArray(r.route_coordinates);
       path.forEach((p) => allPts.push(p));
 
@@ -189,43 +200,36 @@ export function HikingCenterRouteMap({ mountainName, lat, lng }: HikingCenterRou
           path: naverPath,
           strokeColor: color,
           strokeWeight: 4,
-          strokeOpacity: i === selectedIdx ? 1 : 0.4,
+          strokeOpacity: 0.9,
           strokeStyle: "solid",
-          zIndex: i === selectedIdx ? 100 : 50,
-          clickable: true,
+          zIndex: 60,
         });
-        naver.maps.Event.addListener(pl, "click", () => setSelectedIdx(i));
         polylinesRef.current.push(pl);
       }
 
-      // Start marker (numbered, course color)
       if (r.start_lat != null && r.start_lng != null) {
-        const m = new naver.maps.Marker({
+        const sm = new naver.maps.Marker({
           position: new naver.maps.LatLng(r.start_lat, r.start_lng),
           map,
           icon: { content: startPin(i + 1, color), anchor: new naver.maps.Point(0, 0) },
-          zIndex: i === selectedIdx ? 200 : 150,
+          zIndex: 150,
         });
-        naver.maps.Event.addListener(m, "click", () => setSelectedIdx(i));
-        startMarkersRef.current.push(m);
+        startMarkersRef.current.push(sm);
         allPts.push([r.start_lat, r.start_lng]);
       }
-    });
 
-    // Selected course extras: branches + summit
-    const selected = rows[selectedIdx];
-    if (selected) {
-      const places = Array.isArray(selected.kakao_nearby_places) ? selected.kakao_nearby_places : [];
+      // Branch dots
+      const places = Array.isArray(r.kakao_nearby_places) ? r.kakao_nearby_places : [];
       places.forEach((p: any) => {
         const la = Number(p?.lat); const ln = Number(p?.lng);
         if (!isFinite(la) || !isFinite(ln)) return;
-        const m = new naver.maps.Marker({
+        const mk = new naver.maps.Marker({
           position: new naver.maps.LatLng(la, ln),
           map,
           icon: { content: branchDot(), anchor: new naver.maps.Point(0, 0) },
           zIndex: 80,
         });
-        naver.maps.Event.addListener(m, "click", () => {
+        naver.maps.Event.addListener(mk, "click", () => {
           const iw = new naver.maps.InfoWindow({
             content: `<div style="padding:4px 8px;font-size:11px;color:${DARK_GREEN};">${String(p?.name ?? "")}</div>`,
             borderWidth: 1,
@@ -233,24 +237,26 @@ export function HikingCenterRouteMap({ mountainName, lat, lng }: HikingCenterRou
           });
           iw.open(map, new naver.maps.LatLng(la, ln));
         });
-        overlaysRef.current.push(m);
+        overlaysRef.current.push(mk);
         allPts.push([la, ln]);
       });
 
-      if (selected.summit_lat != null && selected.summit_lng != null) {
+      // Summit (single, take first available)
+      if (!summitShown && r.summit_lat != null && r.summit_lng != null) {
         const sm = new naver.maps.Marker({
-          position: new naver.maps.LatLng(selected.summit_lat, selected.summit_lng),
+          position: new naver.maps.LatLng(r.summit_lat, r.summit_lng),
           map,
           icon: {
-            content: summitPin(selected.summit_name ?? mountainName, selected.summit_elevation_m),
+            content: summitPin(r.summit_name ?? mountainName, r.summit_elevation_m),
             anchor: new naver.maps.Point(0, 0),
           },
           zIndex: 250,
         });
         overlaysRef.current.push(sm);
-        allPts.push([selected.summit_lat, selected.summit_lng]);
+        allPts.push([r.summit_lat, r.summit_lng]);
+        summitShown = true;
       }
-    }
+    });
 
     if (allPts.length > 0) {
       const first = new naver.maps.LatLng(allPts[0][0], allPts[0][1]);
@@ -264,31 +270,9 @@ export function HikingCenterRouteMap({ mountainName, lat, lng }: HikingCenterRou
         } catch {}
       }, 80);
     }
-  }, [mapReady, rows, selectedIdx, mountainName]);
+  }, [mapReady, peaks, trailColorByName, mountainName]);
 
-  const cards = useMemo(() => rows.map((r, i) => {
-    const color = colorAt(i);
-    const distanceKm = r.total_distance_m != null ? Math.round(r.total_distance_m / 100) / 10 : null;
-    const gainM = r.elevation_gain_m != null ? Math.round(r.elevation_gain_m) : null;
-    const duration = estimateDuration(distanceKm, gainM);
-    const difficulty = estimateDifficulty(distanceKm, gainM);
-    const places = Array.isArray(r.kakao_nearby_places) ? r.kakao_nearby_places : [];
-    const branchNames = places
-      .map((p: any) => (p?.name && Number.isFinite(Number(p?.lat)) ? String(p.name) : null))
-      .filter(Boolean) as string[];
-    const start = r.start_place_name ?? "출발지";
-    const end = r.end_place_name ?? r.summit_name ?? "도착";
-    const middle = branchNames.slice(0, 2).join(" → ");
-    const waypointText = middle ? `${start} → ${middle} → ${end}` : `${start} → ${end}`;
-    return {
-      idx: i, color,
-      name: r.trail_name ?? `코스 ${i + 1}`,
-      distanceKm, gainM, duration, difficulty, waypointText,
-      isPopular: i === 0,
-    };
-  }), [rows]);
-
-  const hasCourses = rows.length > 0;
+  const hasCourses = trails.length > 0;
 
   return (
     <div className="space-y-3">
@@ -312,43 +296,43 @@ export function HikingCenterRouteMap({ mountainName, lat, lng }: HikingCenterRou
         </div>
       )}
 
-      {/* Course cards */}
+      {/* Course cards (from trails) */}
       {hasCourses && (
         <div className="space-y-2 w-full">
-          {cards.map((c) => {
-            const active = c.idx === selectedIdx;
+          {trails.map((t, i) => {
+            const color = colorAt(i);
+            const start = t.starting_point ?? "출발지";
+            const end = t.ending_point ?? "도착";
             return (
               <button
-                key={`${c.name}-${c.idx}`}
+                key={t.id}
                 type="button"
-                onClick={() => setSelectedIdx(c.idx)}
-                className="w-full text-left transition-all"
+                onClick={() => navigate(`/trails/${t.id}`)}
+                className="w-full text-left transition-all hover:shadow-md"
                 style={{
                   background: "white",
                   border: "0.5px solid #ddd",
-                  borderLeft: `4px solid ${c.color}`,
+                  borderLeft: `4px solid ${color}`,
                   borderRadius: 12,
                   padding: 12,
                   cursor: "pointer",
-                  boxShadow: active ? `0 0 0 2px ${c.color}33` : "none",
                 }}
               >
-                {/* Top row */}
                 <div className="flex items-center gap-2">
                   <span
                     style={{
                       width: 22, height: 22, borderRadius: "50%",
-                      background: c.color, color: "white",
+                      background: color, color: "white",
                       display: "inline-flex", alignItems: "center", justifyContent: "center",
                       fontSize: 11, fontWeight: 800, flexShrink: 0,
                     }}
                   >
-                    {c.idx + 1}
+                    {i + 1}
                   </span>
                   <span style={{ fontSize: 14, fontWeight: 600, color: DARK_GREEN, flex: 1, minWidth: 0 }} className="truncate">
-                    {c.name}
+                    {t.name}
                   </span>
-                  {c.isPopular && (
+                  {t.is_popular && (
                     <span
                       style={{
                         background: "#FFE4E5", color: "#B91C28",
@@ -363,34 +347,32 @@ export function HikingCenterRouteMap({ mountainName, lat, lng }: HikingCenterRou
                   <ChevronRight size={16} color="#9CA3AF" />
                 </div>
 
-                {/* Waypoints */}
                 <p
                   style={{ fontSize: 11, color: "#7A8589", marginTop: 8, marginBottom: 10, lineHeight: 1.5 }}
                   className="truncate"
                 >
-                  {c.waypointText}
+                  {start} → {end}
                 </p>
 
-                {/* Bottom info row */}
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5" style={{ fontSize: 12 }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: difficultyFg(c.difficulty), fontWeight: 600 }}>
-                    <Zap size={12} /> {c.difficulty}
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: difficultyFg(t.difficulty), fontWeight: 600 }}>
+                    <Zap size={12} /> {t.difficulty ?? "-"}
                   </span>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: DARK_GREEN }}>
-                    <Clock size={12} color="#7A8589" /> {fmtDuration(c.duration)}
+                    <Clock size={12} color="#7A8589" /> {fmtDuration(t.duration_minutes)}
                   </span>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: DARK_GREEN }}>
-                    <Ruler size={12} color="#7A8589" /> {c.distanceKm != null ? `${c.distanceKm}km` : "-"}
+                    <Ruler size={12} color="#7A8589" /> {t.distance_km != null ? `${t.distance_km}km` : "-"}
                   </span>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: DARK_GREEN }}>
-                    <TrendingUp size={12} color="#7A8589" /> {c.gainM != null ? `${c.gainM}m` : "-"}
+                    <TrendingUp size={12} color="#7A8589" /> {t.elevation_gain_m != null ? `${Math.round(t.elevation_gain_m)}m` : "-"}
                   </span>
                 </div>
               </button>
             );
           })}
 
-          {/* CTA bar (below all cards) */}
+          {/* CTA bar (single, below all cards) */}
           <div className="flex items-center gap-2 pt-2">
             <button
               type="button"
@@ -407,6 +389,7 @@ export function HikingCenterRouteMap({ mountainName, lat, lng }: HikingCenterRou
             </button>
             <button
               type="button"
+              onClick={() => navigate(`/plans/new?mountainId=${mountainId}`)}
               style={{
                 flex: 1, height: 44,
                 background: LIME, color: DARK_GREEN,
