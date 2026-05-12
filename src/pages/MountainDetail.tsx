@@ -21,7 +21,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import type { WeatherCondition, CompletionRecord } from "@/hooks/useMountainStore";
 import { WeatherCard } from "@/components/WeatherCard";
 import { TrailInfoSection } from "@/components/TrailInfo";
-import { TrailRouteMap } from "@/components/TrailRouteMap";
+
 import { HikingCenterRouteMap } from "@/components/HikingCenterRouteMap";
 import type { Trail } from "@/hooks/useTrails";
 import { NearbyPlaces } from "@/components/NearbyPlaces";
