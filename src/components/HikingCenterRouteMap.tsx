@@ -314,7 +314,7 @@ export function HikingCenterRouteMap({ mountainName, lat, lng }: HikingCenterRou
 
       {/* Course cards */}
       {hasCourses && (
-        <div className="space-y-2 mx-auto" style={{ maxWidth: 600 }}>
+        <div className="space-y-2 w-full">
           {cards.map((c) => {
             const active = c.idx === selectedIdx;
             return (
