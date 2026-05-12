@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, useMemo } from "react";
-import { Map as MapIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TrailGeometry {
   type?: string;
@@ -18,40 +18,38 @@ export interface WaypointItem {
 
 export interface RouteSegment {
   difficulty?: "easy" | "medium" | "hard" | string;
-  coordinates?: number[][]; // [[lng, lat], ...]
+  coordinates?: number[][];
 }
 
 interface TrailDetailMapProps {
   geometry: TrailGeometry | null | undefined;
   difficulty: string | null | undefined;
   waypoints?: string | null;
+  mountainName?: string | null;
   mountainLat?: number | null;
   mountainLng?: number | null;
   waypointsJson?: WaypointItem[] | null;
   routeSegments?: RouteSegment[] | null;
 }
 
-const WAYPOINT_COLORS: Record<string, string> = {
-  start: "#22C55E",
-  end: "#EF4444",
-  branch: "#F97316",
-  waypoint: "#8B5CF6",
-};
-
-const SEGMENT_COLORS: Record<string, string> = {
-  easy: "#22C55E",
-  medium: "#F97316",
-  hard: "#EF4444",
-};
-
-function getColorByDifficulty(difficulty: string | null | undefined): string {
-  switch (difficulty) {
-    case "쉬움": return "#22C55E";
-    case "보통": return "#F97316";
-    case "어려움": return "#EF4444";
-    default:     return "#457B9D";
-  }
+interface PeakRoute {
+  summit_name: string | null;
+  summit_lat: number | null;
+  summit_lng: number | null;
+  start_lat: number | null;
+  start_lng: number | null;
+  end_lat: number | null;
+  end_lng: number | null;
+  route_coordinates: any;
+  summit_elevation_m: number | null;
+  kakao_nearby_places: any;
 }
+
+const POLYLINE_COLOR = "#FF6B35";
+const COLOR_START = "#22C55E";
+const COLOR_END = "#EF4444";
+const COLOR_SUMMIT_BG = "#2F403A";
+const COLOR_BRANCH = "#6B7280";
 
 function extractFirstLine(geometry?: TrailGeometry | null): number[][] | null {
   if (!geometry || !geometry.coordinates) return null;
@@ -66,92 +64,140 @@ function extractFirstLine(geometry?: TrailGeometry | null): number[][] | null {
   return null;
 }
 
-function parseWaypoints(raw?: string | null): string[] {
-  if (!raw) return [];
-  return raw
-    .split(/\r?\n|,|·|\u00B7/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+function toLatLngArray(rc: any): Array<[number, number]> {
+  if (!Array.isArray(rc)) return [];
+  return rc
+    .map((p: any) => {
+      if (!Array.isArray(p) || p.length < 2) return null;
+      const lat = Number(p[0]);
+      const lng = Number(p[1]);
+      if (!isFinite(lat) || !isFinite(lng)) return null;
+      return [lat, lng] as [number, number];
+    })
+    .filter(Boolean) as Array<[number, number]>;
 }
 
-function normalizeWaypointsJson(raw: any): WaypointItem[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .map((w, i) => ({
-      no: typeof w?.no === "number" ? w.no : i + 1,
-      name: w?.name ?? "",
-      type: (w?.type as string) ?? "waypoint",
-      lat: typeof w?.lat === "number" ? w.lat : undefined,
-      lng: typeof w?.lng === "number" ? w.lng : undefined,
-    }))
-    .filter((w) => w.name);
+function distSq(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const dx = a.lat - b.lat, dy = a.lng - b.lng;
+  return dx * dx + dy * dy;
 }
 
-function normalizeSegments(raw: any): RouteSegment[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .map((s) => ({
-      difficulty: (s?.difficulty as string) ?? "medium",
-      coordinates: Array.isArray(s?.coordinates) ? (s.coordinates as number[][]) : [],
-    }))
-    .filter((s) => Array.isArray(s.coordinates) && s.coordinates.length >= 2);
+function pinHTML(color: string, label: string) {
+  return `<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%);pointer-events:none;">
+    <div style="background:white;color:${color};padding:3px 9px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.25);border:1.5px solid ${color};margin-bottom:3px;">${label}</div>
+    <div style="width:14px;height:14px;border-radius:50%;background:${color};border:2.5px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.35);"></div>
+  </div>`;
+}
+
+function summitPinHTML(label: string) {
+  return `<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%);pointer-events:none;">
+    <div style="background:${COLOR_SUMMIT_BG};color:white;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);margin-bottom:3px;">⛰ ${label}</div>
+    <div style="width:30px;height:30px;border-radius:50%;background:${COLOR_SUMMIT_BG};display:flex;align-items:center;justify-content:center;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.35);">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C7D66D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
+    </div>
+  </div>`;
+}
+
+function branchDotHTML() {
+  return `<div style="transform:translate(-50%,-50%);width:8px;height:8px;border-radius:50%;background:${COLOR_BRANCH};border:1.5px solid white;box-shadow:0 1px 2px rgba(0,0,0,0.3);cursor:pointer;"></div>`;
 }
 
 export function TrailDetailMap({
   geometry,
-  difficulty,
-  waypoints,
+  mountainName,
   mountainLat,
   mountainLng,
-  waypointsJson,
-  routeSegments,
 }: TrailDetailMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const placeholderMapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
-  const placeholderMapInstanceRef = useRef<any>(null);
   const overlaysRef = useRef<any[]>([]);
   const [mapReady, setMapReady] = useState(false);
-  const [mapType, setMapType] = useState<"NORMAL" | "TERRAIN">("TERRAIN");
+  const [route, setRoute] = useState<PeakRoute | null>(null);
 
-  const path = extractFirstLine(geometry)?.filter(
-    (pt) => Array.isArray(pt) && pt.length >= 2
-  );
-  const hasPath = !!path && path.length >= 2;
-  const wpList = parseWaypoints(waypoints);
+  // Fallback geometry path as [lat,lng]
+  const geomPath = useMemo<Array<[number, number]>>(() => {
+    const g = extractFirstLine(geometry);
+    if (!g) return [];
+    return g
+      .filter((pt) => Array.isArray(pt) && pt.length >= 2)
+      .map(([lng, lat]) => [Number(lat), Number(lng)] as [number, number])
+      .filter(([la, ln]) => isFinite(la) && isFinite(ln));
+  }, [geometry]);
 
-  const wpJson = useMemo(() => normalizeWaypointsJson(waypointsJson), [waypointsJson]);
-  const segments = useMemo(() => normalizeSegments(routeSegments), [routeSegments]);
-  const hasWpJson = wpJson.length > 0;
-  const hasSegments = segments.length > 0;
-
-  // Sync map type toggle
+  // Fetch hiking_center_peaks for this mountain, pick best match
   useEffect(() => {
-    const map = mapInstanceRef.current || placeholderMapInstanceRef.current;
-    if (!map || !window.naver?.maps) return;
-    map.setMapTypeId(window.naver.maps.MapTypeId[mapType]);
-  }, [mapType]);
+    if (!mountainName) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await (supabase as any)
+        .from("hiking_center_peaks")
+        .select("summit_name, summit_lat, summit_lng, start_lat, start_lng, end_lat, end_lng, route_coordinates, summit_elevation_m, kakao_nearby_places")
+        .eq("peak_name", mountainName);
+      if (cancelled) return;
+      if (error || !Array.isArray(data) || data.length === 0) {
+        setRoute(null);
+        return;
+      }
+      // Pick row whose start is closest to geometry start; else first
+      let pick: any = data[0];
+      const geomStart = geomPath[0];
+      if (geomStart) {
+        let bestD = Infinity;
+        data.forEach((r: any) => {
+          if (typeof r?.start_lat === "number" && typeof r?.start_lng === "number") {
+            const d = distSq(
+              { lat: geomStart[0], lng: geomStart[1] },
+              { lat: r.start_lat, lng: r.start_lng }
+            );
+            if (d < bestD) { bestD = d; pick = r; }
+          }
+        });
+      }
+      setRoute(pick as PeakRoute);
+    })();
+    return () => { cancelled = true; };
+  }, [mountainName, geomPath]);
 
-  // Init map (with path)
+  const path: Array<[number, number]> = useMemo(() => {
+    const fromRoute = toLatLngArray(route?.route_coordinates);
+    return fromRoute.length >= 2 ? fromRoute : geomPath;
+  }, [route, geomPath]);
+
+  const hasPath = path.length >= 2;
+  const hasAnyAnchor =
+    hasPath ||
+    (typeof mountainLat === "number" && typeof mountainLng === "number");
+
+  // Init map
   useEffect(() => {
-    if (!hasPath) return;
+    if (!hasAnyAnchor) return;
     if (!mapRef.current) return;
     if (!window.naver?.maps) return;
     const naver = window.naver;
 
-    const first = path![0];
+    const center = hasPath
+      ? new naver.maps.LatLng(path[0][0], path[0][1])
+      : new naver.maps.LatLng(mountainLat as number, mountainLng as number);
+
     const map = new naver.maps.Map(mapRef.current, {
-      center: new naver.maps.LatLng(first[1], first[0]),
-      zoom: 13,
+      center,
+      zoom: 14,
+      minZoom: 12,
+      maxZoom: 17,
       mapTypeId: naver.maps.MapTypeId.TERRAIN,
       zoomControl: true,
-      zoomControlOptions: { position: naver.maps.Position.BOTTOM_RIGHT },
+      zoomControlOptions: {
+        position: naver.maps.Position.TOP_RIGHT,
+        style: naver.maps.ZoomControlStyle.SMALL,
+      },
+      scaleControl: true,
+      mapDataControl: false,
+      logoControl: true,
+      mapTypeControl: false,
     });
     mapInstanceRef.current = map;
 
-    const initListener = naver.maps.Event.addListener(map, "init", () => {
-      setMapReady(true);
-    });
+    const initListener = naver.maps.Event.addListener(map, "init", () => setMapReady(true));
     const fallbackTimer = window.setTimeout(() => setMapReady(true), 300);
 
     return () => {
@@ -163,34 +209,11 @@ export function TrailDetailMap({
       setMapReady(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasPath]);
+  }, [hasAnyAnchor]);
 
-  // Init placeholder map (no path)
-  useEffect(() => {
-    if (hasPath) return;
-    if (!placeholderMapRef.current) return;
-    if (!window.naver?.maps) return;
-    if (typeof mountainLat !== "number" || typeof mountainLng !== "number") return;
-    const naver = window.naver;
-
-    const map = new naver.maps.Map(placeholderMapRef.current, {
-      center: new naver.maps.LatLng(mountainLat, mountainLng),
-      zoom: 13,
-      mapTypeId: naver.maps.MapTypeId.TERRAIN,
-      zoomControl: true,
-      zoomControlOptions: { position: naver.maps.Position.BOTTOM_RIGHT },
-    });
-    placeholderMapInstanceRef.current = map;
-
-    return () => {
-      placeholderMapInstanceRef.current = null;
-    };
-  }, [hasPath, mountainLat, mountainLng]);
-
-  // Draw polyline(s) + markers
+  // Draw route + markers
   useEffect(() => {
     if (!mapReady) return;
-    if (!hasPath) return;
     const map = mapInstanceRef.current;
     if (!map || !window.naver?.maps) return;
     const naver = window.naver;
@@ -198,258 +221,110 @@ export function TrailDetailMap({
     overlaysRef.current.forEach((o) => o.setMap?.(null));
     overlaysRef.current = [];
 
-    const naverPath = path!.map(([lng, lat]) => new naver.maps.LatLng(lat, lng));
+    const allPts: Array<[number, number]> = [];
 
-    // --- Route lines: segments OR single line ---
-    if (hasSegments) {
-      segments.forEach((seg) => {
-        const segPath = (seg.coordinates || [])
-          .filter((pt) => Array.isArray(pt) && pt.length >= 2)
-          .map(([lng, lat]) => new naver.maps.LatLng(lat, lng));
-        if (segPath.length < 2) return;
-        const color = SEGMENT_COLORS[seg.difficulty as string] || "#457B9D";
-        const polyline = new naver.maps.Polyline({
-          map,
-          path: segPath,
-          strokeColor: color,
-          strokeWeight: 5,
-          strokeOpacity: 0.95,
-          strokeStyle: "solid",
-          zIndex: 50,
-        });
-        overlaysRef.current.push(polyline);
-      });
-    } else {
-      const color = getColorByDifficulty(difficulty);
+    if (hasPath) {
+      const naverPath = path.map(([la, ln]) => new naver.maps.LatLng(la, ln));
       const polyline = new naver.maps.Polyline({
         map,
         path: naverPath,
-        strokeColor: color,
+        strokeColor: POLYLINE_COLOR,
         strokeWeight: 5,
-        strokeOpacity: 0.9,
+        strokeOpacity: 0.95,
         strokeStyle: "solid",
+        strokeLineCap: "round",
+        strokeLineJoin: "round",
         zIndex: 50,
       });
       overlaysRef.current.push(polyline);
+      path.forEach((p) => allPts.push(p));
     }
 
-    // --- Markers: numbered waypoints OR fallback start/end ---
-    if (hasWpJson) {
-      wpJson.forEach((wp, i) => {
-        const typeKey = (wp.type as string) || "waypoint";
-        const color = WAYPOINT_COLORS[typeKey] || WAYPOINT_COLORS.waypoint;
-        const num = wp.no ?? i + 1;
-
-        // Resolve position: explicit lat/lng, else best-fit along path
-        let pos: any = null;
-        if (typeof wp.lat === "number" && typeof wp.lng === "number") {
-          pos = new naver.maps.LatLng(wp.lat, wp.lng);
-        } else if (typeKey === "start") {
-          pos = naverPath[0];
-        } else if (typeKey === "end") {
-          pos = naverPath[naverPath.length - 1];
-        } else if (naverPath.length > 2 && wpJson.length > 1) {
-          const ratio = i / Math.max(1, wpJson.length - 1);
-          const idx = Math.min(naverPath.length - 1, Math.max(0, Math.round(ratio * (naverPath.length - 1))));
-          pos = naverPath[idx];
-        } else {
-          pos = naverPath[Math.floor(naverPath.length / 2)];
-        }
-        if (!pos) return;
-
-        const marker = new naver.maps.Marker({
-          position: pos,
-          map,
-          icon: {
-            content: `
-              <div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%);pointer-events:none;">
-                <div style="background:white;color:#374151;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:600;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.2);border:1px solid #e5e7eb;margin-bottom:3px;max-width:160px;overflow:hidden;text-overflow:ellipsis;">
-                  ${(wp.name || "").replace(/</g, "&lt;")}
-                </div>
-                <div style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;background:${color};color:white;border:2px solid white;border-radius:50%;box-shadow:0 2px 5px rgba(0,0,0,0.35);font-size:12px;font-weight:800;line-height:1;">
-                  ${num}
-                </div>
-              </div>
-            `,
-            anchor: new naver.maps.Point(0, 0),
-          },
-          zIndex: 150,
-        });
-        overlaysRef.current.push(marker);
-      });
-    } else {
-      // Fallback: original start/end labels
-      const startMarker = new naver.maps.Marker({
-        position: naverPath[0],
+    // Start marker
+    const sLat = route?.start_lat ?? (hasPath ? path[0][0] : null);
+    const sLng = route?.start_lng ?? (hasPath ? path[0][1] : null);
+    if (sLat != null && sLng != null) {
+      const m = new naver.maps.Marker({
+        position: new naver.maps.LatLng(sLat, sLng),
         map,
-        icon: {
-          content: `<div style="display:flex;align-items:center;gap:4px;background:white;color:#16A34A;padding:5px 10px;border-radius:14px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.15);transform:translate(-50%,-50%);border:1px solid #E5E7EB;">▶ 출발</div>`,
-          anchor: new naver.maps.Point(0, 0),
-        },
-        zIndex: 150,
+        icon: { content: pinHTML(COLOR_START, "출발"), anchor: new naver.maps.Point(0, 0) },
+        zIndex: 200,
       });
-      overlaysRef.current.push(startMarker);
-
-      const endMarker = new naver.maps.Marker({
-        position: naverPath[naverPath.length - 1],
-        map,
-        icon: {
-          content: `<div style="display:flex;align-items:center;gap:4px;background:white;color:#DC2626;padding:5px 10px;border-radius:14px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.15);transform:translate(-50%,-50%);border:1px solid #E5E7EB;">🏁 도착</div>`,
-          anchor: new naver.maps.Point(0, 0),
-        },
-        zIndex: 150,
-      });
-      overlaysRef.current.push(endMarker);
-
-      // Legacy text waypoints sprinkled along path
-      if (wpList.length > 0 && naverPath.length > 2) {
-        const step = naverPath.length / (wpList.length + 1);
-        wpList.forEach((label, i) => {
-          const idx = Math.min(naverPath.length - 1, Math.max(1, Math.floor(step * (i + 1))));
-          const pos = naverPath[idx];
-          const wpMarker = new naver.maps.Marker({
-            position: pos,
-            map,
-            icon: {
-              content: `
-                <div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%);pointer-events:none;">
-                  <div style="background:white;color:#374151;padding:2px 6px;border-radius:8px;font-size:11px;font-weight:600;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.2);border:1px solid #e5e7eb;margin-bottom:2px;max-width:140px;overflow:hidden;text-overflow:ellipsis;">
-                    ${label}
-                  </div>
-                  <div style="width:10px;height:10px;background:#6b7280;border:2px solid white;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>
-                </div>
-              `,
-              anchor: new naver.maps.Point(0, 0),
-            },
-            zIndex: 100,
-          });
-          overlaysRef.current.push(wpMarker);
-        });
-      }
+      overlaysRef.current.push(m);
+      allPts.push([sLat, sLng]);
     }
 
-    const bounds = new naver.maps.LatLngBounds(naverPath[0], naverPath[0]);
-    naverPath.forEach((p) => bounds.extend(p));
-    map.fitBounds(bounds, { top: 50, right: 40, bottom: 50, left: 40 });
-  }, [mapReady, difficulty, waypoints, path?.length, hasWpJson, hasSegments, wpJson, segments]);
+    // End marker
+    const eLat = route?.end_lat ?? (hasPath ? path[path.length - 1][0] : null);
+    const eLng = route?.end_lng ?? (hasPath ? path[path.length - 1][1] : null);
+    if (eLat != null && eLng != null) {
+      const m = new naver.maps.Marker({
+        position: new naver.maps.LatLng(eLat, eLng),
+        map,
+        icon: { content: pinHTML(COLOR_END, "도착"), anchor: new naver.maps.Point(0, 0) },
+        zIndex: 200,
+      });
+      overlaysRef.current.push(m);
+      allPts.push([eLat, eLng]);
+    }
 
-  const Legend = () =>
-    hasSegments ? (
-      <div className="flex flex-wrap items-center gap-3 px-1 pt-1 text-[11px] text-muted-foreground">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block h-1 w-5 rounded-full" style={{ background: SEGMENT_COLORS.easy }} />
-          쉬움
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block h-1 w-5 rounded-full" style={{ background: SEGMENT_COLORS.medium }} />
-          보통
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block h-1 w-5 rounded-full" style={{ background: SEGMENT_COLORS.hard }} />
-          어려움
-        </span>
-      </div>
-    ) : null;
+    // Summit marker
+    if (route?.summit_lat != null && route?.summit_lng != null) {
+      const label = `${route.summit_name ?? mountainName ?? "정상"}${
+        route.summit_elevation_m != null ? ` ${Math.round(route.summit_elevation_m)}m` : ""
+      }`;
+      const m = new naver.maps.Marker({
+        position: new naver.maps.LatLng(route.summit_lat, route.summit_lng),
+        map,
+        icon: { content: summitPinHTML(label), anchor: new naver.maps.Point(0, 0) },
+        zIndex: 250,
+      });
+      overlaysRef.current.push(m);
+      allPts.push([route.summit_lat, route.summit_lng]);
+    }
 
-  // ---- Course points list (timeline) ----
-  const PointsList = () =>
-    hasWpJson ? (
-      <div className="rounded-xl bg-muted/30 p-4">
-        <div className="text-xs font-semibold text-foreground mb-3">코스 포인트</div>
-        <ol className="relative space-y-3">
-          {wpJson.map((wp, i) => {
-            const typeKey = (wp.type as string) || "waypoint";
-            const color = WAYPOINT_COLORS[typeKey] || WAYPOINT_COLORS.waypoint;
-            const isLast = i === wpJson.length - 1;
-            return (
-              <li key={i} className="relative flex items-start gap-3">
-                <div className="relative flex flex-col items-center">
-                  <div
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white shadow"
-                    style={{ background: color }}
-                  >
-                    {wp.no ?? i + 1}
-                  </div>
-                  {!isLast && (
-                    <div className="mt-1 w-0.5 flex-1 bg-border" style={{ minHeight: 18 }} />
-                  )}
-                </div>
-                <div className="flex flex-1 items-center gap-2 pt-1">
-                  <span className="text-sm font-medium text-foreground">
-                    {wp.no ?? i + 1}. {wp.name}
-                  </span>
-                  {typeKey === "start" && (
-                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
-                      출발
-                    </span>
-                  )}
-                  {typeKey === "end" && (
-                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700 dark:bg-red-900/40 dark:text-red-300">
-                      도착
-                    </span>
-                  )}
-                  {typeKey === "branch" && (
-                    <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
-                      분기점
-                    </span>
-                  )}
-                </div>
-              </li>
-            );
-          })}
-        </ol>
-      </div>
-    ) : wpList.length > 0 ? (
-      <div className="rounded-xl bg-muted/30 p-3 space-y-1">
-        <div className="text-xs font-semibold text-foreground mb-1">분기점</div>
-        <div className="flex flex-wrap gap-1.5">
-          {wpList.map((w, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center gap-1 rounded-full bg-background border border-border px-2 py-0.5 text-[11px] text-foreground"
-            >
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-muted-foreground" />
-              {w}
-            </span>
-          ))}
-        </div>
-      </div>
-    ) : null;
+    // Branch markers
+    const places = Array.isArray(route?.kakao_nearby_places) ? route!.kakao_nearby_places : [];
+    places.forEach((p: any) => {
+      const la = Number(p?.lat); const ln = Number(p?.lng);
+      if (!isFinite(la) || !isFinite(ln)) return;
+      const mk = new naver.maps.Marker({
+        position: new naver.maps.LatLng(la, ln),
+        map,
+        icon: { content: branchDotHTML(), anchor: new naver.maps.Point(0, 0) },
+        zIndex: 80,
+        title: String(p?.name ?? ""),
+      });
+      naver.maps.Event.addListener(mk, "click", () => {
+        const iw = new naver.maps.InfoWindow({
+          content: `<div style="padding:4px 8px;font-size:11px;color:${COLOR_SUMMIT_BG};">${String(p?.name ?? "")}</div>`,
+          borderWidth: 1,
+          anchorSize: new naver.maps.Size(6, 6),
+        });
+        iw.open(map, new naver.maps.LatLng(la, ln));
+      });
+      overlaysRef.current.push(mk);
+      allPts.push([la, ln]);
+    });
 
-  // No geometry — placeholder map
-  if (!hasPath) {
+    if (allPts.length > 0) {
+      const first = new naver.maps.LatLng(allPts[0][0], allPts[0][1]);
+      const bounds = new naver.maps.LatLngBounds(first, first);
+      allPts.forEach(([la, ln]) => bounds.extend(new naver.maps.LatLng(la, ln)));
+      map.fitBounds(bounds, { top: 60, right: 40, bottom: 60, left: 40 });
+    }
+  }, [mapReady, path, route, hasPath, mountainName]);
+
+  if (!hasAnyAnchor) {
     return (
       <div style={{ background: "white", borderRadius: 18, padding: 12, margin: "0 12px 8px" }}>
         <h2 style={{
           fontSize: 12, fontWeight: 600, color: "#173404",
           borderLeft: "2.5px solid #c6d56c", paddingLeft: 8, marginBottom: 10,
         }}>코스 경로</h2>
-        <div className="relative">
-          <div
-            ref={placeholderMapRef}
-            className="naver-map-container"
-            style={{ height: 220, borderRadius: 12, overflow: "hidden" }}
-          />
-          <div className="absolute top-2 right-2 z-10 flex rounded-lg overflow-hidden shadow-md" style={{ border: "0.5px solid #e3efcc", background: "white" }}>
-            {(["NORMAL", "TERRAIN"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setMapType(t)}
-                className="px-2.5 py-1 text-xs font-semibold transition-colors"
-                style={mapType === t
-                  ? { background: "#c6d56c", color: "#173404" }
-                  : { background: "white", color: "#444" }}
-              >
-                {t === "NORMAL" ? "일반" : "지형도"}
-              </button>
-            ))}
-          </div>
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 rounded-full bg-background/90 backdrop-blur px-3 py-1.5 text-xs font-medium text-foreground shadow-md border border-border">
-            등산로는 지형도에서 확인하세요 🗺️
-          </div>
+        <div className="rounded-xl bg-muted/50 px-3 py-6 text-center text-xs text-muted-foreground">
+          이 코스의 경로 데이터는 준비 중입니다
         </div>
-        <PointsList />
       </div>
     );
   }
@@ -460,30 +335,11 @@ export function TrailDetailMap({
         fontSize: 12, fontWeight: 600, color: "#173404",
         borderLeft: "2.5px solid #c6d56c", paddingLeft: 8, marginBottom: 10,
       }}>코스 경로</h2>
-      <div className="relative">
-        <div
-          ref={mapRef}
-          className="naver-map-container"
-          style={{ height: 220, borderRadius: 12, overflow: "hidden" }}
-        />
-        <div className="absolute top-2 right-2 z-10 flex rounded-lg overflow-hidden shadow-md" style={{ border: "0.5px solid #e3efcc", background: "white" }}>
-          {(["NORMAL", "TERRAIN"] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setMapType(t)}
-              className="px-2.5 py-1 text-xs font-semibold transition-colors"
-              style={mapType === t
-                ? { background: "#c6d56c", color: "#173404" }
-                : { background: "white", color: "#444" }}
-            >
-              {t === "NORMAL" ? "일반" : "지형도"}
-            </button>
-          ))}
-        </div>
-      </div>
-      <Legend />
-      <PointsList />
+      <div
+        ref={mapRef}
+        className="naver-map-container"
+        style={{ height: 280, borderRadius: 12, overflow: "hidden" }}
+      />
     </div>
   );
 }
