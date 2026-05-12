@@ -697,6 +697,96 @@ export type Database = {
         }
         Relationships: []
       }
+      hiking_center_peaks: {
+        Row: {
+          elevation_gain_m: number | null
+          end_lat: number | null
+          end_lng: number | null
+          gpx_filename: string | null
+          id: number
+          imported_at: string | null
+          kakao_category: string | null
+          kakao_distance_m: number | null
+          kakao_matched_at: string | null
+          kakao_nearby_places: Json | null
+          kakao_place_id: string | null
+          kakao_place_name: string | null
+          max_elevation_m: number | null
+          min_elevation_m: number | null
+          peak_name: string
+          peak_name_normalized: string | null
+          route_coordinates: Json | null
+          source: string | null
+          start_lat: number | null
+          start_lng: number | null
+          summit_elevation_m: number | null
+          summit_lat: number
+          summit_lng: number
+          summit_name: string | null
+          total_distance_m: number | null
+          total_points: number | null
+          trail_name: string | null
+        }
+        Insert: {
+          elevation_gain_m?: number | null
+          end_lat?: number | null
+          end_lng?: number | null
+          gpx_filename?: string | null
+          id?: number
+          imported_at?: string | null
+          kakao_category?: string | null
+          kakao_distance_m?: number | null
+          kakao_matched_at?: string | null
+          kakao_nearby_places?: Json | null
+          kakao_place_id?: string | null
+          kakao_place_name?: string | null
+          max_elevation_m?: number | null
+          min_elevation_m?: number | null
+          peak_name: string
+          peak_name_normalized?: string | null
+          route_coordinates?: Json | null
+          source?: string | null
+          start_lat?: number | null
+          start_lng?: number | null
+          summit_elevation_m?: number | null
+          summit_lat: number
+          summit_lng: number
+          summit_name?: string | null
+          total_distance_m?: number | null
+          total_points?: number | null
+          trail_name?: string | null
+        }
+        Update: {
+          elevation_gain_m?: number | null
+          end_lat?: number | null
+          end_lng?: number | null
+          gpx_filename?: string | null
+          id?: number
+          imported_at?: string | null
+          kakao_category?: string | null
+          kakao_distance_m?: number | null
+          kakao_matched_at?: string | null
+          kakao_nearby_places?: Json | null
+          kakao_place_id?: string | null
+          kakao_place_name?: string | null
+          max_elevation_m?: number | null
+          min_elevation_m?: number | null
+          peak_name?: string
+          peak_name_normalized?: string | null
+          route_coordinates?: Json | null
+          source?: string | null
+          start_lat?: number | null
+          start_lng?: number | null
+          summit_elevation_m?: number | null
+          summit_lat?: number
+          summit_lng?: number
+          summit_name?: string | null
+          total_distance_m?: number | null
+          total_points?: number | null
+          trail_name?: string | null
+        }
+        Relationships: []
+      }
       hiking_group: {
         Row: {
           avatar_url: string | null
@@ -1892,6 +1982,112 @@ export type Database = {
           },
         ]
       }
+      osm_peaks: {
+        Row: {
+          elevation_m: number | null
+          feature_type: string | null
+          imported_at: string | null
+          lat: number
+          lng: number
+          name: string
+          name_en: string | null
+          name_ko: string | null
+          osm_node_id: number
+          source_mountain_id: number | null
+          tags: Json | null
+        }
+        Insert: {
+          elevation_m?: number | null
+          feature_type?: string | null
+          imported_at?: string | null
+          lat: number
+          lng: number
+          name: string
+          name_en?: string | null
+          name_ko?: string | null
+          osm_node_id: number
+          source_mountain_id?: number | null
+          tags?: Json | null
+        }
+        Update: {
+          elevation_m?: number | null
+          feature_type?: string | null
+          imported_at?: string | null
+          lat?: number
+          lng?: number
+          name?: string
+          name_en?: string | null
+          name_ko?: string | null
+          osm_node_id?: number
+          source_mountain_id?: number | null
+          tags?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "osm_peaks_source_mountain_id_fkey"
+            columns: ["source_mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      osm_trail_segments: {
+        Row: {
+          access_restriction: string | null
+          geometry: Json
+          highway_type: string | null
+          imported_at: string | null
+          length_m: number | null
+          mountain_id: number | null
+          name: string | null
+          name_en: string | null
+          name_ko: string | null
+          sac_scale: string | null
+          source_mountain_id: number | null
+          tags: Json | null
+          way_id: number
+        }
+        Insert: {
+          access_restriction?: string | null
+          geometry: Json
+          highway_type?: string | null
+          imported_at?: string | null
+          length_m?: number | null
+          mountain_id?: number | null
+          name?: string | null
+          name_en?: string | null
+          name_ko?: string | null
+          sac_scale?: string | null
+          source_mountain_id?: number | null
+          tags?: Json | null
+          way_id: number
+        }
+        Update: {
+          access_restriction?: string | null
+          geometry?: Json
+          highway_type?: string | null
+          imported_at?: string | null
+          length_m?: number | null
+          mountain_id?: number | null
+          name?: string | null
+          name_en?: string | null
+          name_ko?: string | null
+          sac_scale?: string | null
+          source_mountain_id?: number | null
+          tags?: Json | null
+          way_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "osm_trail_segments_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       photos: {
         Row: {
           caption: string | null
@@ -2673,6 +2869,53 @@ export type Database = {
           },
         ]
       }
+      trail_starting_points_geocoded: {
+        Row: {
+          address: string | null
+          distance_from_mountain_km: number | null
+          geocoded_at: string | null
+          geocoder: string | null
+          place_category: string | null
+          place_name: string | null
+          query_used: string | null
+          starting_lat: number
+          starting_lng: number
+          trail_id: string
+        }
+        Insert: {
+          address?: string | null
+          distance_from_mountain_km?: number | null
+          geocoded_at?: string | null
+          geocoder?: string | null
+          place_category?: string | null
+          place_name?: string | null
+          query_used?: string | null
+          starting_lat: number
+          starting_lng: number
+          trail_id: string
+        }
+        Update: {
+          address?: string | null
+          distance_from_mountain_km?: number | null
+          geocoded_at?: string | null
+          geocoder?: string | null
+          place_category?: string | null
+          place_name?: string | null
+          query_used?: string | null
+          starting_lat?: number
+          starting_lng?: number
+          trail_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trail_starting_points_geocoded_trail_id_fkey"
+            columns: ["trail_id"]
+            isOneToOne: true
+            referencedRelation: "trails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trails: {
         Row: {
           course_type: string | null
@@ -3110,6 +3353,53 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      vworld_trail_segments: {
+        Row: {
+          difficulty: string | null
+          down_min: number | null
+          feature_id: string
+          geometry: Json
+          imported_at: string | null
+          length_m: number | null
+          mountain_id: number | null
+          source_mountain_id: number | null
+          up_min: number | null
+          vworld_mountain_name: string
+        }
+        Insert: {
+          difficulty?: string | null
+          down_min?: number | null
+          feature_id: string
+          geometry: Json
+          imported_at?: string | null
+          length_m?: number | null
+          mountain_id?: number | null
+          source_mountain_id?: number | null
+          up_min?: number | null
+          vworld_mountain_name: string
+        }
+        Update: {
+          difficulty?: string | null
+          down_min?: number | null
+          feature_id?: string
+          geometry?: Json
+          imported_at?: string | null
+          length_m?: number | null
+          mountain_id?: number | null
+          source_mountain_id?: number | null
+          up_min?: number | null
+          vworld_mountain_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vworld_trail_segments_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       walking_path_courses: {
         Row: {
