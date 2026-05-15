@@ -2878,6 +2878,56 @@ export type Database = {
           },
         ]
       }
+      trail_safety_spots: {
+        Row: {
+          detail: string | null
+          elevation_m: number | null
+          id: number
+          imported_at: string | null
+          latitude: number
+          longitude: number
+          mntn_code: string | null
+          mountain_id: number | null
+          source: string | null
+          source_id: string | null
+          spot_type: string
+        }
+        Insert: {
+          detail?: string | null
+          elevation_m?: number | null
+          id?: number
+          imported_at?: string | null
+          latitude: number
+          longitude: number
+          mntn_code?: string | null
+          mountain_id?: number | null
+          source?: string | null
+          source_id?: string | null
+          spot_type: string
+        }
+        Update: {
+          detail?: string | null
+          elevation_m?: number | null
+          id?: number
+          imported_at?: string | null
+          latitude?: number
+          longitude?: number
+          mntn_code?: string | null
+          mountain_id?: number | null
+          source?: string | null
+          source_id?: string | null
+          spot_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trail_safety_spots_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trail_starting_points_geocoded: {
         Row: {
           address: string | null
@@ -2927,6 +2977,7 @@ export type Database = {
       }
       trails: {
         Row: {
+          coords_synced_at: string | null
           course_type: string | null
           created_at: string | null
           description: string | null
@@ -2936,6 +2987,8 @@ export type Database = {
           down_minutes: number | null
           duration_minutes: number | null
           elevation_gain_m: number | null
+          end_lat: number | null
+          end_lng: number | null
           ending_point: string | null
           forestry_course_code: string | null
           forestry_synced_at: string | null
@@ -2948,10 +3001,15 @@ export type Database = {
           hiking_tips: string | null
           id: string
           is_popular: boolean | null
+          match_confidence: string | null
+          match_score: number | null
           mountain_id: number
           name: string
+          national_park_course_id: number | null
           parking_info: string | null
           route_segments: Json | null
+          start_lat: number | null
+          start_lng: number | null
           starting_point: string | null
           transport_car: string | null
           transport_public: string | null
@@ -2964,6 +3022,7 @@ export type Database = {
           waypoints_json: Json | null
         }
         Insert: {
+          coords_synced_at?: string | null
           course_type?: string | null
           created_at?: string | null
           description?: string | null
@@ -2973,6 +3032,8 @@ export type Database = {
           down_minutes?: number | null
           duration_minutes?: number | null
           elevation_gain_m?: number | null
+          end_lat?: number | null
+          end_lng?: number | null
           ending_point?: string | null
           forestry_course_code?: string | null
           forestry_synced_at?: string | null
@@ -2985,10 +3046,15 @@ export type Database = {
           hiking_tips?: string | null
           id?: string
           is_popular?: boolean | null
+          match_confidence?: string | null
+          match_score?: number | null
           mountain_id: number
           name: string
+          national_park_course_id?: number | null
           parking_info?: string | null
           route_segments?: Json | null
+          start_lat?: number | null
+          start_lng?: number | null
           starting_point?: string | null
           transport_car?: string | null
           transport_public?: string | null
@@ -3001,6 +3067,7 @@ export type Database = {
           waypoints_json?: Json | null
         }
         Update: {
+          coords_synced_at?: string | null
           course_type?: string | null
           created_at?: string | null
           description?: string | null
@@ -3010,6 +3077,8 @@ export type Database = {
           down_minutes?: number | null
           duration_minutes?: number | null
           elevation_gain_m?: number | null
+          end_lat?: number | null
+          end_lng?: number | null
           ending_point?: string | null
           forestry_course_code?: string | null
           forestry_synced_at?: string | null
@@ -3022,10 +3091,15 @@ export type Database = {
           hiking_tips?: string | null
           id?: string
           is_popular?: boolean | null
+          match_confidence?: string | null
+          match_score?: number | null
           mountain_id?: number
           name?: string
+          national_park_course_id?: number | null
           parking_info?: string | null
           route_segments?: Json | null
+          start_lat?: number | null
+          start_lng?: number | null
           starting_point?: string | null
           transport_car?: string | null
           transport_public?: string | null
@@ -3052,7 +3126,32 @@ export type Database = {
             referencedRelation: "hiking_center_peaks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "trails_national_park_course_id_fkey"
+            columns: ["national_park_course_id"]
+            isOneToOne: false
+            referencedRelation: "national_park_courses"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      trails_name_backup: {
+        Row: {
+          backed_up_at: string | null
+          id: string | null
+          old_name: string | null
+        }
+        Insert: {
+          backed_up_at?: string | null
+          id?: string | null
+          old_name?: string | null
+        }
+        Update: {
+          backed_up_at?: string | null
+          id?: string | null
+          old_name?: string | null
+        }
+        Relationships: []
       }
       user_achievements: {
         Row: {
@@ -3631,6 +3730,10 @@ export type Database = {
       can_access_plan: {
         Args: { _plan_id: string; _user_id?: string }
         Returns: boolean
+      }
+      coords_distance_m: {
+        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
+        Returns: number
       }
       get_mountain_name_ko: { Args: { p_mountain_id: number }; Returns: string }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
