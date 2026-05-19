@@ -50,6 +50,7 @@ const MyPage = () => {
     return ids.size || localCompletedCount;
   })();
   const { profile } = useProfile();
+  const xpInfo = useUserXp();
   const { friends } = useFriends();
   const { items: gearItems } = useGearStore();
   const sharedCompletions = useSharedCompletionCounts();
