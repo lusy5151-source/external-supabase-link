@@ -110,6 +110,8 @@ export async function awardXp(opts: AwardXpOptions) {
         { duration: 5000 },
       );
     }
+    // Notify any subscribers (e.g. useUserXp) to refresh
+    try { window.dispatchEvent(new Event("wandeung_xp_changed")); } catch {}
     return result;
   } catch (e) {
     console.error("[awardXp] exception", e);
