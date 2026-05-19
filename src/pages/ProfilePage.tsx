@@ -292,6 +292,26 @@ const ProfilePage = () => {
         )}
       </div>
 
+      {/* Level / XP card */}
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+        <div className="flex items-baseline justify-between">
+          <span className="text-sm font-bold text-foreground">
+            Lv.{xpInfo.level} {xpInfo.name}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {xpInfo.xp.toLocaleString()} XP
+          </span>
+        </div>
+        <div className="mt-2 h-2 rounded-full bg-black/10 overflow-hidden">
+          <div style={{ width: `${xpInfo.progressPct}%`, height: "100%", background: "#C7D66D", transition: "width 0.3s" }} />
+        </div>
+        <p className="mt-1 text-[10px] text-muted-foreground text-right">
+          {xpInfo.isMax
+            ? "MAX 레벨 달성"
+            : `다음 레벨까지 ${xpInfo.xpRemaining.toLocaleString()} XP (${xpInfo.xpIntoLevel.toLocaleString()} / ${xpInfo.xpForNextLevel.toLocaleString()})`}
+        </p>
+      </div>
+
       {/* Profile Summary - 5 stats */}
       <div className="grid grid-cols-5 gap-2">
         <div className="rounded-xl border border-border bg-card p-3 text-center shadow-sm">
