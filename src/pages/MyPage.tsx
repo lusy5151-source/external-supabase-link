@@ -7,6 +7,7 @@ import { useStore } from "@/context/StoreContext";
 import { useSummitClaims } from "@/hooks/useSummitClaims";
 import { useProfile } from "@/hooks/useProfile";
 import { useUserXp } from "@/hooks/useUserXp";
+import { useCharacterEmotion } from "@/hooks/useCharacterEmotion";
 import { useFriends } from "@/hooks/useFriends";
 import { useAchievementStore } from "@/hooks/useAchievementStore";
 import { useGearStore } from "@/hooks/useGearStore";
@@ -51,6 +52,7 @@ const MyPage = () => {
   })();
   const { profile } = useProfile();
   const xpInfo = useUserXp();
+  const charEmotion = useCharacterEmotion();
   const { friends } = useFriends();
   const { items: gearItems } = useGearStore();
   const sharedCompletions = useSharedCompletionCounts();
@@ -131,7 +133,7 @@ const MyPage = () => {
               gap: 12,
             }}
           >
-            <CharacterAnimation character={charKey} emotion="normal" size={56} />
+            <CharacterAnimation character={charKey} emotion={charEmotion} size={56} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-sm font-bold text-foreground">{meta.name}</span>

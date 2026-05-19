@@ -39,6 +39,14 @@ import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOnboarding } from "@/contexts/OnboardingContext";
 import { useUserXp } from "@/hooks/useUserXp";
+import { useCharacterEmotion } from "@/hooks/useCharacterEmotion";
+
+const EMOTION_MSG: Record<"normal" | "sad" | "angry" | "autumn", string | null> = {
+  normal: null,
+  sad: "오늘은 쉬는 날인가요? 🌧️",
+  angry: "다음엔 꼭 인증 성공해요! 💪",
+  autumn: "단풍 구경 가기 딱 좋은 계절이에요 🍂",
+};
 
 const conditionIcons: Record<string, any> = {
   "맑음": Sun, "구름": CloudSun, "흐림": Cloud, "비": CloudRain, "눈": CloudSnow,
@@ -58,6 +66,7 @@ function CharacterSlide({
   xpForNextLevel,
   isMax,
   showXp = true,
+  emotion = "normal",
 }: {
   msg: string;
   characterId: Character;
@@ -69,6 +78,7 @@ function CharacterSlide({
   xpForNextLevel: number;
   isMax: boolean;
   showXp?: boolean;
+  emotion?: "normal" | "sad" | "angry" | "autumn";
 }) {
   const bubbleRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -233,7 +243,7 @@ function CharacterSlide({
               height: CHAR_SIZE,
             }}
           >
-            <CharacterAnimation character={characterId} emotion="normal" size={CHAR_SIZE} />
+            <CharacterAnimation character={characterId} emotion={emotion} size={CHAR_SIZE} />
           </div>
         </div>
       </div>
@@ -274,6 +284,7 @@ const Dashboard = () => {
   const [slideIdx, setSlideIdx] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const xpInfo = useUserXp();
+  const charEmotion = useCharacterEmotion();
 
   const { isOnboarding } = useOnboarding();
   const isDemo = !user || isOnboarding;
@@ -521,7 +532,7 @@ const Dashboard = () => {
                 {/* Slide 1: Character */}
                 <div style={{ flex: "0 0 100%", width: "100%" }}>
                   <CharacterSlide
-                    msg={ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔"}
+                    msg={EMOTION_MSG[charEmotion] ?? (ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔")}
                     characterId={(characterId || "oreumi") as Character}
                     level={xpInfo.level}
                     levelName={xpInfo.name}
@@ -531,6 +542,7 @@ const Dashboard = () => {
                     xpForNextLevel={xpInfo.xpForNextLevel}
                     isMax={xpInfo.isMax}
                     showXp={!isDemo}
+                    emotion={charEmotion}
                   />
                 </div>
 
