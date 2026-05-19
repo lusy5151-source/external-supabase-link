@@ -61,6 +61,19 @@ const MyPage = () => {
   const nav = useNavigate();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showNotifSettings, setShowNotifSettings] = useState(false);
+  const [characterId, setCharacterId] = useState<Character | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    (supabase as any)
+      .from("profiles")
+      .select("character_id")
+      .eq("user_id", user.id)
+      .single()
+      .then(({ data }: any) => {
+        if (data?.character_id) setCharacterId(data.character_id as Character);
+      });
+  }, [user]);
 
   if (!user) {
     return (
