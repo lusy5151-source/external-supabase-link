@@ -367,21 +367,24 @@ const Dashboard = () => {
                         position: "absolute",
                         background: "#fff",
                         border: "1.5px solid #C7D66D",
-                        padding: "10px 14px",
+                        padding: "8px 12px",
                         fontSize: 12,
                         fontWeight: 600,
                         color: "#2F403A",
-                        whiteSpace: "nowrap",
+                        lineHeight: 1.35,
+                        maxWidth: 180,
+                        wordBreak: "keep-all",
                         boxShadow: "0 3px 10px rgba(0,0,0,0.1)",
                         animation: "bubblePop 0.3s ease-out both",
                         zIndex: 2,
                       };
                       const posStyle: React.CSSProperties =
                         pos === "top-right"
-                          ? { bottom: "85%", left: "80%", borderRadius: "12px 12px 12px 4px", transformOrigin: "bottom left" }
+                          ? { bottom: "calc(100% - 8px)", left: "55%", borderRadius: "12px 12px 12px 4px", transformOrigin: "bottom left" }
                           : pos === "top-left"
-                          ? { bottom: "85%", right: "80%", borderRadius: "12px 12px 4px 12px", transformOrigin: "bottom right" }
-                          : { bottom: "95%", left: "50%", marginLeft: 0, transform: "translateX(-50%)", borderRadius: "12px", transformOrigin: "bottom center" };
+                          ? { bottom: "calc(100% - 8px)", right: "55%", borderRadius: "12px 12px 4px 12px", transformOrigin: "bottom right" }
+                          : { bottom: "calc(100% + 4px)", left: "50%", transform: "translateX(-50%)", borderRadius: "12px", transformOrigin: "bottom center" };
+
                       return (
                         <div
                           style={{
