@@ -235,7 +235,7 @@ function CharacterSlide({
               height: CHAR_SIZE,
             }}
           >
-            <CharacterAnimation character={characterId} emotion="normal" size={CHAR_SIZE} />
+            <CharacterAnimation character={characterId} emotion={emotion} size={CHAR_SIZE} />
           </div>
         </div>
       </div>
