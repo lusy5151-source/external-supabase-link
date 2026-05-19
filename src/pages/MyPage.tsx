@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import CharacterAnimation, { CHARACTER_META, type Character } from "@/components/CharacterAnimation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/context/StoreContext";
 import { useSummitClaims } from "@/hooks/useSummitClaims";
@@ -59,6 +61,19 @@ const MyPage = () => {
   const nav = useNavigate();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showNotifSettings, setShowNotifSettings] = useState(false);
+  const [characterId, setCharacterId] = useState<Character | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    (supabase as any)
+      .from("profiles")
+      .select("character_id")
+      .eq("user_id", user.id)
+      .single()
+      .then(({ data }: any) => {
+        if (data?.character_id) setCharacterId(data.character_id as Character);
+      });
+  }, [user]);
 
   if (!user) {
     return (
@@ -96,6 +111,63 @@ const MyPage = () => {
           </Badge>
         </div>
       </div>
+
+      {/* Character card */}
+      {(() => {
+        const charKey = (characterId || "oreumi") as Character;
+        const meta = CHARACTER_META[charKey];
+        const c = completedCount;
+        const level = c >= 100 ? 5 : c >= 50 ? 4 : c >= 20 ? 3 : c >= 5 ? 2 : 1;
+        const thresholds = [0, 5, 20, 50, 100];
+        const curMin = thresholds[level - 1];
+        const nextMin = level < 5 ? thresholds[level] : thresholds[4];
+        const pct = level === 5 ? 100 : Math.min(100, Math.round(((c - curMin) / (nextMin - curMin)) * 100));
+        return (
+          <div
+            style={{
+              background: "linear-gradient(135deg, #EAF3DE, #F8FAED, #E6F1FB)",
+              border: "1.5px solid #C7D66D",
+              borderRadius: 12,
+              padding: 12,
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            <CharacterAnimation character={charKey} emotion="normal" size={56} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-sm font-bold text-foreground">{meta.name}</span>
+                <span className="text-[10px] text-muted-foreground">{meta.type}</span>
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-[10px] font-semibold text-foreground/70">Lv.{level}</span>
+                <div className="flex-1 h-1.5 rounded-full bg-black/10 overflow-hidden">
+                  <div style={{ width: `${pct}%`, height: "100%", background: "#3B6D11", transition: "width 0.3s" }} />
+                </div>
+                <span className="text-[10px] text-muted-foreground">
+                  {level < 5 ? `${c}/${nextMin}` : "MAX"}
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => toast("캐릭터 꾸미기는 곧 추가됩니다!")}
+              style={{
+                background: "#EAF3DE",
+                color: "#3B6D11",
+                fontSize: 12,
+                fontWeight: 600,
+                borderRadius: 8,
+                padding: "6px 10px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              꾸미기 →
+            </button>
+          </div>
+        );
+      })()}
+
 
       {/* Quick stats */}
       <div className="grid grid-cols-3 gap-2">
