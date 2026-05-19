@@ -147,6 +147,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   }
 
   const handleOptionSelect = (option: QuizOption) => {
+    if (outgoingIndex !== null) return
     setScores((prev) => {
       const next = { ...prev }
       ;(Object.keys(option.scores) as Character[]).forEach((c) => {
@@ -154,8 +155,11 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
       })
       return next
     })
-    if (quizIndex < QUIZZES.length - 1) {
-      setQuizIndex((i) => i + 1)
+    const currentIdx = quizIndex
+    if (currentIdx < QUIZZES.length - 1) {
+      setOutgoingIndex(currentIdx)
+      setQuizIndex(currentIdx + 1)
+      window.setTimeout(() => setOutgoingIndex(null), 320)
     } else {
       setStep('result')
     }
