@@ -39,6 +39,14 @@ import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOnboarding } from "@/contexts/OnboardingContext";
 import { useUserXp } from "@/hooks/useUserXp";
+import { useCharacterEmotion } from "@/hooks/useCharacterEmotion";
+
+const EMOTION_MSG: Record<"normal" | "sad" | "angry" | "autumn", string | null> = {
+  normal: null,
+  sad: "오늘은 쉬는 날인가요? 🌧️",
+  angry: "다음엔 꼭 인증 성공해요! 💪",
+  autumn: "단풍 구경 가기 딱 좋은 계절이에요 🍂",
+};
 
 const conditionIcons: Record<string, any> = {
   "맑음": Sun, "구름": CloudSun, "흐림": Cloud, "비": CloudRain, "눈": CloudSnow,
