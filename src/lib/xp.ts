@@ -16,6 +16,61 @@ export function levelName(level: number): string {
   return LEVEL_NAMES[level] ?? `Lv ${level}`;
 }
 
+// XP thresholds per level (matches Supabase calc_level)
+// Lv1: 0+, Lv2: 200+, Lv3: 500+, Lv4: 1000+, Lv5: 2000+, Lv6: 4000+
+export const LEVEL_THRESHOLDS = [0, 200, 500, 1000, 2000, 4000] as const;
+export const MAX_LEVEL = 6;
+
+export function calcLevel(xp: number): number {
+  if (xp >= 4000) return 6;
+  if (xp >= 2000) return 5;
+  if (xp >= 1000) return 4;
+  if (xp >= 500) return 3;
+  if (xp >= 200) return 2;
+  return 1;
+}
+
+export interface LevelInfo {
+  level: number;
+  name: string;
+  xp: number;
+  currentLevelMinXp: number;
+  nextLevelMinXp: number; // === currentLevelMinXp when MAX
+  xpIntoLevel: number;
+  xpForNextLevel: number; // total xp range for current level
+  xpRemaining: number; // to reach next level (0 if MAX)
+  progressPct: number; // 0-100
+  isMax: boolean;
+}
+
+export function getLevelInfo(xp: number, levelOverride?: number): LevelInfo {
+  const safeXp = Math.max(0, Math.floor(xp || 0));
+  const level = levelOverride && levelOverride >= 1 && levelOverride <= MAX_LEVEL
+    ? levelOverride
+    : calcLevel(safeXp);
+  const isMax = level >= MAX_LEVEL;
+  const currentLevelMinXp = LEVEL_THRESHOLDS[level - 1] ?? 0;
+  const nextLevelMinXp = isMax ? currentLevelMinXp : LEVEL_THRESHOLDS[level];
+  const xpForNextLevel = Math.max(1, nextLevelMinXp - currentLevelMinXp);
+  const xpIntoLevel = Math.max(0, safeXp - currentLevelMinXp);
+  const xpRemaining = isMax ? 0 : Math.max(0, nextLevelMinXp - safeXp);
+  const progressPct = isMax
+    ? 100
+    : Math.min(100, Math.max(0, Math.round((xpIntoLevel / xpForNextLevel) * 100)));
+  return {
+    level,
+    name: levelName(level),
+    xp: safeXp,
+    currentLevelMinXp,
+    nextLevelMinXp,
+    xpIntoLevel,
+    xpForNextLevel,
+    xpRemaining,
+    progressPct,
+    isMax,
+  };
+}
+
 export interface AwardXpOptions {
   userId: string;
   amount: number;
