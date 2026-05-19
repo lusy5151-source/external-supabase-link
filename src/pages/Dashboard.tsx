@@ -510,7 +510,10 @@ const Dashboard = () => {
       const newCount = ((profile?.total_comfort_count as number) || 0) + 1;
       await (supabase as any)
         .from("profiles")
-        .update({ total_comfort_count: newCount })
+        .update({
+          total_comfort_count: newCount,
+          last_comforted_at: new Date().toISOString(),
+        })
         .eq("user_id", user.id);
 
       if (newCount === 10) {
