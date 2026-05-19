@@ -524,6 +524,13 @@ const Dashboard = () => {
                     msg={ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔"}
                     characterId={(characterId || "oreumi") as Character}
                     level={xpInfo.level}
+                    levelName={xpInfo.name}
+                    progressPct={xpInfo.progressPct}
+                    xpRemaining={xpInfo.xpRemaining}
+                    xpIntoLevel={xpInfo.xpIntoLevel}
+                    xpForNextLevel={xpInfo.xpForNextLevel}
+                    isMax={xpInfo.isMax}
+                    showXp={!isDemo}
                   />
                 </div>
 
