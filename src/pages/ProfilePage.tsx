@@ -5,6 +5,7 @@ import { useGearStore } from "@/hooks/useGearStore";
 import { useAchievementStore } from "@/hooks/useAchievementStore";
 import { useSharedCompletionCounts } from "@/hooks/useSharedCompletionCounts";
 import { useProfile } from "@/hooks/useProfile";
+import { useUserXp } from "@/hooks/useUserXp";
 import { useHikingJournals, type HikingJournal } from "@/hooks/useHikingJournals";
 import { useFriends } from "@/hooks/useFriends";
 import { usePrivacySettings } from "@/hooks/usePrivacySettings";
