@@ -325,14 +325,16 @@ const Dashboard = () => {
                 {/* Slide 1: Character */}
                 <div style={{ flex: "0 0 100%", width: "100%" }}>
                   <div
-                    className="p-5 shadow-sm"
+                    className="p-4 shadow-sm"
                     style={{
                       background: "linear-gradient(145deg, #EAF3DE, #F8FAED)",
                       borderRadius: 16,
                       position: "relative",
-                      minHeight: 140,
+                      minHeight: 200,
+                      overflow: "hidden",
                     }}
                   >
+                    <style>{`@keyframes bubblePop{0%{opacity:0;transform:scale(0.8)}100%{opacity:1;transform:scale(1)}}`}</style>
                     <span
                       style={{
                         position: "absolute",
@@ -345,6 +347,7 @@ const Dashboard = () => {
                         fontWeight: 700,
                         padding: "3px 8px",
                         borderRadius: 999,
+                        zIndex: 2,
                       }}
                     >
                       Lv.{(() => {
@@ -356,26 +359,46 @@ const Dashboard = () => {
                         return 1;
                       })()}
                     </span>
-                    <div className="flex items-center gap-3">
+                    {(() => {
+                      const msg = ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔";
+                      // pick position deterministically from msg
+                      const positions = ["top-right", "top-left", "top"] as const;
+                      const pos = positions[Math.abs(msg.split("").reduce((a, c) => a + c.charCodeAt(0), 0)) % positions.length];
+                      const bubbleBase: React.CSSProperties = {
+                        position: "absolute",
+                        background: "#fff",
+                        border: "1.5px solid #C7D66D",
+                        padding: "10px 14px",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        maxWidth: 160,
+                        color: "hsl(var(--foreground))",
+                        lineHeight: 1.35,
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                        animation: "bubblePop 0.3s ease-out",
+                        zIndex: 2,
+                      };
+                      const posStyle: React.CSSProperties =
+                        pos === "top-right"
+                          ? { top: 40, right: 24, borderRadius: "12px 12px 12px 4px" }
+                          : pos === "top-left"
+                          ? { top: 40, left: 16, borderRadius: "12px 12px 4px 12px" }
+                          : { top: 16, left: "50%", transform: "translateX(-50%)", borderRadius: "12px" };
+                      return <div style={{ ...bubbleBase, ...posStyle }}>{msg}</div>;
+                    })()}
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: 0,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                      }}
+                    >
                       <CharacterAnimation
                         character={(characterId || "oreumi") as Character}
                         emotion="normal"
-                        size={80}
+                        size={135}
                       />
-                      <div
-                        style={{
-                          flex: 1,
-                          background: "#fff",
-                          border: "1.5px solid #C7D66D",
-                          borderRadius: "12px 12px 12px 4px",
-                          padding: "10px 12px",
-                          fontSize: 13,
-                          color: "hsl(var(--foreground))",
-                          lineHeight: 1.4,
-                        }}
-                      >
-                        {ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔"}
-                      </div>
                     </div>
                   </div>
                 </div>
