@@ -232,11 +232,12 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
           is_onboarded: true,
         })
         .eq('user_id', user.id)
-      if (error) throw error
+      console.log('update error:', error)
       onComplete(nickname, topCharacter)
     } catch (err: any) {
       console.error('[OnboardingFlow] profile update failed', err)
       toast.error(err?.message || '저장에 실패했어요. 다시 시도해 주세요.')
+    } finally {
       setSaving(false)
     }
   }
