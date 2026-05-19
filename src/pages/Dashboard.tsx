@@ -48,6 +48,31 @@ const EMOTION_MSG: Record<"normal" | "sad" | "angry" | "autumn", string | null> 
   autumn: "단풍 구경 가기 딱 좋은 계절이에요 🍂",
 };
 
+const COMFORT_MSG: Record<"sad" | "angry", string[]> = {
+  sad: [
+    "흑흑... 건드리지 마요 🥺",
+    "...조금 나아지는 것 같기도?",
+    "고마워요, 그래도 슬퍼요 😔",
+    "에헤... 기분이 좀 나아져요 🌸",
+    "됐어요! 같이 산 가요! 🏔️",
+  ],
+  angry: [
+    "저리 가요! 화났다고요! 😤",
+    "...뭐예요, 왜 계속 건드려요",
+    "으음... 진짜 그만해요 ㅠ",
+    "...사실 그렇게 화난 건 아니에요",
+    "알겠어요, 화 풀렸어요! 💪",
+  ],
+};
+const COMFORT_RECOVERED_MSG = "완전 회복! 이제 같이 산 가요! 🏔️";
+
+const COMFORT_PARTICLES: Record<"sad" | "angry", string[]> = {
+  sad: ["💧", "💙", "💕"],
+  angry: ["💢", "😤", "🌀"],
+};
+const COMFORT_PARTICLES_LATE_ANGRY = ["😅", "🎉", "💫"];
+const RECOVERY_PARTICLES = ["✨", "⭐", "💫", "✨"];
+
 const conditionIcons: Record<string, any> = {
   "맑음": Sun, "구름": CloudSun, "흐림": Cloud, "비": CloudRain, "눈": CloudSnow,
 };
@@ -67,6 +92,10 @@ function CharacterSlide({
   isMax,
   showXp = true,
   emotion = "normal",
+  comfortCount = 0,
+  showComfortGauge = false,
+  onComfortTap,
+  recovered = false,
 }: {
   msg: string;
   characterId: Character;
@@ -79,6 +108,10 @@ function CharacterSlide({
   isMax: boolean;
   showXp?: boolean;
   emotion?: "normal" | "sad" | "angry" | "autumn";
+  comfortCount?: number;
+  showComfortGauge?: boolean;
+  onComfortTap?: () => void;
+  recovered?: boolean;
 }) {
   const bubbleRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -172,14 +205,19 @@ function CharacterSlide({
         flexDirection: "column",
       }}
     >
-      <style>{`@keyframes bubblePop{0%{opacity:0;transform:scale(0.9)}100%{opacity:1;transform:scale(1)}}`}</style>
+      <style>{`
+        @keyframes bubblePop{0%{opacity:0;transform:scale(0.9)}100%{opacity:1;transform:scale(1)}}
+        @keyframes comfortBounce{0%,100%{transform:translateY(0)}30%{transform:translateY(-10px)}60%{transform:translateY(2px)}}
+        @keyframes comfortRecover{0%{transform:scale(1)}40%{transform:scale(1.15)}100%{transform:scale(1)}}
+        @keyframes comfortParticle{0%{opacity:0;transform:translate(-50%,0) scale(0.6)}30%{opacity:1}100%{opacity:0;transform:translate(var(--dx,0),var(--dy,-40px)) scale(1.1)}}
+      `}</style>
 
       {/* XP bar header */}
       {showXp && (
         <div
           style={{
             padding: "10px 14px 8px",
-            borderBottom: "1px solid rgba(0,0,0,0.06)",
+            borderBottom: showComfortGauge ? "none" : "1px solid rgba(0,0,0,0.06)",
             background: "rgba(255,255,255,0.35)",
           }}
         >
@@ -212,6 +250,46 @@ function CharacterSlide({
         </div>
       )}
 
+      {/* Comfort gauge */}
+      {showComfortGauge && (
+        <div
+          style={{
+            padding: "6px 14px 8px",
+            borderBottom: "1px solid rgba(0,0,0,0.06)",
+            background: "rgba(255,255,255,0.35)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+            <span style={{ fontSize: 10, fontWeight: 600, color: "#6BB8DC" }}>
+              {recovered ? "완전 회복! 💖" : "달래는 중..."}
+            </span>
+            <span style={{ fontSize: 11, letterSpacing: 1 }}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <span key={i} style={{ opacity: i < comfortCount ? 1 : 0.25 }}>♥</span>
+              ))}
+            </span>
+          </div>
+          <div
+            style={{
+              marginTop: 4,
+              height: 3,
+              borderRadius: 999,
+              background: "#e6eef3",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                width: `${(comfortCount / 5) * 100}%`,
+                height: "100%",
+                background: "#6BB8DC",
+                transition: "width 0.25s",
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Character + bubble area */}
       <div
         className="p-4"
@@ -233,20 +311,132 @@ function CharacterSlide({
           }}
         >
           <div ref={bubbleRef} style={{ ...bubbleBase, ...posStyle }}>{msg}</div>
-          <div
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: CHAR_SIZE,
-              height: CHAR_SIZE,
-            }}
-          >
-            <CharacterAnimation character={characterId} emotion={emotion} size={CHAR_SIZE} />
-          </div>
+          <CharacterTapArea
+            characterId={characterId}
+            emotion={emotion}
+            size={CHAR_SIZE}
+            canTap={!!onComfortTap}
+            onTap={onComfortTap}
+            comfortCount={comfortCount}
+            recovered={recovered}
+          />
         </div>
       </div>
+    </div>
+  );
+}
+
+function CharacterTapArea({
+  characterId,
+  emotion,
+  size,
+  canTap,
+  onTap,
+  comfortCount,
+  recovered,
+}: {
+  characterId: Character;
+  emotion: "normal" | "sad" | "angry" | "autumn";
+  size: number;
+  canTap: boolean;
+  onTap?: () => void;
+  comfortCount: number;
+  recovered: boolean;
+}) {
+  const [bounceKey, setBounceKey] = useState(0);
+  const [particles, setParticles] = useState<{ id: number; emoji: string; dx: number; dy: number }[]>([]);
+  const particleSeed = useRef(0);
+  const prevRecovered = useRef(recovered);
+
+  const spawnParticles = (emojis: string[], count = 3) => {
+    const next = Array.from({ length: count }).map(() => {
+      const id = ++particleSeed.current;
+      const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 0.9;
+      const dist = 40 + Math.random() * 25;
+      return {
+        id,
+        emoji: emojis[Math.floor(Math.random() * emojis.length)],
+        dx: Math.cos(angle) * dist,
+        dy: Math.sin(angle) * dist,
+      };
+    });
+    setParticles((p) => [...p, ...next]);
+    setTimeout(() => {
+      const ids = new Set(next.map((n) => n.id));
+      setParticles((p) => p.filter((x) => !ids.has(x.id)));
+    }, 900);
+  };
+
+  // Recovery effect when transitioning to recovered
+  useEffect(() => {
+    if (!prevRecovered.current && recovered) {
+      setBounceKey((k) => k + 1);
+      spawnParticles(RECOVERY_PARTICLES, 4);
+    }
+    prevRecovered.current = recovered;
+  }, [recovered]);
+
+  const handleTap = () => {
+    if (!canTap) return;
+    setBounceKey((k) => k + 1);
+    if (emotion === "sad") {
+      spawnParticles(COMFORT_PARTICLES.sad, 3);
+    } else if (emotion === "angry") {
+      const pool = comfortCount >= 3 ? COMFORT_PARTICLES_LATE_ANGRY : COMFORT_PARTICLES.angry;
+      spawnParticles(pool, 3);
+    }
+    onTap?.();
+  };
+
+  const bounceAnim = recovered
+    ? "comfortRecover 0.5s ease-out"
+    : "comfortBounce 0.3s ease-out";
+
+  return (
+    <div
+      onClick={handleTap}
+      style={{
+        position: "absolute",
+        bottom: 0,
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: size,
+        height: size,
+        cursor: canTap ? "pointer" : "default",
+        touchAction: "manipulation",
+        userSelect: "none",
+      }}
+    >
+      <div
+        key={bounceKey}
+        style={{
+          width: "100%",
+          height: "100%",
+          animation: bounceKey > 0 ? bounceAnim : undefined,
+          transition: "filter 0.6s ease",
+        }}
+      >
+        <CharacterAnimation character={characterId} emotion={emotion} size={size} />
+      </div>
+      {/* Particles */}
+      {particles.map((p) => (
+        <span
+          key={p.id}
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: "20%",
+            fontSize: 20,
+            pointerEvents: "none",
+            animation: "comfortParticle 0.9s ease-out forwards",
+            // @ts-ignore - CSS custom props
+            "--dx": `calc(-50% + ${p.dx}px)`,
+            "--dy": `${p.dy}px`,
+          } as React.CSSProperties}
+        >
+          {p.emoji}
+        </span>
+      ))}
     </div>
   );
 }
@@ -285,6 +475,29 @@ const Dashboard = () => {
   const touchStartX = useRef<number | null>(null);
   const xpInfo = useUserXp();
   const charEmotion = useCharacterEmotion();
+
+  // Comfort interaction (only for sad/angry)
+  const [comfortCount, setComfortCount] = useState(0);
+  const [comfortRecovered, setComfortRecovered] = useState(false);
+  useEffect(() => {
+    setComfortCount(0);
+    setComfortRecovered(false);
+  }, [charEmotion]);
+  const isComfortable = charEmotion === "sad" || charEmotion === "angry";
+  const effectiveEmotion: "normal" | "sad" | "angry" | "autumn" = comfortRecovered ? "normal" : charEmotion;
+  const handleComfortTap = () => {
+    if (!isComfortable || comfortRecovered) return;
+    setComfortCount((c) => {
+      const next = Math.min(c + 1, 5);
+      if (next >= 5) setComfortRecovered(true);
+      return next;
+    });
+  };
+  let comfortMsg: string | null = null;
+  if (isComfortable) {
+    if (comfortRecovered) comfortMsg = COMFORT_RECOVERED_MSG;
+    else if (comfortCount > 0) comfortMsg = COMFORT_MSG[charEmotion][comfortCount - 1];
+  }
 
   const { isOnboarding } = useOnboarding();
   const isDemo = !user || isOnboarding;
@@ -532,7 +745,7 @@ const Dashboard = () => {
                 {/* Slide 1: Character */}
                 <div style={{ flex: "0 0 100%", width: "100%" }}>
                   <CharacterSlide
-                    msg={EMOTION_MSG[charEmotion] ?? (ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔")}
+                    msg={comfortMsg ?? EMOTION_MSG[effectiveEmotion] ?? (ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔")}
                     characterId={(characterId || "oreumi") as Character}
                     level={xpInfo.level}
                     levelName={xpInfo.name}
@@ -542,8 +755,13 @@ const Dashboard = () => {
                     xpForNextLevel={xpInfo.xpForNextLevel}
                     isMax={xpInfo.isMax}
                     showXp={!isDemo}
-                    emotion={charEmotion}
+                    emotion={effectiveEmotion}
+                    comfortCount={comfortCount}
+                    showComfortGauge={!isDemo && (isComfortable || comfortRecovered)}
+                    onComfortTap={isComfortable && !comfortRecovered ? handleComfortTap : undefined}
+                    recovered={comfortRecovered}
                   />
+
                 </div>
 
                 {/* Slide 2: Existing upcoming plan card */}
