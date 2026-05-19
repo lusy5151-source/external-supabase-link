@@ -47,7 +47,29 @@ const conditionIcons: Record<string, any> = {
 const GOAL_KEY = "wandeng-user-goal";
 const HUNDRED_TYPE_KEY = "wandeng-hundred-type"; // "forestry_100" | "bac_100"
 
-function CharacterSlide({ msg, characterId, level }: { msg: string; characterId: Character; level: number }) {
+function CharacterSlide({
+  msg,
+  characterId,
+  level,
+  levelName,
+  progressPct,
+  xpRemaining,
+  xpIntoLevel,
+  xpForNextLevel,
+  isMax,
+  showXp = true,
+}: {
+  msg: string;
+  characterId: Character;
+  level: number;
+  levelName: string;
+  progressPct: number;
+  xpRemaining: number;
+  xpIntoLevel: number;
+  xpForNextLevel: number;
+  isMax: boolean;
+  showXp?: boolean;
+}) {
   const bubbleRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const [bubbleSize, setBubbleSize] = useState({ width: 160, height: 40 });
@@ -130,57 +152,89 @@ function CharacterSlide({ msg, characterId, level }: { msg: string; characterId:
 
   return (
     <div
-      className="p-4 shadow-sm"
+      className="shadow-sm"
       style={{
         background: "linear-gradient(145deg, #EAF3DE, #F8FAED)",
         borderRadius: 16,
         position: "relative",
-        minHeight: Math.max(240, neededHeight),
         overflow: "hidden",
         display: "flex",
-        alignItems: "flex-end",
-        justifyContent: "center",
+        flexDirection: "column",
       }}
     >
       <style>{`@keyframes bubblePop{0%{opacity:0;transform:scale(0.9)}100%{opacity:1;transform:scale(1)}}`}</style>
-      <span
-        style={{
-          position: "absolute",
-          top: 12,
-          right: 12,
-          background: "#fff",
-          border: "1px solid #C7D66D",
-          color: "#3B6D11",
-          fontSize: 11,
-          fontWeight: 700,
-          padding: "3px 8px",
-          borderRadius: 999,
-          zIndex: 2,
-        }}
-      >
-        Lv.{level}
-      </span>
-      <div
-        ref={stageRef}
-        style={{
-          position: "relative",
-          width: "100%",
-          maxWidth: STAGE_MAX_WIDTH,
-          minHeight: stageHeight,
-        }}
-      >
-        <div ref={bubbleRef} style={{ ...bubbleBase, ...posStyle }}>{msg}</div>
+
+      {/* XP bar header */}
+      {showXp && (
         <div
           style={{
-            position: "absolute",
-            bottom: 0,
-            left: "50%",
-            transform: "translateX(-50%)",
-            width: CHAR_SIZE,
-            height: CHAR_SIZE,
+            padding: "10px 14px 8px",
+            borderBottom: "1px solid rgba(0,0,0,0.06)",
+            background: "rgba(255,255,255,0.35)",
           }}
         >
-          <CharacterAnimation character={characterId} emotion="normal" size={CHAR_SIZE} />
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#2F403A" }}>
+              Lv.{level} {levelName}
+            </span>
+            <span style={{ fontSize: 10, color: "#999" }}>
+              {isMax ? "MAX" : `다음까지 ${xpRemaining.toLocaleString()}XP`}
+            </span>
+          </div>
+          <div
+            style={{
+              marginTop: 5,
+              height: 4,
+              borderRadius: 999,
+              background: "#e0e0d8",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                width: `${progressPct}%`,
+                height: "100%",
+                background: "#C7D66D",
+                transition: "width 0.3s",
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Character + bubble area */}
+      <div
+        className="p-4"
+        style={{
+          position: "relative",
+          minHeight: Math.max(220, neededHeight),
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          ref={stageRef}
+          style={{
+            position: "relative",
+            width: "100%",
+            maxWidth: STAGE_MAX_WIDTH,
+            minHeight: stageHeight,
+          }}
+        >
+          <div ref={bubbleRef} style={{ ...bubbleBase, ...posStyle }}>{msg}</div>
+          <div
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: CHAR_SIZE,
+              height: CHAR_SIZE,
+            }}
+          >
+            <CharacterAnimation character={characterId} emotion="normal" size={CHAR_SIZE} />
+          </div>
         </div>
       </div>
     </div>
@@ -470,6 +524,13 @@ const Dashboard = () => {
                     msg={ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔"}
                     characterId={(characterId || "oreumi") as Character}
                     level={xpInfo.level}
+                    levelName={xpInfo.name}
+                    progressPct={xpInfo.progressPct}
+                    xpRemaining={xpInfo.xpRemaining}
+                    xpIntoLevel={xpInfo.xpIntoLevel}
+                    xpForNextLevel={xpInfo.xpForNextLevel}
+                    isMax={xpInfo.isMax}
+                    showXp={!isDemo}
                   />
                 </div>
 
@@ -565,44 +626,6 @@ const Dashboard = () => {
 
         <div className="space-y-4 px-5 pt-5">
 
-          {/* ── XP / Level summary ── */}
-          {!isDemo && (
-            <section
-              className="rounded-2xl border border-border bg-card p-4 shadow-sm"
-              onClick={() => navigate("/my")}
-              role="button"
-            >
-              <div className="flex items-baseline justify-between">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-base font-bold text-foreground">
-                    Lv.{xpInfo.level} {xpInfo.name}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {xpInfo.xp.toLocaleString()} XP
-                  </span>
-                </div>
-                <span className="text-xs font-semibold" style={{ color: "#3B6D11" }}>
-                  {xpInfo.isMax
-                    ? "MAX"
-                    : `다음까지 ${xpInfo.xpRemaining.toLocaleString()} XP`}
-                </span>
-              </div>
-              <div className="mt-2 h-2 rounded-full bg-black/10 overflow-hidden">
-                <div
-                  style={{
-                    width: `${xpInfo.progressPct}%`,
-                    height: "100%",
-                    background: "#C7D66D",
-                    transition: "width 0.3s",
-                  }}
-                />
-              </div>
-              <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
-                <span>{xpInfo.xpIntoLevel.toLocaleString()} / {xpInfo.xpForNextLevel.toLocaleString()} XP</span>
-                <span>{xpInfo.progressPct}%</span>
-              </div>
-            </section>
-          )}
 
 
           {/* ── 1. 완등 실시간 소식 🏔 ── */}
