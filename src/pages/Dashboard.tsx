@@ -38,6 +38,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOnboarding } from "@/contexts/OnboardingContext";
+import { useUserXp } from "@/hooks/useUserXp";
 
 const conditionIcons: Record<string, any> = {
   "맑음": Sun, "구름": CloudSun, "흐림": Cloud, "비": CloudRain, "눈": CloudSnow,
@@ -174,6 +175,7 @@ const Dashboard = () => {
   const [characterId, setCharacterId] = useState<Character | null>(null);
   const [slideIdx, setSlideIdx] = useState(0);
   const touchStartX = useRef<number | null>(null);
+  const xpInfo = useUserXp();
 
   const { isOnboarding } = useOnboarding();
   const isDemo = !user || isOnboarding;
@@ -423,14 +425,7 @@ const Dashboard = () => {
                   <CharacterSlide
                     msg={ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔"}
                     characterId={(characterId || "oreumi") as Character}
-                    level={(() => {
-                      const c = displayCompletedCount;
-                      if (c >= 100) return 5;
-                      if (c >= 50) return 4;
-                      if (c >= 20) return 3;
-                      if (c >= 5) return 2;
-                      return 1;
-                    })()}
+                    level={xpInfo.level}
                   />
                 </div>
 
@@ -525,6 +520,46 @@ const Dashboard = () => {
         </section>
 
         <div className="space-y-4 px-5 pt-5">
+
+          {/* ── XP / Level summary ── */}
+          {!isDemo && (
+            <section
+              className="rounded-2xl border border-border bg-card p-4 shadow-sm"
+              onClick={() => navigate("/my")}
+              role="button"
+            >
+              <div className="flex items-baseline justify-between">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-base font-bold text-foreground">
+                    Lv.{xpInfo.level} {xpInfo.name}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {xpInfo.xp.toLocaleString()} XP
+                  </span>
+                </div>
+                <span className="text-xs font-semibold" style={{ color: "#3B6D11" }}>
+                  {xpInfo.isMax
+                    ? "MAX"
+                    : `다음까지 ${xpInfo.xpRemaining.toLocaleString()} XP`}
+                </span>
+              </div>
+              <div className="mt-2 h-2 rounded-full bg-black/10 overflow-hidden">
+                <div
+                  style={{
+                    width: `${xpInfo.progressPct}%`,
+                    height: "100%",
+                    background: "#C7D66D",
+                    transition: "width 0.3s",
+                  }}
+                />
+              </div>
+              <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+                <span>{xpInfo.xpIntoLevel.toLocaleString()} / {xpInfo.xpForNextLevel.toLocaleString()} XP</span>
+                <span>{xpInfo.progressPct}%</span>
+              </div>
+            </section>
+          )}
+
 
           {/* ── 1. 완등 실시간 소식 🏔 ── */}
           <section>

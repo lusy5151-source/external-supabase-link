@@ -5,6 +5,7 @@ import { useGearStore } from "@/hooks/useGearStore";
 import { useAchievementStore } from "@/hooks/useAchievementStore";
 import { useSharedCompletionCounts } from "@/hooks/useSharedCompletionCounts";
 import { useProfile } from "@/hooks/useProfile";
+import { useUserXp } from "@/hooks/useUserXp";
 import { useHikingJournals, type HikingJournal } from "@/hooks/useHikingJournals";
 import { useFriends } from "@/hooks/useFriends";
 import { usePrivacySettings } from "@/hooks/usePrivacySettings";
@@ -43,6 +44,7 @@ const ProfilePage = () => {
     useAchievementStore(records, gearItems, sharedCompletions);
   const { profile, loading: profileLoading, updateProfile, uploadAvatar } = useProfile();
   const { fetchMyJournals } = useHikingJournals();
+  const xpInfo = useUserXp();
   const { friends } = useFriends();
   const { toast } = useToast();
   const { settings: privacySettings, updateSettings: updatePrivacy, isPrivateAccount } = usePrivacySettings();
@@ -288,6 +290,26 @@ const ProfilePage = () => {
             )}
           </>
         )}
+      </div>
+
+      {/* Level / XP card */}
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+        <div className="flex items-baseline justify-between">
+          <span className="text-sm font-bold text-foreground">
+            Lv.{xpInfo.level} {xpInfo.name}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {xpInfo.xp.toLocaleString()} XP
+          </span>
+        </div>
+        <div className="mt-2 h-2 rounded-full bg-black/10 overflow-hidden">
+          <div style={{ width: `${xpInfo.progressPct}%`, height: "100%", background: "#C7D66D", transition: "width 0.3s" }} />
+        </div>
+        <p className="mt-1 text-[10px] text-muted-foreground text-right">
+          {xpInfo.isMax
+            ? "MAX 레벨 달성"
+            : `다음 레벨까지 ${xpInfo.xpRemaining.toLocaleString()} XP (${xpInfo.xpIntoLevel.toLocaleString()} / ${xpInfo.xpForNextLevel.toLocaleString()})`}
+        </p>
       </div>
 
       {/* Profile Summary - 5 stats */}
