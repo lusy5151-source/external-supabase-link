@@ -169,6 +169,7 @@ function CharacterSlide({ msg, characterId, level }: { msg: string; characterId:
           minHeight: stageHeight,
         }}
       >
+        <div ref={bubbleRef} style={{ ...bubbleBase, ...posStyle }}>{msg}</div>
         <div
           style={{
             position: "absolute",
@@ -179,7 +180,6 @@ function CharacterSlide({ msg, characterId, level }: { msg: string; characterId:
             height: CHAR_SIZE,
           }}
         >
-          <div ref={bubbleRef} style={{ ...bubbleBase, ...posStyle }}>{msg}</div>
           <CharacterAnimation character={characterId} emotion="normal" size={CHAR_SIZE} />
         </div>
       </div>
