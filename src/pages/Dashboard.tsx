@@ -38,6 +38,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOnboarding } from "@/contexts/OnboardingContext";
+import { useUserXp } from "@/hooks/useUserXp";
 
 const conditionIcons: Record<string, any> = {
   "맑음": Sun, "구름": CloudSun, "흐림": Cloud, "비": CloudRain, "눈": CloudSnow,
