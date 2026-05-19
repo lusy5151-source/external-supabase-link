@@ -2469,6 +2469,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_onboarded: boolean | null
+          last_app_visit: string | null
           location: string | null
           nickname: string | null
           provider: string | null
@@ -2488,6 +2489,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_onboarded?: boolean | null
+          last_app_visit?: string | null
           location?: string | null
           nickname?: string | null
           provider?: string | null
@@ -2507,6 +2509,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_onboarded?: boolean | null
+          last_app_visit?: string | null
           location?: string | null
           nickname?: string | null
           provider?: string | null
