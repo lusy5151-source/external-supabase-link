@@ -65,7 +65,7 @@ export function useCharacterEmotion(): CharacterEmotion {
         // 4) Profile XP/level/last_app_visit
         const profileP = (supabase as any)
           .from("profiles")
-          .select("xp, character_level, last_app_visit")
+          .select("xp, character_level, last_app_visit, last_comforted_at")
           .eq("user_id", userId)
           .maybeSingle();
 
@@ -91,12 +91,19 @@ export function useCharacterEmotion(): CharacterEmotion {
             });
         }
 
+        // Skip negative emotions if already comforted today
+        const lastComforted = profile?.last_comforted_at;
+        const skipNegativeEmotions = !!(
+          lastComforted &&
+          new Date(lastComforted).toDateString() === new Date().toDateString()
+        );
+
         // Emotion priority: angry > sad > autumn > normal
-        if (failedSummit && failedSummit.length > 0) {
+        if (!skipNegativeEmotions && failedSummit && failedSummit.length > 0) {
           if (!cancelled) setEmotion("angry");
           return;
         }
-        if (!upcomingPlans || upcomingPlans.length === 0) {
+        if (!skipNegativeEmotions && (!upcomingPlans || upcomingPlans.length === 0)) {
           if (!cancelled) setEmotion("sad");
           return;
         }
