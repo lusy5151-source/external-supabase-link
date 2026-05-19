@@ -301,72 +301,171 @@ const Dashboard = () => {
               )}
             </div>
 
-            {/* Upcoming schedule card */}
-            <div data-onboarding="upcoming-schedule" className="rounded-2xl bg-card/90 p-5 shadow-sm backdrop-blur-sm">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-semibold text-muted-foreground">다가오는 일정</p>
-                <Link
-                  to={isDemo ? "/auth" : "/plans/create"}
-                  style={{
-                    background: "hsl(var(--lavender))",
-                    color: "#fff",
-                    fontSize: "12px",
-                    fontWeight: 500,
-                    borderRadius: "20px",
-                    padding: "5px 12px",
-                    border: "none",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    lineHeight: 1,
-                  }}
-                >
-                  + 계획
-                </Link>
-              </div>
-              {isDemo ? (
-                /* Demo upcoming plan */
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="inline-block rounded-full bg-coral px-3 py-1 text-sm font-bold text-white">D-3</span>
-                    <h3 className="mt-2 text-lg font-bold text-foreground">북한산</h3>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(Date.now() + 3 * 86400000).toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })} · 08:00
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1.5 rounded-xl bg-accent/60 px-3 py-2">
-                    <Sun className="h-5 w-5 text-sky-600" />
-                    <span className="text-base font-semibold text-foreground">12°</span>
-                  </div>
-                </div>
-              ) : upcomingPlan && upcomingMountain ? (
-                <Link to={`/plans/${upcomingPlan.id}`} className="block">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="inline-block rounded-full bg-coral px-3 py-1 text-sm font-bold text-white">{dDay}</span>
-                      <h3 className="mt-2 text-lg font-bold text-foreground">{upcomingMountain.nameKo}</h3>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(upcomingPlan.planned_date).toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })}
-                        {upcomingPlan.start_time && ` · ${upcomingPlan.start_time.slice(0, 5)}`}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1.5 rounded-xl bg-accent/60 px-3 py-2">
-                      <CondIcon className="h-5 w-5 text-sky-600" />
-                      <span className="text-base font-semibold text-foreground">{weather.temp}°</span>
-                    </div>
-                  </div>
-                </Link>
-              ) : (
-                <div className="text-center py-3">
-                  <Calendar className="mx-auto h-8 w-8 text-muted-foreground/30 mb-2" />
-                  <p className="text-sm text-muted-foreground">예정된 일정이 없습니다</p>
-                  <Link
-                    to={isDemo ? "/auth" : "/plans/create"}
-                    className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground"
+            {/* Upcoming schedule slider */}
+            <div
+              data-onboarding="upcoming-schedule"
+              onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+              onTouchEnd={(e) => {
+                if (touchStartX.current == null) return;
+                const dx = e.changedTouches[0].clientX - touchStartX.current;
+                if (Math.abs(dx) > 40) {
+                  setSlideIdx((p) => (dx < 0 ? Math.min(1, p + 1) : Math.max(0, p - 1)));
+                }
+                touchStartX.current = null;
+              }}
+              style={{ overflow: "hidden", borderRadius: 16 }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  transform: `translateX(-${slideIdx * 100}%)`,
+                  transition: "transform 0.3s ease",
+                }}
+              >
+                {/* Slide 1: Character */}
+                <div style={{ flex: "0 0 100%", width: "100%" }}>
+                  <div
+                    className="p-5 shadow-sm"
+                    style={{
+                      background: "linear-gradient(145deg, #EAF3DE, #F8FAED)",
+                      borderRadius: 16,
+                      position: "relative",
+                      minHeight: 140,
+                    }}
                   >
-                    <Plus className="h-3.5 w-3.5" /> 계획 만들기
-                  </Link>
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: 12,
+                        right: 12,
+                        background: "#fff",
+                        border: "1px solid #C7D66D",
+                        color: "#3B6D11",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        padding: "3px 8px",
+                        borderRadius: 999,
+                      }}
+                    >
+                      Lv.{(() => {
+                        const c = displayCompletedCount;
+                        if (c >= 100) return 5;
+                        if (c >= 50) return 4;
+                        if (c >= 20) return 3;
+                        if (c >= 5) return 2;
+                        return 1;
+                      })()}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <CharacterAnimation
+                        character={(characterId || "oreumi") as Character}
+                        emotion="normal"
+                        size={80}
+                      />
+                      <div
+                        style={{
+                          flex: 1,
+                          background: "#fff",
+                          border: "1.5px solid #C7D66D",
+                          borderRadius: "12px 12px 12px 4px",
+                          padding: "10px 12px",
+                          fontSize: 13,
+                          color: "hsl(var(--foreground))",
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        {ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔"}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              )}
+
+                {/* Slide 2: Existing upcoming plan card */}
+                <div style={{ flex: "0 0 100%", width: "100%" }}>
+                  <div className="rounded-2xl bg-card/90 p-5 shadow-sm backdrop-blur-sm">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-muted-foreground">다가오는 일정</p>
+                      <Link
+                        to={isDemo ? "/auth" : "/plans/create"}
+                        style={{
+                          background: "hsl(var(--lavender))",
+                          color: "#fff",
+                          fontSize: "12px",
+                          fontWeight: 500,
+                          borderRadius: "20px",
+                          padding: "5px 12px",
+                          border: "none",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          lineHeight: 1,
+                        }}
+                      >
+                        + 계획
+                      </Link>
+                    </div>
+                    {isDemo ? (
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="inline-block rounded-full bg-coral px-3 py-1 text-sm font-bold text-white">D-3</span>
+                          <h3 className="mt-2 text-lg font-bold text-foreground">북한산</h3>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(Date.now() + 3 * 86400000).toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })} · 08:00
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1.5 rounded-xl bg-accent/60 px-3 py-2">
+                          <Sun className="h-5 w-5 text-sky-600" />
+                          <span className="text-base font-semibold text-foreground">12°</span>
+                        </div>
+                      </div>
+                    ) : upcomingPlan && upcomingMountain ? (
+                      <Link to={`/plans/${upcomingPlan.id}`} className="block">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="inline-block rounded-full bg-coral px-3 py-1 text-sm font-bold text-white">{dDay}</span>
+                            <h3 className="mt-2 text-lg font-bold text-foreground">{upcomingMountain.nameKo}</h3>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {new Date(upcomingPlan.planned_date).toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })}
+                              {upcomingPlan.start_time && ` · ${upcomingPlan.start_time.slice(0, 5)}`}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1.5 rounded-xl bg-accent/60 px-3 py-2">
+                            <CondIcon className="h-5 w-5 text-sky-600" />
+                            <span className="text-base font-semibold text-foreground">{weather.temp}°</span>
+                          </div>
+                        </div>
+                      </Link>
+                    ) : (
+                      <div className="text-center py-3">
+                        <Calendar className="mx-auto h-8 w-8 text-muted-foreground/30 mb-2" />
+                        <p className="text-sm text-muted-foreground">예정된 일정이 없습니다</p>
+                        <Link
+                          to={isDemo ? "/auth" : "/plans/create"}
+                          className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground"
+                        >
+                          <Plus className="h-3.5 w-3.5" /> 계획 만들기
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {/* Dots */}
+              <div className="flex justify-center gap-1.5 mt-2">
+                {[0, 1].map((i) => (
+                  <button
+                    key={i}
+                    onClick={() => setSlideIdx(i)}
+                    aria-label={`slide-${i}`}
+                    style={{
+                      width: slideIdx === i ? 18 : 6,
+                      height: 6,
+                      borderRadius: 999,
+                      background: slideIdx === i ? "#3B6D11" : "rgba(0,0,0,0.2)",
+                      transition: "all 0.2s ease",
+                    }}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </section>
