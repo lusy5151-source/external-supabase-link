@@ -224,6 +224,16 @@ export function useHikingJournals() {
     // Notify achievement system to recheck (cross-component)
     if (!error) {
       try { window.dispatchEvent(new Event("wandeung_journal_changed")); } catch {}
+      // XP: +20 for new journal
+      try {
+        await awardXp({
+          userId: authUser.id,
+          amount: 20,
+          sourceType: "journal",
+          sourceId: (data as any)?.id ?? null,
+          description: "등산 일지 작성",
+        });
+      } catch (e) { console.error("[awardXp journal] failed", e); }
     }
 
     // Auto-update challenge progress
