@@ -799,7 +799,7 @@ const Dashboard = () => {
                     showXp={!isDemo}
                     emotion={effectiveEmotion}
                     comfortCount={comfortCount}
-                    showComfortGauge={!isDemo && (isComfortable || comfortRecovered)}
+                    showComfortGauge={!isDemo && isComfortable && comfortCount < 5}
                     onComfortTap={isComfortable && !comfortRecovered ? handleComfortTap : undefined}
                     recovered={comfortRecovered}
                   />
