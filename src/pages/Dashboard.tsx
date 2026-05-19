@@ -69,31 +69,37 @@ function CharacterSlide({ msg, characterId, level }: { msg: string; characterId:
   const neededHeight = (CHAR_SIZE - 8) + bubbleH + 20;
   const paddingTop = Math.max(56, bubbleH + 24);
 
+  const BUBBLE_WIDTH = 200;
+  const WRAPPER_WIDTH = 260; // wider containing block so bubble doesn't shrink
+
   const bubbleBase: React.CSSProperties = {
     position: "absolute",
     background: "#fff",
     border: "1.5px solid #C7D66D",
-    padding: "8px 10px",
+    padding: "8px 12px",
     fontSize: 12,
     fontWeight: 600,
     color: "#2F403A",
-    lineHeight: 1.3,
-    maxWidth: 200,
+    lineHeight: 1.35,
+    width: "max-content",
+    maxWidth: BUBBLE_WIDTH,
     wordBreak: "keep-all",
     overflowWrap: "break-word",
+    whiteSpace: "normal",
     display: "-webkit-box",
     WebkitBoxOrient: "vertical",
     WebkitLineClamp: 3,
     overflow: "hidden",
+    textOverflow: "ellipsis",
     boxShadow: "0 3px 10px rgba(0,0,0,0.1)",
     animation: "bubblePop 0.3s ease-out both",
     zIndex: 2,
   };
   const posStyle: React.CSSProperties =
     pos === "top-right"
-      ? { bottom: "calc(100% - 8px)", left: "55%", borderRadius: "12px 12px 12px 4px", transformOrigin: "bottom left" }
+      ? { bottom: "calc(100% - 8px)", left: "50%", borderRadius: "12px 12px 12px 4px", transformOrigin: "bottom left" }
       : pos === "top-left"
-      ? { bottom: "calc(100% - 8px)", right: "55%", borderRadius: "12px 12px 4px 12px", transformOrigin: "bottom right" }
+      ? { bottom: "calc(100% - 8px)", right: "50%", borderRadius: "12px 12px 4px 12px", transformOrigin: "bottom right" }
       : { bottom: "calc(100% + 4px)", left: "50%", transform: "translateX(-50%)", borderRadius: "12px", transformOrigin: "bottom center" };
 
   return (
@@ -132,9 +138,12 @@ function CharacterSlide({ msg, characterId, level }: { msg: string; characterId:
           bottom: 0,
           left: "50%",
           transform: "translateX(-50%)",
+          width: WRAPPER_WIDTH,
+          display: "flex",
+          justifyContent: "center",
         }}
       >
-        <div style={{ position: "relative", display: "inline-block" }}>
+        <div style={{ position: "relative", width: CHAR_SIZE, height: CHAR_SIZE }}>
           <div ref={bubbleRef} style={{ ...bubbleBase, ...posStyle }}>{msg}</div>
           <CharacterAnimation character={characterId} emotion="normal" size={CHAR_SIZE} />
         </div>
