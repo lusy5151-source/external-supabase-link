@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/context/StoreContext";
 import { useSummitClaims } from "@/hooks/useSummitClaims";
 import { useProfile } from "@/hooks/useProfile";
+import { useUserXp } from "@/hooks/useUserXp";
 import { useFriends } from "@/hooks/useFriends";
 import { useAchievementStore } from "@/hooks/useAchievementStore";
 import { useGearStore } from "@/hooks/useGearStore";
