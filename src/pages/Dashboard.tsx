@@ -205,14 +205,19 @@ function CharacterSlide({
         flexDirection: "column",
       }}
     >
-      <style>{`@keyframes bubblePop{0%{opacity:0;transform:scale(0.9)}100%{opacity:1;transform:scale(1)}}`}</style>
+      <style>{`
+        @keyframes bubblePop{0%{opacity:0;transform:scale(0.9)}100%{opacity:1;transform:scale(1)}}
+        @keyframes comfortBounce{0%,100%{transform:translateY(0)}30%{transform:translateY(-10px)}60%{transform:translateY(2px)}}
+        @keyframes comfortRecover{0%{transform:scale(1)}40%{transform:scale(1.15)}100%{transform:scale(1)}}
+        @keyframes comfortParticle{0%{opacity:0;transform:translate(-50%,0) scale(0.6)}30%{opacity:1}100%{opacity:0;transform:translate(var(--dx,0),var(--dy,-40px)) scale(1.1)}}
+      `}</style>
 
       {/* XP bar header */}
       {showXp && (
         <div
           style={{
             padding: "10px 14px 8px",
-            borderBottom: "1px solid rgba(0,0,0,0.06)",
+            borderBottom: showComfortGauge ? "none" : "1px solid rgba(0,0,0,0.06)",
             background: "rgba(255,255,255,0.35)",
           }}
         >
@@ -245,6 +250,46 @@ function CharacterSlide({
         </div>
       )}
 
+      {/* Comfort gauge */}
+      {showComfortGauge && (
+        <div
+          style={{
+            padding: "6px 14px 8px",
+            borderBottom: "1px solid rgba(0,0,0,0.06)",
+            background: "rgba(255,255,255,0.35)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+            <span style={{ fontSize: 10, fontWeight: 600, color: "#6BB8DC" }}>
+              {recovered ? "완전 회복! 💖" : "달래는 중..."}
+            </span>
+            <span style={{ fontSize: 11, letterSpacing: 1 }}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <span key={i} style={{ opacity: i < comfortCount ? 1 : 0.25 }}>♥</span>
+              ))}
+            </span>
+          </div>
+          <div
+            style={{
+              marginTop: 4,
+              height: 3,
+              borderRadius: 999,
+              background: "#e6eef3",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                width: `${(comfortCount / 5) * 100}%`,
+                height: "100%",
+                background: "#6BB8DC",
+                transition: "width 0.25s",
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Character + bubble area */}
       <div
         className="p-4"
@@ -266,20 +311,132 @@ function CharacterSlide({
           }}
         >
           <div ref={bubbleRef} style={{ ...bubbleBase, ...posStyle }}>{msg}</div>
-          <div
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: CHAR_SIZE,
-              height: CHAR_SIZE,
-            }}
-          >
-            <CharacterAnimation character={characterId} emotion={emotion} size={CHAR_SIZE} />
-          </div>
+          <CharacterTapArea
+            characterId={characterId}
+            emotion={emotion}
+            size={CHAR_SIZE}
+            canTap={!!onComfortTap}
+            onTap={onComfortTap}
+            comfortCount={comfortCount}
+            recovered={recovered}
+          />
         </div>
       </div>
+    </div>
+  );
+}
+
+function CharacterTapArea({
+  characterId,
+  emotion,
+  size,
+  canTap,
+  onTap,
+  comfortCount,
+  recovered,
+}: {
+  characterId: Character;
+  emotion: "normal" | "sad" | "angry" | "autumn";
+  size: number;
+  canTap: boolean;
+  onTap?: () => void;
+  comfortCount: number;
+  recovered: boolean;
+}) {
+  const [bounceKey, setBounceKey] = useState(0);
+  const [particles, setParticles] = useState<{ id: number; emoji: string; dx: number; dy: number }[]>([]);
+  const particleSeed = useRef(0);
+  const prevRecovered = useRef(recovered);
+
+  const spawnParticles = (emojis: string[], count = 3) => {
+    const next = Array.from({ length: count }).map(() => {
+      const id = ++particleSeed.current;
+      const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 0.9;
+      const dist = 40 + Math.random() * 25;
+      return {
+        id,
+        emoji: emojis[Math.floor(Math.random() * emojis.length)],
+        dx: Math.cos(angle) * dist,
+        dy: Math.sin(angle) * dist,
+      };
+    });
+    setParticles((p) => [...p, ...next]);
+    setTimeout(() => {
+      const ids = new Set(next.map((n) => n.id));
+      setParticles((p) => p.filter((x) => !ids.has(x.id)));
+    }, 900);
+  };
+
+  // Recovery effect when transitioning to recovered
+  useEffect(() => {
+    if (!prevRecovered.current && recovered) {
+      setBounceKey((k) => k + 1);
+      spawnParticles(RECOVERY_PARTICLES, 4);
+    }
+    prevRecovered.current = recovered;
+  }, [recovered]);
+
+  const handleTap = () => {
+    if (!canTap) return;
+    setBounceKey((k) => k + 1);
+    if (emotion === "sad") {
+      spawnParticles(COMFORT_PARTICLES.sad, 3);
+    } else if (emotion === "angry") {
+      const pool = comfortCount >= 3 ? COMFORT_PARTICLES_LATE_ANGRY : COMFORT_PARTICLES.angry;
+      spawnParticles(pool, 3);
+    }
+    onTap?.();
+  };
+
+  const bounceAnim = recovered
+    ? "comfortRecover 0.5s ease-out"
+    : "comfortBounce 0.3s ease-out";
+
+  return (
+    <div
+      onClick={handleTap}
+      style={{
+        position: "absolute",
+        bottom: 0,
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: size,
+        height: size,
+        cursor: canTap ? "pointer" : "default",
+        touchAction: "manipulation",
+        userSelect: "none",
+      }}
+    >
+      <div
+        key={bounceKey}
+        style={{
+          width: "100%",
+          height: "100%",
+          animation: bounceKey > 0 ? bounceAnim : undefined,
+          transition: "filter 0.6s ease",
+        }}
+      >
+        <CharacterAnimation character={characterId} emotion={emotion} size={size} />
+      </div>
+      {/* Particles */}
+      {particles.map((p) => (
+        <span
+          key={p.id}
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: "20%",
+            fontSize: 20,
+            pointerEvents: "none",
+            animation: "comfortParticle 0.9s ease-out forwards",
+            // @ts-ignore - CSS custom props
+            "--dx": `calc(-50% + ${p.dx}px)`,
+            "--dy": `${p.dy}px`,
+          } as React.CSSProperties}
+        >
+          {p.emoji}
+        </span>
+      ))}
     </div>
   );
 }
