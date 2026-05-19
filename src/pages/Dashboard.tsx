@@ -489,10 +489,50 @@ const Dashboard = () => {
     if (!isComfortable || comfortRecovered) return;
     setComfortCount((c) => {
       const next = Math.min(c + 1, 5);
-      if (next >= 5) setComfortRecovered(true);
+      if (next >= 5) {
+        setComfortRecovered(true);
+        void completeComfortSession();
+      }
       return next;
     });
   };
+
+  const completeComfortSession = async () => {
+    if (!user?.id) return;
+    try {
+      const { data: profile } = await (supabase as any)
+        .from("profiles")
+        .select("total_comfort_count")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      const newCount = ((profile?.total_comfort_count as number) || 0) + 1;
+      await (supabase as any)
+        .from("profiles")
+        .update({ total_comfort_count: newCount })
+        .eq("user_id", user.id);
+
+      if (newCount === 10) {
+        const { data: badge } = await (supabase as any)
+          .from("badges")
+          .select("id, name, xp_reward")
+          .eq("condition_type", "comfort_count")
+          .eq("condition_value", 10)
+          .maybeSingle();
+        if (badge?.id) {
+          await (supabase as any).rpc("achieve_badge", {
+            p_user_id: user.id,
+            p_badge_id: badge.id,
+          });
+          const { toast } = await import("sonner");
+          toast.success(`🎖️ ${badge.name || "달래기 마스터"} 업적 달성! +${badge.xp_reward ?? 50} XP`);
+          window.dispatchEvent(new Event("wandeung_xp_changed"));
+        }
+      }
+    } catch (e) {
+      console.warn("[completeComfortSession] failed", e);
+    }
+  };
+
   let comfortMsg: string | null = null;
   if (isComfortable) {
     if (comfortRecovered) comfortMsg = COMFORT_RECOVERED_MSG;
