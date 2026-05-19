@@ -118,12 +118,7 @@ const MyPage = () => {
       {(() => {
         const charKey = (characterId || "oreumi") as Character;
         const meta = CHARACTER_META[charKey];
-        const c = completedCount;
-        const level = c >= 100 ? 5 : c >= 50 ? 4 : c >= 20 ? 3 : c >= 5 ? 2 : 1;
-        const thresholds = [0, 5, 20, 50, 100];
-        const curMin = thresholds[level - 1];
-        const nextMin = level < 5 ? thresholds[level] : thresholds[4];
-        const pct = level === 5 ? 100 : Math.min(100, Math.round(((c - curMin) / (nextMin - curMin)) * 100));
+        const { level, name: lvName, xp, nextLevelMinXp, xpForNextLevel, xpIntoLevel, progressPct, isMax } = xpInfo;
         return (
           <div
             style={{
@@ -142,13 +137,20 @@ const MyPage = () => {
                 <span className="text-sm font-bold text-foreground">{meta.name}</span>
                 <span className="text-[10px] text-muted-foreground">{meta.type}</span>
               </div>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-[10px] font-semibold text-foreground/70">Lv.{level}</span>
-                <div className="flex-1 h-1.5 rounded-full bg-black/10 overflow-hidden">
-                  <div style={{ width: `${pct}%`, height: "100%", background: "#3B6D11", transition: "width 0.3s" }} />
-                </div>
+              <div className="mt-1 flex items-baseline gap-1.5">
+                <span className="text-xs font-bold" style={{ color: "#3B6D11" }}>
+                  Lv.{level} {lvName}
+                </span>
                 <span className="text-[10px] text-muted-foreground">
-                  {level < 5 ? `${c}/${nextMin}` : "MAX"}
+                  {isMax ? `${xp} XP · MAX` : `${xpIntoLevel} / ${xpForNextLevel} XP`}
+                </span>
+              </div>
+              <div className="mt-1.5 flex items-center gap-2">
+                <div className="flex-1 h-1.5 rounded-full bg-black/10 overflow-hidden">
+                  <div style={{ width: `${progressPct}%`, height: "100%", background: "#C7D66D", transition: "width 0.3s" }} />
+                </div>
+                <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                  {isMax ? "MAX" : `다음 ${nextLevelMinXp - xp} XP`}
                 </span>
               </div>
             </div>
