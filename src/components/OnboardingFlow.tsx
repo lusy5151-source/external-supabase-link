@@ -115,6 +115,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const [nicknameError, setNicknameError] = useState('')
   const [quizIndex, setQuizIndex] = useState(0)
   const [scores, setScores] = useState<Scores>({ ...INITIAL_SCORES })
+  const [outgoingIndex, setOutgoingIndex] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
 
   const totalSteps = 1 + QUIZZES.length + 1
