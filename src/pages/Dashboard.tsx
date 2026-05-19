@@ -175,6 +175,7 @@ const Dashboard = () => {
   const [characterId, setCharacterId] = useState<Character | null>(null);
   const [slideIdx, setSlideIdx] = useState(0);
   const touchStartX = useRef<number | null>(null);
+  const xpInfo = useUserXp();
 
   const { isOnboarding } = useOnboarding();
   const isDemo = !user || isOnboarding;
