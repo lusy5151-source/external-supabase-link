@@ -542,6 +542,7 @@ const Dashboard = () => {
                     xpForNextLevel={xpInfo.xpForNextLevel}
                     isMax={xpInfo.isMax}
                     showXp={!isDemo}
+                    emotion={charEmotion}
                   />
                 </div>
 
