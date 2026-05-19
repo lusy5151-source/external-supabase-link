@@ -92,6 +92,10 @@ function CharacterSlide({
   isMax,
   showXp = true,
   emotion = "normal",
+  comfortCount = 0,
+  showComfortGauge = false,
+  onComfortTap,
+  recovered = false,
 }: {
   msg: string;
   characterId: Character;
@@ -104,6 +108,10 @@ function CharacterSlide({
   isMax: boolean;
   showXp?: boolean;
   emotion?: "normal" | "sad" | "angry" | "autumn";
+  comfortCount?: number;
+  showComfortGauge?: boolean;
+  onComfortTap?: () => void;
+  recovered?: boolean;
 }) {
   const bubbleRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
