@@ -361,7 +361,6 @@ const Dashboard = () => {
                     </span>
                     {(() => {
                       const msg = ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔";
-                      // pick position deterministically from msg
                       const positions = ["top-right", "top-left", "top"] as const;
                       const pos = positions[Math.abs(msg.split("").reduce((a, c) => a + c.charCodeAt(0), 0)) % positions.length];
                       const bubbleBase: React.CSSProperties = {
@@ -369,37 +368,40 @@ const Dashboard = () => {
                         background: "#fff",
                         border: "1.5px solid #C7D66D",
                         padding: "10px 14px",
-                        fontSize: 13,
+                        fontSize: 12,
                         fontWeight: 600,
-                        maxWidth: 160,
-                        color: "hsl(var(--foreground))",
-                        lineHeight: 1.35,
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-                        animation: "bubblePop 0.3s ease-out",
+                        color: "#2F403A",
+                        whiteSpace: "nowrap",
+                        boxShadow: "0 3px 10px rgba(0,0,0,0.1)",
+                        animation: "bubblePop 0.3s ease-out both",
                         zIndex: 2,
                       };
                       const posStyle: React.CSSProperties =
                         pos === "top-right"
-                          ? { top: 40, right: 24, borderRadius: "12px 12px 12px 4px" }
+                          ? { bottom: "85%", left: "80%", borderRadius: "12px 12px 12px 4px", transformOrigin: "bottom left" }
                           : pos === "top-left"
-                          ? { top: 40, left: 16, borderRadius: "12px 12px 4px 12px" }
-                          : { top: 16, left: "50%", transform: "translateX(-50%)", borderRadius: "12px" };
-                      return <div style={{ ...bubbleBase, ...posStyle }}>{msg}</div>;
+                          ? { bottom: "85%", right: "80%", borderRadius: "12px 12px 4px 12px", transformOrigin: "bottom right" }
+                          : { bottom: "95%", left: "50%", marginLeft: 0, transform: "translateX(-50%)", borderRadius: "12px", transformOrigin: "bottom center" };
+                      return (
+                        <div
+                          style={{
+                            position: "absolute",
+                            bottom: 0,
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                          }}
+                        >
+                          <div style={{ position: "relative", display: "inline-block" }}>
+                            <div style={{ ...bubbleBase, ...posStyle }}>{msg}</div>
+                            <CharacterAnimation
+                              character={(characterId || "oreumi") as Character}
+                              emotion="normal"
+                              size={135}
+                            />
+                          </div>
+                        </div>
+                      );
                     })()}
-                    <div
-                      style={{
-                        position: "absolute",
-                        bottom: 0,
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                      }}
-                    >
-                      <CharacterAnimation
-                        character={(characterId || "oreumi") as Character}
-                        emotion="normal"
-                        size={135}
-                      />
-                    </div>
                   </div>
                 </div>
 
