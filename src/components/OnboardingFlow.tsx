@@ -109,11 +109,13 @@ const INITIAL_SCORES: Scores = {
 type Step = 'nickname' | 'quiz' | 'result'
 
 export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
+  const { user } = useAuth()
   const [step, setStep] = useState<Step>('nickname')
   const [nickname, setNickname] = useState('')
   const [nicknameError, setNicknameError] = useState('')
   const [quizIndex, setQuizIndex] = useState(0)
   const [scores, setScores] = useState<Scores>({ ...INITIAL_SCORES })
+  const [saving, setSaving] = useState(false)
 
   const totalSteps = 1 + QUIZZES.length + 1
   const currentStepNum =
@@ -158,11 +160,33 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
     }
   }
 
-  const handleComplete = () => {
-    onComplete(nickname, topCharacter)
+  const handleComplete = async () => {
+    if (saving) return
+    if (!user?.id) {
+      toast.error('로그인 정보를 찾을 수 없어요')
+      return
+    }
+    setSaving(true)
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          nickname,
+          character_id: topCharacter,
+          is_onboarded: true,
+        })
+        .eq('user_id', user.id)
+      if (error) throw error
+      onComplete(nickname, topCharacter)
+    } catch (err: any) {
+      console.error('[OnboardingFlow] profile update failed', err)
+      toast.error(err?.message || '저장에 실패했어요. 다시 시도해 주세요.')
+      setSaving(false)
+    }
   }
 
   const meta = CHARACTER_META[topCharacter]
+  const theme = CHARACTER_THEME[topCharacter]
 
   return (
     <div
