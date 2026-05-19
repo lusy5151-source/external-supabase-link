@@ -46,6 +46,97 @@ const conditionIcons: Record<string, any> = {
 const GOAL_KEY = "wandeng-user-goal";
 const HUNDRED_TYPE_KEY = "wandeng-hundred-type"; // "forestry_100" | "bac_100"
 
+function CharacterSlide({ msg, characterId, level }: { msg: string; characterId: Character; level: number }) {
+  const bubbleRef = useRef<HTMLDivElement>(null);
+  const [bubbleH, setBubbleH] = useState(40);
+
+  useEffect(() => {
+    if (!bubbleRef.current) return;
+    const el = bubbleRef.current;
+    const update = () => setBubbleH(el.offsetHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [msg]);
+
+  const positions = ["top-right", "top-left", "top"] as const;
+  const pos = positions[Math.abs(msg.split("").reduce((a, c) => a + c.charCodeAt(0), 0)) % positions.length];
+
+  const CHAR_SIZE = 135;
+  // bubble bottom sits at (CHAR_SIZE - 8) above card bottom; add bubble height + 16px top breathing room
+  const neededHeight = (CHAR_SIZE - 8) + bubbleH + 20;
+  const paddingTop = Math.max(56, bubbleH + 24);
+
+  const bubbleBase: React.CSSProperties = {
+    position: "absolute",
+    background: "#fff",
+    border: "1.5px solid #C7D66D",
+    padding: "8px 12px",
+    fontSize: 12,
+    fontWeight: 600,
+    color: "#2F403A",
+    lineHeight: 1.35,
+    maxWidth: 180,
+    wordBreak: "keep-all",
+    boxShadow: "0 3px 10px rgba(0,0,0,0.1)",
+    animation: "bubblePop 0.3s ease-out both",
+    zIndex: 2,
+  };
+  const posStyle: React.CSSProperties =
+    pos === "top-right"
+      ? { bottom: "calc(100% - 8px)", left: "55%", borderRadius: "12px 12px 12px 4px", transformOrigin: "bottom left" }
+      : pos === "top-left"
+      ? { bottom: "calc(100% - 8px)", right: "55%", borderRadius: "12px 12px 4px 12px", transformOrigin: "bottom right" }
+      : { bottom: "calc(100% + 4px)", left: "50%", transform: "translateX(-50%)", borderRadius: "12px", transformOrigin: "bottom center" };
+
+  return (
+    <div
+      className="p-4 shadow-sm"
+      style={{
+        background: "linear-gradient(145deg, #EAF3DE, #F8FAED)",
+        borderRadius: 16,
+        position: "relative",
+        minHeight: Math.max(240, neededHeight),
+        overflow: "hidden",
+        paddingTop,
+      }}
+    >
+      <style>{`@keyframes bubblePop{0%{opacity:0;transform:scale(0.9)}100%{opacity:1;transform:scale(1)}}`}</style>
+      <span
+        style={{
+          position: "absolute",
+          top: 12,
+          right: 12,
+          background: "#fff",
+          border: "1px solid #C7D66D",
+          color: "#3B6D11",
+          fontSize: 11,
+          fontWeight: 700,
+          padding: "3px 8px",
+          borderRadius: 999,
+          zIndex: 2,
+        }}
+      >
+        Lv.{level}
+      </span>
+      <div
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: "50%",
+          transform: "translateX(-50%)",
+        }}
+      >
+        <div style={{ position: "relative", display: "inline-block" }}>
+          <div ref={bubbleRef} style={{ ...bubbleBase, ...posStyle }}>{msg}</div>
+          <CharacterAnimation character={characterId} emotion="normal" size={CHAR_SIZE} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const Dashboard = () => {
   const { mountains } = useMountains();
   const { records, completedCount, isCompleted } = useStore();
@@ -324,89 +415,18 @@ const Dashboard = () => {
               >
                 {/* Slide 1: Character */}
                 <div style={{ flex: "0 0 100%", width: "100%" }}>
-                  <div
-                    className="p-4 shadow-sm"
-                    style={{
-                      background: "linear-gradient(145deg, #EAF3DE, #F8FAED)",
-                      borderRadius: 16,
-                      position: "relative",
-                      minHeight: 240,
-                      overflow: "hidden",
-                      paddingTop: 56,
-                    }}
-                  >
-                    <style>{`@keyframes bubblePop{0%{opacity:0;transform:scale(0.9)}100%{opacity:1;transform:scale(1)}}`}</style>
-                    <span
-                      style={{
-                        position: "absolute",
-                        top: 12,
-                        right: 12,
-                        background: "#fff",
-                        border: "1px solid #C7D66D",
-                        color: "#3B6D11",
-                        fontSize: 11,
-                        fontWeight: 700,
-                        padding: "3px 8px",
-                        borderRadius: 999,
-                        zIndex: 2,
-                      }}
-                    >
-                      Lv.{(() => {
-                        const c = displayCompletedCount;
-                        if (c >= 100) return 5;
-                        if (c >= 50) return 4;
-                        if (c >= 20) return 3;
-                        if (c >= 5) return 2;
-                        return 1;
-                      })()}
-                    </span>
-                    {(() => {
-                      const msg = ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔";
-                      const positions = ["top-right", "top-left", "top"] as const;
-                      const pos = positions[Math.abs(msg.split("").reduce((a, c) => a + c.charCodeAt(0), 0)) % positions.length];
-                      const bubbleBase: React.CSSProperties = {
-                        position: "absolute",
-                        background: "#fff",
-                        border: "1.5px solid #C7D66D",
-                        padding: "8px 12px",
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: "#2F403A",
-                        lineHeight: 1.35,
-                        maxWidth: 180,
-                        wordBreak: "keep-all",
-                        boxShadow: "0 3px 10px rgba(0,0,0,0.1)",
-                        animation: "bubblePop 0.3s ease-out both",
-                        zIndex: 2,
-                      };
-                      const posStyle: React.CSSProperties =
-                        pos === "top-right"
-                          ? { bottom: "calc(100% - 8px)", left: "55%", borderRadius: "12px 12px 12px 4px", transformOrigin: "bottom left" }
-                          : pos === "top-left"
-                          ? { bottom: "calc(100% - 8px)", right: "55%", borderRadius: "12px 12px 4px 12px", transformOrigin: "bottom right" }
-                          : { bottom: "calc(100% + 4px)", left: "50%", transform: "translateX(-50%)", borderRadius: "12px", transformOrigin: "bottom center" };
-
-                      return (
-                        <div
-                          style={{
-                            position: "absolute",
-                            bottom: 0,
-                            left: "50%",
-                            transform: "translateX(-50%)",
-                          }}
-                        >
-                          <div style={{ position: "relative", display: "inline-block" }}>
-                            <div style={{ ...bubbleBase, ...posStyle }}>{msg}</div>
-                            <CharacterAnimation
-                              character={(characterId || "oreumi") as Character}
-                              emotion="normal"
-                              size={135}
-                            />
-                          </div>
-                        </div>
-                      );
+                  <CharacterSlide
+                    msg={ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔"}
+                    characterId={(characterId || "oreumi") as Character}
+                    level={(() => {
+                      const c = displayCompletedCount;
+                      if (c >= 100) return 5;
+                      if (c >= 50) return 4;
+                      if (c >= 20) return 3;
+                      if (c >= 5) return 2;
+                      return 1;
                     })()}
-                  </div>
+                  />
                 </div>
 
                 {/* Slide 2: Existing upcoming plan card */}
