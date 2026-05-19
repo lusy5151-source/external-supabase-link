@@ -290,50 +290,33 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         )}
 
         {step === 'quiz' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <div style={{ color: '#888', fontSize: 14 }}>
-              {quizIndex + 1} / {QUIZZES.length}
-            </div>
-            <h2
+          <div style={{ position: 'relative', overflow: 'hidden', flex: 1 }}>
+            <style>{`
+              @keyframes ob-slideInRight { from{transform:translateX(100%);opacity:0.4} to{transform:translateX(0);opacity:1} }
+              @keyframes ob-slideOutLeft { from{transform:translateX(0);opacity:1} to{transform:translateX(-100%);opacity:0.4} }
+            `}</style>
+            {outgoingIndex !== null && (
+              <QuizPanel
+                key={`out-${outgoingIndex}`}
+                index={outgoingIndex}
+                onSelect={() => {}}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  animation: 'ob-slideOutLeft 0.3s ease forwards',
+                  pointerEvents: 'none',
+                }}
+              />
+            )}
+            <QuizPanel
+              key={`in-${quizIndex}`}
+              index={quizIndex}
+              onSelect={handleOptionSelect}
               style={{
-                fontSize: 22,
-                fontWeight: 700,
-                margin: 0,
-                color: '#222',
-                lineHeight: 1.4,
+                position: 'relative',
+                animation: outgoingIndex !== null ? 'ob-slideInRight 0.3s ease forwards' : undefined,
               }}
-            >
-              {QUIZZES[quizIndex].question}
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
-              {QUIZZES[quizIndex].options.map((opt, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleOptionSelect(opt)}
-                  style={{
-                    padding: '16px 18px',
-                    fontSize: 15,
-                    textAlign: 'left',
-                    color: '#222',
-                    background: '#FFF',
-                    border: '1px solid #E5E5E5',
-                    borderRadius: 12,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = '#C7D66D'
-                    e.currentTarget.style.background = '#FAFBF0'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = '#E5E5E5'
-                    e.currentTarget.style.background = '#FFF'
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+            />
           </div>
         )}
 
