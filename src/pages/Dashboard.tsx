@@ -47,7 +47,29 @@ const conditionIcons: Record<string, any> = {
 const GOAL_KEY = "wandeng-user-goal";
 const HUNDRED_TYPE_KEY = "wandeng-hundred-type"; // "forestry_100" | "bac_100"
 
-function CharacterSlide({ msg, characterId, level }: { msg: string; characterId: Character; level: number }) {
+function CharacterSlide({
+  msg,
+  characterId,
+  level,
+  levelName,
+  progressPct,
+  xpRemaining,
+  xpIntoLevel,
+  xpForNextLevel,
+  isMax,
+  showXp = true,
+}: {
+  msg: string;
+  characterId: Character;
+  level: number;
+  levelName: string;
+  progressPct: number;
+  xpRemaining: number;
+  xpIntoLevel: number;
+  xpForNextLevel: number;
+  isMax: boolean;
+  showXp?: boolean;
+}) {
   const bubbleRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const [bubbleSize, setBubbleSize] = useState({ width: 160, height: 40 });
