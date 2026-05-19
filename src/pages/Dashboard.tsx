@@ -217,7 +217,7 @@ function CharacterSlide({
         <div
           style={{
             padding: "10px 14px 8px",
-            borderBottom: showComfortGauge ? "none" : "1px solid rgba(0,0,0,0.06)",
+            borderBottom: "1px solid rgba(0,0,0,0.06)",
             background: "rgba(255,255,255,0.35)",
           }}
         >
@@ -250,45 +250,47 @@ function CharacterSlide({
         </div>
       )}
 
-      {/* Comfort gauge */}
-      {showComfortGauge && (
+      {/* Comfort gauge — collapses smoothly when hidden */}
+      <div
+        style={{
+          maxHeight: showComfortGauge ? 80 : 0,
+          opacity: showComfortGauge ? 1 : 0,
+          overflow: "hidden",
+          transition: "max-height 0.4s ease, opacity 0.4s ease, padding 0.4s ease",
+          padding: showComfortGauge ? "6px 14px 8px" : "0 14px",
+          borderBottom: showComfortGauge ? "1px solid rgba(0,0,0,0.06)" : "none",
+          background: "rgba(255,255,255,0.35)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <span style={{ fontSize: 10, fontWeight: 600, color: "#6BB8DC" }}>
+            {recovered ? "완전 회복! 💖" : "달래는 중..."}
+          </span>
+          <span style={{ fontSize: 11, letterSpacing: 1 }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <span key={i} style={{ opacity: i < comfortCount ? 1 : 0.25 }}>♥</span>
+            ))}
+          </span>
+        </div>
         <div
           style={{
-            padding: "6px 14px 8px",
-            borderBottom: "1px solid rgba(0,0,0,0.06)",
-            background: "rgba(255,255,255,0.35)",
+            marginTop: 4,
+            height: 3,
+            borderRadius: 999,
+            background: "#e6eef3",
+            overflow: "hidden",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-            <span style={{ fontSize: 10, fontWeight: 600, color: "#6BB8DC" }}>
-              {recovered ? "완전 회복! 💖" : "달래는 중..."}
-            </span>
-            <span style={{ fontSize: 11, letterSpacing: 1 }}>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <span key={i} style={{ opacity: i < comfortCount ? 1 : 0.25 }}>♥</span>
-              ))}
-            </span>
-          </div>
           <div
             style={{
-              marginTop: 4,
-              height: 3,
-              borderRadius: 999,
-              background: "#e6eef3",
-              overflow: "hidden",
+              width: `${(comfortCount / 5) * 100}%`,
+              height: "100%",
+              background: "#6BB8DC",
+              transition: "width 0.25s",
             }}
-          >
-            <div
-              style={{
-                width: `${(comfortCount / 5) * 100}%`,
-                height: "100%",
-                background: "#6BB8DC",
-                transition: "width 0.25s",
-              }}
-            />
-          </div>
+          />
         </div>
-      )}
+      </div>
 
       {/* Character + bubble area */}
       <div
@@ -797,7 +799,7 @@ const Dashboard = () => {
                     showXp={!isDemo}
                     emotion={effectiveEmotion}
                     comfortCount={comfortCount}
-                    showComfortGauge={!isDemo && (isComfortable || comfortRecovered)}
+                    showComfortGauge={!isDemo && isComfortable && comfortCount < 5}
                     onComfortTap={isComfortable && !comfortRecovered ? handleComfortTap : undefined}
                     recovered={comfortRecovered}
                   />
