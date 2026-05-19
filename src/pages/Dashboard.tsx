@@ -680,7 +680,10 @@ const Dashboard = () => {
         .eq("user_id", user.id)
         .single()
         .then(({ data }: any) => {
-          if (data?.character_id) setCharacterId(data.character_id as Character);
+          if (data?.character_id) {
+            setCharacterId(data.character_id as Character);
+            try { localStorage.setItem("wandeung_character_id", data.character_id); } catch {}
+          }
         });
     }
   }, [user]);
