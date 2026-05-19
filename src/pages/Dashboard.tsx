@@ -75,6 +75,9 @@ const Dashboard = () => {
     return saved === "forestry_100" || saved === "bac_100" ? saved : null;
   });
   const [showHundredPicker, setShowHundredPicker] = useState(false);
+  const [characterId, setCharacterId] = useState<Character | null>(null);
+  const [slideIdx, setSlideIdx] = useState(0);
+  const touchStartX = useRef<number | null>(null);
 
   const { isOnboarding } = useOnboarding();
   const isDemo = !user || isOnboarding;
