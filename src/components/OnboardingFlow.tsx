@@ -333,60 +333,170 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         )}
 
         {step === 'result' && (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 16,
-              textAlign: 'center',
-            }}
-          >
-            <p style={{ fontSize: 16, color: '#666', margin: 0 }}>
-              {nickname}님과 가장 잘 맞는 캐릭터는
-            </p>
-            <h2 style={{ fontSize: 28, fontWeight: 800, margin: 0, color: '#222' }}>
-              {meta.name}
-            </h2>
-            <span
-              style={{
-                padding: '6px 12px',
-                background: meta.tagBg,
-                color: meta.tagCol,
-                fontSize: 13,
-                fontWeight: 600,
-                borderRadius: 999,
-              }}
-            >
-              {meta.type}
-            </span>
+          <>
+            {/* keyframes */}
+            <style>{`
+              @keyframes ob-fadeInUp { 0%{opacity:0;transform:translateY(14px)} 100%{opacity:1;transform:translateY(0)} }
+              @keyframes ob-charPop { 0%{opacity:0;transform:scale(0)} 100%{opacity:1;transform:scale(1)} }
+              @keyframes ob-starPop { 0%{opacity:0;transform:scale(0) rotate(0deg)} 60%{opacity:1;transform:scale(1.2) rotate(20deg)} 100%{opacity:0.85;transform:scale(1) rotate(0deg)} }
+              @keyframes ob-confetti { 0%{transform:translateY(-40px) rotate(0deg);opacity:0} 10%{opacity:1} 100%{transform:translateY(110vh) rotate(720deg);opacity:0.9} }
+              @keyframes ob-btnPulse { 0%,100%{box-shadow:0 12px 28px -10px var(--ob-shadow,rgba(0,0,0,0.2))} 50%{box-shadow:0 18px 36px -10px var(--ob-shadow,rgba(0,0,0,0.35))} }
+            `}</style>
 
-            <div style={{ margin: '16px 0' }}>
-              <CharacterAnimation character={topCharacter} emotion="normal" size={180} />
+            {/* 색종이 confetti */}
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+              {Array.from({ length: 12 }).map((_, i) => {
+                const left = (i * 8.3 + (i % 3) * 4) % 100
+                const delay = (i % 6) * 0.25
+                const duration = 2.6 + (i % 4) * 0.4
+                const color = CONFETTI_COLORS[i % CONFETTI_COLORS.length]
+                const w = 8 + (i % 3) * 3
+                const h = 12 + (i % 2) * 4
+                return (
+                  <span
+                    key={i}
+                    style={{
+                      position: 'absolute',
+                      top: -20,
+                      left: `${left}%`,
+                      width: w,
+                      height: h,
+                      background: color,
+                      borderRadius: 2,
+                      animation: `ob-confetti ${duration}s ${delay}s linear forwards`,
+                    }}
+                  />
+                )
+              })}
             </div>
 
-            <p style={{ fontSize: 15, color: '#555', margin: 0, lineHeight: 1.6 }}>
-              {meta.desc}
-            </p>
-
-            <button
-              onClick={handleComplete}
+            <div
               style={{
-                marginTop: 24,
-                width: '100%',
-                padding: '16px',
-                fontSize: 16,
-                fontWeight: 600,
-                color: '#222',
-                background: '#C7D66D',
-                border: 'none',
-                borderRadius: 12,
-                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 14,
+                textAlign: 'center',
+                position: 'relative',
+                zIndex: 1,
               }}
             >
-              {meta.name}와 함께 시작하기
-            </button>
-          </div>
+              <p
+                style={{
+                  fontSize: 15,
+                  color: '#5a5a5a',
+                  margin: 0,
+                  opacity: 0,
+                  animation: 'ob-fadeInUp 0.5s 0s forwards',
+                }}
+              >
+                {nickname}님과 가장 잘 맞는 캐릭터는
+              </p>
+
+              {/* 캐릭터 + 반짝이 */}
+              <div
+                style={{
+                  position: 'relative',
+                  width: 220,
+                  height: 220,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '8px 0 4px',
+                  opacity: 0,
+                  animation: 'ob-charPop 0.7s 0.15s cubic-bezier(.34,1.56,.64,1) forwards',
+                }}
+              >
+                <CharacterAnimation character={topCharacter} emotion="normal" size={180} />
+                <span
+                  style={{
+                    position: 'absolute', top: 10, left: 14, fontSize: 22,
+                    opacity: 0, animation: 'ob-starPop 1s 0.9s ease-out forwards',
+                  }}
+                >✨</span>
+                <span
+                  style={{
+                    position: 'absolute', top: 20, right: 18, fontSize: 20,
+                    opacity: 0, animation: 'ob-starPop 1s 1.1s ease-out forwards',
+                  }}
+                >⭐</span>
+                <span
+                  style={{
+                    position: 'absolute', bottom: 20, right: 30, fontSize: 18,
+                    opacity: 0, animation: 'ob-starPop 1s 1.3s ease-out forwards',
+                  }}
+                >💫</span>
+              </div>
+
+              <h2
+                style={{
+                  fontSize: 30,
+                  fontWeight: 800,
+                  margin: 0,
+                  color: '#1f1f1f',
+                  opacity: 0,
+                  animation: 'ob-fadeInUp 0.5s 0.45s forwards',
+                }}
+              >
+                {meta.name}
+              </h2>
+
+              <span
+                style={{
+                  padding: '6px 14px',
+                  background: meta.tagBg,
+                  color: meta.tagCol,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  borderRadius: 999,
+                  opacity: 0,
+                  animation: 'ob-fadeInUp 0.5s 0.6s forwards',
+                }}
+              >
+                {meta.type}
+              </span>
+
+              <p
+                style={{
+                  fontSize: 15,
+                  color: '#444',
+                  margin: '4px 8px 0',
+                  lineHeight: 1.6,
+                  opacity: 0,
+                  animation: 'ob-fadeInUp 0.5s 0.75s forwards',
+                }}
+              >
+                {meta.desc}
+              </p>
+
+              <button
+                onClick={handleComplete}
+                disabled={saving}
+                style={{
+                  marginTop: 24,
+                  width: '100%',
+                  padding: '16px',
+                  fontSize: 16,
+                  fontWeight: 700,
+                  color: '#fff',
+                  background: theme.primary,
+                  border: 'none',
+                  borderRadius: 14,
+                  cursor: saving ? 'not-allowed' : 'pointer',
+                  opacity: 0,
+                  ['--ob-shadow' as any]: theme.shadow,
+                  boxShadow: theme.shadow,
+                  animation: saving
+                    ? 'ob-fadeInUp 0.5s 0.9s forwards'
+                    : 'ob-fadeInUp 0.5s 0.9s forwards, ob-btnPulse 2.2s 1.6s ease-in-out infinite',
+                  filter: saving ? 'grayscale(0.3) brightness(0.95)' : 'none',
+                  transition: 'filter 0.2s',
+                }}
+              >
+                {saving ? '저장 중...' : `${meta.name}와 함께 시작하기`}
+              </button>
+            </div>
+          </>
         )}
       </div>
     </div>
