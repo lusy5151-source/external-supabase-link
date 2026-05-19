@@ -449,19 +449,19 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
                 <CharacterAnimation character={topCharacter} emotion="normal" size={180} />
                 <span
                   style={{
-                    position: 'absolute', top: 10, left: 14, fontSize: 22,
+                    position: 'absolute', top: -12, left: 8, fontSize: 18,
                     opacity: 0, animation: 'ob-starPop 1s 0.9s ease-out forwards',
                   }}
                 >✨</span>
                 <span
                   style={{
-                    position: 'absolute', top: 20, right: 18, fontSize: 20,
+                    position: 'absolute', top: -8, right: 12, fontSize: 16,
                     opacity: 0, animation: 'ob-starPop 1s 1.1s ease-out forwards',
                   }}
                 >⭐</span>
                 <span
                   style={{
-                    position: 'absolute', bottom: 20, right: 30, fontSize: 18,
+                    position: 'absolute', bottom: 8, right: -8, fontSize: 16,
                     opacity: 0, animation: 'ob-starPop 1s 1.3s ease-out forwards',
                   }}
                 >💫</span>
