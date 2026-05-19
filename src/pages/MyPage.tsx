@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import CharacterAnimation, { CHARACTER_META, type Character } from "@/components/CharacterAnimation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/context/StoreContext";
 import { useSummitClaims } from "@/hooks/useSummitClaims";
