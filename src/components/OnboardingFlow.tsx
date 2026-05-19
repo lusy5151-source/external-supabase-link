@@ -11,6 +11,26 @@ import CharacterAnimation, {
   type Character,
   CHARACTER_META,
 } from './CharacterAnimation'
+import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/integrations/supabase/client'
+import { toast } from 'sonner'
+
+// 캐릭터별 테마 (그라디언트 / 버튼 컬러)
+const CHARACTER_THEME: Record<Character, {
+  gradient: string
+  primary: string
+  shadow: string
+}> = {
+  oreumi:   { gradient: 'linear-gradient(160deg,#E6F1FB 0%,#F7FBFF 60%,#FFFFFF 100%)', primary: '#5BA8E0', shadow: '0 12px 28px -10px rgba(91,168,224,0.55)' },
+  wandeung: { gradient: 'linear-gradient(160deg,#EAF3DE 0%,#F6FAEC 60%,#FFFFFF 100%)', primary: '#A8C66B', shadow: '0 12px 28px -10px rgba(168,198,107,0.6)' },
+  dorami:   { gradient: 'linear-gradient(160deg,#F1EFE8 0%,#FAF8F2 60%,#FFFFFF 100%)', primary: '#9C8E6E', shadow: '0 12px 28px -10px rgba(156,142,110,0.55)' },
+  pongdang: { gradient: 'linear-gradient(160deg,#EEEDFE 0%,#F7F6FE 60%,#FFFFFF 100%)', primary: '#8B7FE0', shadow: '0 12px 28px -10px rgba(139,127,224,0.55)' },
+  dorong:   { gradient: 'linear-gradient(160deg,#E0F5FF 0%,#F2FAFF 60%,#FFFFFF 100%)', primary: '#5BB8D6', shadow: '0 12px 28px -10px rgba(91,184,214,0.55)' },
+  gaia:     { gradient: 'linear-gradient(160deg,#EAF3DE 0%,#F6FAEC 60%,#FFFFFF 100%)', primary: '#6FA044', shadow: '0 12px 28px -10px rgba(111,160,68,0.55)' },
+  peggy:    { gradient: 'linear-gradient(160deg,#FAECE7 0%,#FEF6F2 60%,#FFFFFF 100%)', primary: '#D97A4F', shadow: '0 12px 28px -10px rgba(217,122,79,0.55)' },
+}
+
+const CONFETTI_COLORS = ['#FFD166','#EF476F','#06D6A0','#118AB2','#C7D66D','#F78C6B']
 
 interface OnboardingFlowProps {
   onComplete: (nickname: string, characterId: string) => void
