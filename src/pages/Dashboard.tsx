@@ -58,6 +58,7 @@ function CharacterSlide({
   xpForNextLevel,
   isMax,
   showXp = true,
+  emotion = "normal",
 }: {
   msg: string;
   characterId: Character;
@@ -69,6 +70,7 @@ function CharacterSlide({
   xpForNextLevel: number;
   isMax: boolean;
   showXp?: boolean;
+  emotion?: "normal" | "sad" | "angry" | "autumn";
 }) {
   const bubbleRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
