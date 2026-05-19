@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { awardXp } from "@/lib/xp";
 
 /**
  * Recompute progress for all of a user's joined `user_challenges`
