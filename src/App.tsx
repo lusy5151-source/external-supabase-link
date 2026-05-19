@@ -19,11 +19,13 @@ import MagazinePopup from "@/components/MagazinePopup";
 import MigrationNoticeModal from "@/components/MigrationNoticeModal";
 import NotFound from "./pages/NotFound";
 import { useState, useCallback, lazy, Suspense, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import PageSkeleton from "@/components/PageSkeleton";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
 import { useProfileSync } from "@/hooks/useProfileSync";
 import { useSchedulePlanAlerts } from "@/hooks/useSchedulePlanAlerts";
 import { supabase } from "@/integrations/supabase/client";
+import OnboardingFlow from "@/components/OnboardingFlow";
 
 // Eagerly loaded (auth only)
 import AuthPage from "@/pages/AuthPage";
@@ -103,6 +105,92 @@ const LazyPage = ({ children, fallback }: { children: React.ReactNode; fallback?
     {children}
   </Suspense>
 );
+
+const ONBOARDING_BYPASS_PATHS = [
+  "/auth",
+  "/auth/callback",
+  "/kakao/callback",
+  "/privacy",
+  "/privacy-policy",
+  "/terms-of-service",
+  "/forgot-password",
+  "/reset-password",
+];
+
+function OnboardingGate({ children }: { children: React.ReactNode }) {
+  const { user, loading: authLoading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [checking, setChecking] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      if (authLoading) return;
+      if (!user) {
+        setNeedsOnboarding(false);
+        return;
+      }
+      setChecking(true);
+      try {
+        const { data, error } = await (supabase as any)
+          .from("profiles")
+          .select("is_onboarded")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (cancelled) return;
+        if (error) {
+          console.error("[OnboardingGate] profile fetch error", error);
+          setNeedsOnboarding(false);
+        } else {
+          setNeedsOnboarding(data ? data.is_onboarded === false : false);
+        }
+      } catch (e) {
+        console.error("[OnboardingGate] unexpected error", e);
+        if (!cancelled) setNeedsOnboarding(false);
+      } finally {
+        if (!cancelled) setChecking(false);
+      }
+    };
+    check();
+    return () => { cancelled = true; };
+  }, [user, authLoading]);
+
+  const handleComplete = useCallback(async (nickname: string, characterId: string) => {
+    if (!user) return;
+    try {
+      const { error } = await (supabase as any)
+        .from("profiles")
+        .update({
+          nickname,
+          character_id: characterId,
+          is_onboarded: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", user.id);
+      if (error) {
+        console.error("[OnboardingGate] profile update error", error);
+        return;
+      }
+      setNeedsOnboarding(false);
+      navigate("/", { replace: true });
+    } catch (e) {
+      console.error("[OnboardingGate] complete error", e);
+    }
+  }, [user, navigate]);
+
+  const bypass = ONBOARDING_BYPASS_PATHS.some(
+    (p) => location.pathname === p || location.pathname.startsWith(p + "/")
+  );
+
+  if (user && !authLoading && !bypass) {
+    if (checking) return <LoadingSpinner message="프로필 확인 중..." />;
+    if (needsOnboarding) return <OnboardingFlow onComplete={handleComplete} />;
+  }
+
+  return <>{children}</>;
+}
 
 const AppRoutes = () => {
   const { user, loading } = useAuth();
@@ -198,7 +286,9 @@ const App = () => {
                 {!showSplash && <MigrationNoticeModal />}
                 <Layout>
                   <ErrorBoundary fallbackMessage="데이터를 불러오는 중 오류가 발생했습니다.">
-                    <AppRoutes />
+                    <OnboardingGate>
+                      <AppRoutes />
+                    </OnboardingGate>
                   </ErrorBoundary>
                 </Layout>
                 </CompletionSuggestionProvider>
