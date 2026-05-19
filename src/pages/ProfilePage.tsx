@@ -44,6 +44,7 @@ const ProfilePage = () => {
     useAchievementStore(records, gearItems, sharedCompletions);
   const { profile, loading: profileLoading, updateProfile, uploadAvatar } = useProfile();
   const { fetchMyJournals } = useHikingJournals();
+  const xpInfo = useUserXp();
   const { friends } = useFriends();
   const { toast } = useToast();
   const { settings: privacySettings, updateSettings: updatePrivacy, isPrivateAccount } = usePrivacySettings();
