@@ -118,6 +118,8 @@ const ONBOARDING_BYPASS_PATHS = [
 ];
 
 function OnboardingGate({ children }: { children: React.ReactNode }) {
+  // user는 AuthContext가 제공하는 현재 유저(Lovable Cloud Auth로 로그인된 세션 유저)
+  // 여기서는 supabase.auth.* 를 직접 호출하지 않고, DB 조회(supabase.from)만 사용한다.
   const { user, loading: authLoading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -136,15 +138,21 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
       try {
         const { data, error } = await (supabase as any)
           .from("profiles")
-          .select("is_onboarded")
+          .select("is_onboarded, character_id")
           .eq("user_id", user.id)
-          .maybeSingle();
+          .single();
         if (cancelled) return;
         if (error) {
-          console.error("[OnboardingGate] profile fetch error", error);
-          setNeedsOnboarding(false);
+          // 프로필이 아직 없거나 조회 실패 → 안전하게 온보딩 미진행으로 가정하지 않고,
+          // 행이 없으면(PGRST116) 온보딩 필요로 처리
+          if ((error as any).code === "PGRST116") {
+            setNeedsOnboarding(true);
+          } else {
+            console.error("[OnboardingGate] profile fetch error", error);
+            setNeedsOnboarding(false);
+          }
         } else {
-          setNeedsOnboarding(data ? data.is_onboarded === false : false);
+          setNeedsOnboarding(!data || data.is_onboarded === false || data.is_onboarded == null);
         }
       } catch (e) {
         console.error("[OnboardingGate] unexpected error", e);
