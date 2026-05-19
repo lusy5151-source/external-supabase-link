@@ -194,9 +194,12 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        background: '#FAFBF7',
+        background: step === 'result' ? theme.gradient : '#FAFBF7',
         padding: '24px 20px',
         fontFamily: '"Noto Sans KR", sans-serif',
+        position: 'relative',
+        overflow: 'hidden',
+        transition: 'background 0.6s ease',
       }}
     >
       {/* 진행바 */}
