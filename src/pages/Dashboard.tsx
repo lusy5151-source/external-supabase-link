@@ -35,7 +35,7 @@ import {
 import { AnnouncementSection } from "@/components/AnnouncementSystem";
 // OnboardingTutorial moved to Layout
 import { Link, useNavigate } from "react-router-dom";
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOnboarding } from "@/contexts/OnboardingContext";
 
