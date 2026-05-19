@@ -282,25 +282,34 @@ export type Database = {
       }
       badges: {
         Row: {
+          condition_type: string | null
+          condition_value: number | null
           created_at: string | null
           description: string | null
           id: string
           image_url: string | null
           name: string
+          xp_reward: number | null
         }
         Insert: {
+          condition_type?: string | null
+          condition_value?: number | null
           created_at?: string | null
           description?: string | null
           id?: string
           image_url?: string | null
           name: string
+          xp_reward?: number | null
         }
         Update: {
+          condition_type?: string | null
+          condition_value?: number | null
           created_at?: string | null
           description?: string | null
           id?: string
           image_url?: string | null
           name?: string
+          xp_reward?: number | null
         }
         Relationships: []
       }
@@ -2453,6 +2462,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           character_id: string | null
+          character_level: number | null
           created_at: string | null
           email: string | null
           hiking_styles: string[] | null
@@ -2465,11 +2475,13 @@ export type Database = {
           role: string | null
           updated_at: string | null
           user_id: string
+          xp: number | null
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
           character_id?: string | null
+          character_level?: number | null
           created_at?: string | null
           email?: string | null
           hiking_styles?: string[] | null
@@ -2482,11 +2494,13 @@ export type Database = {
           role?: string | null
           updated_at?: string | null
           user_id: string
+          xp?: number | null
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
           character_id?: string | null
+          character_level?: number | null
           created_at?: string | null
           email?: string | null
           hiking_styles?: string[] | null
@@ -2499,6 +2513,7 @@ export type Database = {
           role?: string | null
           updated_at?: string | null
           user_id?: string
+          xp?: number | null
         }
         Relationships: []
       }
@@ -3646,6 +3661,51 @@ export type Database = {
           },
         ]
       }
+      xp_log: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          source_id: string | null
+          source_type: string
+          user_id: string | null
+          xp_amount: number
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          source_id?: string | null
+          source_type: string
+          user_id?: string | null
+          xp_amount: number
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          source_id?: string | null
+          source_type?: string
+          user_id?: string | null
+          xp_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "xp_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "xp_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
     }
     Views: {
       profiles_safe: {
@@ -3724,6 +3784,21 @@ export type Database = {
       }
     }
     Functions: {
+      achieve_badge: {
+        Args: { p_badge_id: string; p_user_id: string }
+        Returns: Json
+      }
+      add_xp: {
+        Args: {
+          p_amount: number
+          p_description?: string
+          p_source_id?: string
+          p_source_type: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      calc_level: { Args: { xp_val: number }; Returns: number }
       calc_route_distance: { Args: { coords: Json }; Returns: number }
       can_access_group: {
         Args: { _group_id: string; _user_id?: string }
