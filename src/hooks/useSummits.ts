@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { awardXp } from "@/lib/xp";
 
 export interface Summit {
   id: string; mountain_id: number; summit_name: string; latitude: number; longitude: number; elevation: number;
