@@ -24,6 +24,7 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import MountainMascot from "@/components/MountainMascot";
+import CharacterAnimation, { CHARACTER_META, type Character } from "@/components/CharacterAnimation";
 import {
   Mountain, Plus, Calendar, ChevronRight,
   Sun, Cloud, CloudRain, CloudSnow, CloudSun,
