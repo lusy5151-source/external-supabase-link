@@ -65,7 +65,14 @@ const MyPage = () => {
   const nav = useNavigate();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showNotifSettings, setShowNotifSettings] = useState(false);
-  const [characterId, setCharacterId] = useState<Character | null>(null);
+  const [characterId, setCharacterId] = useState<Character | null>(() => {
+    try {
+      const cached = localStorage.getItem("wandeung_character_id");
+      return (cached as Character) || null;
+    } catch {
+      return null;
+    }
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -75,7 +82,10 @@ const MyPage = () => {
       .eq("user_id", user.id)
       .single()
       .then(({ data }: any) => {
-        if (data?.character_id) setCharacterId(data.character_id as Character);
+        if (data?.character_id) {
+          setCharacterId(data.character_id as Character);
+          try { localStorage.setItem("wandeung_character_id", data.character_id); } catch {}
+        }
       });
   }, [user]);
 
