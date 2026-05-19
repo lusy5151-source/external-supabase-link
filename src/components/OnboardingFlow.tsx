@@ -11,6 +11,26 @@ import CharacterAnimation, {
   type Character,
   CHARACTER_META,
 } from './CharacterAnimation'
+import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/integrations/supabase/client'
+import { toast } from 'sonner'
+
+// 캐릭터별 테마 (그라디언트 / 버튼 컬러)
+const CHARACTER_THEME: Record<Character, {
+  gradient: string
+  primary: string
+  shadow: string
+}> = {
+  oreumi:   { gradient: 'linear-gradient(160deg,#E6F1FB 0%,#F7FBFF 60%,#FFFFFF 100%)', primary: '#5BA8E0', shadow: '0 12px 28px -10px rgba(91,168,224,0.55)' },
+  wandeung: { gradient: 'linear-gradient(160deg,#EAF3DE 0%,#F6FAEC 60%,#FFFFFF 100%)', primary: '#A8C66B', shadow: '0 12px 28px -10px rgba(168,198,107,0.6)' },
+  dorami:   { gradient: 'linear-gradient(160deg,#F1EFE8 0%,#FAF8F2 60%,#FFFFFF 100%)', primary: '#9C8E6E', shadow: '0 12px 28px -10px rgba(156,142,110,0.55)' },
+  pongdang: { gradient: 'linear-gradient(160deg,#EEEDFE 0%,#F7F6FE 60%,#FFFFFF 100%)', primary: '#8B7FE0', shadow: '0 12px 28px -10px rgba(139,127,224,0.55)' },
+  dorong:   { gradient: 'linear-gradient(160deg,#E0F5FF 0%,#F2FAFF 60%,#FFFFFF 100%)', primary: '#5BB8D6', shadow: '0 12px 28px -10px rgba(91,184,214,0.55)' },
+  gaia:     { gradient: 'linear-gradient(160deg,#EAF3DE 0%,#F6FAEC 60%,#FFFFFF 100%)', primary: '#6FA044', shadow: '0 12px 28px -10px rgba(111,160,68,0.55)' },
+  peggy:    { gradient: 'linear-gradient(160deg,#FAECE7 0%,#FEF6F2 60%,#FFFFFF 100%)', primary: '#D97A4F', shadow: '0 12px 28px -10px rgba(217,122,79,0.55)' },
+}
+
+const CONFETTI_COLORS = ['#FFD166','#EF476F','#06D6A0','#118AB2','#C7D66D','#F78C6B']
 
 interface OnboardingFlowProps {
   onComplete: (nickname: string, characterId: string) => void
@@ -89,11 +109,13 @@ const INITIAL_SCORES: Scores = {
 type Step = 'nickname' | 'quiz' | 'result'
 
 export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
+  const { user } = useAuth()
   const [step, setStep] = useState<Step>('nickname')
   const [nickname, setNickname] = useState('')
   const [nicknameError, setNicknameError] = useState('')
   const [quizIndex, setQuizIndex] = useState(0)
   const [scores, setScores] = useState<Scores>({ ...INITIAL_SCORES })
+  const [saving, setSaving] = useState(false)
 
   const totalSteps = 1 + QUIZZES.length + 1
   const currentStepNum =
@@ -138,11 +160,33 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
     }
   }
 
-  const handleComplete = () => {
-    onComplete(nickname, topCharacter)
+  const handleComplete = async () => {
+    if (saving) return
+    if (!user?.id) {
+      toast.error('로그인 정보를 찾을 수 없어요')
+      return
+    }
+    setSaving(true)
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          nickname,
+          character_id: topCharacter,
+          is_onboarded: true,
+        })
+        .eq('user_id', user.id)
+      if (error) throw error
+      onComplete(nickname, topCharacter)
+    } catch (err: any) {
+      console.error('[OnboardingFlow] profile update failed', err)
+      toast.error(err?.message || '저장에 실패했어요. 다시 시도해 주세요.')
+      setSaving(false)
+    }
   }
 
   const meta = CHARACTER_META[topCharacter]
+  const theme = CHARACTER_THEME[topCharacter]
 
   return (
     <div
@@ -150,9 +194,12 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        background: '#FAFBF7',
+        background: step === 'result' ? theme.gradient : '#FAFBF7',
         padding: '24px 20px',
         fontFamily: '"Noto Sans KR", sans-serif',
+        position: 'relative',
+        overflow: 'hidden',
+        transition: 'background 0.6s ease',
       }}
     >
       {/* 진행바 */}
@@ -286,60 +333,170 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         )}
 
         {step === 'result' && (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 16,
-              textAlign: 'center',
-            }}
-          >
-            <p style={{ fontSize: 16, color: '#666', margin: 0 }}>
-              {nickname}님과 가장 잘 맞는 캐릭터는
-            </p>
-            <h2 style={{ fontSize: 28, fontWeight: 800, margin: 0, color: '#222' }}>
-              {meta.name}
-            </h2>
-            <span
-              style={{
-                padding: '6px 12px',
-                background: meta.tagBg,
-                color: meta.tagCol,
-                fontSize: 13,
-                fontWeight: 600,
-                borderRadius: 999,
-              }}
-            >
-              {meta.type}
-            </span>
+          <>
+            {/* keyframes */}
+            <style>{`
+              @keyframes ob-fadeInUp { 0%{opacity:0;transform:translateY(14px)} 100%{opacity:1;transform:translateY(0)} }
+              @keyframes ob-charPop { 0%{opacity:0;transform:scale(0)} 100%{opacity:1;transform:scale(1)} }
+              @keyframes ob-starPop { 0%{opacity:0;transform:scale(0) rotate(0deg)} 60%{opacity:1;transform:scale(1.2) rotate(20deg)} 100%{opacity:0.85;transform:scale(1) rotate(0deg)} }
+              @keyframes ob-confetti { 0%{transform:translateY(-40px) rotate(0deg);opacity:0} 10%{opacity:1} 100%{transform:translateY(110vh) rotate(720deg);opacity:0.9} }
+              @keyframes ob-btnPulse { 0%,100%{box-shadow:0 12px 28px -10px var(--ob-shadow,rgba(0,0,0,0.2))} 50%{box-shadow:0 18px 36px -10px var(--ob-shadow,rgba(0,0,0,0.35))} }
+            `}</style>
 
-            <div style={{ margin: '16px 0' }}>
-              <CharacterAnimation character={topCharacter} emotion="normal" size={180} />
+            {/* 색종이 confetti */}
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+              {Array.from({ length: 12 }).map((_, i) => {
+                const left = (i * 8.3 + (i % 3) * 4) % 100
+                const delay = (i % 6) * 0.25
+                const duration = 2.6 + (i % 4) * 0.4
+                const color = CONFETTI_COLORS[i % CONFETTI_COLORS.length]
+                const w = 8 + (i % 3) * 3
+                const h = 12 + (i % 2) * 4
+                return (
+                  <span
+                    key={i}
+                    style={{
+                      position: 'absolute',
+                      top: -20,
+                      left: `${left}%`,
+                      width: w,
+                      height: h,
+                      background: color,
+                      borderRadius: 2,
+                      animation: `ob-confetti ${duration}s ${delay}s linear forwards`,
+                    }}
+                  />
+                )
+              })}
             </div>
 
-            <p style={{ fontSize: 15, color: '#555', margin: 0, lineHeight: 1.6 }}>
-              {meta.desc}
-            </p>
-
-            <button
-              onClick={handleComplete}
+            <div
               style={{
-                marginTop: 24,
-                width: '100%',
-                padding: '16px',
-                fontSize: 16,
-                fontWeight: 600,
-                color: '#222',
-                background: '#C7D66D',
-                border: 'none',
-                borderRadius: 12,
-                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 14,
+                textAlign: 'center',
+                position: 'relative',
+                zIndex: 1,
               }}
             >
-              {meta.name}와 함께 시작하기
-            </button>
-          </div>
+              <p
+                style={{
+                  fontSize: 15,
+                  color: '#5a5a5a',
+                  margin: 0,
+                  opacity: 0,
+                  animation: 'ob-fadeInUp 0.5s 0s forwards',
+                }}
+              >
+                {nickname}님과 가장 잘 맞는 캐릭터는
+              </p>
+
+              {/* 캐릭터 + 반짝이 */}
+              <div
+                style={{
+                  position: 'relative',
+                  width: 220,
+                  height: 220,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '8px 0 4px',
+                  opacity: 0,
+                  animation: 'ob-charPop 0.7s 0.15s cubic-bezier(.34,1.56,.64,1) forwards',
+                }}
+              >
+                <CharacterAnimation character={topCharacter} emotion="normal" size={180} />
+                <span
+                  style={{
+                    position: 'absolute', top: 10, left: 14, fontSize: 22,
+                    opacity: 0, animation: 'ob-starPop 1s 0.9s ease-out forwards',
+                  }}
+                >✨</span>
+                <span
+                  style={{
+                    position: 'absolute', top: 20, right: 18, fontSize: 20,
+                    opacity: 0, animation: 'ob-starPop 1s 1.1s ease-out forwards',
+                  }}
+                >⭐</span>
+                <span
+                  style={{
+                    position: 'absolute', bottom: 20, right: 30, fontSize: 18,
+                    opacity: 0, animation: 'ob-starPop 1s 1.3s ease-out forwards',
+                  }}
+                >💫</span>
+              </div>
+
+              <h2
+                style={{
+                  fontSize: 30,
+                  fontWeight: 800,
+                  margin: 0,
+                  color: '#1f1f1f',
+                  opacity: 0,
+                  animation: 'ob-fadeInUp 0.5s 0.45s forwards',
+                }}
+              >
+                {meta.name}
+              </h2>
+
+              <span
+                style={{
+                  padding: '6px 14px',
+                  background: meta.tagBg,
+                  color: meta.tagCol,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  borderRadius: 999,
+                  opacity: 0,
+                  animation: 'ob-fadeInUp 0.5s 0.6s forwards',
+                }}
+              >
+                {meta.type}
+              </span>
+
+              <p
+                style={{
+                  fontSize: 15,
+                  color: '#444',
+                  margin: '4px 8px 0',
+                  lineHeight: 1.6,
+                  opacity: 0,
+                  animation: 'ob-fadeInUp 0.5s 0.75s forwards',
+                }}
+              >
+                {meta.desc}
+              </p>
+
+              <button
+                onClick={handleComplete}
+                disabled={saving}
+                style={{
+                  marginTop: 24,
+                  width: '100%',
+                  padding: '16px',
+                  fontSize: 16,
+                  fontWeight: 700,
+                  color: '#fff',
+                  background: theme.primary,
+                  border: 'none',
+                  borderRadius: 14,
+                  cursor: saving ? 'not-allowed' : 'pointer',
+                  opacity: 0,
+                  ['--ob-shadow' as any]: theme.shadow,
+                  boxShadow: theme.shadow,
+                  animation: saving
+                    ? 'ob-fadeInUp 0.5s 0.9s forwards'
+                    : 'ob-fadeInUp 0.5s 0.9s forwards, ob-btnPulse 2.2s 1.6s ease-in-out infinite',
+                  filter: saving ? 'grayscale(0.3) brightness(0.95)' : 'none',
+                  transition: 'filter 0.2s',
+                }}
+              >
+                {saving ? '저장 중...' : `${meta.name}와 함께 시작하기`}
+              </button>
+            </div>
+          </>
         )}
       </div>
     </div>
