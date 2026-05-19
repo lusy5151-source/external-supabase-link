@@ -133,7 +133,7 @@ const MyPage = () => {
               gap: 12,
             }}
           >
-            <CharacterAnimation character={charKey} emotion="normal" size={56} />
+            <CharacterAnimation character={charKey} emotion={charEmotion} size={56} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-sm font-bold text-foreground">{meta.name}</span>
