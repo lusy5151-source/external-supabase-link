@@ -425,14 +425,7 @@ const Dashboard = () => {
                   <CharacterSlide
                     msg={ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔"}
                     characterId={(characterId || "oreumi") as Character}
-                    level={(() => {
-                      const c = displayCompletedCount;
-                      if (c >= 100) return 5;
-                      if (c >= 50) return 4;
-                      if (c >= 20) return 3;
-                      if (c >= 5) return 2;
-                      return 1;
-                    })()}
+                    level={xpInfo.level}
                   />
                 </div>
 
