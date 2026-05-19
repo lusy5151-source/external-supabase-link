@@ -330,8 +330,9 @@ const Dashboard = () => {
                       background: "linear-gradient(145deg, #EAF3DE, #F8FAED)",
                       borderRadius: 16,
                       position: "relative",
-                      minHeight: 200,
+                      minHeight: 240,
                       overflow: "hidden",
+                      paddingTop: 56,
                     }}
                   >
                     <style>{`@keyframes bubblePop{0%{opacity:0;transform:scale(0.9)}100%{opacity:1;transform:scale(1)}}`}</style>
