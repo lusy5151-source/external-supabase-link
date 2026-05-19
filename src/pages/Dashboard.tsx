@@ -476,6 +476,29 @@ const Dashboard = () => {
   const xpInfo = useUserXp();
   const charEmotion = useCharacterEmotion();
 
+  // Comfort interaction (only for sad/angry)
+  const [comfortCount, setComfortCount] = useState(0);
+  const [comfortRecovered, setComfortRecovered] = useState(false);
+  useEffect(() => {
+    setComfortCount(0);
+    setComfortRecovered(false);
+  }, [charEmotion]);
+  const isComfortable = charEmotion === "sad" || charEmotion === "angry";
+  const effectiveEmotion: "normal" | "sad" | "angry" | "autumn" = comfortRecovered ? "normal" : charEmotion;
+  const handleComfortTap = () => {
+    if (!isComfortable || comfortRecovered) return;
+    setComfortCount((c) => {
+      const next = Math.min(c + 1, 5);
+      if (next >= 5) setComfortRecovered(true);
+      return next;
+    });
+  };
+  let comfortMsg: string | null = null;
+  if (isComfortable) {
+    if (comfortRecovered) comfortMsg = COMFORT_RECOVERED_MSG;
+    else if (comfortCount > 0) comfortMsg = COMFORT_MSG[charEmotion][comfortCount - 1];
+  }
+
   const { isOnboarding } = useOnboarding();
   const isDemo = !user || isOnboarding;
 
