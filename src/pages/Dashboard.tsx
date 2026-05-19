@@ -532,7 +532,7 @@ const Dashboard = () => {
                 {/* Slide 1: Character */}
                 <div style={{ flex: "0 0 100%", width: "100%" }}>
                   <CharacterSlide
-                    msg={ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔"}
+                    msg={EMOTION_MSG[charEmotion] ?? (ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔")}
                     characterId={(characterId || "oreumi") as Character}
                     level={xpInfo.level}
                     levelName={xpInfo.name}
