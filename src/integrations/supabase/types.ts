@@ -2470,6 +2470,7 @@ export type Database = {
           is_active: boolean | null
           is_onboarded: boolean | null
           last_app_visit: string | null
+          last_comforted_at: string | null
           location: string | null
           nickname: string | null
           provider: string | null
@@ -2491,6 +2492,7 @@ export type Database = {
           is_active?: boolean | null
           is_onboarded?: boolean | null
           last_app_visit?: string | null
+          last_comforted_at?: string | null
           location?: string | null
           nickname?: string | null
           provider?: string | null
@@ -2512,6 +2514,7 @@ export type Database = {
           is_active?: boolean | null
           is_onboarded?: boolean | null
           last_app_visit?: string | null
+          last_comforted_at?: string | null
           location?: string | null
           nickname?: string | null
           provider?: string | null
