@@ -108,6 +108,57 @@ const INITIAL_SCORES: Scores = {
 
 type Step = 'nickname' | 'quiz' | 'result'
 
+function QuizPanel({
+  index,
+  onSelect,
+  style,
+}: {
+  index: number
+  onSelect: (opt: QuizOption) => void
+  style?: React.CSSProperties
+}) {
+  const q = QUIZZES[index]
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, ...style }}>
+      <div style={{ color: '#888', fontSize: 14 }}>
+        {index + 1} / {QUIZZES.length}
+      </div>
+      <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: '#222', lineHeight: 1.4 }}>
+        {q.question}
+      </h2>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
+        {q.options.map((opt, idx) => (
+          <button
+            key={idx}
+            onClick={() => onSelect(opt)}
+            style={{
+              padding: '16px 18px',
+              fontSize: 15,
+              textAlign: 'left',
+              color: '#222',
+              background: '#FFF',
+              border: '1px solid #E5E5E5',
+              borderRadius: 12,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#C7D66D'
+              e.currentTarget.style.background = '#FAFBF0'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#E5E5E5'
+              e.currentTarget.style.background = '#FFF'
+            }}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const { user } = useAuth()
   const [step, setStep] = useState<Step>('nickname')
