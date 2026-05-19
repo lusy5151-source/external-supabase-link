@@ -217,7 +217,7 @@ function CharacterSlide({
         <div
           style={{
             padding: "10px 14px 8px",
-            borderBottom: showComfortGauge ? "none" : "1px solid rgba(0,0,0,0.06)",
+            borderBottom: "1px solid rgba(0,0,0,0.06)",
             background: "rgba(255,255,255,0.35)",
           }}
         >
