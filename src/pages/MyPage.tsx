@@ -7,6 +7,7 @@ import { useStore } from "@/context/StoreContext";
 import { useSummitClaims } from "@/hooks/useSummitClaims";
 import { useProfile } from "@/hooks/useProfile";
 import { useUserXp } from "@/hooks/useUserXp";
+import { useCharacterEmotion } from "@/hooks/useCharacterEmotion";
 import { useFriends } from "@/hooks/useFriends";
 import { useAchievementStore } from "@/hooks/useAchievementStore";
 import { useGearStore } from "@/hooks/useGearStore";
