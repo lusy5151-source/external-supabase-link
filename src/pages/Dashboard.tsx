@@ -269,21 +269,6 @@ const Dashboard = () => {
         <div className="px-4 pt-4 space-y-3">
           <GuestSignupBanner />
           <PasswordSetupBanner />
-          {ctaCard && (
-            <div
-              className="flex items-center justify-between gap-3"
-              style={{ background: ctaCard.bg, borderRadius: "var(--radius)", padding: 14 }}
-            >
-              <p className="flex-1 text-sm font-medium text-foreground">{ctaCard.msg}</p>
-              <Link
-                to={ctaCard.to}
-                className="shrink-0 inline-flex items-center justify-center text-white"
-                style={{ background: "hsl(var(--brand-forest))", borderRadius: "var(--radius)", padding: "6px 12px", fontSize: 12, fontWeight: 500 }}
-              >
-                {ctaCard.btn}
-              </Link>
-            </div>
-          )}
         </div>
         {!isDemo && <AchievementModal badge={newlyEarned} onDismiss={dismissNewBadge} />}
         {showJournalForm && (
