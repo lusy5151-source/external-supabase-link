@@ -18,62 +18,97 @@ export function useCharacterEmotion(): CharacterEmotion {
 
     const detect = async () => {
       try {
-        // 1) angry: today's most recent summit_claim is not ai_verified
-        if (user?.id) {
-          const { data: claim } = await (supabase as any)
-            .from("summit_claims")
-            .select("ai_verified, created_at")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (claim?.created_at) {
-            const created = new Date(claim.created_at);
-            const today = new Date();
-            const sameDay =
-              created.getFullYear() === today.getFullYear() &&
-              created.getMonth() === today.getMonth() &&
-              created.getDate() === today.getDate();
-            if (sameDay && claim.ai_verified === false) {
-              if (!cancelled) setEmotion("angry");
-              return;
-            }
-          }
+        if (!user?.id) {
+          // 3) autumn fallback only when no user
+          const month = new Date().getMonth() + 1;
+          if (!cancelled) setEmotion(month >= 9 && month <= 11 ? "autumn" : "normal");
+          return;
         }
 
-        // 2) sad: no upcoming hiking_plans within next 7 days
-        if (user?.id) {
-          const today = new Date();
-          const in7 = new Date();
-          in7.setDate(today.getDate() + 7);
-          const todayStr = today.toISOString().slice(0, 10);
-          const in7Str = in7.toISOString().slice(0, 10);
+        const userId = user.id;
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const todayStartISO = todayStart.toISOString();
+        const todayStr = todayStart.toISOString().slice(0, 10);
+        const in7 = new Date(todayStart);
+        in7.setDate(in7.getDate() + 7);
+        const in7Str = in7.toISOString().slice(0, 10);
 
-          const { data: plans } = await (supabase as any)
-            .from("hiking_plans")
-            .select("id, planned_date")
-            .eq("creator_id", user.id)
-            .gte("planned_date", todayStr)
-            .lte("planned_date", in7Str)
-            .limit(1);
+        // 1) Today's failed summit verification
+        const failedSummitP = (supabase as any)
+          .from("summit_claims")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("ai_verified", false)
+          .gte("claimed_at", todayStartISO)
+          .limit(1);
 
-          if (!plans || plans.length === 0) {
-            // 3) autumn check before falling to sad? Spec says sad has higher priority.
-            if (!cancelled) setEmotion("sad");
-            return;
-          }
+        // 2) Upcoming hiking plans within next 7 days
+        const upcomingPlansP = (supabase as any)
+          .from("hiking_plans")
+          .select("planned_date, mountain_id")
+          .eq("creator_id", userId)
+          .gte("planned_date", todayStr)
+          .lte("planned_date", in7Str)
+          .order("planned_date", { ascending: true })
+          .limit(1);
+
+        // 3) Last successful summit (for days-since calculation)
+        const lastSummitP = (supabase as any)
+          .from("summit_claims")
+          .select("claimed_at")
+          .eq("user_id", userId)
+          .eq("ai_verified", true)
+          .order("claimed_at", { ascending: false })
+          .limit(1);
+
+        // 4) Profile XP/level/last_app_visit
+        const profileP = (supabase as any)
+          .from("profiles")
+          .select("xp, character_level, last_app_visit")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        const [
+          { data: failedSummit },
+          { data: upcomingPlans },
+          { data: lastSummit },
+          { data: profile },
+        ] = await Promise.all([failedSummitP, upcomingPlansP, lastSummitP, profileP]);
+
+        // 5) First-visit-today: update last_app_visit
+        const lastVisit = profile?.last_app_visit ? new Date(profile.last_app_visit) : null;
+        const isFirstVisitToday =
+          !lastVisit ||
+          new Date(lastVisit.getFullYear(), lastVisit.getMonth(), lastVisit.getDate()) < todayStart;
+        if (isFirstVisitToday) {
+          (supabase as any)
+            .from("profiles")
+            .update({ last_app_visit: new Date().toISOString() })
+            .eq("user_id", userId)
+            .then(({ error }: any) => {
+              if (error) console.warn("[useCharacterEmotion] last_app_visit update failed", error);
+            });
         }
 
-        // 3) autumn: month is Sep/Oct/Nov
+        // Emotion priority: angry > sad > autumn > normal
+        if (failedSummit && failedSummit.length > 0) {
+          if (!cancelled) setEmotion("angry");
+          return;
+        }
+        if (!upcomingPlans || upcomingPlans.length === 0) {
+          if (!cancelled) setEmotion("sad");
+          return;
+        }
         const month = new Date().getMonth() + 1;
         if (month >= 9 && month <= 11) {
           if (!cancelled) setEmotion("autumn");
           return;
         }
-
-        // 4) default
         if (!cancelled) setEmotion("normal");
+
+        // Reference unused locals for future logic / lint
+        void lastSummit;
       } catch {
         if (!cancelled) setEmotion("normal");
       }
