@@ -472,7 +472,14 @@ const Dashboard = () => {
     return saved === "forestry_100" || saved === "bac_100" ? saved : null;
   });
   const [showHundredPicker, setShowHundredPicker] = useState(false);
-  const [characterId, setCharacterId] = useState<Character | null>(null);
+  const [characterId, setCharacterId] = useState<Character | null>(() => {
+    try {
+      const cached = localStorage.getItem("wandeung_character_id");
+      return (cached as Character) || null;
+    } catch {
+      return null;
+    }
+  });
   const [slideIdx, setSlideIdx] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const xpInfo = useUserXp();
@@ -673,7 +680,10 @@ const Dashboard = () => {
         .eq("user_id", user.id)
         .single()
         .then(({ data }: any) => {
-          if (data?.character_id) setCharacterId(data.character_id as Character);
+          if (data?.character_id) {
+            setCharacterId(data.character_id as Character);
+            try { localStorage.setItem("wandeung_character_id", data.character_id); } catch {}
+          }
         });
     }
   }, [user]);
