@@ -284,6 +284,7 @@ const Dashboard = () => {
   const [slideIdx, setSlideIdx] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const xpInfo = useUserXp();
+  const charEmotion = useCharacterEmotion();
 
   const { isOnboarding } = useOnboarding();
   const isDemo = !user || isOnboarding;
