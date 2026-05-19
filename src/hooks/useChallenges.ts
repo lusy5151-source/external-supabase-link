@@ -333,6 +333,7 @@ export function useChallenges() {
           if (newProgress < 0) continue;
 
           const completed = newProgress >= (rung.goal_value || 1);
+          const wasCompleted = !!joinedItem.uc.completed;
           await supabase
             .from("user_challenges")
             .update({
@@ -341,6 +342,18 @@ export function useChallenges() {
               completed_at: completed ? new Date().toISOString() : null,
             } as any)
             .eq("id", joinedItem.uc.id);
+
+          if (completed && !wasCompleted && user?.id) {
+            try {
+              await awardXp({
+                userId: user.id,
+                amount: 30,
+                sourceType: "challenge",
+                sourceId: rung.id,
+                description: `챌린지 달성: ${rung.title ?? ""}`,
+              });
+            } catch (e) { console.error("[awardXp challenge] failed", e); }
+          }
 
           if (completed) {
             // Auto-insert next level if exists
