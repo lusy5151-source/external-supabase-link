@@ -2474,6 +2474,7 @@ export type Database = {
           nickname: string | null
           provider: string | null
           role: string | null
+          total_comfort_count: number | null
           updated_at: string | null
           user_id: string
           xp: number | null
@@ -2494,6 +2495,7 @@ export type Database = {
           nickname?: string | null
           provider?: string | null
           role?: string | null
+          total_comfort_count?: number | null
           updated_at?: string | null
           user_id: string
           xp?: number | null
@@ -2514,6 +2516,7 @@ export type Database = {
           nickname?: string | null
           provider?: string | null
           role?: string | null
+          total_comfort_count?: number | null
           updated_at?: string | null
           user_id?: string
           xp?: number | null
