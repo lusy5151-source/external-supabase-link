@@ -73,6 +73,24 @@ export function useSummits(mountainId?: number) {
     const { error: insertError } = await (supabase as any).from("summit_claims").insert({ user_id: user.id, mountain_id: summit.mountain_id, summit_id: actualSummitId, group_id: groupId || null, latitude: userLat, longitude: userLng, photo_url: urlData.publicUrl, ai_verified: aiVerified ?? null, ai_confidence: aiConfidence ?? null } as any);
     if (insertError) return { success: false, error: "저장에 실패했습니다" };
     toast({ title: "🎉 정상 정복 인증 완료!" });
+    // XP: +50 (summit), +50 bonus if 100대 명산
+    try {
+      const { data: m } = await (supabase as any)
+        .from("mountains")
+        .select("is_bac100, is_bac100_blackyak, name_ko, name")
+        .eq("id", summit.mountain_id)
+        .maybeSingle();
+      const isBac100 = !!(m?.is_bac100 || m?.is_bac100_blackyak);
+      const amount = isBac100 ? 100 : 50;
+      const mName = m?.name_ko || m?.name || "산";
+      await awardXp({
+        userId: user.id,
+        amount,
+        sourceType: "summit",
+        sourceId: actualSummitId,
+        description: `${mName} 정상 인증${isBac100 ? " (100대 명산)" : ""}`,
+      });
+    } catch (e) { console.error("[awardXp summit] failed", e); }
     await fetchClaims();
     return { success: true };
   };
