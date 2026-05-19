@@ -48,6 +48,31 @@ const EMOTION_MSG: Record<"normal" | "sad" | "angry" | "autumn", string | null> 
   autumn: "단풍 구경 가기 딱 좋은 계절이에요 🍂",
 };
 
+const COMFORT_MSG: Record<"sad" | "angry", string[]> = {
+  sad: [
+    "흑흑... 건드리지 마요 🥺",
+    "...조금 나아지는 것 같기도?",
+    "고마워요, 그래도 슬퍼요 😔",
+    "에헤... 기분이 좀 나아져요 🌸",
+    "됐어요! 같이 산 가요! 🏔️",
+  ],
+  angry: [
+    "저리 가요! 화났다고요! 😤",
+    "...뭐예요, 왜 계속 건드려요",
+    "으음... 진짜 그만해요 ㅠ",
+    "...사실 그렇게 화난 건 아니에요",
+    "알겠어요, 화 풀렸어요! 💪",
+  ],
+};
+const COMFORT_RECOVERED_MSG = "완전 회복! 이제 같이 산 가요! 🏔️";
+
+const COMFORT_PARTICLES: Record<"sad" | "angry", string[]> = {
+  sad: ["💧", "💙", "💕"],
+  angry: ["💢", "😤", "🌀"],
+};
+const COMFORT_PARTICLES_LATE_ANGRY = ["😅", "🎉", "💫"];
+const RECOVERY_PARTICLES = ["✨", "⭐", "💫", "✨"];
+
 const conditionIcons: Record<string, any> = {
   "맑음": Sun, "구름": CloudSun, "흐림": Cloud, "비": CloudRain, "눈": CloudSnow,
 };
