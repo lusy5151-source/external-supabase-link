@@ -52,6 +52,7 @@ const MyPage = () => {
   })();
   const { profile } = useProfile();
   const xpInfo = useUserXp();
+  const charEmotion = useCharacterEmotion();
   const { friends } = useFriends();
   const { items: gearItems } = useGearStore();
   const sharedCompletions = useSharedCompletionCounts();
