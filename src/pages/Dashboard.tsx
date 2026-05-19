@@ -49,15 +49,31 @@ const HUNDRED_TYPE_KEY = "wandeng-hundred-type"; // "forestry_100" | "bac_100"
 
 function CharacterSlide({ msg, characterId, level }: { msg: string; characterId: Character; level: number }) {
   const bubbleRef = useRef<HTMLDivElement>(null);
-  const [bubbleH, setBubbleH] = useState(40);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [bubbleSize, setBubbleSize] = useState({ width: 160, height: 40 });
+  const [stageWidth, setStageWidth] = useState(280);
 
   useEffect(() => {
-    if (!bubbleRef.current) return;
-    const el = bubbleRef.current;
-    const update = () => setBubbleH(el.offsetHeight);
+    const bubbleEl = bubbleRef.current;
+    const stageEl = stageRef.current;
+    if (!bubbleEl && !stageEl) return;
+
+    const update = () => {
+      if (bubbleEl) {
+        setBubbleSize({
+          width: bubbleEl.offsetWidth,
+          height: bubbleEl.offsetHeight,
+        });
+      }
+      if (stageEl) {
+        setStageWidth(stageEl.clientWidth);
+      }
+    };
+
     update();
     const ro = new ResizeObserver(update);
-    ro.observe(el);
+    if (bubbleEl) ro.observe(bubbleEl);
+    if (stageEl) ro.observe(stageEl);
     return () => ro.disconnect();
   }, [msg]);
 
@@ -65,12 +81,20 @@ function CharacterSlide({ msg, characterId, level }: { msg: string; characterId:
   const pos = positions[Math.abs(msg.split("").reduce((a, c) => a + c.charCodeAt(0), 0)) % positions.length];
 
   const CHAR_SIZE = 135;
-  // bubble bottom sits at (CHAR_SIZE - 8) above card bottom; add bubble height + 16px top breathing room
-  const neededHeight = (CHAR_SIZE - 8) + bubbleH + 20;
-  const paddingTop = Math.max(56, bubbleH + 24);
-
-  const BUBBLE_WIDTH = 200;
-  const WRAPPER_WIDTH = 260; // wider containing block so bubble doesn't shrink
+  const STAGE_PADDING = 12;
+  const STAGE_MAX_WIDTH = 300;
+  const BUBBLE_MAX_WIDTH = 220;
+  const safeStageWidth = Math.max(stageWidth, CHAR_SIZE + STAGE_PADDING * 2);
+  const charLeft = (safeStageWidth - CHAR_SIZE) / 2;
+  const maxBubbleLeft = Math.max(STAGE_PADDING, safeStageWidth - bubbleSize.width - STAGE_PADDING);
+  const bubbleLeftByPos = {
+    "top-left": Math.max(STAGE_PADDING, Math.min(maxBubbleLeft, charLeft - bubbleSize.width + 32)),
+    "top-right": Math.max(STAGE_PADDING, Math.min(maxBubbleLeft, charLeft + CHAR_SIZE - 32)),
+    top: Math.max(STAGE_PADDING, Math.min(maxBubbleLeft, (safeStageWidth - bubbleSize.width) / 2)),
+  } as const;
+  const bubbleBottom = CHAR_SIZE - 10;
+  const stageHeight = bubbleSize.height + bubbleBottom + 18;
+  const neededHeight = stageHeight + 22;
 
   const bubbleBase: React.CSSProperties = {
     position: "absolute",
@@ -81,8 +105,8 @@ function CharacterSlide({ msg, characterId, level }: { msg: string; characterId:
     fontWeight: 600,
     color: "#2F403A",
     lineHeight: 1.35,
-    width: "max-content",
-    maxWidth: BUBBLE_WIDTH,
+    width: "fit-content",
+    maxWidth: `min(${BUBBLE_MAX_WIDTH}px, calc(100% - ${STAGE_PADDING * 2}px))`,
     wordBreak: "keep-all",
     overflowWrap: "break-word",
     whiteSpace: "normal",
@@ -94,13 +118,15 @@ function CharacterSlide({ msg, characterId, level }: { msg: string; characterId:
     boxShadow: "0 3px 10px rgba(0,0,0,0.1)",
     animation: "bubblePop 0.3s ease-out both",
     zIndex: 2,
+    left: bubbleLeftByPos[pos],
+    bottom: bubbleBottom,
   };
   const posStyle: React.CSSProperties =
     pos === "top-right"
-      ? { bottom: "calc(100% - 8px)", left: "50%", borderRadius: "12px 12px 12px 4px", transformOrigin: "bottom left" }
+      ? { borderRadius: "12px 12px 12px 4px", transformOrigin: "bottom left" }
       : pos === "top-left"
-      ? { bottom: "calc(100% - 8px)", right: "50%", borderRadius: "12px 12px 4px 12px", transformOrigin: "bottom right" }
-      : { bottom: "calc(100% + 4px)", left: "50%", transform: "translateX(-50%)", borderRadius: "12px", transformOrigin: "bottom center" };
+      ? { borderRadius: "12px 12px 4px 12px", transformOrigin: "bottom right" }
+      : { borderRadius: "12px", transformOrigin: "bottom center" };
 
   return (
     <div
@@ -111,7 +137,9 @@ function CharacterSlide({ msg, characterId, level }: { msg: string; characterId:
         position: "relative",
         minHeight: Math.max(240, neededHeight),
         overflow: "hidden",
-        paddingTop,
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
       }}
     >
       <style>{`@keyframes bubblePop{0%{opacity:0;transform:scale(0.9)}100%{opacity:1;transform:scale(1)}}`}</style>
@@ -133,18 +161,25 @@ function CharacterSlide({ msg, characterId, level }: { msg: string; characterId:
         Lv.{level}
       </span>
       <div
+        ref={stageRef}
         style={{
-          position: "absolute",
-          bottom: 0,
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: WRAPPER_WIDTH,
-          display: "flex",
-          justifyContent: "center",
+          position: "relative",
+          width: "100%",
+          maxWidth: STAGE_MAX_WIDTH,
+          minHeight: stageHeight,
         }}
       >
-        <div style={{ position: "relative", width: CHAR_SIZE, height: CHAR_SIZE }}>
-          <div ref={bubbleRef} style={{ ...bubbleBase, ...posStyle }}>{msg}</div>
+        <div ref={bubbleRef} style={{ ...bubbleBase, ...posStyle }}>{msg}</div>
+        <div
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: CHAR_SIZE,
+            height: CHAR_SIZE,
+          }}
+        >
           <CharacterAnimation character={characterId} emotion="normal" size={CHAR_SIZE} />
         </div>
       </div>
