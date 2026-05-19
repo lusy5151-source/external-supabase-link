@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Tables } from "@/integrations/supabase/types";
+import { awardXp } from "@/lib/xp";
 
 type Friendship = Tables<"friendships">;
 type PublicProfile = Pick<
@@ -97,7 +98,21 @@ export function useFriends() {
       .from("friendships")
       .update({ status: "accepted" })
       .eq("id", friendshipId);
-    if (!error) fetchFriendships();
+    if (!error) {
+      fetchFriendships();
+      // XP: +10 friend accept (award to current user)
+      if (user?.id) {
+        try {
+          await awardXp({
+            userId: user.id,
+            amount: 10,
+            sourceType: "friend",
+            sourceId: friendshipId,
+            description: "친구 요청 수락",
+          });
+        } catch (e) { console.error("[awardXp friend] failed", e); }
+      }
+    }
     return { error };
   };
 

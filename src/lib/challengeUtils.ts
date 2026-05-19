@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { awardXp } from "@/lib/xp";
 
 /**
  * Recompute progress for all of a user's joined `user_challenges`
@@ -110,6 +111,18 @@ export async function updateChallengeProgress(userId: string | null | undefined)
           completed_at: completed ? new Date().toISOString() : null,
         } as any)
         .eq("id", uc.id);
+
+      if (completed) {
+        try {
+          await awardXp({
+            userId,
+            amount: 30,
+            sourceType: "challenge",
+            sourceId: ch.id,
+            description: `챌린지 달성: ${ch.title ?? ""}`,
+          });
+        } catch (e) { console.error("[awardXp challenge] failed", e); }
+      }
     }
   } catch (e) {
     console.error("[updateChallengeProgress] failed", e);

@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { awardXp } from "@/lib/xp";
 
 const QK = ["summit-claims-mine"] as const;
 
@@ -63,6 +64,28 @@ export function useSummitClaims() {
       });
       // Background refetch to stay in sync
       qc.invalidateQueries({ queryKey: QK });
+
+      // XP: award only when newly marked
+      if (data?.action === "marked" && user?.id) {
+        try {
+          const { data: m } = await (supabase as any)
+            .from("mountains")
+            .select("is_bac100, is_bac100_blackyak, name_ko, name")
+            .eq("id", mountainId)
+            .maybeSingle();
+          const isBac100 = !!(m?.is_bac100 || m?.is_bac100_blackyak);
+          const amount = isBac100 ? 100 : 50;
+          const mName = mountainName || m?.name_ko || m?.name || "산";
+          await awardXp({
+            userId: user.id,
+            amount,
+            sourceType: "summit",
+            sourceId: String(mountainId),
+            description: `${mName} 정상 인증${isBac100 ? " (100대 명산)" : ""}`,
+          });
+        } catch (e) { console.error("[awardXp summit toggle] failed", e); }
+      }
+
       return { ok: true, action: data?.action as "marked" | "unmarked", message: data?.message, mountainName };
     },
     [qc, user?.id],
