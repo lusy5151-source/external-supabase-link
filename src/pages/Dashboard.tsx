@@ -202,6 +202,14 @@ const Dashboard = () => {
         .then(({ data }) => {
           setLastHikeDate(data?.[0]?.hiked_at || null);
         });
+      (supabase as any)
+        .from("profiles")
+        .select("character_id")
+        .eq("user_id", user.id)
+        .single()
+        .then(({ data }: any) => {
+          if (data?.character_id) setCharacterId(data.character_id as Character);
+        });
     }
   }, [user]);
 
