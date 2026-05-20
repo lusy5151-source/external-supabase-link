@@ -119,32 +119,60 @@ function CharacterSlide({
   const [stageWidth, setStageWidth] = useState(280);
   const [bgSvg, setBgSvg] = useState<string>("");
 
-  const now = new Date();
-  const month = now.getMonth() + 1;
-  const hour = now.getHours();
-  // TODO: 봄/가을/겨울 SVG 추가되면 계절 자동 판단으로 변경
-  const season = "summer";
-  const timeofday =
-    hour >= 6 && hour < 12 ? "morning"
-    : hour >= 12 && hour < 14 ? "noon"
-    : hour >= 14 && hour < 18 ? "afternoon"
-    : "night";
-  const weather = "serenity";
+  const getSeason = (month: number) => {
+    if (month >= 3 && month <= 5) return "spring";
+    if (month >= 6 && month <= 8) return "summer";
+    if (month >= 9 && month <= 11) return "autumn";
+    return "winter";
+  };
+  const getTimeOfDay = (hour: number) => {
+    if (hour >= 6 && hour < 12) return "morning";
+    if (hour >= 12 && hour < 14) return "noon";
+    if (hour >= 14 && hour < 18) return "afternoon";
+    return "night";
+  };
+
+  const computeBgKey = () => {
+    const d = new Date();
+    return {
+      season: getSeason(d.getMonth() + 1),
+      timeofday: getTimeOfDay(d.getHours()),
+    };
+  };
+
+  const [bgKey, setBgKey] = useState(computeBgKey);
+  const weather = "serenity"; // TODO: 날씨 API 연동 시 동적으로 변경
+
+  // 매 분마다 시간/계절 재계산하여 자동 전환
+  useEffect(() => {
+    const id = setInterval(() => {
+      const next = computeBgKey();
+      setBgKey((prev) =>
+        prev.season === next.season && prev.timeofday === next.timeofday ? prev : next
+      );
+    }, 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const { season, timeofday } = bgKey;
 
   useEffect(() => {
-    console.log("배경 timeofday:", timeofday, "season:", season, "weather:", weather);
     const url = `https://ylcjlzlchinijvyojdbc.supabase.co/storage/v1/object/public/backgrounds/${season}-${weather}-${timeofday}-animated.svg`;
     console.log("배경 URL:", url);
+    let cancelled = false;
     fetch(url)
-      .then((res) => res.text())
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.text();
+      })
       .then((text) => {
+        if (cancelled) return;
         // Normalize root <svg ...> so it fills the container with "cover" semantics
-        let processed = text.replace(/<svg\b[^>]*>/i, (tag) => {
+        const processed = text.replace(/<svg\b[^>]*>/i, (tag) => {
           let t = tag
             .replace(/\swidth="[^"]*"/gi, "")
             .replace(/\sheight="[^"]*"/gi, "")
             .replace(/\spreserveAspectRatio="[^"]*"/gi, "");
-          // Remove width/height from inline style if present
           t = t.replace(/style="([^"]*)"/i, (_m, s) => {
             const cleaned = s
               .replace(/(?:^|;)\s*width\s*:[^;]*/gi, "")
@@ -157,6 +185,9 @@ function CharacterSlide({
         setBgSvg(processed);
       })
       .catch((err) => console.error("SVG fetch 실패:", url, err));
+    return () => {
+      cancelled = true;
+    };
   }, [season, weather, timeofday]);
 
 
