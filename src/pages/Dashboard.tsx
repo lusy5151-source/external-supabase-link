@@ -92,7 +92,6 @@ function CharacterSlide({
   xpIntoLevel,
   xpForNextLevel,
   isMax,
-  showXp = true,
   emotion = "normal",
   comfortCount = 0,
   showComfortGauge = false,
@@ -108,7 +107,6 @@ function CharacterSlide({
   xpIntoLevel: number;
   xpForNextLevel: number;
   isMax: boolean;
-  showXp?: boolean;
   emotion?: "normal" | "sad" | "angry" | "autumn";
   comfortCount?: number;
   showComfortGauge?: boolean;
