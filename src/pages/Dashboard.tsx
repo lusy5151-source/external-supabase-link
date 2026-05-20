@@ -99,7 +99,7 @@ function CharacterSlide({
   recovered = false,
 }: {
   msg: string;
-  characterId: Character;
+  characterId: Character | null;
   level: number;
   levelName: string;
   progressPct: number;
