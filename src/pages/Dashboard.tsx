@@ -243,7 +243,10 @@ function CharacterSlide({
           aria-hidden
           style={{
             position: "absolute",
-            inset: 0,
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
             zIndex: 0,
             pointerEvents: "none",
             overflow: "hidden",
@@ -251,9 +254,11 @@ function CharacterSlide({
           }}
         >
           <div
-            style={{ width: "100%", height: "100%" }}
+            className="wd-bg-svg"
+            style={{ width: "100%", height: "100%", display: "block" }}
             dangerouslySetInnerHTML={{ __html: bgSvg }}
           />
+          <style>{`.wd-bg-svg svg{width:100%!important;height:100%!important;display:block;preserveAspectRatio:xMidYMid slice;}`}</style>
         </div>
       )}
 
