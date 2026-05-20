@@ -238,6 +238,33 @@ function CharacterSlide({
         @keyframes comfortParticle{0%{opacity:0;transform:translate(-50%,0) scale(0.6)}30%{opacity:1}100%{opacity:0;transform:translate(var(--dx,0),var(--dy,-40px)) scale(1.1)}}
       `}</style>
 
+      {/* Animated SVG background (season/weather/time-of-day) */}
+      {bgSvg && (
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 0,
+            pointerEvents: "none",
+            overflow: "hidden",
+            borderRadius: 16,
+          }}
+        >
+          <div
+            style={{ width: "100%", height: "100%" }}
+            dangerouslySetInnerHTML={{
+              __html: bgSvg.replace(
+                /<svg([^>]*)>/,
+                '<svg$1 preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;display:block">'
+              ),
+            }}
+          />
+        </div>
+      )}
+
+
+
       {/* XP bar header */}
       {showXp && (
         <div
