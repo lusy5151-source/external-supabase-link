@@ -1027,7 +1027,7 @@ const Dashboard = () => {
                 {/* Slide 1: Character */}
                 <div style={{ flex: "0 0 100%", width: "100%" }}>
                   <CharacterSlide
-                    msg={comfortMsg ?? EMOTION_MSG[effectiveEmotion] ?? (ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔")}
+                    msg={comfortMsg ?? EMOTION_MSG[displayedEmotion] ?? (ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔")}
                     characterId={characterId}
                     level={xpInfo.level}
                     levelName={xpInfo.name}
@@ -1036,10 +1036,11 @@ const Dashboard = () => {
                     xpIntoLevel={xpInfo.xpIntoLevel}
                     xpForNextLevel={xpInfo.xpForNextLevel}
                     isMax={xpInfo.isMax}
-                    emotion={effectiveEmotion}
+                    emotion={displayedEmotion}
                     comfortCount={comfortCount}
-                    showComfortGauge={!isDemo && isComfortable && comfortCount < 5}
-                    onComfortTap={isComfortable && !comfortRecovered ? handleComfortTap : undefined}
+                    showComfortGauge={!isDemo && isComfortableNow && comfortCount < 5}
+                    onShortTap={!isDemo ? handleShortTap : undefined}
+                    onLongPress={!isDemo ? handleLongPress : undefined}
                     recovered={comfortRecovered}
                   />
 
