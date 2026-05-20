@@ -377,6 +377,7 @@ function CharacterSlide({
           ref={stageRef}
           style={{
             position: "relative",
+            zIndex: 1,
             width: "100%",
             maxWidth: STAGE_MAX_WIDTH,
             minHeight: stageHeight,
