@@ -137,7 +137,18 @@ function CharacterSlide({
     console.log("배경 URL:", url);
     fetch(url)
       .then((res) => res.text())
-      .then((text) => setBgSvg(text))
+      .then((text) => {
+        // Strip fixed width/height and ensure slice scaling so SVG fills container
+        let processed = text
+          .replace(/<svg([^>]*?)\swidth="[^"]*"/i, "<svg$1")
+          .replace(/<svg([^>]*?)\sheight="[^"]*"/i, "<svg$1");
+        if (/preserveAspectRatio=/i.test(processed)) {
+          processed = processed.replace(/preserveAspectRatio="[^"]*"/i, 'preserveAspectRatio="xMidYMid slice"');
+        } else {
+          processed = processed.replace(/<svg/i, '<svg preserveAspectRatio="xMidYMid slice"');
+        }
+        setBgSvg(processed);
+      })
       .catch((err) => console.error("SVG fetch 실패:", url, err));
   }, [season, weather, timeofday]);
 
@@ -243,7 +254,10 @@ function CharacterSlide({
           aria-hidden
           style={{
             position: "absolute",
-            inset: 0,
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
             zIndex: 0,
             pointerEvents: "none",
             overflow: "hidden",
@@ -251,9 +265,11 @@ function CharacterSlide({
           }}
         >
           <div
-            style={{ width: "100%", height: "100%" }}
+            className="wd-bg-svg"
+            style={{ width: "100%", height: "100%", display: "block" }}
             dangerouslySetInnerHTML={{ __html: bgSvg }}
           />
+          <style>{`.wd-bg-svg svg{width:100%!important;height:100%!important;display:block;preserveAspectRatio:xMidYMid slice;}`}</style>
         </div>
       )}
 
