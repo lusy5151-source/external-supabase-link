@@ -41,6 +41,7 @@ import { useOnboarding } from "@/contexts/OnboardingContext";
 import { useUserXp } from "@/hooks/useUserXp";
 import { useCharacterEmotion } from "@/hooks/useCharacterEmotion";
 import { useHomeMessage } from "@/hooks/useHomeMessage";
+import { useBgWeather } from "@/hooks/useBgWeather";
 
 const EMOTION_MSG: Record<"normal" | "sad" | "angry" | "autumn", string | null> = {
   normal: null,
