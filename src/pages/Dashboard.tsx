@@ -40,6 +40,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useOnboarding } from "@/contexts/OnboardingContext";
 import { useUserXp } from "@/hooks/useUserXp";
 import { useCharacterEmotion } from "@/hooks/useCharacterEmotion";
+import { useHomeMessage } from "@/hooks/useHomeMessage";
 
 const EMOTION_MSG: Record<"normal" | "sad" | "angry" | "autumn", string | null> = {
   normal: null,
