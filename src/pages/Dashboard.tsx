@@ -291,45 +291,6 @@ function CharacterSlide({
 
 
 
-      {/* XP bar header */}
-      {showXp && (
-        <div
-          style={{
-            padding: "10px 14px 8px",
-            borderBottom: "1px solid rgba(0,0,0,0.06)",
-            background: "rgba(255,255,255,0.35)",
-            position: "relative",
-            zIndex: 1,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: "#2F403A" }}>
-              Lv.{level} {levelName}
-            </span>
-            <span style={{ fontSize: 10, color: "#999" }}>
-              {isMax ? "MAX" : `다음까지 ${xpRemaining.toLocaleString()}XP`}
-            </span>
-          </div>
-          <div
-            style={{
-              marginTop: 5,
-              height: 4,
-              borderRadius: 999,
-              background: "#e0e0d8",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                width: `${progressPct}%`,
-                height: "100%",
-                background: "#C7D66D",
-                transition: "width 0.3s",
-              }}
-            />
-          </div>
-        </div>
-      )}
 
       {/* Comfort gauge — collapses smoothly when hidden */}
       <div
