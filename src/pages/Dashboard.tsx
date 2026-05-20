@@ -99,7 +99,7 @@ function CharacterSlide({
   recovered = false,
 }: {
   msg: string;
-  characterId: Character;
+  characterId: Character | null;
   level: number;
   levelName: string;
   progressPct: number;
@@ -382,17 +382,61 @@ function CharacterSlide({
             minHeight: stageHeight,
           }}
         >
-          <div ref={bubbleRef} style={{ ...bubbleBase, ...posStyle }}>{msg}</div>
-          <CharacterTapArea
-            characterId={characterId}
-            emotion={emotion}
-            size={CHAR_SIZE}
-            canTap={!!onComfortTap}
-            onTap={onComfortTap}
-            comfortCount={comfortCount}
-            recovered={recovered}
-          />
+          {characterId ? (
+            <>
+              <div ref={bubbleRef} style={{ ...bubbleBase, ...posStyle }}>{msg}</div>
+              <CharacterTapArea
+                characterId={characterId}
+                emotion={emotion}
+                size={CHAR_SIZE}
+                canTap={!!onComfortTap}
+                onTap={onComfortTap}
+                comfortCount={comfortCount}
+                recovered={recovered}
+              />
+            </>
+          ) : (
+            <Link
+              to="/character-setup"
+              aria-label="나의 캐릭터 설정하기"
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: 110,
+                height: 110,
+                borderRadius: "50%",
+                border: "2px dashed rgba(47,64,58,0.4)",
+                background: "rgba(248,250,237,0.7)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 4,
+                textDecoration: "none",
+                cursor: "pointer",
+              }}
+            >
+              <Mountain size={32} color="#2F403A" style={{ opacity: 0.5 }} />
+              <span
+                style={{
+                  fontSize: 9,
+                  fontWeight: 700,
+                  color: "#2F403A",
+                  textAlign: "center",
+                  lineHeight: 1.2,
+                  padding: "0 6px",
+                }}
+              >
+                나의 캐릭터
+                <br />
+                설정하기
+              </span>
+            </Link>
+          )}
         </div>
+
       </div>
     </div>
   );
@@ -871,7 +915,7 @@ const Dashboard = () => {
                 <div style={{ flex: "0 0 100%", width: "100%" }}>
                   <CharacterSlide
                     msg={comfortMsg ?? EMOTION_MSG[effectiveEmotion] ?? (ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔")}
-                    characterId={(characterId || "oreumi") as Character}
+                    characterId={characterId}
                     level={xpInfo.level}
                     levelName={xpInfo.name}
                     progressPct={xpInfo.progressPct}

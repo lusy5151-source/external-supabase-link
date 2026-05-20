@@ -16,7 +16,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
 
 // 캐릭터별 테마 (그라디언트 / 버튼 컬러)
-const CHARACTER_THEME: Record<Character, {
+export const CHARACTER_THEME: Record<Character, {
   gradient: string
   primary: string
   shadow: string
@@ -30,25 +30,26 @@ const CHARACTER_THEME: Record<Character, {
   peggy:    { gradient: 'linear-gradient(160deg,#FAECE7 0%,#FEF6F2 60%,#FFFFFF 100%)', primary: '#D97A4F', shadow: '0 12px 28px -10px rgba(217,122,79,0.55)' },
 }
 
-const CONFETTI_COLORS = ['#FFD166','#EF476F','#06D6A0','#118AB2','#C7D66D','#F78C6B']
+export const CONFETTI_COLORS = ['#FFD166','#EF476F','#06D6A0','#118AB2','#C7D66D','#F78C6B']
 
 interface OnboardingFlowProps {
   onComplete: (nickname: string, characterId: string) => void
 }
 
-type Scores = Record<Character, number>
+export type Scores = Record<Character, number>
 
-interface QuizOption {
+export interface QuizOption {
   label: string
   scores: Partial<Scores>
 }
 
-interface QuizQuestion {
+export interface QuizQuestion {
   question: string
   options: QuizOption[]
 }
 
-const QUIZZES: QuizQuestion[] = [
+export const QUIZZES: QuizQuestion[] = [
+
   {
     question: '산에 오를 때 가장 먼저 떠오르는 장면은?',
     options: [
@@ -96,7 +97,7 @@ const QUIZZES: QuizQuestion[] = [
   },
 ]
 
-const INITIAL_SCORES: Scores = {
+export const INITIAL_SCORES: Scores = {
   oreumi: 0,
   wandeung: 0,
   dorami: 0,
@@ -108,7 +109,8 @@ const INITIAL_SCORES: Scores = {
 
 type Step = 'nickname' | 'quiz' | 'result'
 
-function QuizPanel({
+export function QuizPanel({
+
   index,
   onSelect,
   style,

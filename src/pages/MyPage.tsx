@@ -167,7 +167,7 @@ const MyPage = () => {
               </div>
             </div>
             <button
-              onClick={() => toast("캐릭터 꾸미기는 곧 추가됩니다!")}
+              onClick={() => nav("/character-setup")}
               style={{
                 background: "#EAF3DE",
                 color: "#3B6D11",
@@ -178,7 +178,7 @@ const MyPage = () => {
                 whiteSpace: "nowrap",
               }}
             >
-              꾸미기 →
+              캐릭터 변경
             </button>
           </div>
         );
