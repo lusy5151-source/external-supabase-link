@@ -391,8 +391,8 @@ function CharacterSlide({
                 characterId={characterId}
                 emotion={emotion}
                 size={CHAR_SIZE}
-                canTap={!!onComfortTap}
-                onTap={onComfortTap}
+                onShortTap={onShortTap}
+                onLongPress={onLongPress}
                 comfortCount={comfortCount}
                 recovered={recovered}
               />
