@@ -95,7 +95,8 @@ function CharacterSlide({
   emotion = "normal",
   comfortCount = 0,
   showComfortGauge = false,
-  onComfortTap,
+  onShortTap,
+  onLongPress,
   recovered = false,
 }: {
   msg: string;
@@ -110,7 +111,8 @@ function CharacterSlide({
   emotion?: "normal" | "sad" | "angry" | "autumn";
   comfortCount?: number;
   showComfortGauge?: boolean;
-  onComfortTap?: () => void;
+  onShortTap?: () => void;
+  onLongPress?: () => void;
   recovered?: boolean;
 }) {
   const bubbleRef = useRef<HTMLDivElement>(null);
@@ -389,8 +391,8 @@ function CharacterSlide({
                 characterId={characterId}
                 emotion={emotion}
                 size={CHAR_SIZE}
-                canTap={!!onComfortTap}
-                onTap={onComfortTap}
+                onShortTap={onShortTap}
+                onLongPress={onLongPress}
                 comfortCount={comfortCount}
                 recovered={recovered}
               />
@@ -446,16 +448,16 @@ function CharacterTapArea({
   characterId,
   emotion,
   size,
-  canTap,
-  onTap,
+  onShortTap,
+  onLongPress,
   comfortCount,
   recovered,
 }: {
   characterId: Character;
   emotion: "normal" | "sad" | "angry" | "autumn";
   size: number;
-  canTap: boolean;
-  onTap?: () => void;
+  onShortTap?: () => void;
+  onLongPress?: () => void;
   comfortCount: number;
   recovered: boolean;
 }) {
@@ -463,6 +465,11 @@ function CharacterTapArea({
   const [particles, setParticles] = useState<{ id: number; emoji: string; dx: number; dy: number }[]>([]);
   const particleSeed = useRef(0);
   const prevRecovered = useRef(recovered);
+
+  // Long press detection refs
+  const longPressTimer = useRef<number | null>(null);
+  const longPressFired = useRef(false);
+  const pressStart = useRef(0);
 
   const spawnParticles = (emojis: string[], count = 3) => {
     const next = Array.from({ length: count }).map(() => {
@@ -492,8 +499,8 @@ function CharacterTapArea({
     prevRecovered.current = recovered;
   }, [recovered]);
 
-  const handleTap = () => {
-    if (!canTap) return;
+  const fireShortTap = () => {
+    console.log("[Character] short tap, emotion=", emotion);
     setBounceKey((k) => k + 1);
     if (emotion === "sad") {
       spawnParticles(COMFORT_PARTICLES.sad, 3);
@@ -501,7 +508,36 @@ function CharacterTapArea({
       const pool = comfortCount >= 3 ? COMFORT_PARTICLES_LATE_ANGRY : COMFORT_PARTICLES.angry;
       spawnParticles(pool, 3);
     }
-    onTap?.();
+    onShortTap?.();
+  };
+
+  const fireLongPress = () => {
+    console.log("[Character] long press, emotion=", emotion);
+    setBounceKey((k) => k + 1);
+    spawnParticles(["💙", "💧", "🩵"], 4);
+    onLongPress?.();
+  };
+
+  const startPress = () => {
+    longPressFired.current = false;
+    pressStart.current = Date.now();
+    if (longPressTimer.current) window.clearTimeout(longPressTimer.current);
+    longPressTimer.current = window.setTimeout(() => {
+      longPressFired.current = true;
+      fireLongPress();
+    }, 500);
+  };
+
+  const endPress = () => {
+    if (longPressTimer.current) {
+      window.clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const cancelPress = () => {
+    endPress();
+    longPressFired.current = true; // suppress click
   };
 
   const bounceAnim = recovered
@@ -510,7 +546,6 @@ function CharacterTapArea({
 
   return (
     <div
-      onClick={handleTap}
       style={{
         position: "absolute",
         bottom: 0,
@@ -518,8 +553,6 @@ function CharacterTapArea({
         transform: "translateX(-50%)",
         width: size,
         height: size,
-        cursor: canTap ? "pointer" : "default",
-        touchAction: "manipulation",
         userSelect: "none",
       }}
     >
@@ -530,10 +563,40 @@ function CharacterTapArea({
           height: "100%",
           animation: bounceKey > 0 ? bounceAnim : undefined,
           transition: "filter 0.6s ease",
+          pointerEvents: "none",
         }}
       >
         <CharacterAnimation character={characterId} emotion={emotion} size={size} />
       </div>
+      {/* Transparent tap overlay (above SVG so events always fire) */}
+      <div
+        onClick={() => {
+          if (longPressFired.current) {
+            longPressFired.current = false;
+            return;
+          }
+          fireShortTap();
+        }}
+        onTouchStart={(e) => {
+          e.stopPropagation();
+          startPress();
+        }}
+        onTouchEnd={endPress}
+        onTouchMove={cancelPress}
+        onTouchCancel={cancelPress}
+        onMouseDown={startPress}
+        onMouseUp={endPress}
+        onMouseLeave={endPress}
+        style={{
+          position: "absolute",
+          inset: 0,
+          cursor: "pointer",
+          touchAction: "manipulation",
+          WebkitTapHighlightColor: "transparent",
+          zIndex: 3,
+          background: "transparent",
+        }}
+      />
       {/* Particles */}
       {particles.map((p) => (
         <span
@@ -600,26 +663,76 @@ const Dashboard = () => {
   const charEmotion = useCharacterEmotion();
   const homeMessage = useHomeMessage();
 
-  // Comfort interaction (only for sad/angry)
+  // Comfort interaction (sad/angry) + tap-induced emotion state machine
   const [comfortCount, setComfortCount] = useState(0);
   const [comfortRecovered, setComfortRecovered] = useState(false);
+  const [induced, setInduced] = useState<null | "angry" | "sad">(null);
+  const [tapCount, setTapCount] = useState(0);
+  const tapResetTimer = useRef<number | null>(null);
+
   useEffect(() => {
     setComfortCount(0);
     setComfortRecovered(false);
+    setInduced(null);
+    setTapCount(0);
   }, [charEmotion]);
-  const isComfortable = charEmotion === "sad" || charEmotion === "angry";
-  const effectiveEmotion: "normal" | "sad" | "angry" | "autumn" = comfortRecovered ? "normal" : charEmotion;
-  const handleComfortTap = () => {
-    if (!isComfortable || comfortRecovered) return;
-    setComfortCount((c) => {
-      const next = Math.min(c + 1, 5);
-      if (next >= 5) {
-        setComfortRecovered(true);
-        void completeComfortSession();
+
+  const baseEmotion = charEmotion;
+  const displayedEmotion: "normal" | "sad" | "angry" | "autumn" = comfortRecovered
+    ? "normal"
+    : (induced ?? baseEmotion);
+  const isComfortableNow = displayedEmotion === "sad" || displayedEmotion === "angry";
+
+  const handleShortTap = () => {
+    console.log("[Dashboard] handleShortTap, displayed=", displayedEmotion, "comfort=", comfortCount, "tap=", tapCount);
+    if (comfortRecovered) return;
+    if (isComfortableNow) {
+      setComfortCount((c) => {
+        const next = Math.min(c + 1, 5);
+        if (next >= 5) {
+          setComfortRecovered(true);
+          void completeComfortSession();
+        }
+        return next;
+      });
+      return;
+    }
+    // normal / autumn → bounce + tapCount
+    setTapCount((c) => {
+      const next = c + 1;
+      if (next >= 3) {
+        console.log("[Dashboard] 3 taps → angry");
+        setInduced("angry");
+        setComfortCount(0);
+        setComfortRecovered(false);
+        return 0;
       }
       return next;
     });
+    if (tapResetTimer.current) window.clearTimeout(tapResetTimer.current);
+    tapResetTimer.current = window.setTimeout(() => setTapCount(0), 2000);
   };
+
+  const handleLongPress = () => {
+    console.log("[Dashboard] handleLongPress, displayed=", displayedEmotion);
+    if (comfortRecovered) return;
+    if (displayedEmotion === "sad") return;
+    setInduced("sad");
+    setComfortCount(0);
+    setComfortRecovered(false);
+    setTapCount(0);
+  };
+
+  // Auto-clear recovery → return to normal
+  useEffect(() => {
+    if (!comfortRecovered) return;
+    const t = window.setTimeout(() => {
+      setInduced(null);
+      setComfortRecovered(false);
+      setComfortCount(0);
+    }, 1500);
+    return () => window.clearTimeout(t);
+  }, [comfortRecovered]);
 
   const completeComfortSession = async () => {
     if (!user?.id) return;
@@ -661,9 +774,9 @@ const Dashboard = () => {
   };
 
   let comfortMsg: string | null = null;
-  if (isComfortable) {
+  if (isComfortableNow) {
     if (comfortRecovered) comfortMsg = COMFORT_RECOVERED_MSG;
-    else if (comfortCount > 0) comfortMsg = COMFORT_MSG[charEmotion][comfortCount - 1];
+    else if (comfortCount > 0) comfortMsg = COMFORT_MSG[displayedEmotion as "sad" | "angry"][comfortCount - 1];
   }
 
   const { isOnboarding } = useOnboarding();
@@ -914,7 +1027,7 @@ const Dashboard = () => {
                 {/* Slide 1: Character */}
                 <div style={{ flex: "0 0 100%", width: "100%" }}>
                   <CharacterSlide
-                    msg={comfortMsg ?? EMOTION_MSG[effectiveEmotion] ?? (ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔")}
+                    msg={comfortMsg ?? EMOTION_MSG[displayedEmotion] ?? (ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔")}
                     characterId={characterId}
                     level={xpInfo.level}
                     levelName={xpInfo.name}
@@ -923,10 +1036,11 @@ const Dashboard = () => {
                     xpIntoLevel={xpInfo.xpIntoLevel}
                     xpForNextLevel={xpInfo.xpForNextLevel}
                     isMax={xpInfo.isMax}
-                    emotion={effectiveEmotion}
+                    emotion={displayedEmotion}
                     comfortCount={comfortCount}
-                    showComfortGauge={!isDemo && isComfortable && comfortCount < 5}
-                    onComfortTap={isComfortable && !comfortRecovered ? handleComfortTap : undefined}
+                    showComfortGauge={!isDemo && isComfortableNow && comfortCount < 5}
+                    onShortTap={!isDemo ? handleShortTap : undefined}
+                    onLongPress={!isDemo ? handleLongPress : undefined}
                     recovered={comfortRecovered}
                   />
 
