@@ -135,7 +135,9 @@ function CharacterSlide({
   const weather = "serenity";
 
   useEffect(() => {
+    console.log("배경 timeofday:", timeofday, "season:", season, "weather:", weather);
     const url = `https://ylcjlzlchinijvyojdbc.supabase.co/storage/v1/object/public/backgrounds/${season}-${weather}-${timeofday}-animated.svg`;
+    console.log("배경 URL:", url);
     fetch(url)
       .then((res) => res.text())
       .then((text) => setBgSvg(text))
