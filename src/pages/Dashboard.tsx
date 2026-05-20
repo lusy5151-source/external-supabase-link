@@ -663,26 +663,76 @@ const Dashboard = () => {
   const charEmotion = useCharacterEmotion();
   const homeMessage = useHomeMessage();
 
-  // Comfort interaction (only for sad/angry)
+  // Comfort interaction (sad/angry) + tap-induced emotion state machine
   const [comfortCount, setComfortCount] = useState(0);
   const [comfortRecovered, setComfortRecovered] = useState(false);
+  const [induced, setInduced] = useState<null | "angry" | "sad">(null);
+  const [tapCount, setTapCount] = useState(0);
+  const tapResetTimer = useRef<number | null>(null);
+
   useEffect(() => {
     setComfortCount(0);
     setComfortRecovered(false);
+    setInduced(null);
+    setTapCount(0);
   }, [charEmotion]);
-  const isComfortable = charEmotion === "sad" || charEmotion === "angry";
-  const effectiveEmotion: "normal" | "sad" | "angry" | "autumn" = comfortRecovered ? "normal" : charEmotion;
-  const handleComfortTap = () => {
-    if (!isComfortable || comfortRecovered) return;
-    setComfortCount((c) => {
-      const next = Math.min(c + 1, 5);
-      if (next >= 5) {
-        setComfortRecovered(true);
-        void completeComfortSession();
+
+  const baseEmotion = charEmotion;
+  const displayedEmotion: "normal" | "sad" | "angry" | "autumn" = comfortRecovered
+    ? "normal"
+    : (induced ?? baseEmotion);
+  const isComfortableNow = displayedEmotion === "sad" || displayedEmotion === "angry";
+
+  const handleShortTap = () => {
+    console.log("[Dashboard] handleShortTap, displayed=", displayedEmotion, "comfort=", comfortCount, "tap=", tapCount);
+    if (comfortRecovered) return;
+    if (isComfortableNow) {
+      setComfortCount((c) => {
+        const next = Math.min(c + 1, 5);
+        if (next >= 5) {
+          setComfortRecovered(true);
+          void completeComfortSession();
+        }
+        return next;
+      });
+      return;
+    }
+    // normal / autumn → bounce + tapCount
+    setTapCount((c) => {
+      const next = c + 1;
+      if (next >= 3) {
+        console.log("[Dashboard] 3 taps → angry");
+        setInduced("angry");
+        setComfortCount(0);
+        setComfortRecovered(false);
+        return 0;
       }
       return next;
     });
+    if (tapResetTimer.current) window.clearTimeout(tapResetTimer.current);
+    tapResetTimer.current = window.setTimeout(() => setTapCount(0), 2000);
   };
+
+  const handleLongPress = () => {
+    console.log("[Dashboard] handleLongPress, displayed=", displayedEmotion);
+    if (comfortRecovered) return;
+    if (displayedEmotion === "sad") return;
+    setInduced("sad");
+    setComfortCount(0);
+    setComfortRecovered(false);
+    setTapCount(0);
+  };
+
+  // Auto-clear recovery → return to normal
+  useEffect(() => {
+    if (!comfortRecovered) return;
+    const t = window.setTimeout(() => {
+      setInduced(null);
+      setComfortRecovered(false);
+      setComfortCount(0);
+    }, 1500);
+    return () => window.clearTimeout(t);
+  }, [comfortRecovered]);
 
   const completeComfortSession = async () => {
     if (!user?.id) return;
