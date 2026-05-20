@@ -975,6 +975,46 @@ const Dashboard = () => {
                 ))}
               </div>
             </div>
+
+            {/* XP Level Bar — separated below the character slide */}
+            {!isDemo && (
+              <div
+                className="mt-2"
+                style={{
+                  background: "#fff",
+                  borderRadius: 12,
+                  padding: "10px 14px",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#2F403A" }}>
+                    Lv.{xpInfo.level} {xpInfo.name}
+                  </span>
+                  <span style={{ fontSize: 10, color: "#999" }}>
+                    {xpInfo.isMax ? "MAX" : `다음까지 ${xpInfo.xpRemaining.toLocaleString()}XP`}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    marginTop: 6,
+                    height: 4,
+                    borderRadius: 999,
+                    background: "#e0e0d8",
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${xpInfo.progressPct}%`,
+                      height: "100%",
+                      background: "#C7D66D",
+                      transition: "width 0.3s",
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </section>
 
