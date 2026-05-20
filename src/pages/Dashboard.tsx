@@ -253,12 +253,7 @@ function CharacterSlide({
         >
           <div
             style={{ width: "100%", height: "100%" }}
-            dangerouslySetInnerHTML={{
-              __html: bgSvg.replace(
-                /<svg([^>]*)>/,
-                '<svg$1 preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;display:block">'
-              ),
-            }}
+            dangerouslySetInnerHTML={{ __html: bgSvg }}
           />
         </div>
       )}
