@@ -122,11 +122,8 @@ function CharacterSlide({
   const now = new Date();
   const month = now.getMonth() + 1;
   const hour = now.getHours();
-  const season =
-    month >= 3 && month <= 5 ? "spring"
-    : month >= 6 && month <= 8 ? "summer"
-    : month >= 9 && month <= 11 ? "autumn"
-    : "winter";
+  // TODO: 봄/가을/겨울 SVG 추가되면 계절 자동 판단으로 변경
+  const season = "summer";
   const timeofday =
     hour >= 6 && hour < 12 ? "morning"
     : hour >= 12 && hour < 14 ? "noon"
