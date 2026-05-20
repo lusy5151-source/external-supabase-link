@@ -142,7 +142,7 @@ function CharacterSlide({
   };
 
   const [bgKey, setBgKey] = useState(computeBgKey);
-  const weather = "serenity"; // TODO: 날씨 API 연동 시 동적으로 변경
+  const weather = useBgWeather(bgKey.season);
 
   // 매 분마다 시간/계절 재계산하여 자동 전환
   useEffect(() => {
