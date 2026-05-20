@@ -92,7 +92,6 @@ function CharacterSlide({
   xpIntoLevel,
   xpForNextLevel,
   isMax,
-  showXp = true,
   emotion = "normal",
   comfortCount = 0,
   showComfortGauge = false,
@@ -108,7 +107,6 @@ function CharacterSlide({
   xpIntoLevel: number;
   xpForNextLevel: number;
   isMax: boolean;
-  showXp?: boolean;
   emotion?: "normal" | "sad" | "angry" | "autumn";
   comfortCount?: number;
   showComfortGauge?: boolean;
@@ -293,45 +291,6 @@ function CharacterSlide({
 
 
 
-      {/* XP bar header */}
-      {showXp && (
-        <div
-          style={{
-            padding: "10px 14px 8px",
-            borderBottom: "1px solid rgba(0,0,0,0.06)",
-            background: "rgba(255,255,255,0.35)",
-            position: "relative",
-            zIndex: 1,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: "#2F403A" }}>
-              Lv.{level} {levelName}
-            </span>
-            <span style={{ fontSize: 10, color: "#999" }}>
-              {isMax ? "MAX" : `다음까지 ${xpRemaining.toLocaleString()}XP`}
-            </span>
-          </div>
-          <div
-            style={{
-              marginTop: 5,
-              height: 4,
-              borderRadius: 999,
-              background: "#e0e0d8",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                width: `${progressPct}%`,
-                height: "100%",
-                background: "#C7D66D",
-                transition: "width 0.3s",
-              }}
-            />
-          </div>
-        </div>
-      )}
 
       {/* Comfort gauge — collapses smoothly when hidden */}
       <div
@@ -878,8 +837,7 @@ const Dashboard = () => {
           <div className="relative z-10">
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h1 className="text-xl font-bold text-foreground">완등</h1>
-                <p className="text-xs text-muted-foreground mt-0.5">{homeMessage || "오늘도 한 걸음 더 🏔️"}</p>
+                <p className="text-lg font-bold text-foreground">{homeMessage || "오늘도 한 걸음 더 🏔️"}</p>
               </div>
               {isDemo && (
                 <Link to="/auth" className="rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-md hover:bg-primary/90 transition-all">
@@ -921,7 +879,6 @@ const Dashboard = () => {
                     xpIntoLevel={xpInfo.xpIntoLevel}
                     xpForNextLevel={xpInfo.xpForNextLevel}
                     isMax={xpInfo.isMax}
-                    showXp={!isDemo}
                     emotion={effectiveEmotion}
                     comfortCount={comfortCount}
                     showComfortGauge={!isDemo && isComfortable && comfortCount < 5}
@@ -1018,6 +975,46 @@ const Dashboard = () => {
                 ))}
               </div>
             </div>
+
+            {/* XP Level Bar — separated below the character slide */}
+            {!isDemo && (
+              <div
+                className="mt-2"
+                style={{
+                  background: "#fff",
+                  borderRadius: 12,
+                  padding: "10px 14px",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#2F403A" }}>
+                    Lv.{xpInfo.level} {xpInfo.name}
+                  </span>
+                  <span style={{ fontSize: 10, color: "#999" }}>
+                    {xpInfo.isMax ? "MAX" : `다음까지 ${xpInfo.xpRemaining.toLocaleString()}XP`}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    marginTop: 6,
+                    height: 4,
+                    borderRadius: 999,
+                    background: "#e0e0d8",
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${xpInfo.progressPct}%`,
+                      height: "100%",
+                      background: "#C7D66D",
+                      transition: "width 0.3s",
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </section>
 
