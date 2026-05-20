@@ -248,30 +248,8 @@ function CharacterSlide({
         @keyframes comfortParticle{0%{opacity:0;transform:translate(-50%,0) scale(0.6)}30%{opacity:1}100%{opacity:0;transform:translate(var(--dx,0),var(--dy,-40px)) scale(1.1)}}
       `}</style>
 
-      {/* Animated SVG background (season/weather/time-of-day) */}
-      {bgSvg && (
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            zIndex: 0,
-            pointerEvents: "none",
-            overflow: "hidden",
-            borderRadius: 16,
-          }}
-        >
-          <div
-            className="wd-bg-svg"
-            style={{ width: "100%", height: "100%", display: "block" }}
-            dangerouslySetInnerHTML={{ __html: bgSvg }}
-          />
-          <style>{`.wd-bg-svg svg{width:100%!important;height:100%!important;display:block;preserveAspectRatio:xMidYMid slice;}`}</style>
-        </div>
-      )}
+
+
 
 
 
@@ -369,12 +347,37 @@ function CharacterSlide({
           display: "flex",
           alignItems: "flex-end",
           justifyContent: "center",
+          overflow: "hidden",
         }}
       >
+        {/* Animated SVG background (fills only this area, below the XP/comfort bars) */}
+        {bgSvg && (
+          <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              zIndex: 0,
+              pointerEvents: "none",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              className="wd-bg-svg"
+              style={{ width: "100%", height: "100%", display: "block" }}
+              dangerouslySetInnerHTML={{ __html: bgSvg }}
+            />
+            <style>{`.wd-bg-svg svg{width:100%!important;height:100%!important;display:block;}`}</style>
+          </div>
+        )}
         <div
           ref={stageRef}
           style={{
             position: "relative",
+            zIndex: 1,
             width: "100%",
             maxWidth: STAGE_MAX_WIDTH,
             minHeight: stageHeight,
