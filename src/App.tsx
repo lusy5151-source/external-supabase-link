@@ -44,6 +44,7 @@ const SocialPage = lazy(() => import("@/pages/SocialPage"));
 const AchievementsPage = lazy(() => import("@/pages/AchievementsPage"));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
 const MyPage = lazy(() => import("@/pages/MyPage"));
+const CharacterSetupPage = lazy(() => import("@/pages/CharacterSetupPage"));
 const PlansPage = lazy(() => import("@/pages/PlansPage"));
 const CreatePlanPage = lazy(() => import("@/pages/CreatePlanPage"));
 const PlanDetailPage = lazy(() => import("@/pages/PlanDetailPage"));
@@ -235,6 +236,7 @@ const AppRoutes = () => {
       <Route path="/my" element={<ProtectedRoute><LazyPage><MyPage /></LazyPage></ProtectedRoute>} />
       <Route path="/notifications" element={<ProtectedRoute><LazyPage><NotificationsPage /></LazyPage></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><LazyPage><ProfilePage /></LazyPage></ProtectedRoute>} />
+      <Route path="/character-setup" element={<ProtectedRoute><LazyPage><CharacterSetupPage /></LazyPage></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><LazyPage><AdminPage /></LazyPage></ProtectedRoute>} />
       <Route path="/admin/users" element={<ProtectedRoute><LazyPage><AdminUsersPage /></LazyPage></ProtectedRoute>} />
       <Route path="/admin/announcements" element={<ProtectedRoute><LazyPage><AdminAnnouncementsPage /></LazyPage></ProtectedRoute>} />
