@@ -594,6 +594,7 @@ const Dashboard = () => {
   const touchStartX = useRef<number | null>(null);
   const xpInfo = useUserXp();
   const charEmotion = useCharacterEmotion();
+  const homeMessage = useHomeMessage();
 
   // Comfort interaction (only for sad/angry)
   const [comfortCount, setComfortCount] = useState(0);
