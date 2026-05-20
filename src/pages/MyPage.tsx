@@ -167,7 +167,7 @@ const MyPage = () => {
               </div>
             </div>
             <button
-              onClick={() => navigate("/character-setup")}
+              onClick={() => nav("/character-setup")}
               style={{
                 background: "#EAF3DE",
                 color: "#3B6D11",
