@@ -1032,6 +1032,36 @@ export type Database = {
           },
         ]
       }
+      home_messages: {
+        Row: {
+          condition: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          message: string
+          season: string | null
+          time_of_day: string | null
+        }
+        Insert: {
+          condition?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          message: string
+          season?: string | null
+          time_of_day?: string | null
+        }
+        Update: {
+          condition?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          message?: string
+          season?: string | null
+          time_of_day?: string | null
+        }
+        Relationships: []
+      }
       journal_comments: {
         Row: {
           content: string
