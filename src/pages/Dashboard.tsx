@@ -315,6 +315,8 @@ function CharacterSlide({
           padding: showComfortGauge ? "6px 14px 8px" : "0 14px",
           borderBottom: showComfortGauge ? "1px solid rgba(0,0,0,0.06)" : "none",
           background: "rgba(255,255,255,0.35)",
+          position: "relative",
+          zIndex: 1,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
