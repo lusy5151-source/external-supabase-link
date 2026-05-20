@@ -137,7 +137,18 @@ function CharacterSlide({
     console.log("배경 URL:", url);
     fetch(url)
       .then((res) => res.text())
-      .then((text) => setBgSvg(text))
+      .then((text) => {
+        // Strip fixed width/height and ensure slice scaling so SVG fills container
+        let processed = text
+          .replace(/<svg([^>]*?)\swidth="[^"]*"/i, "<svg$1")
+          .replace(/<svg([^>]*?)\sheight="[^"]*"/i, "<svg$1");
+        if (/preserveAspectRatio=/i.test(processed)) {
+          processed = processed.replace(/preserveAspectRatio="[^"]*"/i, 'preserveAspectRatio="xMidYMid slice"');
+        } else {
+          processed = processed.replace(/<svg/i, '<svg preserveAspectRatio="xMidYMid slice"');
+        }
+        setBgSvg(processed);
+      })
       .catch((err) => console.error("SVG fetch 실패:", url, err));
   }, [season, weather, timeofday]);
 
