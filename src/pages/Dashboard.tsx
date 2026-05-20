@@ -446,16 +446,16 @@ function CharacterTapArea({
   characterId,
   emotion,
   size,
-  canTap,
-  onTap,
+  onShortTap,
+  onLongPress,
   comfortCount,
   recovered,
 }: {
   characterId: Character;
   emotion: "normal" | "sad" | "angry" | "autumn";
   size: number;
-  canTap: boolean;
-  onTap?: () => void;
+  onShortTap?: () => void;
+  onLongPress?: () => void;
   comfortCount: number;
   recovered: boolean;
 }) {
@@ -463,6 +463,11 @@ function CharacterTapArea({
   const [particles, setParticles] = useState<{ id: number; emoji: string; dx: number; dy: number }[]>([]);
   const particleSeed = useRef(0);
   const prevRecovered = useRef(recovered);
+
+  // Long press detection refs
+  const longPressTimer = useRef<number | null>(null);
+  const longPressFired = useRef(false);
+  const pressStart = useRef(0);
 
   const spawnParticles = (emojis: string[], count = 3) => {
     const next = Array.from({ length: count }).map(() => {
@@ -492,8 +497,8 @@ function CharacterTapArea({
     prevRecovered.current = recovered;
   }, [recovered]);
 
-  const handleTap = () => {
-    if (!canTap) return;
+  const fireShortTap = () => {
+    console.log("[Character] short tap, emotion=", emotion);
     setBounceKey((k) => k + 1);
     if (emotion === "sad") {
       spawnParticles(COMFORT_PARTICLES.sad, 3);
@@ -501,7 +506,36 @@ function CharacterTapArea({
       const pool = comfortCount >= 3 ? COMFORT_PARTICLES_LATE_ANGRY : COMFORT_PARTICLES.angry;
       spawnParticles(pool, 3);
     }
-    onTap?.();
+    onShortTap?.();
+  };
+
+  const fireLongPress = () => {
+    console.log("[Character] long press, emotion=", emotion);
+    setBounceKey((k) => k + 1);
+    spawnParticles(["💙", "💧", "🩵"], 4);
+    onLongPress?.();
+  };
+
+  const startPress = () => {
+    longPressFired.current = false;
+    pressStart.current = Date.now();
+    if (longPressTimer.current) window.clearTimeout(longPressTimer.current);
+    longPressTimer.current = window.setTimeout(() => {
+      longPressFired.current = true;
+      fireLongPress();
+    }, 500);
+  };
+
+  const endPress = () => {
+    if (longPressTimer.current) {
+      window.clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const cancelPress = () => {
+    endPress();
+    longPressFired.current = true; // suppress click
   };
 
   const bounceAnim = recovered
@@ -510,7 +544,6 @@ function CharacterTapArea({
 
   return (
     <div
-      onClick={handleTap}
       style={{
         position: "absolute",
         bottom: 0,
@@ -518,8 +551,6 @@ function CharacterTapArea({
         transform: "translateX(-50%)",
         width: size,
         height: size,
-        cursor: canTap ? "pointer" : "default",
-        touchAction: "manipulation",
         userSelect: "none",
       }}
     >
@@ -530,10 +561,40 @@ function CharacterTapArea({
           height: "100%",
           animation: bounceKey > 0 ? bounceAnim : undefined,
           transition: "filter 0.6s ease",
+          pointerEvents: "none",
         }}
       >
         <CharacterAnimation character={characterId} emotion={emotion} size={size} />
       </div>
+      {/* Transparent tap overlay (above SVG so events always fire) */}
+      <div
+        onClick={() => {
+          if (longPressFired.current) {
+            longPressFired.current = false;
+            return;
+          }
+          fireShortTap();
+        }}
+        onTouchStart={(e) => {
+          e.stopPropagation();
+          startPress();
+        }}
+        onTouchEnd={endPress}
+        onTouchMove={cancelPress}
+        onTouchCancel={cancelPress}
+        onMouseDown={startPress}
+        onMouseUp={endPress}
+        onMouseLeave={endPress}
+        style={{
+          position: "absolute",
+          inset: 0,
+          cursor: "pointer",
+          touchAction: "manipulation",
+          WebkitTapHighlightColor: "transparent",
+          zIndex: 3,
+          background: "transparent",
+        }}
+      />
       {/* Particles */}
       {particles.map((p) => (
         <span
