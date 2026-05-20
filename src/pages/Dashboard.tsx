@@ -878,7 +878,7 @@ const Dashboard = () => {
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h1 className="text-xl font-bold text-foreground">완등</h1>
-                <p className="text-xs text-muted-foreground mt-0.5">오늘도 한 걸음 더 🏔️</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{homeMessage || "오늘도 한 걸음 더 🏔️"}</p>
               </div>
               {isDemo && (
                 <Link to="/auth" className="rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-md hover:bg-primary/90 transition-all">
