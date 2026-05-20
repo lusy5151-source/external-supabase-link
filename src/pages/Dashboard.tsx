@@ -915,7 +915,7 @@ const Dashboard = () => {
                 <div style={{ flex: "0 0 100%", width: "100%" }}>
                   <CharacterSlide
                     msg={comfortMsg ?? EMOTION_MSG[effectiveEmotion] ?? (ctaCard?.msg || "오늘도 멋진 산행 되세요! 🏔")}
-                    characterId={(characterId || "oreumi") as Character}
+                    characterId={characterId}
                     level={xpInfo.level}
                     levelName={xpInfo.name}
                     progressPct={xpInfo.progressPct}
