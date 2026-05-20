@@ -95,7 +95,8 @@ function CharacterSlide({
   emotion = "normal",
   comfortCount = 0,
   showComfortGauge = false,
-  onComfortTap,
+  onShortTap,
+  onLongPress,
   recovered = false,
 }: {
   msg: string;
@@ -110,7 +111,8 @@ function CharacterSlide({
   emotion?: "normal" | "sad" | "angry" | "autumn";
   comfortCount?: number;
   showComfortGauge?: boolean;
-  onComfortTap?: () => void;
+  onShortTap?: () => void;
+  onLongPress?: () => void;
   recovered?: boolean;
 }) {
   const bubbleRef = useRef<HTMLDivElement>(null);
