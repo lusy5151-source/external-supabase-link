@@ -880,7 +880,6 @@ const Dashboard = () => {
                     xpIntoLevel={xpInfo.xpIntoLevel}
                     xpForNextLevel={xpInfo.xpForNextLevel}
                     isMax={xpInfo.isMax}
-                    showXp={!isDemo}
                     emotion={effectiveEmotion}
                     comfortCount={comfortCount}
                     showComfortGauge={!isDemo && isComfortable && comfortCount < 5}
