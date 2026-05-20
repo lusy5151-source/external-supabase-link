@@ -354,6 +354,7 @@ function CharacterSlide({
         className="p-4"
         style={{
           position: "relative",
+          zIndex: 1,
           minHeight: Math.max(220, neededHeight),
           display: "flex",
           alignItems: "flex-end",
