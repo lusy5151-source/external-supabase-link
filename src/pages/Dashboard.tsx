@@ -272,6 +272,8 @@ function CharacterSlide({
             padding: "10px 14px 8px",
             borderBottom: "1px solid rgba(0,0,0,0.06)",
             background: "rgba(255,255,255,0.35)",
+            position: "relative",
+            zIndex: 1,
           }}
         >
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
