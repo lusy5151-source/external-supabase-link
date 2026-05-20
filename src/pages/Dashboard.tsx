@@ -117,6 +117,32 @@ function CharacterSlide({
   const stageRef = useRef<HTMLDivElement>(null);
   const [bubbleSize, setBubbleSize] = useState({ width: 160, height: 40 });
   const [stageWidth, setStageWidth] = useState(280);
+  const [bgSvg, setBgSvg] = useState<string>("");
+
+  useEffect(() => {
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const hour = now.getHours();
+    const season =
+      month >= 3 && month <= 5 ? "spring"
+      : month >= 6 && month <= 8 ? "summer"
+      : month >= 9 && month <= 11 ? "autumn"
+      : "winter";
+    const timeofday =
+      hour >= 6 && hour < 12 ? "morning"
+      : hour >= 12 && hour < 14 ? "noon"
+      : hour >= 14 && hour < 18 ? "afternoon"
+      : "night";
+    const weather = "serenity";
+    const url = `https://ylcjlzlchinijvyojdbc.supabase.co/storage/v1/object/public/backgrounds/${season}-${weather}-${timeofday}-animated.svg`;
+    let cancelled = false;
+    fetch(url)
+      .then((r) => (r.ok ? r.text() : ""))
+      .then((txt) => { if (!cancelled && txt) setBgSvg(txt); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
 
   useEffect(() => {
     const bubbleEl = bubbleRef.current;
@@ -212,6 +238,33 @@ function CharacterSlide({
         @keyframes comfortParticle{0%{opacity:0;transform:translate(-50%,0) scale(0.6)}30%{opacity:1}100%{opacity:0;transform:translate(var(--dx,0),var(--dy,-40px)) scale(1.1)}}
       `}</style>
 
+      {/* Animated SVG background (season/weather/time-of-day) */}
+      {bgSvg && (
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 0,
+            pointerEvents: "none",
+            overflow: "hidden",
+            borderRadius: 16,
+          }}
+        >
+          <div
+            style={{ width: "100%", height: "100%" }}
+            dangerouslySetInnerHTML={{
+              __html: bgSvg.replace(
+                /<svg([^>]*)>/,
+                '<svg$1 preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;display:block">'
+              ),
+            }}
+          />
+        </div>
+      )}
+
+
+
       {/* XP bar header */}
       {showXp && (
         <div
@@ -219,6 +272,8 @@ function CharacterSlide({
             padding: "10px 14px 8px",
             borderBottom: "1px solid rgba(0,0,0,0.06)",
             background: "rgba(255,255,255,0.35)",
+            position: "relative",
+            zIndex: 1,
           }}
         >
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
@@ -260,6 +315,8 @@ function CharacterSlide({
           padding: showComfortGauge ? "6px 14px 8px" : "0 14px",
           borderBottom: showComfortGauge ? "1px solid rgba(0,0,0,0.06)" : "none",
           background: "rgba(255,255,255,0.35)",
+          position: "relative",
+          zIndex: 1,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
@@ -297,6 +354,7 @@ function CharacterSlide({
         className="p-4"
         style={{
           position: "relative",
+          zIndex: 1,
           minHeight: Math.max(220, neededHeight),
           display: "flex",
           alignItems: "flex-end",
