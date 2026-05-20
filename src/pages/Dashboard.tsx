@@ -138,15 +138,22 @@ function CharacterSlide({
     fetch(url)
       .then((res) => res.text())
       .then((text) => {
-        // Strip fixed width/height and ensure slice scaling so SVG fills container
-        let processed = text
-          .replace(/<svg([^>]*?)\swidth="[^"]*"/i, "<svg$1")
-          .replace(/<svg([^>]*?)\sheight="[^"]*"/i, "<svg$1");
-        if (/preserveAspectRatio=/i.test(processed)) {
-          processed = processed.replace(/preserveAspectRatio="[^"]*"/i, 'preserveAspectRatio="xMidYMid slice"');
-        } else {
-          processed = processed.replace(/<svg/i, '<svg preserveAspectRatio="xMidYMid slice"');
-        }
+        // Normalize root <svg ...> so it fills the container with "cover" semantics
+        let processed = text.replace(/<svg\b[^>]*>/i, (tag) => {
+          let t = tag
+            .replace(/\swidth="[^"]*"/gi, "")
+            .replace(/\sheight="[^"]*"/gi, "")
+            .replace(/\spreserveAspectRatio="[^"]*"/gi, "");
+          // Remove width/height from inline style if present
+          t = t.replace(/style="([^"]*)"/i, (_m, s) => {
+            const cleaned = s
+              .replace(/(?:^|;)\s*width\s*:[^;]*/gi, "")
+              .replace(/(?:^|;)\s*height\s*:[^;]*/gi, "")
+              .replace(/^;+/, "");
+            return `style="${cleaned}"`;
+          });
+          return t.replace(/<svg\b/i, '<svg preserveAspectRatio="xMidYMid slice" width="100%" height="100%"');
+        });
         setBgSvg(processed);
       })
       .catch((err) => console.error("SVG fetch 실패:", url, err));
