@@ -774,9 +774,9 @@ const Dashboard = () => {
   };
 
   let comfortMsg: string | null = null;
-  if (isComfortable) {
+  if (isComfortableNow) {
     if (comfortRecovered) comfortMsg = COMFORT_RECOVERED_MSG;
-    else if (comfortCount > 0) comfortMsg = COMFORT_MSG[charEmotion][comfortCount - 1];
+    else if (comfortCount > 0) comfortMsg = COMFORT_MSG[displayedEmotion as "sad" | "angry"][comfortCount - 1];
   }
 
   const { isOnboarding } = useOnboarding();
