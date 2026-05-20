@@ -119,29 +119,29 @@ function CharacterSlide({
   const [stageWidth, setStageWidth] = useState(280);
   const [bgSvg, setBgSvg] = useState<string>("");
 
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const hour = now.getHours();
+  const season =
+    month >= 3 && month <= 5 ? "spring"
+    : month >= 6 && month <= 8 ? "summer"
+    : month >= 9 && month <= 11 ? "autumn"
+    : "winter";
+  const timeofday =
+    hour >= 6 && hour < 12 ? "morning"
+    : hour >= 12 && hour < 14 ? "noon"
+    : hour >= 14 && hour < 18 ? "afternoon"
+    : "night";
+  const weather = "serenity";
+
   useEffect(() => {
-    const now = new Date();
-    const month = now.getMonth() + 1;
-    const hour = now.getHours();
-    const season =
-      month >= 3 && month <= 5 ? "spring"
-      : month >= 6 && month <= 8 ? "summer"
-      : month >= 9 && month <= 11 ? "autumn"
-      : "winter";
-    const timeofday =
-      hour >= 6 && hour < 12 ? "morning"
-      : hour >= 12 && hour < 14 ? "noon"
-      : hour >= 14 && hour < 18 ? "afternoon"
-      : "night";
-    const weather = "serenity";
     const url = `https://ylcjlzlchinijvyojdbc.supabase.co/storage/v1/object/public/backgrounds/${season}-${weather}-${timeofday}-animated.svg`;
-    let cancelled = false;
     fetch(url)
-      .then((r) => (r.ok ? r.text() : ""))
-      .then((txt) => { if (!cancelled && txt) setBgSvg(txt); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, []);
+      .then((res) => res.text())
+      .then((text) => setBgSvg(text))
+      .catch((err) => console.error("SVG fetch 실패:", url, err));
+  }, [season, weather, timeofday]);
+
 
 
   useEffect(() => {
