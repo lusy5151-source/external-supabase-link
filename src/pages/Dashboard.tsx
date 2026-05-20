@@ -347,8 +347,32 @@ function CharacterSlide({
           display: "flex",
           alignItems: "flex-end",
           justifyContent: "center",
+          overflow: "hidden",
         }}
       >
+        {/* Animated SVG background (fills only this area, below the XP/comfort bars) */}
+        {bgSvg && (
+          <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              zIndex: 0,
+              pointerEvents: "none",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              className="wd-bg-svg"
+              style={{ width: "100%", height: "100%", display: "block" }}
+              dangerouslySetInnerHTML={{ __html: bgSvg }}
+            />
+            <style>{`.wd-bg-svg svg{width:100%!important;height:100%!important;display:block;}`}</style>
+          </div>
+        )}
         <div
           ref={stageRef}
           style={{
