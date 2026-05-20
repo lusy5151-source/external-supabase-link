@@ -41,6 +41,7 @@ import { useOnboarding } from "@/contexts/OnboardingContext";
 import { useUserXp } from "@/hooks/useUserXp";
 import { useCharacterEmotion } from "@/hooks/useCharacterEmotion";
 import { useHomeMessage } from "@/hooks/useHomeMessage";
+import { useBgWeather } from "@/hooks/useBgWeather";
 
 const EMOTION_MSG: Record<"normal" | "sad" | "angry" | "autumn", string | null> = {
   normal: null,
@@ -142,7 +143,7 @@ function CharacterSlide({
   };
 
   const [bgKey, setBgKey] = useState(computeBgKey);
-  const weather = "serenity"; // TODO: 날씨 API 연동 시 동적으로 변경
+  const weather = useBgWeather(bgKey.season);
 
   // 매 분마다 시간/계절 재계산하여 자동 전환
   useEffect(() => {

@@ -3700,6 +3700,30 @@ export type Database = {
           },
         ]
       }
+      weather_code_map: {
+        Row: {
+          description: string | null
+          id: number
+          owm_code_max: number
+          owm_code_min: number
+          weather_key: string
+        }
+        Insert: {
+          description?: string | null
+          id?: number
+          owm_code_max: number
+          owm_code_min: number
+          weather_key: string
+        }
+        Update: {
+          description?: string | null
+          id?: number
+          owm_code_max?: number
+          owm_code_min?: number
+          weather_key?: string
+        }
+        Relationships: []
+      }
       xp_log: {
         Row: {
           created_at: string | null
