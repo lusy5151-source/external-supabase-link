@@ -141,9 +141,10 @@ const ChallengePage = () => {
   };
 
   useEffect(() => {
+    if (!user?.id) return;
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user?.id]);
 
   // Group ladder by group key (sorted by level ascending)
   const ladders = useMemo(() => {
