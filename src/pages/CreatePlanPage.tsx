@@ -451,7 +451,7 @@ const CreatePlanPage = () => {
       <div
         className="sticky -mx-5"
         style={{
-          bottom: "calc(92px + env(safe-area-inset-bottom, 0px))",
+          bottom: "calc(100px + env(safe-area-inset-bottom, 0px))",
           background: "hsl(var(--color-background-primary))",
           borderTop: "0.5px solid hsl(var(--color-border-tertiary))",
           padding: "16px 20px",

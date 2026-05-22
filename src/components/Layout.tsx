@@ -27,8 +27,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { unreadCount: notifUnread } = useNotifications();
 
   const restrictedTabs = new Set(["/records", "/my"]);
-  const tabBarSafeBottom = "calc(env(safe-area-inset-bottom, 0px) + 16px)";
-  const tabBarReservedSpace = "calc(92px + env(safe-area-inset-bottom, 0px))";
+  const tabBarSafeBottom = "calc(env(safe-area-inset-bottom, 0px) + 22px)";
+  const tabBarReservedSpace = "calc(100px + env(safe-area-inset-bottom, 0px))";
 
   const handleNavClick = (e: React.MouseEvent, to: string) => {
     if (!user && isGuest && restrictedTabs.has(to)) {
