@@ -27,8 +27,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { unreadCount: notifUnread } = useNotifications();
 
   const restrictedTabs = new Set(["/records", "/my"]);
-  const tabBarSafeBottom = "calc(env(safe-area-inset-bottom, 0px) + 22px)";
-  const tabBarReservedSpace = "calc(100px + env(safe-area-inset-bottom, 0px))";
+  const tabBarSafeBottom = "calc(env(safe-area-inset-bottom, 0px) + 8px)";
+  const tabBarReservedSpace = "calc(76px + env(safe-area-inset-bottom, 0px))";
 
   const handleNavClick = (e: React.MouseEvent, to: string) => {
     if (!user && isGuest && restrictedTabs.has(to)) {
@@ -126,7 +126,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </span>
         </Link>
 
-        <div className="container mx-auto flex items-center justify-around px-2" style={{ paddingTop: 10, paddingBottom: 12 }}>
+        <div className="container mx-auto flex items-center justify-around px-2" style={{ paddingTop: 6, paddingBottom: 4 }}>
           {navItems.map((item, idx) => {
             if (!item) {
               return <div key="fab-placeholder" className="flex-shrink-0" style={{ width: 44 }} />;
