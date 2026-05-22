@@ -387,7 +387,7 @@ const PlansPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user?.id]);
 
   if (!user || isOnboarding) {
     return <DemoPlansView />;
