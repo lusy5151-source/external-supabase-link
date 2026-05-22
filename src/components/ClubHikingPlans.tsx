@@ -506,7 +506,7 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
             style={{
               borderRadius: "20px 20px 0 0",
               maxHeight: "calc(100dvh - 120px)",
-              marginBottom: "calc(64px + env(safe-area-inset-bottom, 0px))",
+              marginBottom: "calc(84px + env(safe-area-inset-bottom, 0px))",
             }}
             onClick={(e) => e.stopPropagation()}
           >
