@@ -332,7 +332,7 @@ const PlansPage = () => {
           meeting_location: r.meeting_location,
           group_id: r.group_id,
           mountain_name: mountainNameMap.get(r.mountain_id) || null,
-          group_name: r.hiking_group?.name || null,
+          group_name: (r.group_id && groupNameMap.get(r.group_id)) || null,
           role,
           participant_count: 0,
           journal_id: null,
