@@ -15,15 +15,16 @@ const SplashScreen: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
       className={`fixed inset-0 z-[9999] transition-opacity duration-500 ${
         fadeOut ? "opacity-0" : "opacity-100"
       }`}
-      style={{ background: "#E8EEF2" }}
-    >
-      <img
-        src={splashImage}
-        alt="완등"
-        className="w-full h-full object-cover"
-        draggable={false}
-      />
-    </div>
+      style={{
+        backgroundColor: "#E8EEF2",
+        backgroundImage: `url(${splashImage})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center bottom",
+        backgroundRepeat: "no-repeat",
+      }}
+      aria-label="완등"
+      role="img"
+    />
   );
 };
 
