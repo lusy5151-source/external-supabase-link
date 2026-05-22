@@ -126,7 +126,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </span>
         </Link>
 
-        <div className="container mx-auto flex items-center justify-around px-2" style={{ paddingTop: 10, paddingBottom: 12 }}>
+        <div className="container mx-auto flex items-center justify-around px-2" style={{ paddingTop: 6, paddingBottom: 4 }}>
           {navItems.map((item, idx) => {
             if (!item) {
               return <div key="fab-placeholder" className="flex-shrink-0" style={{ width: 44 }} />;
