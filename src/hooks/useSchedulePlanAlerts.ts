@@ -34,10 +34,11 @@ const scheduleFor = async () => {
 
   const today = new Date().toISOString().split("T")[0];
 
-  // Plans I'm involved in (creator or participant)
+  // Plans I'm involved in (creator or participant) — no FK between hiking_plans and mountains,
+  // so fetch mountain names separately.
   const { data: createdPlans } = await supabase
     .from("hiking_plans")
-    .select("id, planned_date, mountain_id, mountains:mountain_id (name_ko)")
+    .select("id, planned_date, mountain_id")
     .eq("creator_id", user.id)
     .gte("planned_date", today);
 
@@ -48,10 +49,10 @@ const scheduleFor = async () => {
 
   const partIds = (parts || []).map((p: any) => p.plan_id);
   let joined: any[] = [];
-  if (partIds.length) {
+  if (partIds.length > 0) {
     const { data } = await supabase
       .from("hiking_plans")
-      .select("id, planned_date, mountain_id, mountains:mountain_id (name_ko)")
+      .select("id, planned_date, mountain_id")
       .in("id", partIds)
       .gte("planned_date", today);
     joined = data || [];
@@ -59,11 +60,25 @@ const scheduleFor = async () => {
 
   const all = [...(createdPlans || []), ...joined];
   const unique = Array.from(new Map(all.map((p: any) => [p.id, p])).values());
+  if (unique.length === 0) return;
+
+  // Resolve mountain names in a separate query
+  const mountainIds = Array.from(
+    new Set(unique.map((p: any) => p.mountain_id).filter((id: any) => id != null))
+  );
+  const nameMap = new Map<number, string>();
+  if (mountainIds.length > 0) {
+    const { data: mts } = await supabase
+      .from("mountains")
+      .select("id, name_ko")
+      .in("id", mountainIds as number[]);
+    (mts || []).forEach((m: any) => nameMap.set(m.id, m.name_ko));
+  }
 
   const now = Date.now();
 
   unique.forEach((p: any) => {
-    const mountainName = p.mountains?.name_ko || "등산";
+    const mountainName = nameMap.get(p.mountain_id) || "등산";
     const planDate = new Date(p.planned_date);
 
     // D-1 at 20:00 the night before
@@ -81,36 +96,19 @@ const scheduleFor = async () => {
     const dMinus1Delay = dMinus1.getTime() - now;
     const dDayDelay = dDay.getTime() - now;
 
-    // If we're past D-1 time but still on D-1 day (or close), fire immediately
     if (dMinus1Delay <= 0 && dMinus1Delay > -12 * 3600_000) {
-      fire(
-        dMinus1Key,
-        `내일 ${mountainName} 등산이에요! 🏔`,
-        "준비물을 미리 챙겨두세요!"
-      );
+      fire(dMinus1Key, `내일 ${mountainName} 등산이에요! 🏔`, "준비물을 미리 챙겨두세요!");
     } else if (dMinus1Delay > 0 && dMinus1Delay < 24 * 3600_000) {
       setTimeout(() => {
-        fire(
-          dMinus1Key,
-          `내일 ${mountainName} 등산이에요! 🏔`,
-          "준비물을 미리 챙겨두세요!"
-        );
+        fire(dMinus1Key, `내일 ${mountainName} 등산이에요! 🏔`, "준비물을 미리 챙겨두세요!");
       }, dMinus1Delay);
     }
 
     if (dDayDelay <= 0 && dDayDelay > -12 * 3600_000) {
-      fire(
-        dDayKey,
-        `오늘 ${mountainName} 등산 날이에요! 🚩`,
-        "즐거운 등산 되세요 💪 정상 인증 잊지 마세요!"
-      );
+      fire(dDayKey, `오늘 ${mountainName} 등산 날이에요! 🚩`, "즐거운 등산 되세요 💪 정상 인증 잊지 마세요!");
     } else if (dDayDelay > 0 && dDayDelay < 24 * 3600_000) {
       setTimeout(() => {
-        fire(
-          dDayKey,
-          `오늘 ${mountainName} 등산 날이에요! 🚩`,
-          "즐거운 등산 되세요 💪 정상 인증 잊지 마세요!"
-        );
+        fire(dDayKey, `오늘 ${mountainName} 등산 날이에요! 🚩`, "즐거운 등산 되세요 💪 정상 인증 잊지 마세요!");
       }, dDayDelay);
     }
   });
