@@ -183,7 +183,10 @@ const HikingShareCard = ({ mountain, record, sharedCompletion, photoUrl }: Hikin
       )}
 
       {/* Sticky save button area */}
-      <div className="fixed bottom-20 left-0 right-0 z-40 px-4 pb-[env(safe-area-inset-bottom)]">
+      <div
+        className="fixed left-0 right-0 z-40 px-4 pb-[env(safe-area-inset-bottom)]"
+        style={{ bottom: "calc(84px + env(safe-area-inset-bottom, 0px))" }}
+      >
         <div className="max-w-[400px] mx-auto flex gap-2">
           <Button
             className="flex-1 gap-2 rounded-xl h-12 text-sm font-semibold shadow-lg"
