@@ -254,7 +254,7 @@ const PlansPage = () => {
     (async () => {
       try {
         const PLAN_COLS =
-          "id, creator_id, mountain_id, trail_name, estimated_distance_km, estimated_duration_minutes, planned_date, start_time, status, is_public, meeting_location, group_id, hiking_group:group_id (name)";
+          "id, creator_id, mountain_id, trail_name, estimated_distance_km, estimated_duration_minutes, planned_date, start_time, status, is_public, meeting_location, group_id";
 
         const { data: created, error: e1 } = await (supabase as any)
           .from("hiking_plans")
@@ -299,6 +299,23 @@ const PlansPage = () => {
             .select("id, name_ko")
             .in("id", mountainIds);
           (mtns || []).forEach((m: any) => mountainNameMap.set(m.id, m.name_ko));
+        }
+
+        // Resolve group names separately (no FK between hiking_plans and hiking_group)
+        const groupIds = Array.from(
+          new Set(
+            [...(created || []), ...joined]
+              .map((r: any) => r.group_id)
+              .filter((id: any) => id != null)
+          )
+        );
+        const groupNameMap = new Map<string, string>();
+        if (groupIds.length) {
+          const { data: grps } = await (supabase as any)
+            .from("hiking_group")
+            .select("id, name")
+            .in("id", groupIds);
+          (grps || []).forEach((g: any) => groupNameMap.set(g.id, g.name));
         }
 
         const mapRow = (r: any, role: PlanRole): MyPlan => ({
