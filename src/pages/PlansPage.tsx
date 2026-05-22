@@ -254,7 +254,7 @@ const PlansPage = () => {
     (async () => {
       try {
         const PLAN_COLS =
-          "id, creator_id, mountain_id, trail_name, estimated_distance_km, estimated_duration_minutes, planned_date, start_time, status, is_public, meeting_location, group_id, hiking_group:group_id (name)";
+          "id, creator_id, mountain_id, trail_name, estimated_distance_km, estimated_duration_minutes, planned_date, start_time, status, is_public, meeting_location, group_id";
 
         const { data: created, error: e1 } = await (supabase as any)
           .from("hiking_plans")
@@ -301,6 +301,23 @@ const PlansPage = () => {
           (mtns || []).forEach((m: any) => mountainNameMap.set(m.id, m.name_ko));
         }
 
+        // Resolve group names separately (no FK between hiking_plans and hiking_group)
+        const groupIds = Array.from(
+          new Set(
+            [...(created || []), ...joined]
+              .map((r: any) => r.group_id)
+              .filter((id: any) => id != null)
+          )
+        );
+        const groupNameMap = new Map<string, string>();
+        if (groupIds.length) {
+          const { data: grps } = await (supabase as any)
+            .from("hiking_group")
+            .select("id, name")
+            .in("id", groupIds);
+          (grps || []).forEach((g: any) => groupNameMap.set(g.id, g.name));
+        }
+
         const mapRow = (r: any, role: PlanRole): MyPlan => ({
           id: r.id,
           creator_id: r.creator_id,
@@ -315,7 +332,7 @@ const PlansPage = () => {
           meeting_location: r.meeting_location,
           group_id: r.group_id,
           mountain_name: mountainNameMap.get(r.mountain_id) || null,
-          group_name: r.hiking_group?.name || null,
+          group_name: (r.group_id && groupNameMap.get(r.group_id)) || null,
           role,
           participant_count: 0,
           journal_id: null,
@@ -370,7 +387,7 @@ const PlansPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user?.id]);
 
   if (!user || isOnboarding) {
     return <DemoPlansView />;
