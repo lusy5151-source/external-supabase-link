@@ -27,6 +27,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { unreadCount: notifUnread } = useNotifications();
 
   const restrictedTabs = new Set(["/records", "/my"]);
+  const tabBarSafeBottom = "calc(env(safe-area-inset-bottom, 0px) + 22px)";
+  const tabBarReservedSpace = "calc(100px + env(safe-area-inset-bottom, 0px))";
 
   const handleNavClick = (e: React.MouseEvent, to: string) => {
     if (!user && isGuest && restrictedTabs.has(to)) {
@@ -79,7 +81,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       <main
         className="container mx-auto px-5 py-7"
-        style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 16px))" }}
+        style={{ paddingBottom: tabBarReservedSpace }}
       >
         {children}
       </main>
@@ -92,7 +94,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         style={{
           background: "hsl(var(--color-background-primary))",
           borderTop: "0.5px solid hsl(var(--color-border-tertiary) / 0.12)",
-          paddingBottom: "env(safe-area-inset-bottom, 16px)",
+          paddingBottom: tabBarSafeBottom,
         }}
       >
         {/* FAB - center, lifted above bar */}
@@ -101,7 +103,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           onClick={handleFabClick}
           data-onboarding="fab-summit"
           className="absolute left-1/2 flex flex-col items-center"
-          style={{ transform: "translateX(-50%)", top: -8 }}
+          style={{ transform: "translateX(-50%)", top: -14 }}
         >
           <div
             className="relative flex items-center justify-center rounded-full overflow-hidden"
@@ -124,7 +126,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </span>
         </Link>
 
-        <div className="container mx-auto flex items-center justify-around px-2" style={{ paddingTop: 14, paddingBottom: 6 }}>
+        <div className="container mx-auto flex items-center justify-around px-2" style={{ paddingTop: 10, paddingBottom: 12 }}>
           {navItems.map((item, idx) => {
             if (!item) {
               return <div key="fab-placeholder" className="flex-shrink-0" style={{ width: 44 }} />;
