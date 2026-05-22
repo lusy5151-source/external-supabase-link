@@ -77,7 +77,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
       </header>
 
-      <main className="container mx-auto px-5 py-7">{children}</main>
+      <main
+        className="container mx-auto px-5 py-7"
+        style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 16px))" }}
+      >
+        {children}
+      </main>
       <TutorialOverlay />
       <PushPermissionPrompt />
 
@@ -86,6 +91,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         className="fixed bottom-0 left-0 right-0 z-50"
         style={{
           background: "hsl(var(--color-background-primary))",
+          borderTop: "0.5px solid hsl(var(--color-border-tertiary) / 0.12)",
+          paddingBottom: "env(safe-area-inset-bottom, 16px)",
         }}
       >
         {/* FAB - center, lifted above bar */}
