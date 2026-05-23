@@ -52,9 +52,7 @@ const KakaoCallback = () => {
       }
 
       try {
-        const callbackUri = isNativeFlow
-          ? "https://wandeung.com/kakao/callback?native=1"
-          : `${window.location.origin}/kakao/callback`;
+        const callbackUri = `${window.location.origin}/kakao/callback`;
 
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/kakao-auth`,
@@ -67,7 +65,7 @@ const KakaoCallback = () => {
             body: JSON.stringify({
               code,
               redirect_uri: callbackUri,
-              is_native: isNativeFlow,
+              is_native: false,
             }),
           }
         );
@@ -86,7 +84,7 @@ const KakaoCallback = () => {
         ) {
           console.error("Kakao auth error:", responseError, details);
           setError(responseError || "카카오 로그인 처리 중 오류가 발생했습니다.");
-          setTimeout(() => (isNativeFlow ? redirectToNative() : navigate("/auth", { replace: true })), 1500);
+          setTimeout(() => navigate("/auth", { replace: true }), 1500);
           return;
         }
 
@@ -95,15 +93,11 @@ const KakaoCallback = () => {
           refresh_token: session.refresh_token,
         });
 
-        if (isNativeFlow) {
-          redirectToNative();
-        } else {
-          navigate("/", { replace: true });
-        }
+        navigate("/", { replace: true });
       } catch (err) {
         console.error("Kakao callback error:", err);
         setError("카카오 로그인 처리 중 오류가 발생했습니다.");
-        setTimeout(() => (isNativeFlow ? redirectToNative() : navigate("/auth", { replace: true })), 1500);
+        setTimeout(() => navigate("/auth", { replace: true }), 1500);
       }
     };
 
