@@ -285,13 +285,19 @@ const App = () => {
         if (!Capacitor.isNativePlatform()) return;
         const { App: CapApp } = await import("@capacitor/app");
         const listener = await CapApp.addListener("appUrlOpen", async ({ url }) => {
-          if (url.includes("googleusercontent") || url.includes("oauth") || url.includes("auth/callback")) {
+          if (
+            url.startsWith("com.wandeung.app://oauth") ||
+            url.includes("googleusercontent") ||
+            url.includes("oauth") ||
+            url.includes("auth/callback")
+          ) {
             try {
               const { Browser } = await import("@capacitor/browser");
               await Browser.close();
             } catch (e) {
               console.warn("[deeplink] Browser.close failed", e);
             }
+            // Session is already set by KakaoCallback page before redirecting here.
           }
         });
         cleanup = () => listener.remove();

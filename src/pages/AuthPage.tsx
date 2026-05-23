@@ -199,9 +199,33 @@ const AuthPage = () => {
   const handleKakaoLogin = async () => {
     setAuthError("");
     setAuthSuccess("");
-    const redirectUri = `${window.location.origin}/kakao/callback`;
-    const kakaoAuthUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/kakao-auth?redirect_uri=${encodeURIComponent(redirectUri)}`;
-    window.location.assign(kakaoAuthUrl);
+    try {
+      const { Capacitor } = await import("@capacitor/core");
+      const isNative = Capacitor.isNativePlatform();
+
+      if (isNative) {
+        const redirectUri = "https://wandeung.com/kakao/callback?native=1";
+        const { data, error } = await supabase.functions.invoke("kakao-auth", {
+          body: { redirect_uri: redirectUri, is_native: true, request_type: "authorize_url" },
+        });
+        if (error) throw error;
+        if (data?.url) {
+          const { Browser } = await import("@capacitor/browser");
+          await Browser.open({ url: data.url, windowName: "_self" });
+        } else {
+          throw new Error("카카오 인증 URL을 가져오지 못했습니다.");
+        }
+      } else {
+        const redirectUri = `${window.location.origin}/kakao/callback`;
+        const kakaoAuthUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/kakao-auth?redirect_uri=${encodeURIComponent(redirectUri)}`;
+        window.location.assign(kakaoAuthUrl);
+      }
+    } catch (err: any) {
+      const message = getSupabaseErrorMessage(err, "카카오 로그인 처리 중 오류가 발생했습니다.");
+      console.error("Kakao login error:", err);
+      setAuthError(message);
+      toast({ title: "인증 오류", description: message, variant: "destructive" });
+    }
   };
 
   return (
