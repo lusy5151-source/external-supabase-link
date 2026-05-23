@@ -27,8 +27,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { unreadCount: notifUnread } = useNotifications();
 
   const restrictedTabs = new Set(["/records", "/my"]);
-  const tabBarSafeBottom = "calc(env(safe-area-inset-bottom, 0px) + 8px)";
-  const tabBarReservedSpace = "calc(76px + env(safe-area-inset-bottom, 0px))";
+  const tabBarSafeBottom = "env(safe-area-inset-bottom, 16px)";
+  const tabBarReservedSpace = "calc(76px + env(safe-area-inset-bottom, 16px))";
+  const safeAreaTop = "env(safe-area-inset-top, 0px)";
 
   const handleNavClick = (e: React.MouseEvent, to: string) => {
     if (!user && isGuest && restrictedTabs.has(to)) {
@@ -47,7 +48,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(180deg, hsl(205, 50%, 88%) 0%, hsl(var(--background)) 30%)" }}>
       {/* Top header */}
-      <header className="sticky top-0 z-50 bg-card/70 backdrop-blur-xl">
+      <header className="sticky z-50 bg-card/70 backdrop-blur-xl" style={{ top: 0, paddingTop: safeAreaTop }}>
         <div className="container mx-auto flex h-14 items-center justify-between px-5">
           <Link to="/" className="flex items-center gap-2">
             <MountainMascot size={32} />
