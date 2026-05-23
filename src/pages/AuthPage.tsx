@@ -165,15 +165,26 @@ const AuthPage = () => {
     setAuthSuccess("");
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { Capacitor } = await import("@capacitor/core");
+      const isNative = Capacitor.isNativePlatform();
+      const redirectTo = isNative
+        ? "com.googleusercontent.apps.859885901943-5ut5bk06jbk53la07p6c128u7tn4vehe:/"
+        : `${window.location.origin}/auth/callback`;
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          skipBrowserRedirect: false,
+          redirectTo,
+          skipBrowserRedirect: isNative,
         },
       });
 
       if (error) throw error;
+
+      if (isNative && data?.url) {
+        const { Browser } = await import("@capacitor/browser");
+        await Browser.open({ url: data.url, windowName: "_self" });
+      }
     } catch (err: any) {
       const message = getSupabaseErrorMessage(err, "로그인 처리 중 오류가 발생했습니다.");
       console.error("Supabase Google login error:", err);
@@ -183,6 +194,7 @@ const AuthPage = () => {
       setLoading(false);
     }
   };
+
 
   const handleKakaoLogin = async () => {
     setAuthError("");
