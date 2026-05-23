@@ -276,6 +276,33 @@ const App = () => {
     clearBrokenSession();
   }, []);
 
+  // Capacitor deep link handler for OAuth callbacks
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+    (async () => {
+      try {
+        const { Capacitor } = await import("@capacitor/core");
+        if (!Capacitor.isNativePlatform()) return;
+        const { App: CapApp } = await import("@capacitor/app");
+        const listener = await CapApp.addListener("appUrlOpen", async ({ url }) => {
+          if (url.includes("googleusercontent") || url.includes("oauth") || url.includes("auth/callback")) {
+            try {
+              const { Browser } = await import("@capacitor/browser");
+              await Browser.close();
+            } catch (e) {
+              console.warn("[deeplink] Browser.close failed", e);
+            }
+          }
+        });
+        cleanup = () => listener.remove();
+      } catch (e) {
+        console.warn("[deeplink] setup failed", e);
+      }
+    })();
+    return () => { if (cleanup) cleanup(); };
+  }, []);
+
+
   return (
     <ErrorBoundary fallbackMessage="데이터를 불러오는 중 오류가 발생했습니다.">
       <QueryClientProvider client={queryClient}>
