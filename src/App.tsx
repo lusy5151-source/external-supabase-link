@@ -303,10 +303,22 @@ const App = () => {
               const parsed = new URL(url);
               const code = parsed.searchParams.get("code");
               const errorParam = parsed.searchParams.get("error");
-              if (errorParam || !code) {
-                console.error("[deeplink] kakao error", errorParam);
+
+              // Google (and other Supabase OAuth) flow: no `code` param —
+              // session was already established in the in-app browser context,
+              // but the app needs to refresh from its own storage.
+              if (!code) {
+                if (errorParam) {
+                  console.error("[deeplink] oauth error", errorParam);
+                  return;
+                }
+                await supabase.auth.refreshSession();
+                await supabase.auth.getSession();
+                window.location.replace("/");
                 return;
               }
+
+              // Kakao native flow: exchange code in the app context.
               const { data, error } = await supabase.functions.invoke("kakao-auth", {
                 body: {
                   code,
@@ -324,7 +336,7 @@ const App = () => {
               });
               window.location.replace("/");
             } catch (e) {
-              console.error("[deeplink] kakao exchange error", e);
+              console.error("[deeplink] oauth exchange error", e);
             }
             return;
           }
