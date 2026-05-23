@@ -163,9 +163,25 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { code, redirect_uri } = await req.json()
+    const body = await req.json()
+    const { code, redirect_uri, is_native, request_type } = body ?? {}
 
-    if (typeof code !== 'string' || typeof redirect_uri !== 'string' || !code || !isSafeRedirectUri(redirect_uri)) {
+    if (typeof redirect_uri !== 'string' || !isSafeRedirectUri(redirect_uri)) {
+      return jsonResponse({ error: '유효한 redirect_uri가 필요합니다.' }, 400)
+    }
+
+    // Native flow step 1: return the Kakao authorize URL for the in-app browser to open
+    if (request_type === 'authorize_url' || !code) {
+      if (request_type === 'authorize_url' || (!code && is_native)) {
+        const kakaoAuthUrl = new URL('https://kauth.kakao.com/oauth/authorize')
+        kakaoAuthUrl.searchParams.set('client_id', KAKAO_REST_API_KEY)
+        kakaoAuthUrl.searchParams.set('redirect_uri', redirect_uri)
+        kakaoAuthUrl.searchParams.set('response_type', 'code')
+        return jsonResponse({ url: kakaoAuthUrl.toString() })
+      }
+    }
+
+    if (typeof code !== 'string' || !code) {
       return jsonResponse({ error: 'code와 redirect_uri가 필요합니다.' }, 400)
     }
 
