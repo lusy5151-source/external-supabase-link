@@ -25,7 +25,13 @@ export default function AuthCallbackPage() {
           if (event === "SIGNED_IN" && session) {
             subscription.unsubscribe();
             if (timeoutId) clearTimeout(timeoutId);
-            navigate("/", { replace: true });
+            const native = new URLSearchParams(window.location.search).get("native") === "1";
+            if (native) {
+              setStatus("앱으로 돌아가는 중...");
+              window.location.href = "com.wandeung.app://oauth";
+            } else {
+              navigate("/", { replace: true });
+            }
           } else if (event === "SIGNED_OUT") {
             subscription.unsubscribe();
             if (timeoutId) clearTimeout(timeoutId);
@@ -44,7 +50,13 @@ export default function AuthCallbackPage() {
 
         if (data.session) {
           subscription.unsubscribe();
-          navigate("/", { replace: true });
+          const native = new URLSearchParams(window.location.search).get("native") === "1";
+          if (native) {
+            setStatus("앱으로 돌아가는 중...");
+            window.location.href = "com.wandeung.app://oauth";
+          } else {
+            navigate("/", { replace: true });
+          }
           return;
         }
 
