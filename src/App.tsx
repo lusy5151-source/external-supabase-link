@@ -284,20 +284,58 @@ const App = () => {
         const { Capacitor } = await import("@capacitor/core");
         if (!Capacitor.isNativePlatform()) return;
         const { App: CapApp } = await import("@capacitor/app");
+
+        const closeBrowser = async () => {
+          try {
+            const { Browser } = await import("@capacitor/browser");
+            await Browser.close();
+          } catch (e) {
+            console.warn("[deeplink] Browser.close failed", e);
+          }
+        };
+
         const listener = await CapApp.addListener("appUrlOpen", async ({ url }) => {
+          // Kakao native flow: KakaoCallback page redirects to
+          // com.wandeung.app://oauth?code=... — exchange code in the app context.
+          if (url.startsWith("com.wandeung.app://oauth")) {
+            await closeBrowser();
+            try {
+              const parsed = new URL(url);
+              const code = parsed.searchParams.get("code");
+              const errorParam = parsed.searchParams.get("error");
+              if (errorParam || !code) {
+                console.error("[deeplink] kakao error", errorParam);
+                return;
+              }
+              const { data, error } = await supabase.functions.invoke("kakao-auth", {
+                body: {
+                  code,
+                  redirect_uri: "https://wandeung.com/kakao/callback?native=1",
+                  is_native: true,
+                },
+              });
+              if (error || !data?.session?.access_token || !data?.session?.refresh_token) {
+                console.error("[deeplink] kakao-auth invoke failed", error, data);
+                return;
+              }
+              await supabase.auth.setSession({
+                access_token: data.session.access_token,
+                refresh_token: data.session.refresh_token,
+              });
+              window.location.replace("/");
+            } catch (e) {
+              console.error("[deeplink] kakao exchange error", e);
+            }
+            return;
+          }
+
+          // Other OAuth providers (Google etc.) — Supabase handles via URL parsing.
           if (
-            url.startsWith("com.wandeung.app://oauth") ||
             url.includes("googleusercontent") ||
             url.includes("oauth") ||
             url.includes("auth/callback")
           ) {
-            try {
-              const { Browser } = await import("@capacitor/browser");
-              await Browser.close();
-            } catch (e) {
-              console.warn("[deeplink] Browser.close failed", e);
-            }
-            // Session is already set by KakaoCallback page before redirecting here.
+            await closeBrowser();
           }
         });
         cleanup = () => listener.remove();
