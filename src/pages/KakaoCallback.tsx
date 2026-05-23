@@ -18,19 +18,36 @@ const KakaoCallback = () => {
       const errorParam = params.get("error");
       const isNativeFlow = params.get("native") === "1";
 
-      const redirectToNative = () => {
-        window.location.href = "com.wandeung.app://oauth";
+      const redirectToNative = (extra: Record<string, string> = {}) => {
+        const qs = new URLSearchParams(extra).toString();
+        window.location.href = `com.wandeung.app://oauth${qs ? `?${qs}` : ""}`;
       };
+
+      // Native flow: hand the auth code back to the app via deep link.
+      // The app exchanges the code with kakao-auth in its own context so the
+      // session is persisted in the app (not in the in-app browser).
+      if (isNativeFlow) {
+        if (errorParam) {
+          redirectToNative({ error: errorParam });
+          return;
+        }
+        if (!code) {
+          redirectToNative({ error: "missing_code" });
+          return;
+        }
+        redirectToNative({ code });
+        return;
+      }
 
       if (errorParam) {
         setError("카카오 로그인이 취소되었습니다.");
-        setTimeout(() => (isNativeFlow ? redirectToNative() : navigate("/auth", { replace: true })), 1500);
+        setTimeout(() => navigate("/auth", { replace: true }), 1500);
         return;
       }
 
       if (!code) {
         setError("인증 코드가 없습니다.");
-        setTimeout(() => (isNativeFlow ? redirectToNative() : navigate("/auth", { replace: true })), 1500);
+        setTimeout(() => navigate("/auth", { replace: true }), 1500);
         return;
       }
 
