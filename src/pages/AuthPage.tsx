@@ -169,7 +169,7 @@ const AuthPage = () => {
       const isNative = Capacitor.isNativePlatform();
       const redirectTo = isNative
         ? "https://wandeung.com/auth/callback?native=1"
-        : `${window.location.origin}/auth/callback`;
+        : "https://wandeung.com/auth/callback";
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",

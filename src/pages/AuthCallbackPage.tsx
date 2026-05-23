@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Capacitor } from "@capacitor/core";
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export default function AuthCallbackPage() {
         const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
         const hasCode = Boolean(searchParams.get("code"));
         const hasAccessToken = Boolean(hashParams.get("access_token"));
+        const isNative = Capacitor.isNativePlatform();
 
         const {
           data: { subscription },
@@ -25,10 +27,9 @@ export default function AuthCallbackPage() {
           if (event === "SIGNED_IN" && session) {
             subscription.unsubscribe();
             if (timeoutId) clearTimeout(timeoutId);
-            const native = new URLSearchParams(window.location.search).get("native") === "1";
-            if (native) {
+            if (isNative) {
               setStatus("앱으로 돌아가는 중...");
-              window.location.href = "com.wandeung.app://oauth";
+              window.location.replace("com.wandeung.app://oauth");
             } else {
               navigate("/", { replace: true });
             }
@@ -50,10 +51,9 @@ export default function AuthCallbackPage() {
 
         if (data.session) {
           subscription.unsubscribe();
-          const native = new URLSearchParams(window.location.search).get("native") === "1";
-          if (native) {
+          if (isNative) {
             setStatus("앱으로 돌아가는 중...");
-            window.location.href = "com.wandeung.app://oauth";
+            window.location.replace("com.wandeung.app://oauth");
           } else {
             navigate("/", { replace: true });
           }
