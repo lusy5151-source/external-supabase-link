@@ -180,6 +180,7 @@ const TutorialTooltip = ({
   interactionComplete,
   customContent,
   noSpotlight,
+  showCloseButton,
 }: TutorialTooltipProps) => {
   const [borderFlash, setBorderFlash] = useState(false);
   const tooltipW = 300;
