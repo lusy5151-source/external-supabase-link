@@ -183,7 +183,23 @@ const AuthPage = () => {
 
       if (isNative && data?.url) {
         const { Browser } = await import("@capacitor/browser");
+        const { App } = await import("@capacitor/app");
 
+        // 방법 1: 딥링크로 앱이 열릴 때 브라우저 강제 닫기
+        App.addListener("appUrlOpen", async (event) => {
+          if (event.url.startsWith("com.wandeung.app://")) {
+            await App.removeAllListeners();
+            await Browser.close();
+            const { data: sessionData } = await supabase.auth.getSession();
+            if (sessionData.session) {
+              navigate("/");
+            } else {
+              setLoading(false);
+            }
+          }
+        });
+
+        // 방법 2: 브라우저가 닫혔을 때도 체크 (백업)
         await Browser.addListener("browserFinished", async () => {
           await Browser.removeAllListeners();
           const { data: sessionData } = await supabase.auth.getSession();
@@ -196,6 +212,7 @@ const AuthPage = () => {
 
         await Browser.open({ url: data.url });
       }
+
     } catch (err: any) {
       const message = getSupabaseErrorMessage(err, "로그인 처리 중 오류가 발생했습니다.");
       console.error("Supabase Google login error:", err);
