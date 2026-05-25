@@ -250,3 +250,14 @@
   0% { transform: scale(0) rotate(-45deg); }
   100% { transform: scale(1) rotate(0deg); }
 }
+
+/* Prevent iOS auto-zoom on input focus */
+input, textarea, select {
+  font-size: 16px !important;
+}
+
+@supports (-webkit-touch-callout: none) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
