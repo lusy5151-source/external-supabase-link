@@ -117,8 +117,6 @@ const TutorialOverlay = () => {
     setTargetRect(rect);
   }, []);
 
-  // Auto-close + dismissible behaviors for the mountain-explore filter step
-  const dismissible = current?.customContent === "filter-interactive";
 
 
   if (!visible || !current) return null;
