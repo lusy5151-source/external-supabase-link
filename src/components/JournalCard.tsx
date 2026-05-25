@@ -429,7 +429,7 @@ export function JournalGridCard({ journal, onClick }: { journal: HikingJournal; 
     >
       <div className="aspect-square bg-secondary/30 relative">
         {photo ? (
-          <img src={photo} alt="" className="h-full w-full object-cover" />
+          <img src={photo} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
         ) : (
           <div className="h-full w-full flex items-center justify-center">
             <Mountain className="h-8 w-8 text-muted-foreground/30" />
