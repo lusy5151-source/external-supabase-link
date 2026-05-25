@@ -23,6 +23,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import PageSkeleton from "@/components/PageSkeleton";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
 import { useProfileSync } from "@/hooks/useProfileSync";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useSchedulePlanAlerts } from "@/hooks/useSchedulePlanAlerts";
 import { supabase } from "@/integrations/supabase/client";
 import OnboardingFlow from "@/components/OnboardingFlow";
@@ -204,6 +205,7 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
 const AppRoutes = () => {
   const { user, loading } = useAuth();
   useProfileSync();
+  usePushNotifications();
   useSchedulePlanAlerts();
 
   return (
