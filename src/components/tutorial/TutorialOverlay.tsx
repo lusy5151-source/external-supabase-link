@@ -139,7 +139,7 @@ const TutorialOverlay = () => {
         <div
           className="fixed inset-0"
           style={{ zIndex: 9998, background: "rgba(0,0,0,0.65)" }}
-          onClick={dismissible ? handleSkip : undefined}
+          onClick={handleSkip}
         />
       )}
 
@@ -160,7 +160,7 @@ const TutorialOverlay = () => {
         interactionComplete={interactionComplete}
         customContent={current.customContent}
         noSpotlight={noSpotlight}
-        showCloseButton={dismissible}
+        showCloseButton={true}
       />
     </>
   );
