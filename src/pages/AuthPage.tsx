@@ -240,10 +240,34 @@ const AuthPage = () => {
         if (error) throw error;
         if (data?.url) {
           const { Browser } = await import("@capacitor/browser");
-          await Browser.open({ url: data.url, windowName: "_self" });
+          const { App } = await import("@capacitor/app");
+
+          const urlListener = await App.addListener("appUrlOpen", async (event) => {
+            if (event.url.startsWith("com.wandeung.app://")) {
+              await urlListener.remove();
+              await finishListener.remove();
+              await Browser.close();
+              const { data: sessionData } = await supabase.auth.getSession();
+              if (sessionData.session) {
+                navigate("/");
+              }
+            }
+          });
+
+          const finishListener = await Browser.addListener("browserFinished", async () => {
+            await urlListener.remove();
+            await finishListener.remove();
+            const { data: sessionData } = await supabase.auth.getSession();
+            if (sessionData.session) {
+              navigate("/");
+            }
+          });
+
+          await Browser.open({ url: data.url });
         } else {
           throw new Error("카카오 인증 URL을 가져오지 못했습니다.");
         }
+
       } else {
         const redirectUri = `${window.location.origin}/kakao/callback`;
         const kakaoAuthUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/kakao-auth?redirect_uri=${encodeURIComponent(redirectUri)}`;
