@@ -938,6 +938,7 @@ const Dashboard = () => {
             try { localStorage.setItem("wandeung_character_id", data.character_id); } catch {}
           }
         });
+      return () => clearTimeout(deferredTimer);
     }
   }, [user]);
 
