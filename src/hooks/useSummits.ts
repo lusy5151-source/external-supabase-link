@@ -70,7 +70,7 @@ export function useSummits(mountainId?: number) {
     const { error: uploadError } = await supabase.storage.from("summit-photos").upload(filePath, photoFile);
     if (uploadError) return { success: false, error: "사진 업로드에 실패했습니다" };
     const { data: urlData } = supabase.storage.from("summit-photos").getPublicUrl(filePath);
-    const { error: insertError } = await (supabase as any).from("summit_claims").insert({ user_id: user.id, mountain_id: summit.mountain_id, summit_id: actualSummitId, group_id: groupId || null, latitude: userLat, longitude: userLng, photo_url: urlData.publicUrl, ai_verified: aiVerified ?? null, ai_confidence: aiConfidence ?? null } as any);
+    const { error: insertError } = await (supabase as any).from("summit_claims").insert({ user_id: user.id, mountain_id: summit.mountain_id, summit_id: actualSummitId, group_id: groupId || null, latitude: userLat, longitude: userLng, photo_url: urlData.publicUrl, ai_verified: aiVerified ?? null, ai_confidence: aiConfidence ?? null, source: 'certified' } as any);
     if (insertError) return { success: false, error: "저장에 실패했습니다" };
     toast({ title: "🎉 정상 정복 인증 완료!" });
     // XP: +50 (summit), +50 bonus if 100대 명산
