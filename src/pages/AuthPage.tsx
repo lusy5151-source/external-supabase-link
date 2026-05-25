@@ -183,17 +183,28 @@ const AuthPage = () => {
 
       if (isNative && data?.url) {
         const { Browser } = await import("@capacitor/browser");
-        await Browser.open({ url: data.url, windowName: "_self" });
+
+        await Browser.addListener("browserFinished", async () => {
+          await Browser.removeAllListeners();
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData.session) {
+            navigate("/");
+          } else {
+            setLoading(false);
+          }
+        });
+
+        await Browser.open({ url: data.url });
       }
     } catch (err: any) {
       const message = getSupabaseErrorMessage(err, "로그인 처리 중 오류가 발생했습니다.");
       console.error("Supabase Google login error:", err);
       setAuthError(message);
       toast({ title: "인증 오류", description: message, variant: "destructive" });
-    } finally {
       setLoading(false);
     }
   };
+
 
 
   const handleKakaoLogin = async () => {
