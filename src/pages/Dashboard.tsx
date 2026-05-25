@@ -904,16 +904,19 @@ const Dashboard = () => {
       fetchSharedCompletions()
         .then((scs) => setRecentSharedCompletions(scs.slice(0, 3)))
         .catch(() => setRecentSharedCompletions([]));
-      Promise.all([fetchAllChallenges(), fetchUserChallenges()])
-        .then(([all, mine]) => {
-          const active = mine
-            .filter((uc) => !uc.completed)
-            .slice(0, 3)
-            .map((uc) => ({ ...uc, ch: all.find((c) => c.id === uc.challenge_id)! }))
-            .filter((uc) => uc.ch);
-          setActiveChallenges(active);
-        })
-        .catch(() => setActiveChallenges([]));
+      // Defer non-critical fetches to improve initial paint
+      const deferredTimer = setTimeout(() => {
+        Promise.all([fetchAllChallenges(), fetchUserChallenges()])
+          .then(([all, mine]) => {
+            const active = mine
+              .filter((uc) => !uc.completed)
+              .slice(0, 3)
+              .map((uc) => ({ ...uc, ch: all.find((c) => c.id === uc.challenge_id)! }))
+              .filter((uc) => uc.ch);
+            setActiveChallenges(active);
+          })
+          .catch(() => setActiveChallenges([]));
+      }, 800);
       // Fetch last hike date
       supabase
         .from("hiking_journals")
@@ -935,6 +938,7 @@ const Dashboard = () => {
             try { localStorage.setItem("wandeung_character_id", data.character_id); } catch {}
           }
         });
+      return () => clearTimeout(deferredTimer);
     }
   }, [user]);
 

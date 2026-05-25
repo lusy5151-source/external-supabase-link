@@ -161,7 +161,7 @@ export function JournalCard({ journal, showAuthor = true, onRefresh, slider = fa
                 className="w-full relative overflow-hidden focus:outline-none bg-secondary/30"
                 style={{ maxHeight: 320 }}
               >
-                <img src={photos[0]} alt="" className="w-full object-contain" style={{ maxHeight: 320 }} />
+                <img src={photos[0]} alt="" className="w-full object-contain" style={{ maxHeight: 320 }} loading="lazy" decoding="async" />
               </button>
             ) : (
               <div
@@ -202,6 +202,8 @@ export function JournalCard({ journal, showAuthor = true, onRefresh, slider = fa
                       <img
                         src={url}
                         alt=""
+                        loading="lazy"
+                        decoding="async"
                         style={{
                           width: '100%',
                           aspectRatio: '1',
@@ -427,7 +429,7 @@ export function JournalGridCard({ journal, onClick }: { journal: HikingJournal; 
     >
       <div className="aspect-square bg-secondary/30 relative">
         {photo ? (
-          <img src={photo} alt="" className="h-full w-full object-cover" />
+          <img src={photo} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
         ) : (
           <div className="h-full w-full flex items-center justify-center">
             <Mountain className="h-8 w-8 text-muted-foreground/30" />
