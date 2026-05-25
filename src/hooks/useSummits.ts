@@ -108,15 +108,58 @@ export function useLeaderboard() {
     const fetchData = async () => {
       const { data: allClaims } = await (supabase as any).from("summit_claims").select("user_id, mountain_id, group_id").eq("source", "certified").order("claimed_at", { ascending: true });
       if (!allClaims || (allClaims as any[]).length === 0) { setLoading(false); return; }
+
       const userCounts = new Map<string, number>();
       (allClaims as any[]).forEach((c: any) => userCounts.set(c.user_id, (userCounts.get(c.user_id) || 0) + 1));
       const topUsers = [...userCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 20);
-      const userIds = topUsers.map(([id]) => id);
+
+      // Mountain leaders: per mountain, user with most certified claims
+      const perMountain = new Map<number, Map<string, number>>();
+      (allClaims as any[]).forEach((c: any) => {
+        if (!perMountain.has(c.mountain_id)) perMountain.set(c.mountain_id, new Map());
+        const m = perMountain.get(c.mountain_id)!;
+        m.set(c.user_id, (m.get(c.user_id) || 0) + 1);
+      });
+      const leaders: { mountain_id: number; user_id: string; count: number }[] = [];
+      perMountain.forEach((users, mountain_id) => {
+        let topUser = ""; let topCount = 0;
+        users.forEach((count, uid) => { if (count > topCount) { topCount = count; topUser = uid; } });
+        if (topUser) leaders.push({ mountain_id, user_id: topUser, count: topCount });
+      });
+      leaders.sort((a, b) => b.count - a.count);
+
+      // Club rankings: per group, total certified claims
+      const groupCounts = new Map<string, number>();
+      (allClaims as any[]).forEach((c: any) => {
+        if (c.group_id) groupCounts.set(c.group_id, (groupCounts.get(c.group_id) || 0) + 1);
+      });
+      const topGroups = [...groupCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 20);
+
+      const userIds = [...new Set([...topUsers.map(([id]) => id), ...leaders.map((l) => l.user_id)])];
       const { data: profiles } = await supabase.from("public_profiles").select("user_id, nickname, avatar_url").in("user_id", userIds);
       const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+
       setTopClaimers(topUsers.map(([userId, count]) => ({
         user_id: userId, count, nickname: profileMap.get(userId)?.nickname || null, avatar_url: profileMap.get(userId)?.avatar_url || null,
       })));
+
+      setMountainLeaders(leaders.map((l) => ({
+        mountain_id: l.mountain_id,
+        user_id: l.user_id,
+        count: l.count,
+        nickname: profileMap.get(l.user_id)?.nickname || null,
+        avatar_url: profileMap.get(l.user_id)?.avatar_url || null,
+      })));
+
+      if (topGroups.length > 0) {
+        const groupIds = topGroups.map(([id]) => id);
+        const { data: groups } = await (supabase as any).from("hiking_group").select("id, name").in("id", groupIds);
+        const groupMap = new Map((groups || []).map((g: any) => [g.id, g.name]));
+        setClubRankings(topGroups.map(([group_id, count]) => ({
+          group_id, count, group_name: groupMap.get(group_id) || "산악회",
+        })));
+      }
+
       setLoading(false);
     };
     fetchData();
