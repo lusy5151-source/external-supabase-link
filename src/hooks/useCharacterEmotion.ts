@@ -4,14 +4,32 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export type CharacterEmotion = "normal" | "sad" | "angry" | "autumn";
 
+const isSameDay = (iso: string | null | undefined) =>
+  !!iso && new Date(iso).toDateString() === new Date().toDateString();
+
 /**
  * Detects app context to auto-select character emotion.
  * Priority: angry > sad > autumn > normal.
  * Returns 'normal' while loading.
+ *
+ * Listens to window 'wandeung_comforted' event for immediate local update
+ * after a comfort session completes (so sad/angry won't re-appear today).
  */
 export function useCharacterEmotion(): CharacterEmotion {
   const { user } = useAuth();
   const [emotion, setEmotion] = useState<CharacterEmotion>("normal");
+  const [lastComfortedAt, setLastComfortedAt] = useState<string | null>(null);
+
+  // Listen for local "comforted" event → immediately go to normal
+  useEffect(() => {
+    const onComforted = () => {
+      const nowIso = new Date().toISOString();
+      setLastComfortedAt(nowIso);
+      setEmotion("normal");
+    };
+    window.addEventListener("wandeung_comforted", onComforted);
+    return () => window.removeEventListener("wandeung_comforted", onComforted);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -19,7 +37,6 @@ export function useCharacterEmotion(): CharacterEmotion {
     const detect = async () => {
       try {
         if (!user?.id) {
-          // 3) autumn fallback only when no user
           const month = new Date().getMonth() + 1;
           if (!cancelled) setEmotion(month >= 9 && month <= 11 ? "autumn" : "normal");
           return;
@@ -34,7 +51,6 @@ export function useCharacterEmotion(): CharacterEmotion {
         in7.setDate(in7.getDate() + 7);
         const in7Str = in7.toISOString().slice(0, 10);
 
-        // 1) Today's failed summit verification
         const failedSummitP = (supabase as any)
           .from("summit_claims")
           .select("id")
@@ -43,7 +59,6 @@ export function useCharacterEmotion(): CharacterEmotion {
           .gte("claimed_at", todayStartISO)
           .limit(1);
 
-        // 2) Upcoming hiking plans within next 7 days
         const upcomingPlansP = (supabase as any)
           .from("hiking_plans")
           .select("planned_date, mountain_id")
@@ -53,7 +68,6 @@ export function useCharacterEmotion(): CharacterEmotion {
           .order("planned_date", { ascending: true })
           .limit(1);
 
-        // 3) Last successful summit (for days-since calculation)
         const lastSummitP = (supabase as any)
           .from("summit_claims")
           .select("claimed_at")
@@ -62,7 +76,6 @@ export function useCharacterEmotion(): CharacterEmotion {
           .order("claimed_at", { ascending: false })
           .limit(1);
 
-        // 4) Profile XP/level/last_app_visit
         const profileP = (supabase as any)
           .from("profiles")
           .select("xp, character_level, last_app_visit, last_comforted_at")
@@ -76,7 +89,12 @@ export function useCharacterEmotion(): CharacterEmotion {
           { data: profile },
         ] = await Promise.all([failedSummitP, upcomingPlansP, lastSummitP, profileP]);
 
-        // 5) First-visit-today: update last_app_visit
+        // Sync local lastComfortedAt from DB (don't override fresher local value)
+        const dbComforted: string | null = profile?.last_comforted_at ?? null;
+        if (dbComforted && (!lastComfortedAt || new Date(dbComforted) > new Date(lastComfortedAt))) {
+          if (!cancelled) setLastComfortedAt(dbComforted);
+        }
+
         const lastVisit = profile?.last_app_visit ? new Date(profile.last_app_visit) : null;
         const isFirstVisitToday =
           !lastVisit ||
@@ -91,19 +109,21 @@ export function useCharacterEmotion(): CharacterEmotion {
             });
         }
 
-        // Skip negative emotions if already comforted today
-        const lastComforted = profile?.last_comforted_at;
-        const skipNegativeEmotions = !!(
-          lastComforted &&
-          new Date(lastComforted).toDateString() === new Date().toDateString()
-        );
+        // Comforted today? Check local state first (most up-to-date), else DB.
+        const comfortedToday = isSameDay(lastComfortedAt) || isSameDay(dbComforted);
+
+        if (comfortedToday) {
+          const month = new Date().getMonth() + 1;
+          if (!cancelled) setEmotion(month >= 9 && month <= 11 ? "autumn" : "normal");
+          return;
+        }
 
         // Emotion priority: angry > sad > autumn > normal
-        if (!skipNegativeEmotions && failedSummit && failedSummit.length > 0) {
+        if (failedSummit && failedSummit.length > 0) {
           if (!cancelled) setEmotion("angry");
           return;
         }
-        if (!skipNegativeEmotions && (!upcomingPlans || upcomingPlans.length === 0)) {
+        if (!upcomingPlans || upcomingPlans.length === 0) {
           if (!cancelled) setEmotion("sad");
           return;
         }
@@ -114,7 +134,6 @@ export function useCharacterEmotion(): CharacterEmotion {
         }
         if (!cancelled) setEmotion("normal");
 
-        // Reference unused locals for future logic / lint
         void lastSummit;
       } catch {
         if (!cancelled) setEmotion("normal");
@@ -125,7 +144,7 @@ export function useCharacterEmotion(): CharacterEmotion {
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [user?.id, lastComfortedAt]);
 
   return emotion;
 }
