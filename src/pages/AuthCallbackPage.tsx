@@ -17,7 +17,7 @@ export default function AuthCallbackPage() {
         const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
         const hasCode = Boolean(searchParams.get("code"));
         const hasAccessToken = Boolean(hashParams.get("access_token"));
-        const isNative = Capacitor.isNativePlatform();
+        const isNative = searchParams.get("native") === "1";
 
         const {
           data: { subscription },
