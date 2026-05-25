@@ -31,6 +31,63 @@ const visibilityOptions = [
   { value: "friends", label: "친구 공개", icon: Users },
   { value: "private", label: "나만 보기", icon: Lock },
 ];
+function PhotoPickerButton({
+  saving,
+  onNativePick,
+  onWebFiles,
+}: {
+  saving: boolean;
+  onNativePick: () => void | Promise<void>;
+  onWebFiles: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
+  const [isNative, setIsNative] = useState(false);
+  useEffect(() => {
+    (async () => {
+      try {
+        const { Capacitor } = await import("@capacitor/core");
+        setIsNative(Capacitor.isNativePlatform());
+      } catch {
+        setIsNative(false);
+      }
+    })();
+  }, []);
+
+  const baseClass = cn(
+    "flex shrink-0 flex-col items-center justify-center border-2 border-dashed border-border cursor-pointer hover:border-primary/50 transition-colors gap-1",
+    saving && "pointer-events-none opacity-50"
+  );
+  const baseStyle = { width: 80, height: 80, borderRadius: 8 } as const;
+
+  if (isNative) {
+    return (
+      <button
+        type="button"
+        onClick={() => { void onNativePick(); }}
+        disabled={saving}
+        className={baseClass}
+        style={baseStyle}
+      >
+        <Camera className="h-4 w-4 text-muted-foreground" />
+        <span className="text-[10px] text-muted-foreground">사진 추가</span>
+      </button>
+    );
+  }
+
+  return (
+    <label className={baseClass} style={baseStyle}>
+      <Camera className="h-4 w-4 text-muted-foreground" />
+      <span className="text-[10px] text-muted-foreground">사진 추가</span>
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+        multiple
+        className="hidden"
+        onChange={onWebFiles}
+        disabled={saving}
+      />
+    </label>
+  );
+}
 
 export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, prefillDate }: JournalFormProps) {
   const { mountains } = useMountains();
