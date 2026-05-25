@@ -251,9 +251,25 @@
   100% { transform: scale(1) rotate(0deg); }
 }
 
-/* Prevent iOS auto-zoom on input focus */
-input, textarea, select {
+/* iOS + Android 키보드 확대 방지 */
+input, input:focus,
+textarea, textarea:focus,
+select, select:focus {
   font-size: 16px !important;
+  transform: none !important;
+}
+
+/* Android WebView 확대 방지 */
+html {
+  touch-action: pan-x pan-y;
+  -ms-touch-action: pan-x pan-y;
+}
+
+/* 전체 화면 핀치줌 방지 */
+body {
+  touch-action: pan-x pan-y;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 @supports (-webkit-touch-callout: none) {
