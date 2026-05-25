@@ -118,19 +118,17 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
 
   const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    const remaining = MAX_PHOTOS - (photos.length + pendingPhotos.length);
-    if (remaining <= 0) {
-      toast({ title: `사진은 최대 ${MAX_PHOTOS}장까지 첨부할 수 있어요`, variant: "destructive" });
-      e.target.value = "";
-      return;
+  const addFilesToPending = (files: File[]) => {
+    const currentTotal = photos.length + pendingPhotos.length;
+    const remaining = MAX_PHOTOS - currentTotal;
+    if (remaining <= 0 || files.length > remaining) {
+      toast({ title: `사진은 최대 ${MAX_PHOTOS}장까지 첨부 가능해요`, variant: "destructive" });
+      if (remaining <= 0) return;
     }
-    const incoming = Array.from(files).slice(0, remaining);
+    const incoming = files.slice(0, Math.max(0, remaining));
     const newPending: { file: File; preview: string }[] = [];
     for (const file of incoming) {
-      if (!allowedTypes.includes(file.type)) {
+      if (file.type && !allowedTypes.includes(file.type)) {
         toast({ title: "JPG, PNG, WEBP 형식의 사진만 업로드 가능해요", variant: "destructive" });
         continue;
       }
@@ -141,8 +139,46 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
       newPending.push({ file, preview: URL.createObjectURL(file) });
     }
     setPendingPhotos((prev) => [...prev, ...newPending]);
+  };
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    addFilesToPending(Array.from(files));
     e.target.value = "";
   };
+
+  const handleNativePhotoPick = async () => {
+    try {
+      const remaining = MAX_PHOTOS - (photos.length + pendingPhotos.length);
+      if (remaining <= 0) {
+        toast({ title: `사진은 최대 ${MAX_PHOTOS}장까지 첨부 가능해요`, variant: "destructive" });
+        return;
+      }
+      const { Camera } = await import("@capacitor/camera");
+      const result = await Camera.pickImages({ quality: 80, limit: remaining });
+      const photosArr = result?.photos || [];
+      if (photosArr.length === 0) return;
+      const files = await Promise.all(
+        photosArr.map(async (photo, idx) => {
+          const src = photo.webPath || (photo as any).path;
+          const response = await fetch(src as string);
+          const blob = await response.blob();
+          const ext = (photo.format || "jpeg").toLowerCase();
+          const mime = blob.type || `image/${ext === "jpg" ? "jpeg" : ext}`;
+          return new File([blob], `photo_${Date.now()}_${idx}.${ext === "jpeg" ? "jpg" : ext}`, { type: mime });
+        })
+      );
+      addFilesToPending(files);
+    } catch (err: any) {
+      // User cancellation throws — ignore silently
+      const msg = String(err?.message || err || "");
+      if (/cancel/i.test(msg)) return;
+      console.error("Native photo pick error:", err);
+      toast({ title: "사진을 불러오지 못했어요", variant: "destructive" });
+    }
+  };
+
 
   const removePhoto = (index: number) => {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
@@ -595,25 +631,13 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
                     </div>
                   ))}
                   {photos.length + pendingPhotos.length < MAX_PHOTOS && (
-                    <label
-                      className={cn(
-                        "flex shrink-0 flex-col items-center justify-center border-2 border-dashed border-border cursor-pointer hover:border-primary/50 transition-colors gap-1",
-                        saving && "pointer-events-none opacity-50"
-                      )}
-                      style={{ width: 80, height: 80, borderRadius: 8 }}
-                    >
-                      <Camera className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-[10px] text-muted-foreground">사진 추가</span>
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-                        multiple
-                        className="hidden"
-                        onChange={handlePhotoSelect}
-                        disabled={saving}
-                      />
-                    </label>
+                    <PhotoPickerButton
+                      saving={saving}
+                      onNativePick={handleNativePhotoPick}
+                      onWebFiles={handlePhotoSelect}
+                    />
                   )}
+
                 </div>
                 <p className="mt-1" style={{ fontSize: 11, color: "hsl(var(--muted-foreground))" }}>
                   (최대 {MAX_PHOTOS}장)
@@ -685,5 +709,63 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
         </div>
       </div>
     </div>
+  );
+}
+
+function PhotoPickerButton({
+  saving,
+  onNativePick,
+  onWebFiles,
+}: {
+  saving: boolean;
+  onNativePick: () => void | Promise<void>;
+  onWebFiles: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
+  const [isNative, setIsNative] = useState(false);
+  useEffect(() => {
+    (async () => {
+      try {
+        const { Capacitor } = await import("@capacitor/core");
+        setIsNative(Capacitor.isNativePlatform());
+      } catch {
+        setIsNative(false);
+      }
+    })();
+  }, []);
+
+  const baseClass = cn(
+    "flex shrink-0 flex-col items-center justify-center border-2 border-dashed border-border cursor-pointer hover:border-primary/50 transition-colors gap-1",
+    saving && "pointer-events-none opacity-50"
+  );
+  const baseStyle = { width: 80, height: 80, borderRadius: 8 } as const;
+
+  if (isNative) {
+    return (
+      <button
+        type="button"
+        onClick={() => { void onNativePick(); }}
+        disabled={saving}
+        className={baseClass}
+        style={baseStyle}
+      >
+        <Camera className="h-4 w-4 text-muted-foreground" />
+        <span className="text-[10px] text-muted-foreground">사진 추가</span>
+      </button>
+    );
+  }
+
+  return (
+    <label className={baseClass} style={baseStyle}>
+      <Camera className="h-4 w-4 text-muted-foreground" />
+      <span className="text-[10px] text-muted-foreground">사진 추가</span>
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+        multiple
+        className="hidden"
+        onChange={onWebFiles}
+        disabled={saving}
+      />
+    </label>
   );
 }
