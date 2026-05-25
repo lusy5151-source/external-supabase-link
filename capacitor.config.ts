@@ -16,6 +16,11 @@ const config: CapacitorConfig = {
       resizeOnFullScreen: true,
     },
   },
+  ios: {
+    contentInset: 'automatic',
+    scrollEnabled: true,
+    backgroundColor: '#F8FAED',
+  },
 };
 
 export default config;
