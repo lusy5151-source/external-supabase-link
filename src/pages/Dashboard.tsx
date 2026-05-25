@@ -739,9 +739,14 @@ const Dashboard = () => {
     try {
       const { data: profile } = await (supabase as any)
         .from("profiles")
-        .select("total_comfort_count")
+        .select("total_comfort_count, last_comforted_at")
         .eq("user_id", user.id)
         .maybeSingle();
+
+      const comfortedToday =
+        !!profile?.last_comforted_at &&
+        new Date(profile.last_comforted_at).toDateString() === new Date().toDateString();
+
       const newCount = ((profile?.total_comfort_count as number) || 0) + 1;
       await (supabase as any)
         .from("profiles")
@@ -750,6 +755,23 @@ const Dashboard = () => {
           last_comforted_at: new Date().toISOString(),
         })
         .eq("user_id", user.id);
+
+      // Immediately update local emotion state to normal for the rest of today
+      window.dispatchEvent(new Event("wandeung_comforted"));
+
+      // Award +2 XP once per day for comforting
+      if (!comfortedToday) {
+        await (supabase as any).rpc("add_xp", {
+          p_user_id: user.id,
+          p_amount: 2,
+          p_source_type: "comfort",
+          p_source_id: null,
+          p_description: "캐릭터 달래기",
+        });
+        const { toast } = await import("sonner");
+        toast.success("완등이를 달래줬어요 +2 XP 🌿");
+        window.dispatchEvent(new Event("wandeung_xp_changed"));
+      }
 
       if (newCount === 10) {
         const { data: badge } = await (supabase as any)
