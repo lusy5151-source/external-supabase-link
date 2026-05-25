@@ -45,7 +45,18 @@
         });
       };
     </script>
+
+    <script>
+      // iOS 15.4+ pinch zoom 완전 차단
+      document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
+      document.addEventListener('gesturechange', function(e) { e.preventDefault(); });
+      document.addEventListener('gestureend', function(e) { e.preventDefault(); });
+      document.addEventListener('touchmove', function(e) {
+        if (e.scale !== undefined && e.scale !== 1) { e.preventDefault(); }
+      }, { passive: false });
+    </script>
 </head>
+
 
   <body>
     <div id="root"></div>
