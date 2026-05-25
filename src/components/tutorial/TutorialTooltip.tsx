@@ -22,6 +22,7 @@ interface TutorialTooltipProps {
   interactionComplete?: boolean;
   customContent?: string;
   noSpotlight?: boolean;
+  showCloseButton?: boolean;
 }
 
 const TOOLTIP_STYLES = `
