@@ -313,8 +313,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
       setUploadProgress({ current: 0, total: pendingPhotos.length });
       try {
         for (let i = 0; i < pendingPhotos.length; i++) {
-          const compressed = await compressImage(pendingPhotos[i].file);
-          const url = await uploadPhoto(compressed);
+          const url = await uploadPhoto(pendingPhotos[i].file);
           if (!url) throw new Error("사진 업로드에 실패했어요");
           uploadedUrls.push(url);
           setUploadProgress({ current: i + 1, total: pendingPhotos.length });
