@@ -117,6 +117,16 @@ const TutorialOverlay = () => {
     setTargetRect(rect);
   }, []);
 
+  // Auto-close + dismissible behaviors for the mountain-explore filter step
+  const dismissible = current?.customContent === "filter-interactive";
+
+  useEffect(() => {
+    if (!visible || !ready || !dismissible) return;
+    if (interactionComplete) return;
+    const t = setTimeout(() => handleSkip(), 5000);
+    return () => clearTimeout(t);
+  }, [visible, ready, dismissible, interactionComplete, handleSkip]);
+
   if (!visible || !current) return null;
 
   const showSpotlight = !noSpotlight && current.targetSelector;
@@ -137,8 +147,12 @@ const TutorialOverlay = () => {
         <div
           className="fixed inset-0"
           style={{ zIndex: 9998, background: "rgba(0,0,0,0.65)" }}
+          onClick={dismissible ? handleSkip : undefined}
         />
       )}
+
+
+
 
       <TutorialTooltip
         title={current.title}
@@ -154,6 +168,7 @@ const TutorialOverlay = () => {
         interactionComplete={interactionComplete}
         customContent={current.customContent}
         noSpotlight={noSpotlight}
+        showCloseButton={dismissible}
       />
     </>
   );

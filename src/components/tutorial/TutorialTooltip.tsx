@@ -22,6 +22,7 @@ interface TutorialTooltipProps {
   interactionComplete?: boolean;
   customContent?: string;
   noSpotlight?: boolean;
+  showCloseButton?: boolean;
 }
 
 const TOOLTIP_STYLES = `
@@ -179,6 +180,7 @@ const TutorialTooltip = ({
   interactionComplete,
   customContent,
   noSpotlight,
+  showCloseButton,
 }: TutorialTooltipProps) => {
   const [borderFlash, setBorderFlash] = useState(false);
   const tooltipW = 300;
@@ -259,8 +261,32 @@ const TutorialTooltip = ({
             boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
             border: borderFlash ? "2px solid hsl(var(--brand-forest))" : "2px solid transparent",
             transition: "border-color 0.3s",
+            position: "relative",
           }}
+          onClick={(e) => e.stopPropagation()}
         >
+          {showCloseButton && (
+            <button
+              onClick={onSkip}
+              aria-label="닫기"
+              style={{
+                position: "absolute",
+                top: 8,
+                right: 8,
+                width: 28,
+                height: 28,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 16,
+                color: "hsl(var(--color-text-tertiary, var(--muted-foreground)))",
+                background: "transparent",
+                borderRadius: 999,
+              }}
+            >
+              ✕
+            </button>
+          )}
           {/* Progress bar */}
           <div
             className="mb-4 overflow-hidden rounded-full"
