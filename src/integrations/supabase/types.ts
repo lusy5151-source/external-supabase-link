@@ -2743,6 +2743,7 @@ export type Database = {
           mountain_id: number
           photo_url: string | null
           record_id: string | null
+          source: string | null
           summit_id: string | null
           user_id: string
         }
@@ -2758,6 +2759,7 @@ export type Database = {
           mountain_id: number
           photo_url?: string | null
           record_id?: string | null
+          source?: string | null
           summit_id?: string | null
           user_id: string
         }
@@ -2773,6 +2775,7 @@ export type Database = {
           mountain_id?: number
           photo_url?: string | null
           record_id?: string | null
+          source?: string | null
           summit_id?: string | null
           user_id?: string
         }
