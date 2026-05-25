@@ -118,19 +118,17 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
 
   const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    const remaining = MAX_PHOTOS - (photos.length + pendingPhotos.length);
-    if (remaining <= 0) {
-      toast({ title: `사진은 최대 ${MAX_PHOTOS}장까지 첨부할 수 있어요`, variant: "destructive" });
-      e.target.value = "";
-      return;
+  const addFilesToPending = (files: File[]) => {
+    const currentTotal = photos.length + pendingPhotos.length;
+    const remaining = MAX_PHOTOS - currentTotal;
+    if (remaining <= 0 || files.length > remaining) {
+      toast({ title: `사진은 최대 ${MAX_PHOTOS}장까지 첨부 가능해요`, variant: "destructive" });
+      if (remaining <= 0) return;
     }
-    const incoming = Array.from(files).slice(0, remaining);
+    const incoming = files.slice(0, Math.max(0, remaining));
     const newPending: { file: File; preview: string }[] = [];
     for (const file of incoming) {
-      if (!allowedTypes.includes(file.type)) {
+      if (file.type && !allowedTypes.includes(file.type)) {
         toast({ title: "JPG, PNG, WEBP 형식의 사진만 업로드 가능해요", variant: "destructive" });
         continue;
       }
@@ -141,8 +139,46 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
       newPending.push({ file, preview: URL.createObjectURL(file) });
     }
     setPendingPhotos((prev) => [...prev, ...newPending]);
+  };
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    addFilesToPending(Array.from(files));
     e.target.value = "";
   };
+
+  const handleNativePhotoPick = async () => {
+    try {
+      const remaining = MAX_PHOTOS - (photos.length + pendingPhotos.length);
+      if (remaining <= 0) {
+        toast({ title: `사진은 최대 ${MAX_PHOTOS}장까지 첨부 가능해요`, variant: "destructive" });
+        return;
+      }
+      const { Camera } = await import("@capacitor/camera");
+      const result = await Camera.pickImages({ quality: 80, limit: remaining });
+      const photosArr = result?.photos || [];
+      if (photosArr.length === 0) return;
+      const files = await Promise.all(
+        photosArr.map(async (photo, idx) => {
+          const src = photo.webPath || (photo as any).path;
+          const response = await fetch(src as string);
+          const blob = await response.blob();
+          const ext = (photo.format || "jpeg").toLowerCase();
+          const mime = blob.type || `image/${ext === "jpg" ? "jpeg" : ext}`;
+          return new File([blob], `photo_${Date.now()}_${idx}.${ext === "jpeg" ? "jpg" : ext}`, { type: mime });
+        })
+      );
+      addFilesToPending(files);
+    } catch (err: any) {
+      // User cancellation throws — ignore silently
+      const msg = String(err?.message || err || "");
+      if (/cancel/i.test(msg)) return;
+      console.error("Native photo pick error:", err);
+      toast({ title: "사진을 불러오지 못했어요", variant: "destructive" });
+    }
+  };
+
 
   const removePhoto = (index: number) => {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
