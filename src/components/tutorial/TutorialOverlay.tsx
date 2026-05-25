@@ -151,14 +151,8 @@ const TutorialOverlay = () => {
         />
       )}
 
-      {/* Transparent backdrop to allow tap-to-close on spotlight steps that are dismissible */}
-      {dismissible && ready && targetRect && (
-        <div
-          className="fixed inset-0"
-          style={{ zIndex: 9999, background: "transparent" }}
-          onClick={handleSkip}
-        />
-      )}
+
+
 
       <TutorialTooltip
         title={current.title}
