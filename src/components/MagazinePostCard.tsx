@@ -19,7 +19,7 @@ const MagazinePostCard = ({ post, meta, onLike, onSave, onShare }: Props) => {
       </div>
       <div className="relative w-full" style={{ aspectRatio: "4 / 5" }}>
         {post.cover_image_url ? (
-          <img src={post.cover_image_url} alt={post.title} className="w-full h-full object-cover" />
+          <img src={post.cover_image_url} alt={post.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
             <MountainMascot size={80} />
