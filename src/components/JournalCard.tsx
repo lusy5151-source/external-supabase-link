@@ -161,7 +161,7 @@ export function JournalCard({ journal, showAuthor = true, onRefresh, slider = fa
                 className="w-full relative overflow-hidden focus:outline-none bg-secondary/30"
                 style={{ maxHeight: 320 }}
               >
-                <img src={photos[0]} alt="" className="w-full object-contain" style={{ maxHeight: 320 }} />
+                <img src={photos[0]} alt="" className="w-full object-contain" style={{ maxHeight: 320 }} loading="lazy" decoding="async" />
               </button>
             ) : (
               <div
