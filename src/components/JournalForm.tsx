@@ -271,7 +271,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
           return new File([blob], `photo_${Date.now()}_${idx}.${ext === "jpeg" ? "jpg" : ext}`, { type: mime });
         })
       );
-      addFilesToPending(files);
+      await addFilesToPending(files);
     } catch (err: any) {
       // User cancellation throws — ignore silently
       const msg = String(err?.message || err || "");
