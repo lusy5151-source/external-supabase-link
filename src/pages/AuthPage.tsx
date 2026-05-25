@@ -183,25 +183,24 @@ const AuthPage = () => {
 
       if (isNative && data?.url) {
         const { Browser } = await import("@capacitor/browser");
-        const { App } = await import("@capacitor/app");
 
-        const urlListener = await App.addListener("appUrlOpen", async (event) => {
-          if (event.url.startsWith("com.wandeung.app://")) {
-            await urlListener.remove();
-            await finishListener.remove();
+        await Browser.open({ url: data.url });
+
+        // 딥링크 대신 세션 폴링 방식 (더 안정적)
+        const pollInterval = setInterval(async () => {
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData.session) {
+            clearInterval(pollInterval);
             await Browser.close();
-            const { data: sessionData } = await supabase.auth.getSession();
-            if (sessionData.session) {
-              navigate("/");
-            } else {
-              setLoading(false);
-            }
+            setLoading(false);
+            navigate("/");
           }
-        });
+        }, 1000);
 
-        const finishListener = await Browser.addListener("browserFinished", async () => {
-          await urlListener.remove();
-          await finishListener.remove();
+        // 브라우저 닫히면 폴링 중단
+        await Browser.addListener("browserFinished", async () => {
+          clearInterval(pollInterval);
+          await Browser.removeAllListeners();
           const { data: sessionData } = await supabase.auth.getSession();
           if (sessionData.session) {
             navigate("/");
@@ -209,8 +208,6 @@ const AuthPage = () => {
             setLoading(false);
           }
         });
-
-        await Browser.open({ url: data.url });
       }
 
 
