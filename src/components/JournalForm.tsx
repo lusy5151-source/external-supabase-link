@@ -631,25 +631,13 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
                     </div>
                   ))}
                   {photos.length + pendingPhotos.length < MAX_PHOTOS && (
-                    <label
-                      className={cn(
-                        "flex shrink-0 flex-col items-center justify-center border-2 border-dashed border-border cursor-pointer hover:border-primary/50 transition-colors gap-1",
-                        saving && "pointer-events-none opacity-50"
-                      )}
-                      style={{ width: 80, height: 80, borderRadius: 8 }}
-                    >
-                      <Camera className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-[10px] text-muted-foreground">사진 추가</span>
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-                        multiple
-                        className="hidden"
-                        onChange={handlePhotoSelect}
-                        disabled={saving}
-                      />
-                    </label>
+                    <PhotoPickerButton
+                      saving={saving}
+                      onNativePick={handleNativePhotoPick}
+                      onWebFiles={handlePhotoSelect}
+                    />
                   )}
+
                 </div>
                 <p className="mt-1" style={{ fontSize: 11, color: "hsl(var(--muted-foreground))" }}>
                   (최대 {MAX_PHOTOS}장)
