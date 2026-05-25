@@ -170,25 +170,40 @@ const AuthPage = () => {
       const redirectTo = isNative
         ? "https://wandeung.com/auth/callback?native=1"
         : "https://wandeung.com/auth/callback";
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo, skipBrowserRedirect: isNative },
       });
       if (error) throw error;
+
       if (isNative && data?.url) {
         const { Browser } = await import("@capacitor/browser");
-        await Browser.open({ url: data.url });
-        const pollInterval = setInterval(async () => {
-          const { data: sessionData } = await supabase.auth.getSession();
-          if (sessionData.session) {
-            clearInterval(pollInterval);
+        const { App } = await import("@capacitor/app");
+
+        // 카카오와 동일: 딥링크로 토큰 받아서 세션 설정
+        const urlListener = await App.addListener("appUrlOpen", async (event) => {
+          if (event.url.startsWith("com.wandeung.app://oauth")) {
+            await urlListener.remove();
             await Browser.close();
+
+            const url = new URL(event.url.replace("com.wandeung.app://", "https://app/"));
+            const accessToken = url.searchParams.get("access_token");
+            const refreshToken = url.searchParams.get("refresh_token");
+
+            if (accessToken && refreshToken) {
+              await supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken,
+              });
+            }
             setLoading(false);
             navigate("/");
           }
-        }, 1000);
+        });
+
         await Browser.addListener("browserFinished", async () => {
-          clearInterval(pollInterval);
+          await urlListener.remove();
           await Browser.removeAllListeners();
           const { data: sessionData } = await supabase.auth.getSession();
           if (sessionData.session) {
@@ -197,6 +212,8 @@ const AuthPage = () => {
             setLoading(false);
           }
         });
+
+        await Browser.open({ url: data.url });
       }
     } catch (err: any) {
       const message = getSupabaseErrorMessage(err, "로그인 처리 중 오류가 발생했습니다.");
