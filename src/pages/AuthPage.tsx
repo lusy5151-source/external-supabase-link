@@ -170,23 +170,14 @@ const AuthPage = () => {
       const redirectTo = isNative
         ? "https://wandeung.com/auth/callback?native=1"
         : "https://wandeung.com/auth/callback";
-
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: {
-          redirectTo,
-          skipBrowserRedirect: isNative,
-        },
+        options: { redirectTo, skipBrowserRedirect: isNative },
       });
-
       if (error) throw error;
-
       if (isNative && data?.url) {
         const { Browser } = await import("@capacitor/browser");
-
         await Browser.open({ url: data.url });
-
-        // 딥링크 대신 세션 폴링 방식 (더 안정적)
         const pollInterval = setInterval(async () => {
           const { data: sessionData } = await supabase.auth.getSession();
           if (sessionData.session) {
@@ -196,8 +187,6 @@ const AuthPage = () => {
             navigate("/");
           }
         }, 1000);
-
-        // 브라우저 닫히면 폴링 중단
         await Browser.addListener("browserFinished", async () => {
           clearInterval(pollInterval);
           await Browser.removeAllListeners();
@@ -209,11 +198,8 @@ const AuthPage = () => {
           }
         });
       }
-
-
     } catch (err: any) {
       const message = getSupabaseErrorMessage(err, "로그인 처리 중 오류가 발생했습니다.");
-      console.error("Supabase Google login error:", err);
       setAuthError(message);
       toast({ title: "인증 오류", description: message, variant: "destructive" });
       setLoading(false);
