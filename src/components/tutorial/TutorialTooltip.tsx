@@ -258,6 +258,7 @@ const TutorialTooltip = ({
       {/* Tooltip card */}
       <div style={style}>
         <div
+          key={currentStep}
           style={{
             background: "#FFFFFF",
             borderRadius: 16,
@@ -266,6 +267,7 @@ const TutorialTooltip = ({
             border: borderFlash ? "2px solid hsl(var(--brand-forest))" : "2px solid transparent",
             transition: "border-color 0.3s",
             position: "relative",
+            animation: "tooltip-fade-in 0.2s ease-out forwards",
           }}
           onClick={(e) => e.stopPropagation()}
         >
