@@ -23,6 +23,48 @@ interface JournalFormProps {
   prefillMountainId?: number;
   prefillDate?: string;
 }
+const compressImage = async (file: File): Promise<File> => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return resolve(file);
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      const MAX = 1920;
+      let { width, height } = img;
+      if (width > MAX || height > MAX) {
+        if (width > height) {
+          height = Math.round((height * MAX) / width);
+          width = MAX;
+        } else {
+          width = Math.round((width * MAX) / height);
+          height = MAX;
+        }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(url);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) return resolve(file);
+          const newName = file.name.replace(/\.(heic|heif)$/i, ".jpg");
+          resolve(new File([blob], newName, { type: "image/jpeg" }));
+        },
+        "image/jpeg",
+        0.8
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+    img.src = url;
+  });
+};
 
 const weatherOptions = ["☀️ 맑음", "⛅ 구름", "☁️ 흐림", "🌧️ 비", "❄️ 눈", "🌫️ 안개"];
 const difficultyOptions = ["쉬움", "보통", "어려움", "매우 어려움"];
@@ -268,7 +310,8 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
       setUploadProgress({ current: 0, total: pendingPhotos.length });
       try {
         for (let i = 0; i < pendingPhotos.length; i++) {
-          const url = await uploadPhoto(pendingPhotos[i].file);
+          const compressed = await compressImage(pendingPhotos[i].file);
+          const url = await uploadPhoto(compressed);
           if (!url) throw new Error("사진 업로드에 실패했어요");
           uploadedUrls.push(url);
           setUploadProgress({ current: i + 1, total: pendingPhotos.length });
