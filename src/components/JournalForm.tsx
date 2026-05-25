@@ -217,7 +217,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
 
   const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 
-  const addFilesToPending = (files: File[]) => {
+  const addFilesToPending = async (files: File[]) => {
     const currentTotal = photos.length + pendingPhotos.length;
     const remaining = MAX_PHOTOS - currentTotal;
     if (remaining <= 0 || files.length > remaining) {
@@ -225,27 +225,30 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
       if (remaining <= 0) return;
     }
     const incoming = files.slice(0, Math.max(0, remaining));
-    const newPending: { file: File; preview: string }[] = [];
+    const filtered: File[] = [];
     for (const file of incoming) {
       if (file.type && !allowedTypes.includes(file.type)) {
         toast({ title: "JPG, PNG, WEBP 형식의 사진만 업로드 가능해요", variant: "destructive" });
         continue;
       }
-      if (file.size > 10 * 1024 * 1024) {
-        toast({ title: "사진 크기는 10MB 이하여야 해요", variant: "destructive" });
+      if (file.size > 30 * 1024 * 1024) {
+        toast({ title: "사진 크기는 30MB 이하여야 해요", variant: "destructive" });
         continue;
       }
-      newPending.push({ file, preview: URL.createObjectURL(file) });
+      filtered.push(file);
     }
+    const compressed = await Promise.all(filtered.map((f) => compressImage(f)));
+    const newPending = compressed.map((file) => ({ file, preview: URL.createObjectURL(file) }));
     setPendingPhotos((prev) => [...prev, ...newPending]);
   };
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    addFilesToPending(Array.from(files));
+    void addFilesToPending(Array.from(files));
     e.target.value = "";
   };
+
 
   const handleNativePhotoPick = async () => {
     try {
