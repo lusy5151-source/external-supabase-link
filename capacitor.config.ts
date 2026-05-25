@@ -11,6 +11,10 @@ const config: CapacitorConfig = {
     Browser: {
       presentationStyle: 'popover',
     },
+    Keyboard: {
+      resize: 'none',
+      resizeOnFullScreen: true,
+    },
   },
 };
 
