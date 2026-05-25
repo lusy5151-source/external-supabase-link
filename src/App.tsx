@@ -314,8 +314,17 @@ const App = () => {
                   console.error("[deeplink] oauth error", errorParam);
                   return;
                 }
-                await supabase.auth.refreshSession();
-                await supabase.auth.getSession();
+                // Google OAuth: 토큰을 URL에서 받아서 세션 설정
+                const accessToken = parsed.searchParams.get("access_token");
+                const refreshToken = parsed.searchParams.get("refresh_token");
+                if (accessToken && refreshToken) {
+                  await supabase.auth.setSession({
+                    access_token: accessToken,
+                    refresh_token: refreshToken,
+                  });
+                } else {
+                  await supabase.auth.refreshSession();
+                }
                 window.location.replace("/");
                 return;
               }
