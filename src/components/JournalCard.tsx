@@ -202,6 +202,8 @@ export function JournalCard({ journal, showAuthor = true, onRefresh, slider = fa
                       <img
                         src={url}
                         alt=""
+                        loading="lazy"
+                        decoding="async"
                         style={{
                           width: '100%',
                           aspectRatio: '1',
