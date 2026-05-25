@@ -106,7 +106,7 @@ export function useLeaderboard() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: allClaims } = await (supabase as any).from("summit_claims").select("user_id, mountain_id, group_id").order("claimed_at", { ascending: true });
+      const { data: allClaims } = await (supabase as any).from("summit_claims").select("user_id, mountain_id, group_id").eq("source", "certified").order("claimed_at", { ascending: true });
       if (!allClaims || (allClaims as any[]).length === 0) { setLoading(false); return; }
       const userCounts = new Map<string, number>();
       (allClaims as any[]).forEach((c: any) => userCounts.set(c.user_id, (userCounts.get(c.user_id) || 0) + 1));
