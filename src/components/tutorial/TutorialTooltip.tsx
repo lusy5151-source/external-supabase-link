@@ -27,8 +27,12 @@ interface TutorialTooltipProps {
 
 const TOOLTIP_STYLES = `
 @keyframes tutorial-card-enter {
-  0% { opacity: 0; transform: translate(-50%, calc(-50% + 20px)); }
+  0% { opacity: 0; transform: translate(-50%, calc(-50% + 12px)); }
   100% { opacity: 1; transform: translate(-50%, -50%); }
+}
+@keyframes tooltip-fade-in {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 @keyframes tutorial-border-flash {
   0%, 100% { border-color: transparent; }
@@ -254,6 +258,7 @@ const TutorialTooltip = ({
       {/* Tooltip card */}
       <div style={style}>
         <div
+          key={currentStep}
           style={{
             background: "#FFFFFF",
             borderRadius: 16,
@@ -262,6 +267,7 @@ const TutorialTooltip = ({
             border: borderFlash ? "2px solid hsl(var(--brand-forest))" : "2px solid transparent",
             transition: "border-color 0.3s",
             position: "relative",
+            animation: "tooltip-fade-in 0.2s ease-out forwards",
           }}
           onClick={(e) => e.stopPropagation()}
         >
