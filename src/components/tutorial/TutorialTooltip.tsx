@@ -337,8 +337,8 @@ const TutorialTooltip = ({
           {customContent === "mini-leaderboard" && <MiniLeaderboard />}
           {customContent === "final-celebration" && <FinalCelebration />}
 
-          {/* Action button or task hint */}
-          {interactive && !interactionComplete ? (
+          {/* Task hint (interactive steps) */}
+          {interactive && !interactionComplete && taskHint && (
             <p
               className="text-center"
               style={{
@@ -350,34 +350,36 @@ const TutorialTooltip = ({
             >
               {taskHint}
             </p>
-          ) : interactive && interactionComplete ? (
+          )}
+          {interactive && interactionComplete && (
             <p
               className="text-center"
               style={{
                 fontSize: 13,
                 color: "hsl(var(--brand-forest))",
-                marginTop: 14,
+                marginTop: 10,
                 fontWeight: 500,
               }}
             >
               ✅ 완료!
             </p>
-          ) : (
-            <button
-              onClick={onNext}
-              className="w-full font-medium text-white"
-              style={{
-                height: customContent === "final-celebration" ? 48 : 44,
-                background: "hsl(var(--brand-forest))",
-                borderRadius: 10,
-                fontSize: customContent === "final-celebration" ? 15 : 14,
-                fontWeight: customContent === "final-celebration" ? 500 : undefined,
-                marginTop: 14,
-              }}
-            >
-              {buttonLabel}
-            </button>
           )}
+
+          {/* Next button — always available so user can advance manually */}
+          <button
+            onClick={onNext}
+            className="w-full font-medium text-white"
+            style={{
+              height: customContent === "final-celebration" ? 48 : 44,
+              background: "hsl(var(--brand-forest))",
+              borderRadius: 10,
+              fontSize: customContent === "final-celebration" ? 15 : 14,
+              fontWeight: customContent === "final-celebration" ? 500 : undefined,
+              marginTop: 10,
+            }}
+          >
+            {interactive && !interactionComplete ? "다음" : buttonLabel}
+          </button>
         </div>
       </div>
     </>
