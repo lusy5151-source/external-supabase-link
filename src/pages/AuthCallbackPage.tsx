@@ -29,7 +29,13 @@ export default function AuthCallbackPage() {
             if (timeoutId) clearTimeout(timeoutId);
             if (isNative) {
               setStatus("앱으로 돌아가는 중...");
-              window.location.replace("com.wandeung.app://oauth");
+              const at = session?.access_token;
+              const rt = session?.refresh_token;
+              if (at && rt) {
+                window.location.href = `com.wandeung.app://oauth?access_token=${at}&refresh_token=${rt}`;
+              } else {
+                window.location.replace("com.wandeung.app://oauth");
+              }
             } else {
               navigate("/", { replace: true });
             }
@@ -53,7 +59,13 @@ export default function AuthCallbackPage() {
           subscription.unsubscribe();
           if (isNative) {
             setStatus("앱으로 돌아가는 중...");
-            window.location.replace("com.wandeung.app://oauth");
+            const at = data.session.access_token;
+            const rt = data.session.refresh_token;
+            if (at && rt) {
+              window.location.href = `com.wandeung.app://oauth?access_token=${at}&refresh_token=${rt}`;
+            } else {
+              window.location.replace("com.wandeung.app://oauth");
+            }
           } else {
             navigate("/", { replace: true });
           }
