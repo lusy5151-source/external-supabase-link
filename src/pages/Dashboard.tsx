@@ -33,6 +33,7 @@ import {
   Users, Flag, Crown, Flame,
 } from "lucide-react";
 import { AnnouncementSection } from "@/components/AnnouncementSystem";
+import MagazineHub from "@/components/MagazineHub";
 // OnboardingTutorial moved to Layout
 import { Link, useNavigate } from "react-router-dom";
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
@@ -1281,6 +1282,9 @@ const Dashboard = () => {
               </div>
             </section>
           )}
+
+          {/* ── 완등 MAGAZINE 콘텐츠 허브 ── */}
+          <MagazineHub />
 
           {/* ── 2. Circular Progress Cards: 100대 명산 + 정상 챌린지 ── */}
           <section className="grid grid-cols-2 gap-3">

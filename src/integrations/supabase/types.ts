@@ -1168,36 +1168,54 @@ export type Database = {
       magazine_posts: {
         Row: {
           category: string | null
+          content_body: string | null
+          content_type: string | null
           cover_image_url: string | null
           created_at: string | null
           created_by: string | null
           description: string | null
           id: string
           is_featured: boolean | null
+          read_time_minutes: number | null
+          related_mountain_ids: number[] | null
+          tags: string[] | null
           title: string
           updated_at: string | null
+          view_count: number | null
         }
         Insert: {
           category?: string | null
+          content_body?: string | null
+          content_type?: string | null
           cover_image_url?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
           id?: string
           is_featured?: boolean | null
+          read_time_minutes?: number | null
+          related_mountain_ids?: number[] | null
+          tags?: string[] | null
           title: string
           updated_at?: string | null
+          view_count?: number | null
         }
         Update: {
           category?: string | null
+          content_body?: string | null
+          content_type?: string | null
           cover_image_url?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
           id?: string
           is_featured?: boolean | null
+          read_time_minutes?: number | null
+          related_mountain_ids?: number[] | null
+          tags?: string[] | null
           title?: string
           updated_at?: string | null
+          view_count?: number | null
         }
         Relationships: [
           {
@@ -1261,25 +1279,31 @@ export type Database = {
       }
       magazine_slides: {
         Row: {
+          caption: string | null
           created_at: string | null
           id: string
           image_url: string
           post_id: string
           slide_order: number
+          subtitle: string | null
         }
         Insert: {
+          caption?: string | null
           created_at?: string | null
           id?: string
           image_url: string
           post_id: string
           slide_order?: number
+          subtitle?: string | null
         }
         Update: {
+          caption?: string | null
           created_at?: string | null
           id?: string
           image_url?: string
           post_id?: string
           slide_order?: number
+          subtitle?: string | null
         }
         Relationships: [
           {
@@ -2591,6 +2615,75 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      push_notification_logs: {
+        Row: {
+          body: string | null
+          created_at: string | null
+          id: string
+          status: string | null
+          title: string | null
+          user_id: string | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          title?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          title?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      push_tokens: {
+        Row: {
+          created_at: string | null
+          id: string
+          platform: string | null
+          token: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          platform?: string | null
+          token: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          platform?: string | null
+          token?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "push_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       reports: {
         Row: {
