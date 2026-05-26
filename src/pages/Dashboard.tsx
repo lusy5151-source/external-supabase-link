@@ -1283,6 +1283,9 @@ const Dashboard = () => {
             </section>
           )}
 
+          {/* ── 완등 MAGAZINE 콘텐츠 허브 ── */}
+          <MagazineHub />
+
           {/* ── 2. Circular Progress Cards: 100대 명산 + 정상 챌린지 ── */}
           <section className="grid grid-cols-2 gap-3">
             {/* LEFT: 100대 명산 */}
