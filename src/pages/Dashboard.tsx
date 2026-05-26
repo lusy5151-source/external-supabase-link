@@ -635,6 +635,18 @@ const Dashboard = () => {
   const { fetchSharedCompletions } = useSharedCompletions();
   const { claims: liveClaims, kingOfDay, loading: liveFeedLoading } = useLiveSummitFeed();
   const [recentJournals, setRecentJournals] = useState<HikingJournal[]>([]);
+  const [hasMagazinePosts, setHasMagazinePosts] = useState(false);
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("magazine_posts")
+        .select("id")
+        .eq("is_published", true)
+        .not("cover_image_url", "is", null)
+        .limit(1);
+      setHasMagazinePosts(!!data && data.length > 0);
+    })();
+  }, []);
   const [lastHikeDate, setLastHikeDate] = useState<string | null>(null);
   const [recentSharedCompletions, setRecentSharedCompletions] = useState<SharedCompletion[]>([]);
   const [activeChallenges, setActiveChallenges] = useState<(UserChallenge & { ch: Challenge })[]>([]);
