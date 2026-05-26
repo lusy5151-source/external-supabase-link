@@ -42,7 +42,7 @@ const MagazinePage = () => {
                 key={post.id}
                 onClick={() => setOpenPost(post)}
                 className="text-left overflow-hidden bg-card"
-                style={{ borderRadius: 16, border: "0.5px solid hsl(var(--border))" }}
+                style={{ borderRadius: 16 }}
               >
                 {post.cover_image_url ? (
                   <img
