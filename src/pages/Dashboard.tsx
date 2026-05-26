@@ -33,6 +33,7 @@ import {
   Users, Flag, Crown, Flame,
 } from "lucide-react";
 import { AnnouncementSection } from "@/components/AnnouncementSystem";
+import MagazineHub from "@/components/MagazineHub";
 // OnboardingTutorial moved to Layout
 import { Link, useNavigate } from "react-router-dom";
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
