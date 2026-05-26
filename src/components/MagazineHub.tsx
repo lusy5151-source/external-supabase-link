@@ -101,9 +101,9 @@ const MagazineHub = () => {
             >
               {featured.title}
             </p>
-            {featured.read_time_minutes != null && (
+            {(featured as any).read_time_minutes != null && (
               <p style={{ fontSize: 10, color: "rgba(255,255,255,0.8)" }}>
-                {featured.read_time_minutes}분 읽기
+                {(featured as any).read_time_minutes}분 읽기
               </p>
             )}
           </div>
@@ -146,12 +146,12 @@ const MagazineHub = () => {
                   >
                     {p.title}
                   </p>
-                  {p.read_time_minutes != null && (
+                  {(p as any).read_time_minutes != null && (
                     <p
                       className="text-muted-foreground"
                       style={{ fontSize: 9, marginTop: 2 }}
                     >
-                      {p.read_time_minutes}분 읽기
+                      {(p as any).read_time_minutes}분 읽기
                     </p>
                   )}
                 </div>
@@ -258,13 +258,13 @@ const MagazineDetailSheet = ({
                 <div key={s.id} className="shrink-0 w-full max-w-[88%] space-y-1">
                   <img
                     src={s.image_url}
-                    alt={s.caption || ""}
+                    alt={(s as any).caption || ""}
                     className="w-full object-cover rounded-xl"
                     style={{ height: 160 }}
                   />
-                  {s.caption && (
+                  {(s as any).caption && (
                     <p className="text-muted-foreground" style={{ fontSize: 12 }}>
-                      {s.caption}
+                      {(s as any).caption}
                     </p>
                   )}
                 </div>
