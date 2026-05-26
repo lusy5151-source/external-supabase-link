@@ -1176,6 +1176,7 @@ export type Database = {
           description: string | null
           id: string
           is_featured: boolean | null
+          is_published: boolean | null
           read_time_minutes: number | null
           related_mountain_ids: number[] | null
           tags: string[] | null
@@ -1193,6 +1194,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_featured?: boolean | null
+          is_published?: boolean | null
           read_time_minutes?: number | null
           related_mountain_ids?: number[] | null
           tags?: string[] | null
@@ -1210,6 +1212,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_featured?: boolean | null
+          is_published?: boolean | null
           read_time_minutes?: number | null
           related_mountain_ids?: number[] | null
           tags?: string[] | null

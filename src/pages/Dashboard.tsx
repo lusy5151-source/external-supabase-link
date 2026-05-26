@@ -33,7 +33,6 @@ import {
   Users, Flag, Crown, Flame,
 } from "lucide-react";
 import { AnnouncementSection } from "@/components/AnnouncementSystem";
-import MagazineHub from "@/components/MagazineHub";
 // OnboardingTutorial moved to Layout
 import { Link, useNavigate } from "react-router-dom";
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
@@ -636,6 +635,18 @@ const Dashboard = () => {
   const { fetchSharedCompletions } = useSharedCompletions();
   const { claims: liveClaims, kingOfDay, loading: liveFeedLoading } = useLiveSummitFeed();
   const [recentJournals, setRecentJournals] = useState<HikingJournal[]>([]);
+  const [hasMagazinePosts, setHasMagazinePosts] = useState(false);
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("magazine_posts")
+        .select("id")
+        .eq("is_published", true)
+        .not("cover_image_url", "is", null)
+        .limit(1);
+      setHasMagazinePosts(!!data && data.length > 0);
+    })();
+  }, []);
   const [lastHikeDate, setLastHikeDate] = useState<string | null>(null);
   const [recentSharedCompletions, setRecentSharedCompletions] = useState<SharedCompletion[]>([]);
   const [activeChallenges, setActiveChallenges] = useState<(UserChallenge & { ch: Challenge })[]>([]);
@@ -1283,9 +1294,6 @@ const Dashboard = () => {
             </section>
           )}
 
-          {/* ── 완등 MAGAZINE 콘텐츠 허브 ── */}
-          <MagazineHub />
-
           {/* ── 2. Circular Progress Cards: 100대 명산 + 정상 챌린지 ── */}
           <section className="grid grid-cols-2 gap-3">
             {/* LEFT: 100대 명산 */}
@@ -1438,19 +1446,21 @@ const Dashboard = () => {
           })()}
 
           {/* ── 3. 완등 MAGAZINE Banner ── */}
-          <section>
-            <Link to="/magazine">
-              <div className="relative rounded-2xl p-4 shadow-md overflow-hidden hover:shadow-lg transition-all hover:scale-[1.01] active:scale-[0.99]" style={{ background: "hsl(var(--magazine))" }}>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-20">
-                  <Newspaper className="h-14 w-14 text-white/20" />
+          {hasMagazinePosts && (
+            <section>
+              <Link to="/magazine">
+                <div className="relative rounded-2xl p-4 shadow-md overflow-hidden hover:shadow-lg transition-all hover:scale-[1.01] active:scale-[0.99]" style={{ background: "hsl(var(--magazine))" }}>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-20">
+                    <Newspaper className="h-14 w-14 text-white/20" />
+                  </div>
+                  <div className="relative z-10">
+                    <h2 className="text-base font-bold text-white">완등 MAGAZINE</h2>
+                    <p className="text-[11px] mt-0.5 text-white/80">등산 정보 · 코스 · 장비 · 안전 팁</p>
+                  </div>
                 </div>
-                <div className="relative z-10">
-                  <h2 className="text-base font-bold text-white">완등 MAGAZINE</h2>
-                  <p className="text-[11px] mt-0.5 text-white/80">등산 정보 · 코스 · 장비 · 안전 팁</p>
-                </div>
-              </div>
-            </Link>
-          </section>
+              </Link>
+            </section>
+          )}
 
           {/* ── CTA Buttons ── */}
           <section className="grid grid-cols-2 gap-3">
