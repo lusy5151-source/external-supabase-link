@@ -1129,6 +1129,50 @@ export type Database = {
         }
         Relationships: []
       }
+      magazine_content_blocks: {
+        Row: {
+          block_order: number
+          block_type: string
+          body_text: string | null
+          created_at: string | null
+          heading_text: string | null
+          id: string
+          image_caption: string | null
+          image_url: string | null
+          post_id: string
+        }
+        Insert: {
+          block_order: number
+          block_type?: string
+          body_text?: string | null
+          created_at?: string | null
+          heading_text?: string | null
+          id?: string
+          image_caption?: string | null
+          image_url?: string | null
+          post_id: string
+        }
+        Update: {
+          block_order?: number
+          block_type?: string
+          body_text?: string | null
+          created_at?: string | null
+          heading_text?: string | null
+          id?: string
+          image_caption?: string | null
+          image_url?: string | null
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "magazine_content_blocks_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "magazine_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       magazine_likes: {
         Row: {
           created_at: string | null
@@ -1177,6 +1221,7 @@ export type Database = {
           id: string
           is_featured: boolean | null
           is_published: boolean | null
+          post_images: string[] | null
           read_time_minutes: number | null
           related_mountain_ids: number[] | null
           tags: string[] | null
@@ -1195,6 +1240,7 @@ export type Database = {
           id?: string
           is_featured?: boolean | null
           is_published?: boolean | null
+          post_images?: string[] | null
           read_time_minutes?: number | null
           related_mountain_ids?: number[] | null
           tags?: string[] | null
@@ -1213,6 +1259,7 @@ export type Database = {
           id?: string
           is_featured?: boolean | null
           is_published?: boolean | null
+          post_images?: string[] | null
           read_time_minutes?: number | null
           related_mountain_ids?: number[] | null
           tags?: string[] | null

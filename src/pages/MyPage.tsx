@@ -202,6 +202,21 @@ const MyPage = () => {
         ))}
       </div>
 
+      {/* Admin content management entry (top of menu, admin-only) */}
+      {isAdmin && (
+        <Link
+          to="/admin/magazine"
+          className="flex items-center gap-3 rounded-2xl px-4 py-3.5 transition-opacity hover:opacity-90"
+          style={{ background: "#EAF3DE" }}
+        >
+          <ShieldCheck style={{ width: 16, height: 16, color: "#639922" }} />
+          <span className="flex-1" style={{ fontSize: 14, color: "#639922", fontWeight: 600 }}>
+            콘텐츠 관리
+          </span>
+          <ChevronRight style={{ width: 16, height: 16, color: "#639922" }} />
+        </Link>
+      )}
+
       {/* Menu list */}
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
         {menuItems.map((item, idx) => (
