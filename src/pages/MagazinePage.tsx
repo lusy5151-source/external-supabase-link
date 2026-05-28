@@ -283,8 +283,34 @@ const MagazinePage = () => {
   );
 };
 
+interface ContentBlock {
+  id: string;
+  block_type: string;
+  heading_text: string | null;
+  image_url: string | null;
+  image_caption: string | null;
+  body_text: string | null;
+  block_order: number;
+}
+
 const MagazineDetail = ({ post, onBack }: { post: MagazinePost; onBack: () => void }) => {
-  const body = post.content_body || post.description || "";
+  const [blocks, setBlocks] = useState<ContentBlock[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("magazine_content_blocks")
+        .select("*")
+        .eq("post_id", post.id)
+        .order("block_order");
+      setBlocks((data as ContentBlock[]) || []);
+      setLoaded(true);
+    })();
+  }, [post.id]);
+
+  const fallbackBody = post.content_body || post.description || "";
+
   return (
     <div className="bg-background min-h-screen" style={{ paddingBottom: 40 }}>
       <div className="relative">
@@ -333,15 +359,135 @@ const MagazineDetail = ({ post, onBack }: { post: MagazinePost; onBack: () => vo
             margin: "12px 0",
           }}
         />
-        <div
-          className="text-muted-foreground"
-          style={{ fontSize: 14, lineHeight: 1.9, whiteSpace: "pre-wrap" }}
-        >
-          {body}
-        </div>
+
+        {loaded && blocks.length > 0 ? (
+          <div>
+            {blocks.map((b) => {
+              if (b.block_type === "heading") {
+                return (
+                  <div
+                    key={b.id}
+                    className="text-foreground"
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 500,
+                      borderLeft: "3px solid #639922",
+                      paddingLeft: 10,
+                      margin: "16px 0 8px",
+                    }}
+                  >
+                    {b.heading_text}
+                  </div>
+                );
+              }
+              if (b.block_type === "image_text") {
+                return (
+                  <div key={b.id} style={{ margin: "12px 0" }}>
+                    {b.image_url && (
+                      <img
+                        src={b.image_url}
+                        alt={b.image_caption || ""}
+                        style={{
+                          width: "100%",
+                          borderRadius: 8,
+                          height: "auto",
+                          objectFit: "contain",
+                        }}
+                      />
+                    )}
+                    {b.image_caption && (
+                      <p
+                        className="text-muted-foreground"
+                        style={{
+                          fontSize: 11,
+                          textAlign: "center",
+                          marginTop: 4,
+                        }}
+                      >
+                        {b.image_caption}
+                      </p>
+                    )}
+                    {b.body_text && (
+                      <p
+                        className="text-muted-foreground"
+                        style={{
+                          fontSize: 13,
+                          lineHeight: 1.7,
+                          marginTop: 8,
+                          whiteSpace: "pre-wrap",
+                        }}
+                      >
+                        {b.body_text}
+                      </p>
+                    )}
+                  </div>
+                );
+              }
+              if (b.block_type === "text_only") {
+                return (
+                  <p
+                    key={b.id}
+                    className="text-muted-foreground"
+                    style={{
+                      fontSize: 13,
+                      lineHeight: 1.75,
+                      margin: "8px 0",
+                      whiteSpace: "pre-wrap",
+                    }}
+                  >
+                    {b.body_text}
+                  </p>
+                );
+              }
+              if (b.block_type === "tip") {
+                return (
+                  <div
+                    key={b.id}
+                    style={{
+                      background: "#EAF3DE",
+                      borderRadius: 8,
+                      padding: "10px 12px",
+                      margin: "10px 0",
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 500,
+                        color: "#27500A",
+                        marginBottom: 3,
+                      }}
+                    >
+                      팁
+                    </p>
+                    <p
+                      style={{
+                        fontSize: 12,
+                        color: "#3B6D11",
+                        lineHeight: 1.5,
+                        whiteSpace: "pre-wrap",
+                      }}
+                    >
+                      {b.body_text}
+                    </p>
+                  </div>
+                );
+              }
+              return null;
+            })}
+          </div>
+        ) : (
+          <div
+            className="text-muted-foreground"
+            style={{ fontSize: 14, lineHeight: 1.9, whiteSpace: "pre-wrap" }}
+          >
+            {fallbackBody}
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 export default MagazinePage;
+
