@@ -61,6 +61,7 @@ const AdminAnnouncementsPage = lazy(() => import("@/pages/AdminAnnouncementsPage
 const LeaderboardPage = lazy(() => import("@/pages/LeaderboardPage"));
 const MagazinePage = lazy(() => import("@/pages/MagazinePage"));
 const AdminMagazinePage = lazy(() => import("@/pages/AdminMagazinePage"));
+const AdminMagazineEditorPage = lazy(() => import("@/pages/AdminMagazineEditorPage"));
 const AdminReportsPage = lazy(() => import("@/pages/AdminReportsPage"));
 const AdminMountainApprovalPage = lazy(() => import("@/pages/AdminMountainApprovalPage"));
 const AdminPage = lazy(() => import("@/pages/AdminPage"));
