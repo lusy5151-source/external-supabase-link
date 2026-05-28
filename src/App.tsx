@@ -247,6 +247,9 @@ const AppRoutes = () => {
       <Route path="/magazine" element={<LazyPage><MagazinePage /></LazyPage>} />
       <Route path="/summit-claim" element={<ProtectedRoute><LazyPage><SummitClaimPage /></LazyPage></ProtectedRoute>} />
       <Route path="/admin/magazine" element={<ProtectedRoute><LazyPage><AdminMagazinePage /></LazyPage></ProtectedRoute>} />
+      <Route path="/admin/magazine/new" element={<ProtectedRoute><LazyPage><AdminMagazineEditorPage /></LazyPage></ProtectedRoute>} />
+      <Route path="/admin/magazine/:id/edit" element={<ProtectedRoute><LazyPage><AdminMagazineEditorPage /></LazyPage></ProtectedRoute>} />
+
       <Route path="/admin/reports" element={<ProtectedRoute><LazyPage><AdminReportsPage /></LazyPage></ProtectedRoute>} />
       <Route path="/admin/mountains" element={<ProtectedRoute><LazyPage><AdminMountainApprovalPage /></LazyPage></ProtectedRoute>} />
       <Route path="/admin/gpx-sync" element={<ProtectedRoute><LazyPage><AdminGpxSyncPage /></LazyPage></ProtectedRoute>} />
