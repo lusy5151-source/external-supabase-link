@@ -510,7 +510,7 @@ const AdminMagazineEditorPage = () => {
       <div
         style={{
           position: "fixed",
-          bottom: 0,
+          bottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
           left: 0,
           right: 0,
           background: "hsl(var(--background))",
