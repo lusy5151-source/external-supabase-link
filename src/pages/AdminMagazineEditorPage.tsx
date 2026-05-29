@@ -201,7 +201,7 @@ const AdminMagazineEditorPage = () => {
   };
 
   return (
-    <div className="pb-32 -mx-5">
+    <div className="pb-56 -mx-5">
       {/* Top bar */}
       <div
         className="sticky top-14 z-10 flex items-center justify-between bg-background"
