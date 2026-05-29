@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Tables } from "@/integrations/supabase/types";
@@ -7,10 +7,31 @@ type Profile = Tables<"profiles">;
 type SafeProfile = Omit<Profile, "email">;
 const PROFILE_SELECT = "id, user_id, nickname, avatar_url, bio, location, hiking_styles, provider, is_active, created_at, updated_at";
 
+const cacheKey = (userId: string) => `profile_cache_${userId}`;
+
+function readCache(userId: string): Profile | null {
+  try {
+    const raw = localStorage.getItem(cacheKey(userId));
+    return raw ? (JSON.parse(raw) as Profile) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(userId: string, profile: Profile | null) {
+  try {
+    if (profile) localStorage.setItem(cacheKey(userId), JSON.stringify(profile));
+    else localStorage.removeItem(cacheKey(userId));
+  } catch {
+    /* ignore */
+  }
+}
+
 export function useProfile() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const fetchedForUserRef = useRef<string | null>(null);
 
   const fetchProfile = useCallback(async () => {
     if (!user) {
@@ -25,13 +46,34 @@ export function useProfile() {
       .eq("user_id", user.id)
       .single();
 
-    setProfile(data ? { ...(data as SafeProfile), email: user.email ?? null } : null);
+    const next = data ? { ...(data as SafeProfile), email: user.email ?? null } : null;
+    setProfile(next);
+    writeCache(user.id, next);
     setLoading(false);
   }, [user]);
 
+  // Stale-while-revalidate: show cached profile immediately, refetch in background.
   useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+    if (!user) {
+      setProfile(null);
+      setLoading(false);
+      fetchedForUserRef.current = null;
+      return;
+    }
+
+    const cached = readCache(user.id);
+    if (cached) {
+      setProfile({ ...cached, email: user.email ?? cached.email ?? null });
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
+    if (fetchedForUserRef.current !== user.id) {
+      fetchedForUserRef.current = user.id;
+      fetchProfile();
+    }
+  }, [user, fetchProfile]);
 
   const updateProfile = async (updates: Partial<Pick<Profile, "nickname" | "bio" | "location" | "hiking_styles" | "avatar_url">>) => {
     if (!user) return;
@@ -48,7 +90,9 @@ export function useProfile() {
       const { toast } = await import("sonner");
       toast.error("저장에 실패했습니다. 다시 시도해주세요.");
     } else if (data) {
-      setProfile({ ...(data as SafeProfile), email: user.email ?? profile?.email ?? null });
+      const next = { ...(data as SafeProfile), email: user.email ?? profile?.email ?? null };
+      setProfile(next);
+      writeCache(user.id, next);
     }
     return { data, error };
   };
