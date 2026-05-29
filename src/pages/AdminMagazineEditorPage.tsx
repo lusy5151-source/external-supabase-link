@@ -192,7 +192,7 @@ const AdminMagazineEditorPage = () => {
 
   const inputStyle: React.CSSProperties = {
     width: "100%",
-    border: "0.5px solid hsl(var(--border))",
+    border: "0.5px solid #EAE7DD",
     borderRadius: 8,
     padding: "10px 12px",
     fontSize: 14,
@@ -205,7 +205,7 @@ const AdminMagazineEditorPage = () => {
       {/* Top bar */}
       <div
         className="sticky top-14 z-10 flex items-center justify-between bg-background"
-        style={{ padding: "12px 16px", borderBottom: "0.5px solid hsl(var(--border))" }}
+        style={{ padding: "12px 16px", borderBottom: "0.5px solid #EAE7DD" }}
       >
         <button onClick={() => nav(-1)} className="flex items-center gap-1 text-foreground" style={{ fontSize: 13 }}>
           <ArrowLeft style={{ width: 18, height: 18 }} /> 뒤로
@@ -290,7 +290,7 @@ const AdminMagazineEditorPage = () => {
               justifyContent: "space-between",
               padding: "10px 12px",
               borderRadius: 8,
-              border: "0.5px solid hsl(var(--border))",
+              border: "0.5px solid #EAE7DD",
               fontSize: 14,
               cursor: "pointer",
             }}
@@ -324,7 +324,7 @@ const AdminMagazineEditorPage = () => {
                 display: "flex",
                 gap: 8,
                 padding: "12px 0",
-                borderBottom: "0.5px solid hsl(var(--border))",
+                borderBottom: "0.5px solid #EAE7DD",
               }}
             >
               <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "center", paddingTop: 4 }}>
@@ -476,7 +476,7 @@ const AdminMagazineEditorPage = () => {
                 style={{
                   marginTop: 8,
                   background: "hsl(var(--background))",
-                  border: "0.5px solid hsl(var(--border))",
+                  border: "0.5px solid #EAE7DD",
                   borderRadius: 12,
                   padding: 8,
                   display: "grid",
@@ -514,7 +514,7 @@ const AdminMagazineEditorPage = () => {
           left: 0,
           right: 0,
           background: "hsl(var(--background))",
-          borderTop: "0.5px solid hsl(var(--border))",
+          borderTop: "0.5px solid #EAE7DD",
           padding: "12px 16px",
           display: "flex",
           gap: 8,
