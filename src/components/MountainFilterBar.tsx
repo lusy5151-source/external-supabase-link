@@ -124,6 +124,40 @@ export default function MountainFilterBar({ value, onChange, regions, resultCoun
             </button>
           );
         })}
+        {/* Region chip */}
+        {(() => {
+          const regionActive = value.region !== "전체";
+          return (
+            <button
+              type="button"
+              onClick={() => {
+                if (regionActive) {
+                  set("region", "전체");
+                } else {
+                  openFilter();
+                }
+              }}
+              style={{
+                padding: "6px 14px",
+                borderRadius: 9999,
+                fontSize: 12,
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                background: regionActive ? "#C7D66D" : "#FFFFFF",
+                color: regionActive ? "#173404" : "#4B5563",
+                fontWeight: regionActive ? 500 : 400,
+                border: regionActive ? "none" : "0.5px solid #F3F4F6",
+                cursor: "pointer",
+              }}
+            >
+              <MapPin size={11} />
+              {regionActive ? value.region : "지역"}
+            </button>
+          );
+        })()}
       </div>
 
       {/* Result count + sort/filter row */}
