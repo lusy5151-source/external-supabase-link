@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, ListFilter } from "lucide-react";
+import { X, ListFilter, MapPin } from "lucide-react";
 import {
   Sheet,
   SheetContent,
