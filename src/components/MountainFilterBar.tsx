@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, ListFilter } from "lucide-react";
+import { X, ListFilter, MapPin } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -53,7 +53,7 @@ interface Props {
   resultCount?: number;
 }
 
-export default function MountainFilterBar({ value, onChange, resultCount }: Props) {
+export default function MountainFilterBar({ value, onChange, regions, resultCount }: Props) {
   const set = <K extends keyof MountainFilterState>(k: K, v: MountainFilterState[K]) =>
     onChange({ ...value, [k]: v });
 
@@ -75,6 +75,7 @@ export default function MountainFilterBar({ value, onChange, resultCount }: Prop
       ...pending,
       difficulties: [],
       status: "all",
+      region: "전체",
       showUserOnly: false,
     });
 
@@ -123,6 +124,40 @@ export default function MountainFilterBar({ value, onChange, resultCount }: Prop
             </button>
           );
         })}
+        {/* Region chip */}
+        {(() => {
+          const regionActive = value.region !== "전체";
+          return (
+            <button
+              type="button"
+              onClick={() => {
+                if (regionActive) {
+                  set("region", "전체");
+                } else {
+                  openFilter();
+                }
+              }}
+              style={{
+                padding: "6px 14px",
+                borderRadius: 9999,
+                fontSize: 12,
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                background: regionActive ? "#C7D66D" : "#FFFFFF",
+                color: regionActive ? "#173404" : "#4B5563",
+                fontWeight: regionActive ? 500 : 400,
+                border: regionActive ? "none" : "0.5px solid #F3F4F6",
+                cursor: "pointer",
+              }}
+            >
+              <MapPin size={11} />
+              {regionActive ? value.region : "지역"}
+            </button>
+          );
+        })()}
       </div>
 
       {/* Result count + sort/filter row */}
@@ -323,6 +358,37 @@ export default function MountainFilterBar({ value, onChange, resultCount }: Prop
                       }}
                     >
                       {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 지역 */}
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: "#111827", marginBottom: 8 }}>
+                지역
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {(["전체", ...regions] as string[]).map((r) => {
+                  const active = pending.region === r;
+                  return (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setPending({ ...pending, region: r })}
+                      style={{
+                        padding: "6px 14px",
+                        borderRadius: 9999,
+                        fontSize: 12,
+                        background: active ? "#C7D66D" : "#FFFFFF",
+                        color: active ? "#173404" : "#4B5563",
+                        fontWeight: active ? 500 : 400,
+                        border: active ? "none" : "0.5px solid #F3F4F6",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {r}
                     </button>
                   );
                 })}
