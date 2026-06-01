@@ -363,6 +363,37 @@ export default function MountainFilterBar({ value, onChange, regions, resultCoun
                 })}
               </div>
             </div>
+
+            {/* 지역 */}
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: "#111827", marginBottom: 8 }}>
+                지역
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {(["전체", ...regions] as string[]).map((r) => {
+                  const active = pending.region === r;
+                  return (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setPending({ ...pending, region: r })}
+                      style={{
+                        padding: "6px 14px",
+                        borderRadius: 9999,
+                        fontSize: 12,
+                        background: active ? "#C7D66D" : "#FFFFFF",
+                        color: active ? "#173404" : "#4B5563",
+                        fontWeight: active ? 500 : 400,
+                        border: active ? "none" : "0.5px solid #F3F4F6",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {r}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           {/* Footer */}
