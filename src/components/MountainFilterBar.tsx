@@ -53,7 +53,7 @@ interface Props {
   resultCount?: number;
 }
 
-export default function MountainFilterBar({ value, onChange, resultCount }: Props) {
+export default function MountainFilterBar({ value, onChange, regions, resultCount }: Props) {
   const set = <K extends keyof MountainFilterState>(k: K, v: MountainFilterState[K]) =>
     onChange({ ...value, [k]: v });
 
@@ -75,6 +75,7 @@ export default function MountainFilterBar({ value, onChange, resultCount }: Prop
       ...pending,
       difficulties: [],
       status: "all",
+      region: "전체",
       showUserOnly: false,
     });
 
