@@ -79,13 +79,15 @@ export function useProfile() {
 
     const cached = readCache(user.id);
     if (cached) {
-      setProfile({ ...cached, email: user.email ?? cached.email ?? null });
+      setProfile({ ...cached.data, email: user.email ?? cached.data.email ?? null });
       setLoading(false);
     } else {
       setLoading(true);
     }
 
-    if (fetchedForUserRef.current !== user.id) {
+    // Skip background refetch if cache is fresh (< 5 min)
+    const isFresh = cached && Date.now() - cached.timestamp < CACHE_TTL;
+    if (!isFresh && fetchedForUserRef.current !== user.id) {
       fetchedForUserRef.current = user.id;
       fetchProfile();
     }
