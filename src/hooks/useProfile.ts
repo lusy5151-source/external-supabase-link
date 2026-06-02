@@ -8,11 +8,23 @@ type SafeProfile = Omit<Profile, "email">;
 const PROFILE_SELECT = "id, user_id, nickname, avatar_url, bio, location, hiking_styles, provider, is_active, created_at, updated_at";
 
 const cacheKey = (userId: string) => `profile_cache_${userId}`;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-function readCache(userId: string): Profile | null {
+interface CachedProfile {
+  data: Profile;
+  timestamp: number;
+}
+
+function readCache(userId: string): CachedProfile | null {
   try {
     const raw = localStorage.getItem(cacheKey(userId));
-    return raw ? (JSON.parse(raw) as Profile) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    // Backward-compat: old shape stored Profile directly
+    if (parsed && typeof parsed === "object" && "timestamp" in parsed && "data" in parsed) {
+      return parsed as CachedProfile;
+    }
+    return { data: parsed as Profile, timestamp: 0 };
   } catch {
     return null;
   }
@@ -20,7 +32,11 @@ function readCache(userId: string): Profile | null {
 
 function writeCache(userId: string, profile: Profile | null) {
   try {
-    if (profile) localStorage.setItem(cacheKey(userId), JSON.stringify(profile));
+    if (profile)
+      localStorage.setItem(
+        cacheKey(userId),
+        JSON.stringify({ data: profile, timestamp: Date.now() })
+      );
     else localStorage.removeItem(cacheKey(userId));
   } catch {
     /* ignore */
@@ -63,13 +79,15 @@ export function useProfile() {
 
     const cached = readCache(user.id);
     if (cached) {
-      setProfile({ ...cached, email: user.email ?? cached.email ?? null });
+      setProfile({ ...cached.data, email: user.email ?? cached.data.email ?? null });
       setLoading(false);
     } else {
       setLoading(true);
     }
 
-    if (fetchedForUserRef.current !== user.id) {
+    // Skip background refetch if cache is fresh (< 5 min)
+    const isFresh = cached && Date.now() - cached.timestamp < CACHE_TTL;
+    if (!isFresh && fetchedForUserRef.current !== user.id) {
       fetchedForUserRef.current = user.id;
       fetchProfile();
     }

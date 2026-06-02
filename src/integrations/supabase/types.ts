@@ -278,6 +278,13 @@ export type Database = {
             referencedRelation: "mountains"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bac100_mountains_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains_list"
+            referencedColumns: ["id"]
+          },
         ]
       }
       badges: {
@@ -395,6 +402,13 @@ export type Database = {
             columns: ["mountain_id"]
             isOneToOne: false
             referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "climbs_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains_list"
             referencedColumns: ["id"]
           },
           {
@@ -862,6 +876,13 @@ export type Database = {
             columns: ["representative_mountain_id"]
             isOneToOne: false
             referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiking_group_representative_mountain_id_fkey"
+            columns: ["representative_mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains_list"
             referencedColumns: ["id"]
           },
         ]
@@ -1531,6 +1552,13 @@ export type Database = {
             referencedRelation: "mountains"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "mountain_facilities_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains_list"
+            referencedColumns: ["id"]
+          },
         ]
       }
       mountain_trail_features: {
@@ -1567,6 +1595,13 @@ export type Database = {
             columns: ["mountain_id"]
             isOneToOne: true
             referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mountain_trail_features_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: true
+            referencedRelation: "mountains_list"
             referencedColumns: ["id"]
           },
         ]
@@ -1778,6 +1813,13 @@ export type Database = {
             referencedRelation: "mountains"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "national_park_courses_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains_list"
+            referencedColumns: ["id"]
+          },
         ]
       }
       national_parks: {
@@ -1832,6 +1874,13 @@ export type Database = {
             columns: ["mountain_id"]
             isOneToOne: false
             referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "national_parks_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains_list"
             referencedColumns: ["id"]
           },
         ]
@@ -2096,6 +2145,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "np_trails_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains_list"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "np_trails_national_park_id_fkey"
             columns: ["national_park_id"]
             isOneToOne: false
@@ -2150,6 +2206,13 @@ export type Database = {
             columns: ["source_mountain_id"]
             isOneToOne: false
             referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "osm_peaks_source_mountain_id_fkey"
+            columns: ["source_mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains_list"
             referencedColumns: ["id"]
           },
         ]
@@ -2208,6 +2271,13 @@ export type Database = {
             referencedRelation: "mountains"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "osm_trail_segments_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains_list"
+            referencedColumns: ["id"]
+          },
         ]
       }
       photos: {
@@ -2251,6 +2321,13 @@ export type Database = {
             columns: ["mountain_id"]
             isOneToOne: false
             referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "photos_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains_list"
             referencedColumns: ["id"]
           },
           {
@@ -3038,6 +3115,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "trail_closures_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains_list"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "trail_closures_trail_id_fkey"
             columns: ["trail_id"]
             isOneToOne: false
@@ -3130,6 +3214,13 @@ export type Database = {
             columns: ["mountain_id"]
             isOneToOne: false
             referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trail_safety_spots_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains_list"
             referencedColumns: ["id"]
           },
         ]
@@ -3326,6 +3417,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_trail_mountain"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains_list"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "trails_hiking_center_peak_id_fkey"
             columns: ["hiking_center_peak_id"]
             isOneToOne: false
@@ -3468,6 +3566,33 @@ export type Database = {
           },
         ]
       }
+      user_fcm_tokens: {
+        Row: {
+          created_at: string | null
+          fcm_token: string
+          id: string
+          platform: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          fcm_token: string
+          id?: string
+          platform?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          fcm_token?: string
+          id?: string
+          platform?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_mountain_challenges: {
         Row: {
           bac100_id: number | null
@@ -3524,6 +3649,13 @@ export type Database = {
             columns: ["mountain_id"]
             isOneToOne: false
             referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_mountain_challenges_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains_list"
             referencedColumns: ["id"]
           },
           {
@@ -3723,6 +3855,13 @@ export type Database = {
             referencedRelation: "mountains"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "vworld_trail_segments_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains_list"
+            referencedColumns: ["id"]
+          },
         ]
       }
       walking_path_courses: {
@@ -3844,6 +3983,13 @@ export type Database = {
             referencedRelation: "mountains"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "walking_paths_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains_list"
+            referencedColumns: ["id"]
+          },
         ]
       }
       weather_code_map: {
@@ -3917,6 +4063,72 @@ export type Database = {
       }
     }
     Views: {
+      mountains_list: {
+        Row: {
+          bac100_label: string | null
+          bac100_rank: number | null
+          created_at: string | null
+          difficulty: string | null
+          height: number | null
+          id: number | null
+          image_url: string | null
+          is_bac100: boolean | null
+          is_bac100_blackyak: boolean | null
+          is_national_park: boolean | null
+          is_oreum: boolean | null
+          lat: number | null
+          lng: number | null
+          name: string | null
+          name_ko: string | null
+          national_park_name: string | null
+          popularity: number | null
+          province: string | null
+          region: string | null
+        }
+        Insert: {
+          bac100_label?: string | null
+          bac100_rank?: number | null
+          created_at?: string | null
+          difficulty?: string | null
+          height?: number | null
+          id?: number | null
+          image_url?: string | null
+          is_bac100?: boolean | null
+          is_bac100_blackyak?: boolean | null
+          is_national_park?: boolean | null
+          is_oreum?: boolean | null
+          lat?: number | null
+          lng?: number | null
+          name?: string | null
+          name_ko?: string | null
+          national_park_name?: string | null
+          popularity?: number | null
+          province?: string | null
+          region?: string | null
+        }
+        Update: {
+          bac100_label?: string | null
+          bac100_rank?: number | null
+          created_at?: string | null
+          difficulty?: string | null
+          height?: number | null
+          id?: number | null
+          image_url?: string | null
+          is_bac100?: boolean | null
+          is_bac100_blackyak?: boolean | null
+          is_national_park?: boolean | null
+          is_oreum?: boolean | null
+          lat?: number | null
+          lng?: number | null
+          name?: string | null
+          name_ko?: string | null
+          national_park_name?: string | null
+          popularity?: number | null
+          province?: string | null
+          region?: string | null
+        }
+        Relationships: []
+      }
       profiles_safe: {
         Row: {
           avatar_url: string | null

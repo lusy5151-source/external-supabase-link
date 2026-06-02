@@ -54,7 +54,7 @@ export function useLiveSummitFeed() {
       .select("id, user_id, mountain_id, summit_id, photo_url, claimed_at")
       .not("photo_url", "is", null)
       .order("claimed_at", { ascending: false })
-      .limit(20);
+      .limit(5);
 
     const enriched = await enrichClaims((data as any[]) || []);
     setClaims(enriched);
@@ -123,7 +123,7 @@ export function useLiveSummitFeed() {
           const newClaim = payload.new as any;
           if (!newClaim?.photo_url) return; // only photo-verified claims
           const enriched = await enrichClaims([newClaim]);
-          setClaims((prev) => [...enriched, ...prev].slice(0, 20));
+          setClaims((prev) => [...enriched, ...prev].slice(0, 5));
           fetchKingOfDay();
         }
       )
