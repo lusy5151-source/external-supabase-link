@@ -221,107 +221,105 @@ export function useHikingJournals() {
       await supabase.from("plan_notifications").insert(notifications as any);
     }
 
-    // Notify achievement system to recheck (cross-component)
+    // Fire-and-forget: XP + challenge progress run in the background so the
+    // UI can update immediately after insert succeeds.
     if (!error) {
       try { window.dispatchEvent(new Event("wandeung_journal_changed")); } catch {}
-      // XP: +20 for new journal
-      try {
-        await awardXp({
-          userId: authUser.id,
-          amount: 20,
-          sourceType: "journal",
-          sourceId: (data as any)?.id ?? null,
-          description: "등산 일지 작성",
-        });
-      } catch (e) { console.error("[awardXp journal] failed", e); }
-    }
+      void (async () => {
+        try {
+          await awardXp({
+            userId: authUser.id,
+            amount: 20,
+            sourceType: "journal",
+            sourceId: (data as any)?.id ?? null,
+            description: "등산 일지 작성",
+          });
+        } catch (e) { console.error("[awardXp journal] failed", e); }
 
-    // Auto-update challenge progress
-    if (!error) {
-      try {
-        const { useChallenges } = await import("@/hooks/useChallenges");
-        // We can't call hooks here, so we do inline progress update
-        const { data: userChallenges } = await supabase
-          .from("user_challenges")
-          .select("*, challenges(*)")
-          .eq("user_id", user.id)
-          .eq("completed", false);
+        try {
+          const { data: userChallenges } = await supabase
+            .from("user_challenges")
+            .select("*, challenges(*)")
+            .eq("user_id", user.id)
+            .eq("completed", false);
 
-        if (userChallenges && userChallenges.length > 0) {
-          const { data: allJournals } = await supabase
-            .from("hiking_journals")
-            .select("*")
-            .eq("user_id", user.id);
+          if (userChallenges && userChallenges.length > 0) {
+            const { data: allJournals } = await supabase
+              .from("hiking_journals")
+              .select("*")
+              .eq("user_id", user.id);
 
-          if (allJournals) {
-            const now = new Date();
-            const { mountains } = await import("@/data/mountains");
+            if (allJournals) {
+              const now = new Date();
+              const { mountains } = await import("@/data/mountains");
 
-            for (const uc of userChallenges as any[]) {
-              const ch = uc.challenges;
-              if (!ch) continue;
-              let progress = 0;
+              for (const uc of userChallenges as any[]) {
+                const ch = uc.challenges;
+                if (!ch) continue;
+                let progress = 0;
 
-              switch (ch.goal_type) {
-                case "count":
-                  progress = allJournals.filter((j: any) => {
-                    const d = new Date(j.hiked_at);
-                    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-                  }).length;
-                  break;
-                case "mountain":
-                  progress = new Set(allJournals.map((j: any) => j.mountain_id)).size;
-                  break;
-                case "elevation": {
-                  const ids = new Set(allJournals.map((j: any) => j.mountain_id));
-                  progress = mountains.some((m) => ids.has(m.id) && m.height >= ch.goal_value)
-                    ? ch.goal_value : 0;
-                  break;
-                }
-                case "group_count":
-                  progress = allJournals.filter(
-                    (j: any) => j.tagged_friends && j.tagged_friends.length > 0
-                  ).length;
-                  break;
-                case "group_size":
-                  progress = allJournals.some(
-                    (j: any) => j.tagged_friends && j.tagged_friends.length >= ch.goal_value
-                  ) ? ch.goal_value : 0;
-                  break;
-                case "streak": {
-                  const dates = allJournals
-                    .map((j: any) => new Date(j.hiked_at).toDateString())
-                    .filter((v: string, i: number, a: string[]) => a.indexOf(v) === i)
-                    .map((d: string) => new Date(d).getTime())
-                    .sort((a: number, b: number) => a - b);
-                  let maxS = dates.length > 0 ? 1 : 0, s = 1;
-                  for (let i = 1; i < dates.length; i++) {
-                    if ((dates[i] - dates[i - 1]) / 86400000 === 1) { s++; maxS = Math.max(maxS, s); }
-                    else s = 1;
+                switch (ch.goal_type) {
+                  case "count":
+                    progress = allJournals.filter((j: any) => {
+                      const d = new Date(j.hiked_at);
+                      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                    }).length;
+                    break;
+                  case "mountain":
+                    progress = new Set(allJournals.map((j: any) => j.mountain_id)).size;
+                    break;
+                  case "elevation": {
+                    const ids = new Set(allJournals.map((j: any) => j.mountain_id));
+                    progress = mountains.some((m) => ids.has(m.id) && m.height >= ch.goal_value)
+                      ? ch.goal_value : 0;
+                    break;
                   }
-                  progress = maxS;
-                  break;
+                  case "group_count":
+                    progress = allJournals.filter(
+                      (j: any) => j.tagged_friends && j.tagged_friends.length > 0
+                    ).length;
+                    break;
+                  case "group_size":
+                    progress = allJournals.some(
+                      (j: any) => j.tagged_friends && j.tagged_friends.length >= ch.goal_value
+                    ) ? ch.goal_value : 0;
+                    break;
+                  case "streak": {
+                    const dates = allJournals
+                      .map((j: any) => new Date(j.hiked_at).toDateString())
+                      .filter((v: string, i: number, a: string[]) => a.indexOf(v) === i)
+                      .map((d: string) => new Date(d).getTime())
+                      .sort((a: number, b: number) => a - b);
+                    let maxS = dates.length > 0 ? 1 : 0, s = 1;
+                    for (let i = 1; i < dates.length; i++) {
+                      if ((dates[i] - dates[i - 1]) / 86400000 === 1) { s++; maxS = Math.max(maxS, s); }
+                      else s = 1;
+                    }
+                    progress = maxS;
+                    break;
+                  }
+                  default:
+                    continue;
                 }
-                default:
-                  continue;
-              }
 
-              const completed = progress >= ch.goal_value;
-              await supabase
-                .from("user_challenges")
-                .update({
-                  progress,
-                  completed,
-                  completed_at: completed ? new Date().toISOString() : null,
-                } as any)
-                .eq("id", uc.id);
+                const completed = progress >= ch.goal_value;
+                await supabase
+                  .from("user_challenges")
+                  .update({
+                    progress,
+                    completed,
+                    completed_at: completed ? new Date().toISOString() : null,
+                  } as any)
+                  .eq("id", uc.id);
+              }
             }
           }
+        } catch (e) {
+          console.error("Challenge progress update failed:", e);
         }
-      } catch (e) {
-        console.error("Challenge progress update failed:", e);
-      }
+      })();
     }
+
 
     return { data: data as unknown as HikingJournal | null, error };
   };
