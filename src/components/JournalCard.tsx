@@ -30,7 +30,7 @@ interface JournalCardProps {
   slider?: boolean;
 }
 
-export function JournalCard({ journal, showAuthor = true, onRefresh, slider = false }: JournalCardProps) {
+export const JournalCard = memo(function JournalCard({ journal, showAuthor = true, onRefresh, slider = false }: JournalCardProps) {
   const { mountains } = useMountains();
   const { user } = useAuth();
   const { toggleLike, fetchComments, addComment, deleteComment } = useHikingJournals();
@@ -410,10 +410,10 @@ export function JournalCard({ journal, showAuthor = true, onRefresh, slider = fa
       </div>
     </div>
   );
-}
+});
 
 // Compact card for profile grid
-export function JournalGridCard({ journal, onClick }: { journal: HikingJournal; onClick?: () => void }) {
+export const JournalGridCard = memo(function JournalGridCard({ journal, onClick }: { journal: HikingJournal; onClick?: () => void }) {
   const { mountains } = useMountains();
   const allMts = (journal.mountain_ids?.length ? journal.mountain_ids : [journal.mountain_id])
     .map((id) => mountains.find((m) => m.id === id))
@@ -454,4 +454,4 @@ export function JournalGridCard({ journal, onClick }: { journal: HikingJournal; 
       </div>
     </button>
   );
-}
+});
