@@ -123,7 +123,7 @@ export function useLiveSummitFeed() {
           const newClaim = payload.new as any;
           if (!newClaim?.photo_url) return; // only photo-verified claims
           const enriched = await enrichClaims([newClaim]);
-          setClaims((prev) => [...enriched, ...prev].slice(0, 20));
+          setClaims((prev) => [...enriched, ...prev].slice(0, 5));
           fetchKingOfDay();
         }
       )
