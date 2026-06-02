@@ -54,7 +54,7 @@ export function useLiveSummitFeed() {
       .select("id, user_id, mountain_id, summit_id, photo_url, claimed_at")
       .not("photo_url", "is", null)
       .order("claimed_at", { ascending: false })
-      .limit(20);
+      .limit(5);
 
     const enriched = await enrichClaims((data as any[]) || []);
     setClaims(enriched);
