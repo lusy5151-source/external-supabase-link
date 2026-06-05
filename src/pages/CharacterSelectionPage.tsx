@@ -156,7 +156,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
           </span>
         )}
         <img
-          src={c.image_original || ""}
+          src={`${c.image_original || ""}?v=${Date.now()}`}
           alt={c.name_ko}
           style={{
             width: "100%",
@@ -166,7 +166,6 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
             display: "block",
             margin: "0 auto",
             background: "transparent",
-            mixBlendMode: "multiply",
           }}
         />
 
