@@ -37,7 +37,7 @@ export default function CharacterSelectionPage({ onCompleted }: Props) {
     (async () => {
       const { data, error } = await (supabase as any)
         .from("characters")
-        .select("id, name_ko, description, color, image_original")
+        .select("id, name_ko, description, color, image_original, image_complete, image_badge")
         .order("id");
       if (cancelled) return;
       if (error) {
