@@ -264,58 +264,91 @@ export default function CharacterSelectionPage({ onCompleted }: Props) {
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0,0,0,0.5)",
+            background: "rgba(0,0,0,0.6)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             zIndex: 1000,
             padding: 24,
+            overflow: "hidden",
           }}
         >
           <style>{`
             @keyframes csp-popIn { 0%{opacity:0;transform:scale(0.85)} 100%{opacity:1;transform:scale(1)} }
             @keyframes csp-charPop { 0%{opacity:0;transform:scale(0)} 100%{opacity:1;transform:scale(1)} }
+            @keyframes csp-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+            @keyframes csp-confetti-fall { 0%{transform:translateY(-20px) rotate(0deg);opacity:0} 10%{opacity:1} 100%{transform:translateY(110vh) rotate(540deg);opacity:0.9} }
           `}</style>
+
+          {/* Confetti */}
+          <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}>
+            {Array.from({ length: 12 }).map((_, i) => {
+              const palette = ["#C7D66D", "#639922", "#F5C518", "#5BC8F5", "#E53935", "#B39DDB"];
+              const left = (i * 8.3 + (i % 4) * 5) % 100;
+              const delay = (i % 6) * 0.18;
+              const duration = 2.4 + (i % 4) * 0.35;
+              const size = 8 + (i % 3) * 3;
+              return (
+                <span
+                  key={i}
+                  style={{
+                    position: "absolute",
+                    top: -20,
+                    left: `${left}%`,
+                    width: size,
+                    height: size,
+                    borderRadius: "50%",
+                    background: palette[i % palette.length],
+                    animation: `csp-confetti-fall ${duration}s ${delay}s linear forwards`,
+                  }}
+                />
+              );
+            })}
+          </div>
+
           <div
             style={{
               width: "100%",
-              maxWidth: 320,
+              maxWidth: 300,
               background: "#FFFFFF",
               borderRadius: 20,
-              padding: "32px 24px 24px",
+              padding: "32px 24px",
               textAlign: "center",
               animation: "csp-popIn 0.3s cubic-bezier(.34,1.56,.64,1) forwards",
+              position: "relative",
+              zIndex: 1,
             }}
           >
+            {/* Character image with 깃발 */}
             <div
               style={{
-                width: 120,
-                height: 120,
+                width: 100,
+                height: 100,
                 margin: "0 auto 16px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                animation: "csp-charPop 0.5s 0.1s cubic-bezier(.34,1.56,.64,1) backwards",
+                animation: "csp-charPop 0.5s 0.1s cubic-bezier(.34,1.56,.64,1) backwards, csp-pulse 2s 0.7s ease-in-out infinite",
               }}
             >
-              {selected.image_original && !imgError[selected.id] ? (
+              {selected.image_complete || selected.image_original ? (
                 <img
-                  src={selected.image_original}
+                  src={(selected.image_complete || selected.image_original) as string}
                   alt={selected.name_ko}
-                  style={{ width: 120, height: 120, objectFit: "contain" }}
+                  style={{ width: 100, height: 100, objectFit: "contain" }}
                 />
               ) : (
                 <div
                   style={{
-                    width: 120,
-                    height: 120,
+                    width: 100,
+                    height: 100,
                     borderRadius: "50%",
                     background: selected.color || "#9E9E9E",
                     color: "#FFFFFF",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: 36,
+                    fontSize: 32,
                     fontWeight: 500,
                   }}
                 >
@@ -323,15 +356,58 @@ export default function CharacterSelectionPage({ onCompleted }: Props) {
                 </div>
               )}
             </div>
-            <div style={{ fontSize: 13, color: "#888", marginBottom: 6 }}>
-              앞으로 함께할 메이트
+
+            {/* Achievement banner */}
+            <div
+              style={{
+                display: "inline-block",
+                background: "#EAF3DE",
+                borderRadius: 8,
+                padding: "8px 16px",
+                fontSize: 12,
+                fontWeight: 500,
+                color: "#27500A",
+                marginBottom: 16,
+              }}
+            >
+              🏆 업적 달성!
             </div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: "#1a1a1a", marginBottom: 8 }}>
-              {selected.name_ko} 🎉
+
+            <div style={{ fontSize: 18, fontWeight: 500, color: "#1a1a1a", marginBottom: 6 }}>
+              나만의 등산 메이트!
             </div>
-            <div style={{ fontSize: 13, color: "#555", marginBottom: 24, lineHeight: 1.5 }}>
-              {selected.description}
+            <div style={{ fontSize: 13, color: "#888", marginBottom: 20, lineHeight: 1.5 }}>
+              {selected.name_ko}(와)과 함께 등산을 시작해요
             </div>
+
+            {/* Badge preview */}
+            {selected.image_badge && (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 6,
+                  marginBottom: 24,
+                }}
+              >
+                <img
+                  src={selected.image_badge}
+                  alt={`${selected.name_ko} 뱃지`}
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: "50%",
+                    border: "2px solid #639922",
+                    objectFit: "cover",
+                  }}
+                />
+                <div style={{ fontSize: 12, color: "#3B6D11" }}>
+                  '{selected.name_ko}' 뱃지 획득!
+                </div>
+              </div>
+            )}
+
             <button
               onClick={handleCelebrationContinue}
               style={{
@@ -340,13 +416,13 @@ export default function CharacterSelectionPage({ onCompleted }: Props) {
                 background: "#639922",
                 color: "#FFFFFF",
                 fontSize: 15,
-                fontWeight: 600,
+                fontWeight: 500,
                 border: "none",
                 borderRadius: 12,
                 cursor: "pointer",
               }}
             >
-              시작하기
+              완등 시작하기!
             </button>
           </div>
         </div>
