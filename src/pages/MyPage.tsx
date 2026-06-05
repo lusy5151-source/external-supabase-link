@@ -311,20 +311,6 @@ const MyPage = () => {
                 </span>
               </div>
             </div>
-            <button
-              onClick={() => nav("/character-setup")}
-              style={{
-                background: "#EAF3DE",
-                color: "#3B6D11",
-                fontSize: 12,
-                fontWeight: 600,
-                borderRadius: 8,
-                padding: "6px 10px",
-                whiteSpace: "nowrap",
-              }}
-            >
-              캐릭터 변경
-            </button>
           </div>
         );
       })()}
