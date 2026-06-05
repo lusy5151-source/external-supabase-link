@@ -17,6 +17,7 @@ import SplashScreen from "@/components/SplashScreen";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import MagazinePopup from "@/components/MagazinePopup";
 import MigrationNoticeModal from "@/components/MigrationNoticeModal";
+import Level3BadgeCelebration from "@/components/Level3BadgeCelebration";
 import NotFound from "./pages/NotFound";
 import { useState, useCallback, lazy, Suspense, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -490,6 +491,7 @@ const App = () => {
                 <UnreadChatProvider>
                 <CompletionSuggestionProvider>
                 {!showSplash && <MigrationNoticeModal />}
+                {!showSplash && <Level3BadgeCelebration />}
                 <Layout>
                   <ErrorBoundary fallbackMessage="데이터를 불러오는 중 오류가 발생했습니다.">
                     <OnboardingGate>
