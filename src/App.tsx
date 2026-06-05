@@ -249,6 +249,7 @@ const AppRoutes = () => {
       <Route path="/notifications" element={<ProtectedRoute><LazyPage><NotificationsPage /></LazyPage></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><LazyPage><ProfilePage /></LazyPage></ProtectedRoute>} />
       <Route path="/character-setup" element={<ProtectedRoute><LazyPage><CharacterSetupPage /></LazyPage></ProtectedRoute>} />
+      <Route path="/character-select" element={<ProtectedRoute><CharacterSelectionPage /></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><LazyPage><AdminPage /></LazyPage></ProtectedRoute>} />
       <Route path="/admin/users" element={<ProtectedRoute><LazyPage><AdminUsersPage /></LazyPage></ProtectedRoute>} />
       <Route path="/admin/announcements" element={<ProtectedRoute><LazyPage><AdminAnnouncementsPage /></LazyPage></ProtectedRoute>} />
