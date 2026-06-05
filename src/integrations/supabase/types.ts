@@ -376,6 +376,15 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: string
+          image_angry: string | null
+          image_badge: string | null
+          image_cheer: string | null
+          image_complete: string | null
+          image_happy: string | null
+          image_original: string | null
+          image_rest: string | null
+          image_sad: string | null
+          image_surprise: string | null
           name_en: string
           name_ko: string
         }
@@ -386,6 +395,15 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id: string
+          image_angry?: string | null
+          image_badge?: string | null
+          image_cheer?: string | null
+          image_complete?: string | null
+          image_happy?: string | null
+          image_original?: string | null
+          image_rest?: string | null
+          image_sad?: string | null
+          image_surprise?: string | null
           name_en: string
           name_ko: string
         }
@@ -396,6 +414,15 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          image_angry?: string | null
+          image_badge?: string | null
+          image_cheer?: string | null
+          image_complete?: string | null
+          image_happy?: string | null
+          image_original?: string | null
+          image_rest?: string | null
+          image_sad?: string | null
+          image_surprise?: string | null
           name_en?: string
           name_ko?: string
         }
