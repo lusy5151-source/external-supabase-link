@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -21,12 +21,18 @@ interface CharacterRow {
 
 interface Props {
   onCompleted?: () => void;
+  recommendedId?: string | null;
 }
 
-export default function CharacterSelectionPage({ onCompleted }: Props) {
+export default function CharacterSelectionPage({ onCompleted, recommendedId }: Props) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const navStateRecommendedId =
+    (location.state as { recommendedId?: string } | null)?.recommendedId ?? null;
+  const effectiveRecommendedId = recommendedId ?? navStateRecommendedId ?? null;
+
   const [characters, setCharacters] = useState<CharacterRow[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(effectiveRecommendedId);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [imgError, setImgError] = useState<Record<string, boolean>>({});
