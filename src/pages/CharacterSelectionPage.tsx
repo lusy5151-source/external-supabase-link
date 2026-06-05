@@ -110,9 +110,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
 
   const selected = characters.find((c) => c.id === selectedId);
 
-  // 7개일 때 마지막(7번째) 카드를 가운데에 놓기 위한 span 트릭
-  const renderCard = (c: CharacterRow, idx: number, total: number) => {
-    const isLastOdd = total % 2 === 1 && idx === total - 1;
+  const renderCard = (c: CharacterRow) => {
     const isSelected = selectedId === c.id;
     const isRecommended = effectiveRecommendedId === c.id;
     return (
@@ -120,9 +118,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
         key={c.id}
         onClick={() => setSelectedId(c.id)}
         style={{
-          gridColumn: isLastOdd ? "1 / -1" : undefined,
-          justifySelf: isLastOdd ? "center" : "stretch",
-          width: isLastOdd ? "calc(50% - 6px)" : "100%",
+          width: "100%",
           background: isSelected ? "#EAF3DE" : "transparent",
           border: isSelected ? "2px solid #639922" : "0.5px solid var(--color-border-tertiary, #E5E7EB)",
           borderRadius: "var(--border-radius-lg, 16px)",
@@ -155,19 +151,27 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
             추천 ✨
           </span>
         )}
-        <img
-          src={`${c.image_original || ""}?v=${Date.now()}`}
-          alt={c.name_ko}
+        <div
           style={{
-            width: "100%",
-            maxWidth: "100px",
-            height: "auto",
-            objectFit: "contain",
-            display: "block",
-            margin: "0 auto",
-            background: "transparent",
+            width: 96,
+            height: 96,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
-        />
+        >
+          <img
+            src={`${c.image_original || ""}?v=${Date.now()}`}
+            alt={c.name_ko}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              display: "block",
+              background: "transparent",
+            }}
+          />
+        </div>
 
         <div
           style={{
