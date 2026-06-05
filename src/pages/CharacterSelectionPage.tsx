@@ -41,6 +41,17 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      try {
+        const cached = sessionStorage.getItem("characters_cache");
+        if (cached) {
+          const rows = JSON.parse(cached) as CharacterRow[];
+          if (!cancelled) {
+            setCharacters(rows);
+            setLoading(false);
+          }
+          return;
+        }
+      } catch {}
       const charsRes = await (supabase as any)
         .from("characters")
         .select("id, name_ko, description, color, image_original, image_complete, image_badge")
@@ -51,11 +62,11 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
         toast.error("캐릭터를 불러오지 못했어요");
       } else {
         const rows = (charsRes.data as CharacterRow[]) || [];
-        console.log(
-          "Characters with images:",
-          rows.map((c) => ({ id: c.id, hasImage: !!c.image_original, url: c.image_original }))
-        );
+        console.log("Character URLs:", rows.map((c) => c.image_original));
         setCharacters(rows);
+        try {
+          sessionStorage.setItem("characters_cache", JSON.stringify(rows));
+        } catch {}
       }
       setLoading(false);
     })();
