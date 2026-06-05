@@ -158,8 +158,13 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
         <img
           src={c.image_original || ""}
           alt={c.name_ko}
-          loading="lazy"
-          style={{ width: 80, height: 80, objectFit: "contain" }}
+          style={{
+            width: "80px",
+            height: "80px",
+            objectFit: "contain",
+            display: "block",
+            margin: "0 auto",
+          }}
         />
         <div
           style={{
