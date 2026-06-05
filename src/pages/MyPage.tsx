@@ -178,7 +178,7 @@ const MyPage = () => {
       </div>
 
       {/* Badge collection */}
-      <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="rounded-2xl bg-card p-4">
         <div className="flex items-center justify-between mb-3">
           <span style={{ fontSize: 14, fontWeight: 500, color: "var(--color-text-primary)" }}>나의 뱃지</span>
           <span style={{ fontSize: 12, color: "#3B6D11" }}>{earnedIds.length}/{Math.max(allChars.length, 7)} 수집</span>
@@ -264,7 +264,7 @@ const MyPage = () => {
       {/* Change hiking mate menu */}
       <button
         onClick={() => nav("/character-select")}
-        className="flex items-center gap-3 w-full rounded-2xl border border-border bg-card px-4 py-3.5 transition-colors hover:bg-accent/50"
+        className="flex items-center gap-3 w-full rounded-2xl bg-card px-4 py-3.5 transition-colors hover:bg-accent/50"
       >
         <UserCircle2 style={{ width: 18, height: 18, color: "hsl(var(--muted-foreground))" }} />
         <span className="flex-1 text-left text-sm font-medium text-foreground">등산 메이트 변경</span>
@@ -339,7 +339,7 @@ const MyPage = () => {
         ].map((s) => (
           <div
             key={s.label}
-            className="flex flex-col items-center rounded-xl border border-border bg-card py-3"
+            className="flex flex-col items-center rounded-xl bg-card py-3"
           >
             <span className="text-lg font-bold text-foreground">{s.value}</span>
             <span className="text-[11px] text-muted-foreground">{s.label}</span>
@@ -363,7 +363,7 @@ const MyPage = () => {
       )}
 
       {/* Menu list */}
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="rounded-2xl bg-card overflow-hidden">
         {menuItems.map((item, idx) => (
           <Link
             key={item.label}
@@ -409,7 +409,7 @@ const MyPage = () => {
       </div>
 
       {/* Extra menu rows */}
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="rounded-2xl bg-card overflow-hidden">
         {/* 알림 설정 */}
         <button
           onClick={() => {
@@ -510,7 +510,7 @@ const MyPage = () => {
       <div className="space-y-0">
         <button
           onClick={() => signOut()}
-          className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 transition-colors hover:bg-accent/50"
+          className="flex w-full items-center gap-3 rounded-2xl bg-card px-4 py-3.5 transition-colors hover:bg-accent/50"
         >
           <LogOut className="h-4 w-4 text-destructive" />
           <span className="text-sm font-medium text-destructive">로그아웃</span>
