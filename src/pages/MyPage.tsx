@@ -138,7 +138,7 @@ const MyPage = () => {
   return (
     <div className="max-w-lg mx-auto pb-24 space-y-5">
       {/* Profile header card */}
-      <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4">
+      <div className="flex items-center gap-3 rounded-2xl bg-card p-4">
         <Avatar className="h-11 w-11">
           {avatarUrl && <AvatarImage src={avatarUrl} />}
           <AvatarFallback className="bg-muted text-sm font-semibold">
