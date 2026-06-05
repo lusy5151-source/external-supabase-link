@@ -50,7 +50,12 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
         console.error("[CharacterSelectionPage] fetch error", charsRes.error);
         toast.error("캐릭터를 불러오지 못했어요");
       } else {
-        setCharacters((charsRes.data as CharacterRow[]) || []);
+        const rows = (charsRes.data as CharacterRow[]) || [];
+        console.log(
+          "Characters with images:",
+          rows.map((c) => ({ id: c.id, hasImage: !!c.image_original, url: c.image_original }))
+        );
+        setCharacters(rows);
       }
       setLoading(false);
     })();
