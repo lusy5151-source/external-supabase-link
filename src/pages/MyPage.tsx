@@ -84,6 +84,7 @@ const MyPage = () => {
   const [myChar, setMyChar] = useState<CharRow | null>(null);
   const [allChars, setAllChars] = useState<CharRow[]>([]);
   const [earnedBadges, setEarnedBadges] = useState<Record<string, string | null>>({});
+  const [characterLevel, setCharacterLevel] = useState<number>(1);
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
 
   useEffect(() => {
@@ -91,9 +92,9 @@ const MyPage = () => {
     let cancelled = false;
     (async () => {
       const [{ data: profileRow }, { data: chars }, { data: badges }] = await Promise.all([
-        (supabase as any).from("profiles").select("character_id").eq("user_id", user.id).single(),
+        (supabase as any).from("profiles").select("character_id, character_level").eq("user_id", user.id).single(),
         (supabase as any).from("characters").select("id, name_ko, color, image_original, image_badge").order("id"),
-        (supabase as any).from("user_badges").select("character_id, earned_at").eq("user_id", user.id),
+        (supabase as any).from("user_badges").select("character_id, earned_at").eq("user_id", user.id).eq("badge_type", "level3"),
       ]);
       if (cancelled) return;
       const cid: string | null = profileRow?.character_id ?? null;
@@ -101,6 +102,7 @@ const MyPage = () => {
         setCharacterId(cid as Character);
         try { localStorage.setItem("wandeung_character_id", cid); } catch {}
       }
+      setCharacterLevel(Number(profileRow?.character_level) || 1);
       const all = (chars as CharRow[]) || [];
       setAllChars(all);
       if (cid) setMyChar(all.find((c) => c.id === cid) || null);
