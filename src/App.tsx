@@ -144,7 +144,7 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
       try {
         const { data, error } = await (supabase as any)
           .from("profiles")
-          .select("is_onboarded, character_id")
+          .select("is_onboarded, character_id, character_selected_at")
           .eq("user_id", user.id)
           .single();
         if (cancelled) return;
@@ -160,7 +160,8 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
         } else {
           const onboardingNeeded = !data || data.is_onboarded === false || data.is_onboarded == null;
           setNeedsOnboarding(onboardingNeeded);
-          setNeedsCharacter(!onboardingNeeded && (!data || data.character_id == null));
+          const needsCharacterSelection = !data || data.character_id == null || data.character_selected_at == null;
+          setNeedsCharacter(!onboardingNeeded && needsCharacterSelection);
         }
       } catch (e) {
         console.error("[OnboardingGate] unexpected error", e);
