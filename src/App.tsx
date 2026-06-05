@@ -121,15 +121,34 @@ const ONBOARDING_BYPASS_PATHS = [
   "/reset-password",
 ];
 
+type ProfileGateData = {
+  is_onboarded: boolean | null;
+  character_id: string | null;
+  character_selected_at: string | null;
+};
+const profileGateCache = new Map<string, ProfileGateData | "missing">();
+
 function OnboardingGate({ children }: { children: React.ReactNode }) {
-  // user는 AuthContext가 제공하는 현재 유저(Lovable Cloud Auth로 로그인된 세션 유저)
-  // 여기서는 supabase.auth.* 를 직접 호출하지 않고, DB 조회(supabase.from)만 사용한다.
   const { user, loading: authLoading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [checking, setChecking] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [needsCharacter, setNeedsCharacter] = useState(false);
+  const [recommendedCharacterId, setRecommendedCharacterId] = useState<string | null>(null);
+
+  const applyProfile = useCallback((data: ProfileGateData | "missing") => {
+    if (data === "missing") {
+      setNeedsOnboarding(true);
+      setNeedsCharacter(false);
+      return;
+    }
+    const onboardingNeeded = data.is_onboarded === false || data.is_onboarded == null;
+    setNeedsOnboarding(onboardingNeeded);
+    const needsCharacterSelection =
+      data.character_id == null || data.character_selected_at == null;
+    setNeedsCharacter(!onboardingNeeded && needsCharacterSelection);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -138,6 +157,11 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
       if (!user) {
         setNeedsOnboarding(false);
         setNeedsCharacter(false);
+        return;
+      }
+      const cached = profileGateCache.get(user.id);
+      if (cached) {
+        applyProfile(cached);
         return;
       }
       setChecking(true);
@@ -150,18 +174,16 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
         if (cancelled) return;
         if (error) {
           if ((error as any).code === "PGRST116") {
-            setNeedsOnboarding(true);
-            setNeedsCharacter(false);
+            profileGateCache.set(user.id, "missing");
+            applyProfile("missing");
           } else {
             console.error("[OnboardingGate] profile fetch error", error);
             setNeedsOnboarding(false);
             setNeedsCharacter(false);
           }
         } else {
-          const onboardingNeeded = !data || data.is_onboarded === false || data.is_onboarded == null;
-          setNeedsOnboarding(onboardingNeeded);
-          const needsCharacterSelection = !data || data.character_id == null || data.character_selected_at == null;
-          setNeedsCharacter(!onboardingNeeded && needsCharacterSelection);
+          profileGateCache.set(user.id, data as ProfileGateData);
+          applyProfile(data as ProfileGateData);
         }
       } catch (e) {
         console.error("[OnboardingGate] unexpected error", e);
@@ -175,9 +197,7 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
     };
     check();
     return () => { cancelled = true; };
-  }, [user, authLoading]);
-
-  const [recommendedCharacterId, setRecommendedCharacterId] = useState<string | null>(null);
+  }, [user, authLoading, applyProfile]);
 
   const handleComplete = useCallback(async (nickname: string, characterId: string) => {
     if (!user) return;
@@ -194,7 +214,12 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
         console.error("[OnboardingGate] profile update error", error);
         return;
       }
-      // Quiz result becomes a recommendation for the manual selection screen
+      const prev = profileGateCache.get(user.id);
+      const base: ProfileGateData =
+        prev && prev !== "missing"
+          ? prev
+          : { is_onboarded: true, character_id: null, character_selected_at: null };
+      profileGateCache.set(user.id, { ...base, is_onboarded: true });
       setRecommendedCharacterId(characterId || null);
       setNeedsOnboarding(false);
       setNeedsCharacter(true);
@@ -203,22 +228,76 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
     }
   }, [user]);
 
+  const handleCharacterCompleted = useCallback(() => {
+    if (user) {
+      const prev = profileGateCache.get(user.id);
+      const base: ProfileGateData =
+        prev && prev !== "missing"
+          ? prev
+          : { is_onboarded: true, character_id: null, character_selected_at: null };
+      profileGateCache.set(user.id, {
+        ...base,
+        character_id: base.character_id ?? "selected",
+        character_selected_at: new Date().toISOString(),
+      });
+    }
+    setNeedsCharacter(false);
+    setRecommendedCharacterId(null);
+  }, [user]);
+
   const bypass = ONBOARDING_BYPASS_PATHS.some(
     (p) => location.pathname === p || location.pathname.startsWith(p + "/")
   );
 
   if (user && !authLoading && !bypass) {
-    if (checking) return <LoadingSpinner message="프로필 확인 중..." />;
+    if (checking) return <GateLoadingSkeleton />;
     if (needsOnboarding) return <OnboardingFlow onComplete={handleComplete} />;
     if (needsCharacter) return (
       <CharacterSelectionPage
         recommendedId={recommendedCharacterId}
-        onCompleted={() => { setNeedsCharacter(false); setRecommendedCharacterId(null); }}
+        onCompleted={handleCharacterCompleted}
       />
     );
   }
 
   return <>{children}</>;
+}
+
+function GateLoadingSkeleton() {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "var(--color-background-primary, #FFFFFF)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 16,
+      }}
+    >
+      <style>{`
+        @keyframes gate-dot { 0%, 80%, 100% { opacity: 0.2 } 40% { opacity: 1 } }
+      `}</style>
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-label="완등">
+        <path d="M4 40 L18 18 L26 28 L34 14 L44 40 Z" fill="#639922" />
+      </svg>
+      <div style={{ display: "flex", gap: 6 }}>
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              background: "#639922",
+              animation: `gate-dot 1.2s ${i * 0.2}s infinite ease-in-out`,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 const AppRoutes = () => {
