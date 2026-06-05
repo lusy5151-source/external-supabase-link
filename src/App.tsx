@@ -206,6 +206,7 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
   if (user && !authLoading && !bypass) {
     if (checking) return <LoadingSpinner message="프로필 확인 중..." />;
     if (needsOnboarding) return <OnboardingFlow onComplete={handleComplete} />;
+    if (needsCharacter) return <CharacterSelectionPage onCompleted={() => setNeedsCharacter(false)} />;
   }
 
   return <>{children}</>;
