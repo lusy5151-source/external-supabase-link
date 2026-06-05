@@ -400,9 +400,9 @@ export default function SummitClaimPage() {
       {/* Celebration overlay */}
       {showCelebration && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm">
-          <div className="rounded-3xl bg-card p-8 text-center shadow-2xl animate-in zoom-in-95 duration-300">
-            <MountainMascot size={120} mood="celebrating" />
-            <h2 className="mt-3 text-xl font-bold text-foreground">정상 정복! 🏔️</h2>
+          <div className="rounded-3xl bg-card p-8 text-center shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col items-center">
+            <CharacterCompletionCelebration userId={user?.id} size={120} />
+            <h2 className="mt-4 text-xl font-bold text-foreground">인증 완료!</h2>
             <p className="text-sm text-muted-foreground mt-1">
               {selectedSummit?.summit_name || "정상"} 정복을 축하합니다!
             </p>
