@@ -380,7 +380,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
           alert(`저장 실패: ${msg} / code: ${code}`);
         } else {
           toast({ title: "일지를 수정했습니다 ✏️" });
-          onSaved();
+          onSaved({ mode: "update", journal: { ...(editJournal as HikingJournal), ...(journalData as any) } });
         }
       } else {
         const { error } = await createJournal(journalData);
