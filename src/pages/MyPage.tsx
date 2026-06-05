@@ -391,7 +391,7 @@ const MyPage = () => {
           완등 SNS
         </p>
         <button
-          onClick={() => window.open("https://www.instagram.com/wandeung_app", "_blank")}
+          onClick={() => window.open("https://www.instagram.com/wan_deung.official", "_blank", "noopener,noreferrer")}
           className="flex items-center w-full"
           style={{ gap: 10, padding: "10px 0" }}
         >
@@ -434,7 +434,7 @@ const MyPage = () => {
                 color: "hsl(var(--color-text-tertiary))",
               }}
             >
-              @wandeung_app
+              @wan_deung.official
             </div>
           </div>
           <ExternalLink
