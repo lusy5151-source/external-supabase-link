@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 interface JournalFormProps {
   editJournal?: HikingJournal | null;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (saved?: { mode: "create" | "update"; journal: HikingJournal }) => void;
   prefillMountainId?: number;
   prefillDate?: string;
 }
@@ -380,10 +380,10 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
           alert(`저장 실패: ${msg} / code: ${code}`);
         } else {
           toast({ title: "일지를 수정했습니다 ✏️" });
-          onSaved();
+          onSaved({ mode: "update", journal: { ...(editJournal as HikingJournal), ...(journalData as any) } });
         }
       } else {
-        const { error } = await createJournal(journalData);
+        const { data: createdData, error } = await createJournal(journalData);
         if (error) {
           console.error("Journal insert error:", JSON.stringify(error));
           const msg = (error as any).message || "알 수 없는 오류";
@@ -427,7 +427,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
               duration: 6000,
             });
           } catch {}
-          onSaved();
+          onSaved(createdData ? { mode: "create", journal: createdData } : undefined);
         }
       }
     } catch (e: any) {

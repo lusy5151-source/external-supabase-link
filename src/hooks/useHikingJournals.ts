@@ -108,14 +108,16 @@ export function useHikingJournals() {
 
   const fetchFeed = useCallback(async (publicOnly: boolean = false): Promise<HikingJournal[]> => {
     if (!user) return [];
-    // Fetch journals (RLS handles visibility)
+    // Slim column selection — exclude heavy/unused fields. Limit to most-recent 20.
     let query = supabase
       .from("hiking_journals")
-      .select("*")
+      .select(
+        "id,user_id,mountain_id,mountain_ids,course_name,course_starting_point,course_notes,duration,difficulty,weather,notes,photos,tagged_friends,visibility,hiked_at,created_at,updated_at"
+      )
       .neq("user_id", user.id)
       .order("created_at", { ascending: false })
-      .limit(50);
-    
+      .limit(20);
+
     if (publicOnly) {
       query = query.eq("visibility", "public");
     }

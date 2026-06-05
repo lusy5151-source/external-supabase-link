@@ -73,7 +73,19 @@ const Records = () => {
   };
 
   const handleEdit = (journal: HikingJournal) => { setEditingJournal(journal); setShowForm(true); };
-  const handleFormSaved = () => { setShowForm(false); setEditingJournal(null); setPrefillData(null); loadData(); };
+  const handleFormSaved = (saved?: { mode: "create" | "update"; journal: HikingJournal }) => {
+    setShowForm(false);
+    setEditingJournal(null);
+    setPrefillData(null);
+    // Optimistic update: reflect the change locally immediately,
+    // then refresh from the server in the background.
+    if (saved?.mode === "create" && saved.journal) {
+      setMyJournals((prev) => [saved.journal, ...prev.filter((j) => j.id !== saved.journal.id)]);
+    } else if (saved?.mode === "update" && saved.journal) {
+      setMyJournals((prev) => prev.map((j) => (j.id === saved.journal.id ? { ...j, ...saved.journal } : j)));
+    }
+    loadData();
+  };
   const handleFormClose = () => { setShowForm(false); setEditingJournal(null); setPrefillData(null); };
 
   const { isOnboarding } = useOnboarding();
