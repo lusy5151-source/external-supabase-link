@@ -247,15 +247,17 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
         <p
           style={{
             fontSize: 13,
-            color: "var(--color-text-tertiary, #888)",
+            color: "var(--color-text-secondary, #666)",
             textAlign: "center",
             marginTop: 8,
             marginBottom: 0,
           }}
         >
-          언제든지 마이 탭에서 바꿀 수 있어요
+          {isReturningUser
+            ? "기존에 선택된 캐릭터예요. 변경하거나 그대로 시작할 수 있어요."
+            : "언제든지 마이 탭에서 바꿀 수 있어요"}
         </p>
-        {effectiveRecommendedId && (() => {
+        {!isReturningUser && effectiveRecommendedId && (() => {
           const rec = characters.find((c) => c.id === effectiveRecommendedId);
           if (!rec) return null;
           return (
