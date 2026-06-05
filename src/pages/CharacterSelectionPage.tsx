@@ -37,41 +37,20 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
   const [saving, setSaving] = useState(false);
   const [imgError, setImgError] = useState<Record<string, boolean>>({});
   const [showCelebration, setShowCelebration] = useState(false);
-  const [isReturningUser, setIsReturningUser] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [charsRes, userRes] = await Promise.all([
-        (supabase as any)
-          .from("characters")
-          .select("id, name_ko, description, color, image_original, image_complete, image_badge")
-          .order("id"),
-        supabase.auth.getUser(),
-      ]);
+      const charsRes = await (supabase as any)
+        .from("characters")
+        .select("id, name_ko, description, color, image_original, image_complete, image_badge")
+        .order("name_ko");
       if (cancelled) return;
       if (charsRes.error) {
         console.error("[CharacterSelectionPage] fetch error", charsRes.error);
         toast.error("캐릭터를 불러오지 못했어요");
       } else {
         setCharacters((charsRes.data as CharacterRow[]) || []);
-      }
-      const user = userRes.data?.user;
-      if (user) {
-        const { data: profile } = await (supabase as any)
-          .from("profiles")
-          .select("character_id, character_selected_at")
-          .eq("user_id", user.id)
-          .single();
-        if (!cancelled && profile) {
-          const existingCharId = profile.character_id as string | null;
-          const returning = !!existingCharId && !profile.character_selected_at;
-          if (returning) {
-            setIsReturningUser(true);
-            // Priority: existingCharId > recommendedId
-            setSelectedId(existingCharId);
-          }
-        }
       }
       setLoading(false);
     })();
