@@ -129,6 +129,7 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const [checking, setChecking] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [needsCharacter, setNeedsCharacter] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
