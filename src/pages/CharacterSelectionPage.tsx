@@ -166,6 +166,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
             display: "block",
             margin: "0 auto",
             background: "transparent",
+            mixBlendMode: "multiply",
           }}
         />
 
