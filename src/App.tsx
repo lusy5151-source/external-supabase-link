@@ -137,6 +137,7 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
       if (authLoading) return;
       if (!user) {
         setNeedsOnboarding(false);
+        setNeedsCharacter(false);
         return;
       }
       setChecking(true);
@@ -148,20 +149,25 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
           .single();
         if (cancelled) return;
         if (error) {
-          // 프로필이 아직 없거나 조회 실패 → 안전하게 온보딩 미진행으로 가정하지 않고,
-          // 행이 없으면(PGRST116) 온보딩 필요로 처리
           if ((error as any).code === "PGRST116") {
             setNeedsOnboarding(true);
+            setNeedsCharacter(false);
           } else {
             console.error("[OnboardingGate] profile fetch error", error);
             setNeedsOnboarding(false);
+            setNeedsCharacter(false);
           }
         } else {
-          setNeedsOnboarding(!data || data.is_onboarded === false || data.is_onboarded == null);
+          const onboardingNeeded = !data || data.is_onboarded === false || data.is_onboarded == null;
+          setNeedsOnboarding(onboardingNeeded);
+          setNeedsCharacter(!onboardingNeeded && (!data || data.character_id == null));
         }
       } catch (e) {
         console.error("[OnboardingGate] unexpected error", e);
-        if (!cancelled) setNeedsOnboarding(false);
+        if (!cancelled) {
+          setNeedsOnboarding(false);
+          setNeedsCharacter(false);
+        }
       } finally {
         if (!cancelled) setChecking(false);
       }
