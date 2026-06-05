@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 interface JournalFormProps {
   editJournal?: HikingJournal | null;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (saved?: { mode: "create" | "update"; journal: HikingJournal }) => void;
   prefillMountainId?: number;
   prefillDate?: string;
 }
