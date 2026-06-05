@@ -144,42 +144,12 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
             추천 ✨
           </span>
         )}
-        <div
-          style={{
-            width: 80,
-            height: 80,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {c.image_original && !imgError[c.id] ? (
-            <img
-              src={c.image_original}
-              alt={c.name_ko}
-              loading="lazy"
-              style={{ width: 80, height: 80, objectFit: "contain" }}
-              onError={() => setImgError((prev) => ({ ...prev, [c.id]: true }))}
-            />
-          ) : (
-            <div
-              style={{
-                width: 80,
-                height: 80,
-                borderRadius: "50%",
-                background: c.color || "#9E9E9E",
-                color: "#FFFFFF",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 24,
-                fontWeight: 500,
-              }}
-            >
-              {c.name_ko?.[0] || "?"}
-            </div>
-          )}
-        </div>
+        <img
+          src={c.image_original || ""}
+          alt={c.name_ko}
+          loading="lazy"
+          style={{ width: 80, height: 80, objectFit: "contain" }}
+        />
         <div
           style={{
             fontSize: 13,
