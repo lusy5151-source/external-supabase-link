@@ -427,7 +427,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
               duration: 6000,
             });
           } catch {}
-          onSaved();
+          onSaved(createdData ? { mode: "create", journal: createdData } : undefined);
         }
       }
     } catch (e: any) {
