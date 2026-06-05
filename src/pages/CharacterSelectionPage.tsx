@@ -139,6 +139,15 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
             추천 ✨
           </span>
         )}
+        <div
+          style={{
+            width: 80,
+            height: 80,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           {c.image_original && !imgError[c.id] ? (
             <img
               src={c.image_original}
