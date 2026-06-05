@@ -368,6 +368,39 @@ export type Database = {
         }
         Relationships: []
       }
+      characters: {
+        Row: {
+          badge_image_url: string | null
+          character_image_url: string | null
+          color: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name_en: string
+          name_ko: string
+        }
+        Insert: {
+          badge_image_url?: string | null
+          character_image_url?: string | null
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          id: string
+          name_en: string
+          name_ko: string
+        }
+        Update: {
+          badge_image_url?: string | null
+          character_image_url?: string | null
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name_en?: string
+          name_ko?: string
+        }
+        Relationships: []
+      }
       climbs: {
         Row: {
           climbed_at: string | null
@@ -2644,6 +2677,7 @@ export type Database = {
           bio: string | null
           character_id: string | null
           character_level: number | null
+          character_selected_at: string | null
           created_at: string | null
           email: string | null
           hiking_styles: string[] | null
@@ -2666,6 +2700,7 @@ export type Database = {
           bio?: string | null
           character_id?: string | null
           character_level?: number | null
+          character_selected_at?: string | null
           created_at?: string | null
           email?: string | null
           hiking_styles?: string[] | null
@@ -2688,6 +2723,7 @@ export type Database = {
           bio?: string | null
           character_id?: string | null
           character_level?: number | null
+          character_selected_at?: string | null
           created_at?: string | null
           email?: string | null
           hiking_styles?: string[] | null
@@ -3477,6 +3513,38 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      user_badges: {
+        Row: {
+          badge_type: string
+          character_id: string
+          earned_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_type?: string
+          character_id: string
+          earned_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_type?: string
+          character_id?: string
+          earned_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_badges_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_blocks: {
         Row: {
