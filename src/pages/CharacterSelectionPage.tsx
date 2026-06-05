@@ -15,6 +15,8 @@ interface CharacterRow {
   description: string | null;
   color: string | null;
   image_original: string | null;
+  image_complete?: string | null;
+  image_badge?: string | null;
 }
 
 interface Props {
