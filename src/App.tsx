@@ -27,6 +27,7 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useSchedulePlanAlerts } from "@/hooks/useSchedulePlanAlerts";
 import { supabase } from "@/integrations/supabase/client";
 import OnboardingFlow from "@/components/OnboardingFlow";
+import CharacterSelectionPage from "@/pages/CharacterSelectionPage";
 
 // Eagerly loaded (auth only)
 import AuthPage from "@/pages/AuthPage";
