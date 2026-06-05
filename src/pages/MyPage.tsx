@@ -13,7 +13,7 @@ import { useAchievementStore } from "@/hooks/useAchievementStore";
 import { useGearStore } from "@/hooks/useGearStore";
 import { useSharedCompletionCounts } from "@/hooks/useSharedCompletionCounts";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ChevronRight, Users, Mountain, BookOpen, Settings, LogOut, HelpCircle, Bell, ShieldCheck } from "lucide-react";
+import { ChevronRight, Users, Mountain, BookOpen, Settings, LogOut, HelpCircle, Bell, ShieldCheck, ExternalLink } from "lucide-react";
 import { useAdmin } from "@/hooks/useAdmin";
 import { Badge } from "@/components/ui/badge";
 import { useUnreadChat } from "@/contexts/UnreadChatContext";
@@ -376,6 +376,75 @@ const MyPage = () => {
           style={{ fontSize: 13, color: "hsl(var(--color-text-tertiary))" }}
         >
           회원 탈퇴
+        </button>
+      </div>
+
+      {/* SNS Links */}
+      <div>
+        <p
+          style={{
+            fontSize: 12,
+            color: "hsl(var(--color-text-tertiary))",
+            marginBottom: 8,
+          }}
+        >
+          완등 SNS
+        </p>
+        <button
+          onClick={() => window.open("https://www.instagram.com/wandeung_app", "_blank")}
+          className="flex items-center w-full"
+          style={{ gap: 10, padding: "10px 0" }}
+        >
+          <div
+            className="flex items-center justify-center flex-shrink-0"
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #F58529, #DD2A7B, #8134AF)",
+            }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ width: 16, height: 16 }}
+            >
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+              <circle cx="12" cy="12" r="4" />
+              <circle cx="17.5" cy="6.5" r="1" fill="white" stroke="none" />
+            </svg>
+          </div>
+          <div className="flex-1 text-left">
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 500,
+                color: "var(--color-text-primary)",
+              }}
+            >
+              인스타그램
+            </div>
+            <div
+              style={{
+                fontSize: 11,
+                color: "hsl(var(--color-text-tertiary))",
+              }}
+            >
+              @wandeung_app
+            </div>
+          </div>
+          <ExternalLink
+            style={{
+              width: 14,
+              height: 14,
+              color: "hsl(var(--color-text-tertiary))",
+              flexShrink: 0,
+            }}
+          />
         </button>
       </div>
 

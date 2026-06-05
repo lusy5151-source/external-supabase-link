@@ -277,6 +277,88 @@ const MagazinePage = () => {
               </div>
             </button>
           ))}
+
+          {/* Instagram follow banner */}
+          <div
+            className="flex items-center"
+            style={{
+              background: "linear-gradient(135deg, #F58529 0%, #DD2A7B 50%, #8134AF 100%)",
+              borderRadius: 14,
+              padding: 16,
+              margin: "16px 16px 24px",
+              gap: 12,
+            }}
+          >
+            <div
+              className="flex items-center justify-center flex-shrink-0"
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                background: "white",
+              }}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                style={{ width: 22, height: 22 }}
+              >
+                <defs>
+                  <linearGradient id="ig-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#F58529" />
+                    <stop offset="50%" stopColor="#DD2A7B" />
+                    <stop offset="100%" stopColor="#8134AF" />
+                  </linearGradient>
+                </defs>
+                <rect
+                  x="2" y="2" width="20" height="20" rx="5" ry="5"
+                  fill="none"
+                  stroke="url(#ig-grad)"
+                  strokeWidth="2"
+                />
+                <circle
+                  cx="12" cy="12" r="4"
+                  fill="none"
+                  stroke="url(#ig-grad)"
+                  strokeWidth="2"
+                />
+                <circle cx="17.5" cy="6.5" r="1.5" fill="url(#ig-grad)" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "white",
+                }}
+              >
+                인스타그램에서 완등을 팔로우하세요
+              </div>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "rgba(255,255,255,0.85)",
+                  marginTop: 2,
+                }}
+              >
+                등산 정보, 코스, 이벤트 소식을 먼저 받아보세요
+              </div>
+            </div>
+            <button
+              onClick={() => window.open("https://www.instagram.com/wandeung_app", "_blank")}
+              style={{
+                background: "white",
+                color: "#DD2A7B",
+                fontSize: 12,
+                fontWeight: 500,
+                borderRadius: 20,
+                padding: "6px 12px",
+                flexShrink: 0,
+              }}
+            >
+              팔로우
+            </button>
+          </div>
         </>
       )}
     </div>
