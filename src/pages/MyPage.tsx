@@ -183,7 +183,7 @@ const MyPage = () => {
       <div className="rounded-2xl bg-card p-4">
         <div className="flex items-center justify-between mb-3">
           <span style={{ fontSize: 14, fontWeight: 500, color: "var(--color-text-primary)" }}>나의 뱃지</span>
-          <span style={{ fontSize: 12, color: "#3B6D11" }}>{earnedIds.length}/{Math.max(allChars.length, 7)} 수집</span>
+          <span style={{ fontSize: 12, color: "#3B6D11" }}>{earnedIds.length}/7 수집</span>
         </div>
         <div
           className="flex gap-3 overflow-x-auto pb-1"
@@ -201,26 +201,41 @@ const MyPage = () => {
                     width: 56,
                     height: 56,
                     borderRadius: "50%",
-                    background: earned ? "transparent" : (c.color || "#C7D66D"),
+                    background: earned ? "transparent" : "var(--color-background-secondary, #F1F4EA)",
                     border: earned ? "2px solid #639922" : "none",
-                    overflow: "hidden",
+                    overflow: "visible",
                     position: "relative",
                   }}
                   aria-label={earned ? `${c.name_ko} 뱃지` : "미획득 뱃지"}
                 >
                   {earned ? (
-                    c.image_badge ? (
-                      <img
-                        src={c.image_badge}
-                        alt={c.name_ko}
-                        style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
-                        loading="lazy"
-                      />
-                    ) : (
-                      <span style={{ fontSize: 18, color: "white" }}>{c.name_ko.charAt(0)}</span>
-                    )
+                    <>
+                      {c.image_badge ? (
+                        <img
+                          src={c.image_badge}
+                          alt={c.name_ko}
+                          style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+                          loading="lazy"
+                        />
+                      ) : (
+                        <span style={{ fontSize: 18, color: "white" }}>{c.name_ko.charAt(0)}</span>
+                      )}
+                      <span
+                        aria-hidden
+                        style={{
+                          position: "absolute",
+                          top: -4,
+                          right: -4,
+                          fontSize: 14,
+                          lineHeight: 1,
+                          filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.15))",
+                        }}
+                      >
+                        ✨
+                      </span>
+                    </>
                   ) : (
-                    <Lock style={{ width: 16, height: 16, color: "white", opacity: 0.7 }} />
+                    <Lock style={{ width: 16, height: 16, color: "hsl(var(--muted-foreground))", opacity: 0.7 }} />
                   )}
                 </button>
                 <span
@@ -228,6 +243,7 @@ const MyPage = () => {
                     fontSize: 10,
                     marginTop: 4,
                     color: earned ? "#27500A" : "hsl(var(--muted-foreground))",
+                    fontWeight: earned ? 500 : 400,
                     textAlign: "center",
                     lineHeight: 1.2,
                   }}
@@ -253,14 +269,26 @@ const MyPage = () => {
                     }}
                   >
                     {earned
-                      ? `${c.name_ko}${earnedBadges[c.id] ? ` · ${formatEarnedDate(earnedBadges[c.id])}` : ""}`
-                      : "등산 메이트로 선택하면 획득해요"}
+                      ? `${c.name_ko} · 레벨 3 달성 🎉${earnedBadges[c.id] ? ` · ${formatEarnedDate(earnedBadges[c.id])}` : ""}`
+                      : `Lv.${c.id === (characterId as any) ? characterLevel : 1}/3 — 레벨 3이 되면 뱃지를 획득해요`}
                   </div>
                 )}
               </div>
             );
           })}
         </div>
+        {myChar && !earnedBadges[myChar.id] && (
+          <div
+            style={{
+              fontSize: 12,
+              color: "#3B6D11",
+              textAlign: "center",
+              marginTop: 10,
+            }}
+          >
+            현재 {myChar.name_ko} Lv.{characterLevel} — 레벨 3 달성 시 뱃지 획득!
+          </div>
+        )}
       </div>
 
       {/* Change hiking mate menu */}
