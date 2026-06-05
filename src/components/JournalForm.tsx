@@ -383,7 +383,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
           onSaved({ mode: "update", journal: { ...(editJournal as HikingJournal), ...(journalData as any) } });
         }
       } else {
-        const { error } = await createJournal(journalData);
+        const { data: createdData, error } = await createJournal(journalData);
         if (error) {
           console.error("Journal insert error:", JSON.stringify(error));
           const msg = (error as any).message || "알 수 없는 오류";
