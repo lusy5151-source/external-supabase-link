@@ -234,6 +234,24 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
         >
           언제든지 마이 탭에서 바꿀 수 있어요
         </p>
+        {effectiveRecommendedId && (() => {
+          const rec = characters.find((c) => c.id === effectiveRecommendedId);
+          if (!rec) return null;
+          return (
+            <p
+              style={{
+                fontSize: 13,
+                color: "#3B6D11",
+                textAlign: "center",
+                marginTop: 6,
+                marginBottom: 0,
+                fontWeight: 500,
+              }}
+            >
+              퀴즈 결과 {rec.name_ko}(을)를 추천드려요!
+            </p>
+          );
+        })()}
       </div>
 
       <div style={{ flex: 1, padding: "0 20px 24px" }}>
