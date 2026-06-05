@@ -176,6 +176,8 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
     return () => { cancelled = true; };
   }, [user, authLoading]);
 
+  const [recommendedCharacterId, setRecommendedCharacterId] = useState<string | null>(null);
+
   const handleComplete = useCallback(async (nickname: string, characterId: string) => {
     if (!user) return;
     try {
@@ -183,7 +185,6 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
         .from("profiles")
         .update({
           nickname,
-          character_id: characterId,
           is_onboarded: true,
           updated_at: new Date().toISOString(),
         })
@@ -192,12 +193,14 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
         console.error("[OnboardingGate] profile update error", error);
         return;
       }
+      // Quiz result becomes a recommendation for the manual selection screen
+      setRecommendedCharacterId(characterId || null);
       setNeedsOnboarding(false);
-      navigate("/", { replace: true });
+      setNeedsCharacter(true);
     } catch (e) {
       console.error("[OnboardingGate] complete error", e);
     }
-  }, [user, navigate]);
+  }, [user]);
 
   const bypass = ONBOARDING_BYPASS_PATHS.some(
     (p) => location.pathname === p || location.pathname.startsWith(p + "/")
@@ -206,7 +209,12 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
   if (user && !authLoading && !bypass) {
     if (checking) return <LoadingSpinner message="프로필 확인 중..." />;
     if (needsOnboarding) return <OnboardingFlow onComplete={handleComplete} />;
-    if (needsCharacter) return <CharacterSelectionPage onCompleted={() => setNeedsCharacter(false)} />;
+    if (needsCharacter) return (
+      <CharacterSelectionPage
+        recommendedId={recommendedCharacterId}
+        onCompleted={() => { setNeedsCharacter(false); setRecommendedCharacterId(null); }}
+      />
+    );
   }
 
   return <>{children}</>;

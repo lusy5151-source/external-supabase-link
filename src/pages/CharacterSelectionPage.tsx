@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -21,12 +21,18 @@ interface CharacterRow {
 
 interface Props {
   onCompleted?: () => void;
+  recommendedId?: string | null;
 }
 
-export default function CharacterSelectionPage({ onCompleted }: Props) {
+export default function CharacterSelectionPage({ onCompleted, recommendedId }: Props) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const navStateRecommendedId =
+    (location.state as { recommendedId?: string } | null)?.recommendedId ?? null;
+  const effectiveRecommendedId = recommendedId ?? navStateRecommendedId ?? null;
+
   const [characters, setCharacters] = useState<CharacterRow[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(effectiveRecommendedId);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [imgError, setImgError] = useState<Record<string, boolean>>({});
@@ -92,6 +98,7 @@ export default function CharacterSelectionPage({ onCompleted }: Props) {
   const renderCard = (c: CharacterRow, idx: number, total: number) => {
     const isLastOdd = total % 2 === 1 && idx === total - 1;
     const isSelected = selectedId === c.id;
+    const isRecommended = effectiveRecommendedId === c.id;
     return (
       <button
         key={c.id}
@@ -111,8 +118,27 @@ export default function CharacterSelectionPage({ onCompleted }: Props) {
           cursor: "pointer",
           transition: "background 0.15s, border-color 0.15s",
           textAlign: "center",
+          position: "relative",
         }}
       >
+        {isRecommended && (
+          <span
+            style={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              background: "#FAEEDA",
+              color: "#633806",
+              fontSize: 10,
+              fontWeight: 600,
+              borderRadius: 10,
+              padding: "2px 6px",
+              lineHeight: 1.2,
+            }}
+          >
+            추천 ✨
+          </span>
+        )}
         <div
           style={{
             width: 80,
@@ -208,6 +234,24 @@ export default function CharacterSelectionPage({ onCompleted }: Props) {
         >
           언제든지 마이 탭에서 바꿀 수 있어요
         </p>
+        {effectiveRecommendedId && (() => {
+          const rec = characters.find((c) => c.id === effectiveRecommendedId);
+          if (!rec) return null;
+          return (
+            <p
+              style={{
+                fontSize: 13,
+                color: "#3B6D11",
+                textAlign: "center",
+                marginTop: 6,
+                marginBottom: 0,
+                fontWeight: 500,
+              }}
+            >
+              퀴즈 결과 {rec.name_ko}(을)를 추천드려요!
+            </p>
+          );
+        })()}
       </div>
 
       <div style={{ flex: 1, padding: "0 20px 24px" }}>
