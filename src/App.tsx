@@ -17,6 +17,7 @@ import SplashScreen from "@/components/SplashScreen";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import MagazinePopup from "@/components/MagazinePopup";
 import MigrationNoticeModal from "@/components/MigrationNoticeModal";
+import Level3BadgeCelebration from "@/components/Level3BadgeCelebration";
 import NotFound from "./pages/NotFound";
 import { useState, useCallback, lazy, Suspense, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
