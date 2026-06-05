@@ -123,14 +123,14 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
           gridColumn: isLastOdd ? "1 / -1" : undefined,
           justifySelf: isLastOdd ? "center" : "stretch",
           width: isLastOdd ? "calc(50% - 6px)" : "100%",
-          background: isSelected ? "#EAF3DE" : "var(--color-background-primary, #FFFFFF)",
+          background: isSelected ? "#EAF3DE" : "transparent",
           border: isSelected ? "2px solid #639922" : "0.5px solid var(--color-border-tertiary, #E5E7EB)",
           borderRadius: "var(--border-radius-lg, 16px)",
-          padding: "16px 12px",
+          padding: "12px 8px",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: 8,
+          gap: 6,
           cursor: "pointer",
           transition: "background 0.15s, border-color 0.15s",
           textAlign: "center",
@@ -159,13 +159,16 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
           src={c.image_original || ""}
           alt={c.name_ko}
           style={{
-            width: "80px",
-            height: "80px",
+            width: "100%",
+            maxWidth: "100px",
+            height: "auto",
             objectFit: "contain",
             display: "block",
             margin: "0 auto",
+            background: "transparent",
           }}
         />
+
         <div
           style={{
             fontSize: 13,
