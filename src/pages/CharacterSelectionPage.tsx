@@ -98,6 +98,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
   const renderCard = (c: CharacterRow, idx: number, total: number) => {
     const isLastOdd = total % 2 === 1 && idx === total - 1;
     const isSelected = selectedId === c.id;
+    const isRecommended = effectiveRecommendedId === c.id;
     return (
       <button
         key={c.id}
@@ -117,17 +118,27 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
           cursor: "pointer",
           transition: "background 0.15s, border-color 0.15s",
           textAlign: "center",
+          position: "relative",
         }}
       >
-        <div
-          style={{
-            width: 80,
-            height: 80,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
+        {isRecommended && (
+          <span
+            style={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              background: "#FAEEDA",
+              color: "#633806",
+              fontSize: 10,
+              fontWeight: 600,
+              borderRadius: 10,
+              padding: "2px 6px",
+              lineHeight: 1.2,
+            }}
+          >
+            추천 ✨
+          </span>
+        )}
           {c.image_original && !imgError[c.id] ? (
             <img
               src={c.image_original}
