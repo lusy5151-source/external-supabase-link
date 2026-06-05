@@ -226,15 +226,16 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
     }
     setSaving(true)
     try {
+      // NOTE: character_id intentionally not saved here.
+      // Quiz result is only a recommendation — user manually confirms on CharacterSelectionPage.
       const { error } = await supabase
         .from('profiles')
         .update({
           nickname,
-          character_id: topCharacter,
           is_onboarded: true,
         })
         .eq('user_id', user.id)
-      console.log('update error:', error)
+      if (error) console.log('update error:', error)
       onComplete(nickname, topCharacter)
     } catch (err: any) {
       console.error('[OnboardingFlow] profile update failed', err)
