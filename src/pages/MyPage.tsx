@@ -155,7 +155,121 @@ const MyPage = () => {
             완등 {completedCount}개
           </Badge>
         </div>
+        {myChar && (
+          <button
+            onClick={() => nav("/character-select")}
+            className="flex flex-col items-center flex-shrink-0"
+            style={{ gap: 2 }}
+            aria-label="등산 메이트 변경"
+          >
+            {myChar.image_original ? (
+              <img
+                src={myChar.image_original}
+                alt={myChar.name_ko}
+                style={{ width: 52, height: 52, objectFit: "contain" }}
+                loading="lazy"
+              />
+            ) : (
+              <div style={{ width: 52, height: 52, borderRadius: "50%", background: myChar.color || "#EAF3DE" }} />
+            )}
+            <span style={{ fontSize: 11, color: "#3B6D11", fontWeight: 500 }}>{myChar.name_ko}</span>
+          </button>
+        )}
       </div>
+
+      {/* Badge collection */}
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="flex items-center justify-between mb-3">
+          <span style={{ fontSize: 14, fontWeight: 500, color: "var(--color-text-primary)" }}>나의 뱃지</span>
+          <span style={{ fontSize: 12, color: "#3B6D11" }}>{earnedIds.length}/{Math.max(allChars.length, 7)} 수집</span>
+        </div>
+        <div
+          className="flex gap-3 overflow-x-auto pb-1"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {allChars.map((c) => {
+            const earned = !!earnedBadges[c.id];
+            const isActive = activeTooltip === c.id;
+            return (
+              <div key={c.id} className="flex flex-col items-center flex-shrink-0 relative" style={{ width: 64 }}>
+                <button
+                  onClick={() => setActiveTooltip(isActive ? null : c.id)}
+                  className="flex items-center justify-center"
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: "50%",
+                    background: earned ? "transparent" : (c.color || "#C7D66D"),
+                    border: earned ? "2px solid #639922" : "none",
+                    overflow: "hidden",
+                    position: "relative",
+                  }}
+                  aria-label={earned ? `${c.name_ko} 뱃지` : "미획득 뱃지"}
+                >
+                  {earned ? (
+                    c.image_badge ? (
+                      <img
+                        src={c.image_badge}
+                        alt={c.name_ko}
+                        style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span style={{ fontSize: 18, color: "white" }}>{c.name_ko.charAt(0)}</span>
+                    )
+                  ) : (
+                    <Lock style={{ width: 16, height: 16, color: "white", opacity: 0.7 }} />
+                  )}
+                </button>
+                <span
+                  style={{
+                    fontSize: 10,
+                    marginTop: 4,
+                    color: earned ? "#27500A" : "hsl(var(--muted-foreground))",
+                    textAlign: "center",
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {earned ? c.name_ko : "???"}
+                </span>
+                {isActive && (
+                  <div
+                    onClick={() => setActiveTooltip(null)}
+                    style={{
+                      position: "absolute",
+                      top: 66,
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      background: "rgba(39,80,10,0.95)",
+                      color: "white",
+                      fontSize: 10,
+                      padding: "6px 8px",
+                      borderRadius: 6,
+                      whiteSpace: "nowrap",
+                      zIndex: 5,
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    {earned
+                      ? `${c.name_ko}${earnedBadges[c.id] ? ` · ${formatEarnedDate(earnedBadges[c.id])}` : ""}`
+                      : "등산 메이트로 선택하면 획득해요"}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Change hiking mate menu */}
+      <button
+        onClick={() => nav("/character-select")}
+        className="flex items-center gap-3 w-full rounded-2xl border border-border bg-card px-4 py-3.5 transition-colors hover:bg-accent/50"
+      >
+        <UserCircle2 style={{ width: 18, height: 18, color: "hsl(var(--muted-foreground))" }} />
+        <span className="flex-1 text-left text-sm font-medium text-foreground">등산 메이트 변경</span>
+        <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
+      </button>
 
       {/* Character card */}
       {(() => {
