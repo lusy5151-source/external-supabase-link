@@ -251,7 +251,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
               gap: 12,
             }}
           >
-            {characters.map((c, idx) => renderCard(c, idx, characters.length))}
+            {characters.map((c) => renderCard(c))}
           </div>
         )}
       </div>
