@@ -74,20 +74,51 @@ const MyPage = () => {
     }
   });
 
+  type CharRow = {
+    id: string;
+    name_ko: string;
+    color: string | null;
+    image_original: string | null;
+    image_badge: string | null;
+  };
+  const [myChar, setMyChar] = useState<CharRow | null>(null);
+  const [allChars, setAllChars] = useState<CharRow[]>([]);
+  const [earnedBadges, setEarnedBadges] = useState<Record<string, string | null>>({});
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
+
   useEffect(() => {
     if (!user) return;
-    (supabase as any)
-      .from("profiles")
-      .select("character_id")
-      .eq("user_id", user.id)
-      .single()
-      .then(({ data }: any) => {
-        if (data?.character_id) {
-          setCharacterId(data.character_id as Character);
-          try { localStorage.setItem("wandeung_character_id", data.character_id); } catch {}
-        }
-      });
+    let cancelled = false;
+    (async () => {
+      const [{ data: profileRow }, { data: chars }, { data: badges }] = await Promise.all([
+        (supabase as any).from("profiles").select("character_id").eq("user_id", user.id).single(),
+        (supabase as any).from("characters").select("id, name_ko, color, image_original, image_badge").order("id"),
+        (supabase as any).from("user_badges").select("character_id, earned_at").eq("user_id", user.id),
+      ]);
+      if (cancelled) return;
+      const cid: string | null = profileRow?.character_id ?? null;
+      if (cid) {
+        setCharacterId(cid as Character);
+        try { localStorage.setItem("wandeung_character_id", cid); } catch {}
+      }
+      const all = (chars as CharRow[]) || [];
+      setAllChars(all);
+      if (cid) setMyChar(all.find((c) => c.id === cid) || null);
+      const map: Record<string, string | null> = {};
+      ((badges as any[]) || []).forEach((b) => { if (b?.character_id) map[b.character_id] = b.earned_at ?? null; });
+      setEarnedBadges(map);
+    })();
+    return () => { cancelled = true; };
   }, [user]);
+
+  const earnedIds = Object.keys(earnedBadges);
+  const formatEarnedDate = (iso: string | null) => {
+    if (!iso) return "";
+    try {
+      const d = new Date(iso);
+      return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+    } catch { return ""; }
+  };
 
   if (!user) {
     return (
