@@ -345,7 +345,7 @@ const MagazinePage = () => {
               </div>
             </div>
             <button
-              onClick={() => window.open("https://www.instagram.com/wandeung_app", "_blank")}
+              onClick={() => window.open("https://www.instagram.com/wan_deung.official", "_blank", "noopener,noreferrer")}
               style={{
                 background: "white",
                 color: "#DD2A7B",
