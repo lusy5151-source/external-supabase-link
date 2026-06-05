@@ -37,20 +37,41 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
   const [saving, setSaving] = useState(false);
   const [imgError, setImgError] = useState<Record<string, boolean>>({});
   const [showCelebration, setShowCelebration] = useState(false);
+  const [isReturningUser, setIsReturningUser] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data, error } = await (supabase as any)
-        .from("characters")
-        .select("id, name_ko, description, color, image_original, image_complete, image_badge")
-        .order("id");
+      const [charsRes, userRes] = await Promise.all([
+        (supabase as any)
+          .from("characters")
+          .select("id, name_ko, description, color, image_original, image_complete, image_badge")
+          .order("id"),
+        supabase.auth.getUser(),
+      ]);
       if (cancelled) return;
-      if (error) {
-        console.error("[CharacterSelectionPage] fetch error", error);
+      if (charsRes.error) {
+        console.error("[CharacterSelectionPage] fetch error", charsRes.error);
         toast.error("캐릭터를 불러오지 못했어요");
       } else {
-        setCharacters((data as CharacterRow[]) || []);
+        setCharacters((charsRes.data as CharacterRow[]) || []);
+      }
+      const user = userRes.data?.user;
+      if (user) {
+        const { data: profile } = await (supabase as any)
+          .from("profiles")
+          .select("character_id, character_selected_at")
+          .eq("user_id", user.id)
+          .single();
+        if (!cancelled && profile) {
+          const existingCharId = profile.character_id as string | null;
+          const returning = !!existingCharId && !profile.character_selected_at;
+          if (returning) {
+            setIsReturningUser(true);
+            // Priority: existingCharId > recommendedId
+            setSelectedId(existingCharId);
+          }
+        }
       }
       setLoading(false);
     })();
@@ -226,15 +247,17 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
         <p
           style={{
             fontSize: 13,
-            color: "var(--color-text-tertiary, #888)",
+            color: "var(--color-text-secondary, #666)",
             textAlign: "center",
             marginTop: 8,
             marginBottom: 0,
           }}
         >
-          언제든지 마이 탭에서 바꿀 수 있어요
+          {isReturningUser
+            ? "기존에 선택된 캐릭터예요. 변경하거나 그대로 시작할 수 있어요."
+            : "언제든지 마이 탭에서 바꿀 수 있어요"}
         </p>
-        {effectiveRecommendedId && (() => {
+        {!isReturningUser && effectiveRecommendedId && (() => {
           const rec = characters.find((c) => c.id === effectiveRecommendedId);
           if (!rec) return null;
           return (
