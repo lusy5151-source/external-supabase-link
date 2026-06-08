@@ -1,0 +1,2 @@
+UPDATE public.profiles SET avatar_url = 'https://' || substring(avatar_url from 8) WHERE avatar_url LIKE 'http://%';
+UPDATE public.hiking_group SET avatar_url = 'https://' || substring(avatar_url from 8) WHERE avatar_url LIKE 'http://%';
