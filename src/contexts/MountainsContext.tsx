@@ -29,13 +29,12 @@ export const MountainsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     [mountains]
   );
   return (
-    <MountainsContext.Provider value={{ mountains, isLoading: enabled && isLoading }}>
+    <MountainsContext.Provider value={{ mountains, isLoading: enabled && isLoading, getMountain }}>
       {children}
     </MountainsContext.Provider>
   );
 };
 
-// NOTE: getMountain re-added below for backward compatibility.
 
 
 export function useMountains() {
