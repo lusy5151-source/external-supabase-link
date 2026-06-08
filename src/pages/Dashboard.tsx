@@ -160,7 +160,6 @@ function CharacterSlide({
 
   useEffect(() => {
     const url = `https://ylcjlzlchinijvyojdbc.supabase.co/storage/v1/object/public/backgrounds/${season}-${weather}-${timeofday}-animated.svg`;
-    console.log("배경 URL:", url);
     let cancelled = false;
     fetch(url)
       .then((res) => {
