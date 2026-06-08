@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import { normalizeImageUrl } from "@/lib/normalizeImageUrl";
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
