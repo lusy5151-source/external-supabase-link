@@ -197,8 +197,6 @@ export function useHikingPlans() {
       max_participants: plan.max_participants === undefined ? 10 : plan.max_participants,
     };
 
-    console.log("Creating hiking plan user.id:", authUser.id);
-    console.log("Creating hiking plan insert payload:", payload);
 
     const { error } = await supabase
       .from("hiking_plans")
