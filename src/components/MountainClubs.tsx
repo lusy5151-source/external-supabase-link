@@ -95,7 +95,7 @@ export function MountainClubs({ mountainId }: { mountainId: number }) {
               style={{ width: 32, height: 32, fontSize: 13 }}
             >
               {club.avatar_url ? (
-                <img src={club.avatar_url} alt="" className="h-full w-full rounded-full object-cover" />
+                <img src={normalizeImageUrl(club.avatar_url)} alt="" className="h-full w-full rounded-full object-cover" />
               ) : (
                 club.name[0]
               )}

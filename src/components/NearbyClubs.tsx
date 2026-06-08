@@ -148,7 +148,7 @@ export function NearbyClubs() {
                 style={{ width: 28, height: 28, fontSize: 11 }}
               >
                 {club.avatar_url ? (
-                  <img src={club.avatar_url} alt="" className="h-full w-full rounded-full object-cover" />
+                  <img src={normalizeImageUrl(club.avatar_url)} alt="" className="h-full w-full rounded-full object-cover" />
                 ) : (
                   club.name[0]
                 )}
