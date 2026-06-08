@@ -71,14 +71,19 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
+          // Group admin pages into a single isolated chunk so it can be
+          // excluded from PWA precache and never loaded on Home.
+          if (id.includes("/pages/Admin")) return "admin";
+          if (id.includes("/pages/AchievementsPage")) return "achievements";
           if (!id.includes("node_modules")) return undefined;
-          // Bundle React + all libs that depend on React together to avoid
-          // "Cannot read properties of undefined (reading 'createContext')"
-          // caused by load-order issues across split chunks.
           if (id.includes("@supabase")) return "vendor-supabase";
           return "vendor";
         },
       },
     },
+    modulePreload: {
+      polyfill: false,
+    },
   },
+
 }));
