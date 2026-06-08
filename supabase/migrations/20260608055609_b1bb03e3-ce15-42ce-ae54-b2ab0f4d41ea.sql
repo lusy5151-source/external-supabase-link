@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_mountains_popularity ON public.mountains (popularity DESC NULLS LAST);
