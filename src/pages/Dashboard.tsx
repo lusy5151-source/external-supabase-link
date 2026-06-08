@@ -42,6 +42,10 @@ import { useUserXp } from "@/hooks/useUserXp";
 import { useCharacterEmotion } from "@/hooks/useCharacterEmotion";
 import { useHomeMessage } from "@/hooks/useHomeMessage";
 import { useBgWeather } from "@/hooks/useBgWeather";
+import { timeStart, timeEnd } from "@/lib/debugTiming";
+
+// Mark dashboard initial render timing (module-load → first render commit)
+timeStart("dashboard:initialRender");
 
 const EMOTION_MSG: Record<"normal" | "sad" | "angry" | "autumn", string | null> = {
   normal: null,
@@ -620,6 +624,10 @@ function CharacterTapArea({
 }
 
 const Dashboard = () => {
+  useEffect(() => {
+    // First commit reached
+    timeEnd("dashboard:initialRender");
+  }, []);
   const { mountains } = useMountains();
   const { records, completedCount, isCompleted } = useStore();
   const { items: gearItems } = useGearStore();

@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { awardXp } from "@/lib/xp";
+import { timeStart, timeEnd } from "@/lib/debugTiming";
 
 export interface Challenge { id: string; title: string; description: string | null; type: string; goal_type: string; goal_value: number; start_date: string | null; end_date: string | null; badge_id: string | null; level: number; category: string; category_group?: string | null; badge?: { name: string; image_url: string | null; description: string | null }; }
 export interface UserChallenge { id: string; user_id: string; challenge_id: string; progress: number; completed: boolean; completed_at: string | null; joined_at: string; abandoned_at?: string | null; abandon_reason?: string | null; challenge?: Challenge; }
@@ -20,31 +21,36 @@ export function useChallenges() {
   const [loading, setLoading] = useState(false);
 
   const fetchAllChallenges = useCallback(async (): Promise<Challenge[]> => {
-    const { data, error } = await supabase
-      .from("challenges")
-      .select("*")
-      .order("category")
-      .order("level");
-    if (error) {
-      console.error("[useChallenges] fetchAllChallenges error:", error);
-      return [];
+    timeStart("challenges:fetch");
+    try {
+      const { data, error } = await supabase
+        .from("challenges")
+        .select("*")
+        .order("category")
+        .order("level");
+      if (error) {
+        console.error("[useChallenges] fetchAllChallenges error:", error);
+        return [];
+      }
+      const rows = data || [];
+      const badgeIds = Array.from(new Set(rows.map((c: any) => c.badge_id).filter(Boolean)));
+      let badgeMap = new Map<string, any>();
+      if (badgeIds.length > 0) {
+        const { data: badges, error: badgeErr } = await supabase
+          .from("badges")
+          .select("id, name, image_url, description")
+          .in("id", badgeIds);
+        if (badgeErr) console.warn("[useChallenges] badges fetch error:", badgeErr);
+        (badges || []).forEach((b: any) => badgeMap.set(b.id, b));
+      }
+      return rows.map((c: any) => ({
+        ...c,
+        level: typeof c.level === "string" ? parseInt(c.level, 10) || 1 : c.level ?? 1,
+        badge: c.badge_id ? badgeMap.get(c.badge_id) ?? null : null,
+      }));
+    } finally {
+      timeEnd("challenges:fetch");
     }
-    const rows = data || [];
-    const badgeIds = Array.from(new Set(rows.map((c: any) => c.badge_id).filter(Boolean)));
-    let badgeMap = new Map<string, any>();
-    if (badgeIds.length > 0) {
-      const { data: badges, error: badgeErr } = await supabase
-        .from("badges")
-        .select("id, name, image_url, description")
-        .in("id", badgeIds);
-      if (badgeErr) console.warn("[useChallenges] badges fetch error:", badgeErr);
-      (badges || []).forEach((b: any) => badgeMap.set(b.id, b));
-    }
-    return rows.map((c: any) => ({
-      ...c,
-      level: typeof c.level === "string" ? parseInt(c.level, 10) || 1 : c.level ?? 1,
-      badge: c.badge_id ? badgeMap.get(c.badge_id) ?? null : null,
-    }));
   }, []);
 
   const fetchUserChallenges = useCallback(async (): Promise<UserChallenge[]> => {

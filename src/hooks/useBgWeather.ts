@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { timeStart, timeEnd } from "@/lib/debugTiming";
 
 export type BgWeather = "serenity" | "cloudy" | "rain" | "snow";
 
@@ -42,11 +43,16 @@ export function useBgWeather(season: string): BgWeather {
   const { data } = useQuery({
     queryKey: ["weather", "current", coords?.lat, coords?.lon],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("get-weather", {
-        body: { lat: coords!.lat, lon: coords!.lon, type: "current" },
-      });
-      if (error) throw error;
-      return data;
+      timeStart("weather:fetch");
+      try {
+        const { data, error } = await supabase.functions.invoke("get-weather", {
+          body: { lat: coords!.lat, lon: coords!.lon, type: "current" },
+        });
+        if (error) throw error;
+        return data;
+      } finally {
+        timeEnd("weather:fetch");
+      }
     },
     enabled: !!coords,
     staleTime: 1000 * 60 * 10,

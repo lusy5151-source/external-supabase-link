@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Tables } from "@/integrations/supabase/types";
+import { timeStart, timeEnd, shortId } from "@/lib/debugTiming";
 
 type Profile = Tables<"profiles">;
 type SafeProfile = Omit<Profile, "email">;
@@ -56,6 +57,7 @@ export function useProfile() {
       return;
     }
 
+    timeStart("profile:fetch", { uid: shortId(user.id) });
     try {
       const { data, error } = await supabase
         .from("profiles")
@@ -70,13 +72,18 @@ export function useProfile() {
 
       let row: any = data;
       if (!row) {
-        const { data: upserted, error: upsertErr } = await supabase
-          .from("profiles")
-          .upsert({ user_id: user.id, id: user.id } as any, { onConflict: "user_id" })
-          .select(PROFILE_SELECT)
-          .maybeSingle();
-        if (upsertErr) console.error("[useProfile] upsert error:", upsertErr.message);
-        row = upserted ?? null;
+        timeStart("profile:upsertIfMissing", { uid: shortId(user.id) });
+        try {
+          const { data: upserted, error: upsertErr } = await supabase
+            .from("profiles")
+            .upsert({ user_id: user.id, id: user.id } as any, { onConflict: "user_id" })
+            .select(PROFILE_SELECT)
+            .maybeSingle();
+          if (upsertErr) console.error("[useProfile] upsert error:", upsertErr.message);
+          row = upserted ?? null;
+        } finally {
+          timeEnd("profile:upsertIfMissing");
+        }
       }
 
       const next = row ? { ...(row as SafeProfile), email: user.email ?? null } : null;
@@ -86,6 +93,7 @@ export function useProfile() {
       console.error("[useProfile] unexpected:", e?.message ?? "error");
     } finally {
       setLoading(false);
+      timeEnd("profile:fetch");
     }
   }, [user]);
 
