@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bookmark, CalendarPlus, ChevronRight, Clock, Info, Loader2, Ruler, Star, TrendingUp, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useNaverMaps } from "@/lib/naverMaps";
 
 interface HikingCenterRouteMapProps {
   mountainName: string;

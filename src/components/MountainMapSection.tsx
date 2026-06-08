@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNaverMaps } from "@/lib/naverMaps";
 import { useNavigate } from "react-router-dom";
 import { useMountains } from "@/contexts/MountainsContext";
 import type { Mountain } from "@/data/mountains";
@@ -61,12 +62,13 @@ const MountainMapSection = () => {
   useEffect(() => { sharedCompletionMapRef.current = sharedCompletionMap; }, [sharedCompletionMap]);
 
   // Initialize Naver map ONCE
+  const sdkReady = useNaverMaps();
+
+  // Initialize Naver map ONCE (after SDK loaded)
   useEffect(() => {
+    if (!sdkReady) return;
     if (!mapRef.current || mapInstanceRef.current) return;
-    if (!window.naver?.maps) {
-      console.warn("Naver Maps SDK not loaded yet");
-      return;
-    }
+    if (!window.naver?.maps) return;
     const naver = window.naver;
 
     const map = new naver.maps.Map(mapRef.current, {
@@ -88,7 +90,7 @@ const MountainMapSection = () => {
       }
       mapInstanceRef.current = null;
     };
-  }, []);
+  }, [sdkReady]);
 
   // Update markers when filter/data changes
   useEffect(() => {
