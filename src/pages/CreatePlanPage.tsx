@@ -456,7 +456,6 @@ const CreatePlanPage = () => {
         style={{
           bottom: "calc(76px + env(safe-area-inset-bottom, 16px))",
           background: "hsl(var(--color-background-primary))",
-          borderTop: "0.5px solid hsl(var(--color-border-tertiary))",
           padding: "12px 20px",
           zIndex: 40,
         }}
