@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Route, Loader2, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useNaverMaps } from "@/lib/naverMaps";
 
 interface TrailFeature {
   type: string;
@@ -30,12 +31,12 @@ export function TrailMap({ mountainName, lat, lng }: TrailMapProps) {
   const [trailCount, setTrailCount] = useState(0);
   const [noData, setNoData] = useState(false);
 
+  const sdkReady = useNaverMaps();
+
   useEffect(() => {
+    if (!sdkReady) return;
     if (!mapRef.current) return;
-    if (!window.naver?.maps) {
-      console.warn("Naver Maps SDK not loaded yet");
-      return;
-    }
+    if (!window.naver?.maps) return;
     const naver = window.naver;
 
     // Cleanup previous
@@ -75,7 +76,7 @@ export function TrailMap({ mountainName, lat, lng }: TrailMapProps) {
       mapInstanceRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mountainName, lat, lng]);
+  }, [mountainName, lat, lng, sdkReady]);
 
   const fetchTrails = async (name: string, map: any, naver: any) => {
     setLoading(true);
