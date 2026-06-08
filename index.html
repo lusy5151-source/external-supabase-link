@@ -34,17 +34,7 @@
   <meta property="og:description" content="산을 정복하는 즐거움 - 등산 기록 앱">
   <meta name="twitter:description" content="산을 정복하는 즐거움 - 등산 기록 앱">
 
-    <!-- Naver Maps JS API v3 -->
-    <script type="text/javascript"
-      src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=e35ks3exhv&submodules=geocoder"></script>
-    <script type="text/javascript">
-      window.navermap_authFailure = function () {
-        console.error("[Naver Maps] Authentication failed. Check Client ID and registered Web service URLs in NCP Console.", {
-          currentOrigin: window.location.origin,
-          clientId: "e35ks3exhv",
-        });
-      };
-    </script>
+    <!-- Naver Maps SDK is loaded on demand via src/lib/naverMaps.ts (only on map/geocoder screens) -->
 
     <script>
       // iOS 15.4+ pinch zoom 완전 차단
