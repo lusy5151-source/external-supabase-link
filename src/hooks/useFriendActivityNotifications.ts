@@ -170,20 +170,31 @@ export function useFriendActivityNotifications({ onUnread }: UseFriendActivityNo
     channelsRef.current = [];
   }, []);
 
-  // Main lifecycle
+  // Main lifecycle — deferred to keep initial paint fast
   useEffect(() => {
     if (!user) { unsubscribe(); return; }
     if (!enabled) { unsubscribe(); return; }
 
     let cancelled = false;
-    (async () => {
+    const run = async () => {
       await fetchFriendIds(user.id);
       if (cancelled) return;
       subscribe();
-    })();
+    };
 
-    return () => { cancelled = true; unsubscribe(); };
+    const w = window as any;
+    const handle = w.requestIdleCallback
+      ? w.requestIdleCallback(run, { timeout: 6000 })
+      : window.setTimeout(run, 3500);
+
+    return () => {
+      cancelled = true;
+      if (w.cancelIdleCallback && typeof handle === "number") w.cancelIdleCallback(handle);
+      else clearTimeout(handle as any);
+      unsubscribe();
+    };
   }, [user, enabled, fetchFriendIds, subscribe, unsubscribe]);
+
 
   const setFriendActivityEnabled = useCallback((v: boolean) => {
     saveEnabled(v);
