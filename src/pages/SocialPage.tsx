@@ -1,3 +1,4 @@
+import { normalizeImageUrl } from "@/lib/normalizeImageUrl";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOnboarding } from "@/contexts/OnboardingContext";
