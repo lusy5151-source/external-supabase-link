@@ -624,6 +624,10 @@ function CharacterTapArea({
 }
 
 const Dashboard = () => {
+  useEffect(() => {
+    // First commit reached
+    timeEnd("dashboard:initialRender");
+  }, []);
   const { mountains } = useMountains();
   const { records, completedCount, isCompleted } = useStore();
   const { items: gearItems } = useGearStore();
