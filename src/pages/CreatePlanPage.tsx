@@ -448,31 +448,36 @@ const CreatePlanPage = () => {
         </div>
       )}
 
+      {/* Spacer so last content isn't hidden behind fixed submit bar */}
+      <div aria-hidden style={{ height: "calc(80px + env(safe-area-inset-bottom, 0px))" }} />
+
       <div
-        className="sticky -mx-5"
+        className="fixed left-0 right-0"
         style={{
-          bottom: "calc(100px + env(safe-area-inset-bottom, 0px))",
+          bottom: "calc(76px + env(safe-area-inset-bottom, 16px))",
           background: "hsl(var(--color-background-primary))",
           borderTop: "0.5px solid hsl(var(--color-border-tertiary))",
-          padding: "16px 20px",
-          zIndex: 10,
+          padding: "12px 20px",
+          zIndex: 40,
         }}
       >
-        <Button
-          onClick={handleSubmit}
-          disabled={!canSubmit}
-          className="w-full"
-          style={{
-            background: "hsl(var(--brand-forest))",
-            color: "white",
-            height: 48,
-            borderRadius: "var(--border-radius-md, 12px)",
-            fontSize: 15,
-            fontWeight: 500,
-          }}
-        >
-          {submitting ? "생성 중..." : "계획 만들기"}
-        </Button>
+        <div className="container mx-auto">
+          <Button
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+            className="w-full"
+            style={{
+              background: "hsl(var(--brand-forest))",
+              color: "white",
+              height: 48,
+              borderRadius: "var(--border-radius-md, 12px)",
+              fontSize: 15,
+              fontWeight: 500,
+            }}
+          >
+            {submitting ? "생성 중..." : "계획 만들기"}
+          </Button>
+        </div>
       </div>
 
       {createdPlanId && (
