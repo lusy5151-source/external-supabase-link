@@ -70,21 +70,29 @@ export function useHikingPlans() {
   const { user } = useAuth();
   const [plans, setPlans] = useState<HikingPlan[]>([]);
   const [myUpcomingPlans, setMyUpcomingPlans] = useState<HikingPlan[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState<PlanNotification[]>([]);
 
   const fetchPlans = useCallback(async () => {
-    if (!user) { setLoading(false); return; }
-    const { data } = await supabase
-      .from("hiking_plans")
-      .select("*")
-      .order("planned_date", { ascending: true });
-    setPlans((data as HikingPlan[]) || []);
-    setLoading(false);
+    if (!user) {
+      setPlans([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data } = await supabase
+        .from("hiking_plans")
+        .select("*")
+        .order("planned_date", { ascending: true });
+      setPlans((data as HikingPlan[]) || []);
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
   const fetchMyUpcomingPlans = useCallback(async () => {
-    if (!user) return;
+    if (!user) { setMyUpcomingPlans([]); return; }
     const today = new Date().toISOString().split("T")[0];
     // Get plan IDs the user participates in (going or interested only)
     const { data: participations } = await supabase
@@ -121,7 +129,7 @@ export function useHikingPlans() {
   }, [user]);
 
   const fetchNotifications = useCallback(async () => {
-    if (!user) return;
+    if (!user) { setNotifications([]); return; }
     const { data } = await supabase
       .from("plan_notifications")
       .select("*")
@@ -132,10 +140,17 @@ export function useHikingPlans() {
   }, [user]);
 
   useEffect(() => {
+    if (!user) {
+      setPlans([]);
+      setMyUpcomingPlans([]);
+      setNotifications([]);
+      setLoading(false);
+      return;
+    }
     fetchPlans();
     fetchMyUpcomingPlans();
     fetchNotifications();
-  }, [fetchPlans, fetchMyUpcomingPlans, fetchNotifications]);
+  }, [user, fetchPlans, fetchMyUpcomingPlans, fetchNotifications]);
 
   const createPlan = async (plan: {
     mountain_id: number;
@@ -182,8 +197,6 @@ export function useHikingPlans() {
       max_participants: plan.max_participants === undefined ? 10 : plan.max_participants,
     };
 
-    console.log("Creating hiking plan user.id:", authUser.id);
-    console.log("Creating hiking plan insert payload:", payload);
 
     const { error } = await supabase
       .from("hiking_plans")

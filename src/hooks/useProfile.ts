@@ -56,16 +56,37 @@ export function useProfile() {
       return;
     }
 
-    const { data } = await supabase
-      .from("profiles")
-      .select(PROFILE_SELECT)
-      .eq("user_id", user.id)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select(PROFILE_SELECT)
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-    const next = data ? { ...(data as SafeProfile), email: user.email ?? null } : null;
-    setProfile(next);
-    writeCache(user.id, next);
-    setLoading(false);
+      if (error) {
+        console.error("[useProfile] fetch error:", error.message);
+        return;
+      }
+
+      let row: any = data;
+      if (!row) {
+        const { data: upserted, error: upsertErr } = await supabase
+          .from("profiles")
+          .upsert({ user_id: user.id, id: user.id } as any, { onConflict: "user_id" })
+          .select(PROFILE_SELECT)
+          .maybeSingle();
+        if (upsertErr) console.error("[useProfile] upsert error:", upsertErr.message);
+        row = upserted ?? null;
+      }
+
+      const next = row ? { ...(row as SafeProfile), email: user.email ?? null } : null;
+      setProfile(next);
+      writeCache(user.id, next);
+    } catch (e: any) {
+      console.error("[useProfile] unexpected:", e?.message ?? "error");
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
   // Stale-while-revalidate: show cached profile immediately, refetch in background.
