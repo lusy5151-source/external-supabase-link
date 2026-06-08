@@ -25,14 +25,7 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         navigateFallbackDenylist: [/^\/~oauth/],
-        globPatterns: ["**/*.{css,html,ico,png,svg,jpg,jpeg,webp,woff,woff2}", "assets/index-*.js", "assets/vendor-*.js"],
-        globIgnores: [
-          "**/assets/admin-*.js",
-          "**/assets/achievements-*.js",
-          "**/assets/AdminMagazineEditor*.js",
-          "**/assets/AdminGpxSync*.js",
-          "**/assets/AdminAnnouncements*.js",
-        ],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff,woff2}"],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
@@ -44,7 +37,6 @@ export default defineConfig(({ mode }) => ({
           },
         ],
       },
-
       manifest: {
         name: "완등",
         short_name: "완등",
@@ -71,19 +63,14 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Group admin pages into a single isolated chunk so it can be
-          // excluded from PWA precache and never loaded on Home.
-          if (id.includes("/pages/Admin")) return "admin";
-          if (id.includes("/pages/AchievementsPage")) return "achievements";
           if (!id.includes("node_modules")) return undefined;
+          // Bundle React + all libs that depend on React together to avoid
+          // "Cannot read properties of undefined (reading 'createContext')"
+          // caused by load-order issues across split chunks.
           if (id.includes("@supabase")) return "vendor-supabase";
           return "vendor";
         },
       },
     },
-    modulePreload: {
-      polyfill: false,
-    },
   },
-
 }));
