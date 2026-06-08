@@ -104,7 +104,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           onClick={handleFabClick}
           data-onboarding="fab-summit"
           className="absolute left-1/2 flex flex-col items-center"
-          style={{ transform: "translateX(-50%)", top: -14 }}
+          style={{ transform: "translateX(-50%)", top: -28 }}
         >
           <div
             className="relative flex items-center justify-center rounded-full overflow-hidden"
@@ -122,7 +122,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               }}
             />
           </div>
-          <span style={{ fontSize: 11, color: "hsl(var(--brand-forest))", fontWeight: 500, marginTop: 2 }}>
+          <span style={{ fontSize: 11, color: "hsl(var(--brand-forest))", fontWeight: 600, marginTop: 4, lineHeight: 1, whiteSpace: "nowrap" }}>
             인증
           </span>
         </Link>
