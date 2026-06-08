@@ -3,6 +3,7 @@ import { useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { awardXp } from "@/lib/xp";
+import { timeStart, timeEnd, shortId } from "@/lib/debugTiming";
 
 const QK = ["summit-claims-mine"] as const;
 
@@ -15,15 +16,20 @@ export function useSummitClaims() {
     enabled: !!user?.id,
     queryFn: async () => {
       if (!user) return new Set<number>();
-      const { data, error } = await (supabase as any)
-        .from("summit_claims")
-        .select("mountain_id")
-        .eq("user_id", user.id);
-      if (error) {
-        console.error("[useSummitClaims] fetch error", error.message);
-        return new Set<number>();
+      timeStart("summitClaims:fetch", { uid: shortId(user.id) });
+      try {
+        const { data, error } = await (supabase as any)
+          .from("summit_claims")
+          .select("mountain_id")
+          .eq("user_id", user.id);
+        if (error) {
+          console.error("[useSummitClaims] fetch error", error.message);
+          return new Set<number>();
+        }
+        return new Set<number>(((data || []) as any[]).map((r) => r.mountain_id));
+      } finally {
+        timeEnd("summitClaims:fetch");
       }
-      return new Set<number>(((data || []) as any[]).map((r) => r.mountain_id));
     },
     staleTime: 1000 * 60,
   });

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { timeStart, timeEnd, shortId } from "@/lib/debugTiming";
 
 export interface PlanWaypoint {
   name: string;
@@ -80,6 +81,7 @@ export function useHikingPlans() {
       return;
     }
     setLoading(true);
+    timeStart("hikingPlans:fetch", { uid: shortId(user.id) });
     try {
       const { data } = await supabase
         .from("hiking_plans")
@@ -88,6 +90,7 @@ export function useHikingPlans() {
       setPlans((data as HikingPlan[]) || []);
     } finally {
       setLoading(false);
+      timeEnd("hikingPlans:fetch");
     }
   }, [user]);
 

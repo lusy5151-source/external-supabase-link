@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
+import { timeStart, timeEnd, shortId } from "@/lib/debugTiming";
 
 interface AuthContextType {
   user: User | null;
@@ -24,6 +25,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let firstAuthChange = true;
+    timeStart("auth:onAuthStateChange");
+
     const applySession = (nextSession: Session | null) => {
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
@@ -32,16 +36,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (firstAuthChange) {
+        firstAuthChange = false;
+        timeEnd("auth:onAuthStateChange", {
+          event,
+          uid: shortId(nextSession?.user?.id),
+        });
+      }
       applySession(nextSession);
     });
 
+    timeStart("auth:getSession");
     supabase.auth
       .getSession()
       .then(({ data: { session } }) => {
+        timeEnd("auth:getSession", { uid: shortId(session?.user?.id) });
         applySession(session);
       })
       .catch(() => {
+        timeEnd("auth:getSession", { error: true });
         setLoading(false);
       });
 
