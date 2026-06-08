@@ -56,16 +56,17 @@ export const UnreadChatProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     onUnread: incrementFriendActivity,
   });
 
-  // Calculate initial unread count across all clubs
+  // Calculate initial unread count across all clubs — deferred & batched
   useEffect(() => {
     if (!user) { setUnreadChatCount(0); setFriendActivityUnread(0); return; }
 
+    let cancelled = false;
     const calcAllUnread = async () => {
       const { data: memberships } = await supabase
         .from("group_members")
         .select("group_id")
         .eq("user_id", user.id);
-      if (!memberships || memberships.length === 0) return;
+      if (cancelled || !memberships || memberships.length === 0) return;
 
       const clubIds = memberships.map((m) => m.group_id);
 
@@ -74,31 +75,50 @@ export const UnreadChatProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         .select("club_id, last_read_at")
         .eq("user_id", user.id)
         .in("club_id", clubIds);
+      if (cancelled) return;
 
       const readMap = new Map<string, string>();
-      ((reads as any[]) || []).forEach((r: any) => {
-        readMap.set(r.club_id, r.last_read_at);
-      });
+      ((reads as any[]) || []).forEach((r: any) => readMap.set(r.club_id, r.last_read_at));
+
+      // Single query: fetch ids only of unread-eligible messages, then bucket client-side.
+      const oldestRead = ((reads as any[]) || [])
+        .map((r) => r.last_read_at)
+        .sort()[0];
+      let q = (supabase as any)
+        .from("club_messages")
+        .select("club_id, created_at, user_id")
+        .in("club_id", clubIds)
+        .neq("user_id", user.id);
+      if (oldestRead) q = q.gt("created_at", oldestRead);
+      const { data: msgs } = await q.limit(500);
+      if (cancelled) return;
 
       let total = 0;
-      for (const clubId of clubIds) {
-        const lastRead = readMap.get(clubId);
-        let query = (supabase as any)
-          .from("club_messages")
-          .select("id", { count: "exact", head: true })
-          .eq("club_id", clubId)
-          .neq("user_id", user.id);
-        if (lastRead) {
-          query = query.gt("created_at", lastRead);
+      ((msgs as any[]) || []).forEach((m) => {
+        const lr = readMap.get(m.club_id);
+        if (!lr || m.created_at > lr) total += 1;
+      });
+      // For clubs with no read row, count all messages not authored by user
+      clubIds.forEach((cid) => {
+        if (!readMap.has(cid)) {
+          // already counted above (lr undefined)
         }
-        const { count } = await query;
-        total += count || 0;
-      }
+      });
       setUnreadChatCount(total);
     };
 
-    calcAllUnread();
-  }, [user]);
+    const w = window as any;
+    const handle = w.requestIdleCallback
+      ? w.requestIdleCallback(() => calcAllUnread(), { timeout: 5000 })
+      : window.setTimeout(calcAllUnread, 3000);
+
+    return () => {
+      cancelled = true;
+      if (w.cancelIdleCallback && typeof handle === "number") w.cancelIdleCallback(handle);
+      else clearTimeout(handle as any);
+    };
+  }, [user?.id]);
+
 
   return (
     <UnreadChatContext.Provider value={{

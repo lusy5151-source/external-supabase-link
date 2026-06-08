@@ -62,38 +62,45 @@ const Level3BadgeCelebration = () => {
 
   useEffect(() => {
     if (!user) return;
-    check();
-    // Realtime: listen for new level3 badge inserts
-    const channel = (supabase as any)
-      .channel(`level3-badge-${user.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "user_badges",
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload: any) => {
-          if (payload?.new?.badge_type === "level3") {
-            // refetch with character join
-            setTimeout(check, 300);
-          }
-        }
-      )
-      .subscribe();
+    let channel: any = null;
 
-    // Re-check on focus/visibility
+    const setup = () => {
+      check();
+      channel = (supabase as any)
+        .channel(`level3-badge-${user.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "user_badges",
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload: any) => {
+            if (payload?.new?.badge_type === "level3") setTimeout(check, 300);
+          }
+        )
+        .subscribe();
+    };
+
+    const w = window as any;
+    const handle = w.requestIdleCallback
+      ? w.requestIdleCallback(setup, { timeout: 6000 })
+      : window.setTimeout(setup, 4000);
+
     const onFocus = () => check();
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onFocus);
 
     return () => {
-      try { (supabase as any).removeChannel(channel); } catch {}
+      if (w.cancelIdleCallback && typeof handle === "number") w.cancelIdleCallback(handle);
+      else clearTimeout(handle as any);
+      try { if (channel) (supabase as any).removeChannel(channel); } catch {}
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onFocus);
     };
   }, [user, check]);
+
 
   if (!badge) return null;
 
