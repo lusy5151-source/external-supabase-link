@@ -8,7 +8,6 @@ let loadPromise: Promise<void> | null = null;
 
 declare global {
   interface Window {
-    naver?: any;
     navermap_authFailure?: () => void;
   }
 }
