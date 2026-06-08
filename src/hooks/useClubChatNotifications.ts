@@ -149,7 +149,7 @@ export function useClubChatNotifications({
     }
   }, []);
 
-  // Main effect: fetch clubs, then subscribe
+  // Main effect: fetch clubs, then subscribe — deferred to keep initial paint fast
   useEffect(() => {
     if (!user) {
       unsubscribe();
@@ -159,18 +159,25 @@ export function useClubChatNotifications({
     if (!getChatNotifEnabled()) return;
 
     let cancelled = false;
-
-    (async () => {
+    const run = async () => {
       await fetchClubs(user.id);
       if (cancelled) return;
       subscribe();
-    })();
+    };
+
+    const w = window as any;
+    const handle = w.requestIdleCallback
+      ? w.requestIdleCallback(run, { timeout: 5000 })
+      : window.setTimeout(run, 3000);
 
     return () => {
       cancelled = true;
+      if (w.cancelIdleCallback && typeof handle === "number") w.cancelIdleCallback(handle);
+      else clearTimeout(handle as any);
       unsubscribe();
     };
   }, [user, fetchClubs, subscribe, unsubscribe]);
+
 
   // Toggle setting
   const isChatNotifEnabled = getChatNotifEnabled();
