@@ -59,18 +59,7 @@ export default defineConfig(({ mode }) => ({
     },
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
   },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: (id) => {
-          if (!id.includes("node_modules")) return undefined;
-          // Bundle React + all libs that depend on React together to avoid
-          // "Cannot read properties of undefined (reading 'createContext')"
-          // caused by load-order issues across split chunks.
-          if (id.includes("@supabase")) return "vendor-supabase";
-          return "vendor";
-        },
-      },
-    },
-  },
+  // Use Vite/Rollup default chunking. Custom manualChunks previously caused
+  // "Cannot read properties of undefined (reading 'createContext')" by
+  // splitting React from libraries that depend on it.
 }));
