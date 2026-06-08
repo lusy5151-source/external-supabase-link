@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bookmark, CalendarPlus, ChevronRight, Clock, Info, Loader2, Ruler, Star, TrendingUp, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useNaverMaps } from "@/lib/naverMaps";
 
 interface HikingCenterRouteMapProps {
   mountainName: string;
@@ -92,6 +93,7 @@ export function HikingCenterRouteMap({ mountainName, mountainId, lat, lng }: Hik
   const mapInstanceRef = useRef<any>(null);
   const overlaysRef = useRef<any[]>([]);
   const [mapReady, setMapReady] = useState(false);
+  const sdkReady = useNaverMaps();
 
   const [trails, setTrails] = useState<TrailRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,6 +131,7 @@ export function HikingCenterRouteMap({ mountainName, mountainId, lat, lng }: Hik
 
   // Init map once
   useEffect(() => {
+    if (!sdkReady) return;
     if (!mapRef.current || !window.naver?.maps) return;
     const naver = window.naver;
     const map = new naver.maps.Map(mapRef.current, {
@@ -153,7 +156,7 @@ export function HikingCenterRouteMap({ mountainName, mountainId, lat, lng }: Hik
       setMapReady(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lat, lng]);
+  }, [lat, lng, sdkReady]);
 
   // Map of trail.id -> color index (only for those with GPX)
   const colorByTrailId = useMemo(() => {

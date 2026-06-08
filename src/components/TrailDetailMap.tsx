@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useNaverMaps } from "@/lib/naverMaps";
 
 interface TrailGeometry {
   type?: string;
@@ -112,6 +113,7 @@ export function TrailDetailMap({
   const mapInstanceRef = useRef<any>(null);
   const overlaysRef = useRef<any[]>([]);
   const [mapReady, setMapReady] = useState(false);
+  const sdkReady = useNaverMaps();
   const [route, setRoute] = useState<PeakRoute | null>(null);
 
   // Fallback geometry path as [lat,lng]
@@ -170,6 +172,7 @@ export function TrailDetailMap({
 
   // Init map
   useEffect(() => {
+    if (!sdkReady) return;
     if (!hasAnyAnchor) return;
     if (!mapRef.current) return;
     if (!window.naver?.maps) return;
@@ -209,7 +212,7 @@ export function TrailDetailMap({
       setMapReady(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasAnyAnchor]);
+  }, [hasAnyAnchor, sdkReady]);
 
   // Draw route + markers
   useEffect(() => {

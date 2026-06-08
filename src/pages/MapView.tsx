@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Layers, Mountain as MountainIcon, Route, Clock, Ruler, Phone, MoonStar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useNaverMaps } from "@/lib/naverMaps";
 
 const SAFEMAP_PROXY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/safemap-wms`;
 
@@ -71,6 +72,7 @@ const MapView = () => {
   const [showCourses, setShowCourses] = useState(true);
   const [courses, setCourses] = useState<NPCourse[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<NPCourse | null>(null);
+  const sdkReady = useNaverMaps();
 
   useEffect(() => {
     if (user) {
@@ -105,11 +107,9 @@ const MapView = () => {
   }, []);
 
   useEffect(() => {
+    if (!sdkReady) return;
     if (!mapRef.current || mapInstanceRef.current) return;
-    if (!window.naver?.maps) {
-      console.warn("Naver Maps SDK not loaded yet");
-      return;
-    }
+    if (!window.naver?.maps) return;
     const naver = window.naver;
     const map = new naver.maps.Map(mapRef.current, {
       center: new naver.maps.LatLng(36.0, 127.8),
@@ -127,7 +127,7 @@ const MapView = () => {
       courseMarkersRef.current = [];
       mapInstanceRef.current = null;
     };
-  }, []);
+  }, [sdkReady]);
 
   // Mountain markers
   useEffect(() => {

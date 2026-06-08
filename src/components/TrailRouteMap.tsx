@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Map as MapIcon, Info } from "lucide-react";
 import { useTrails, type Trail } from "@/hooks/useTrails";
+import { useNaverMaps } from "@/lib/naverMaps";
 
 interface TrailRouteMapProps {
   mountainName: string;
@@ -49,6 +50,7 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
   const [mapReady, setMapReady] = useState(false);
   const [mapType, setMapType] = useState<"NORMAL" | "TERRAIN">("TERRAIN");
   const { trails } = useTrails(mountainId ?? 0);
+  const sdkReady = useNaverMaps();
 
   // Toggle map type when user clicks the buttons
   useEffect(() => {
@@ -59,11 +61,9 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
 
   // Init map once — wait for `init` event before signaling ready
   useEffect(() => {
+    if (!sdkReady) return;
     if (!mapRef.current) return;
-    if (!window.naver?.maps) {
-      console.warn("Naver Maps SDK not loaded yet");
-      return;
-    }
+    if (!window.naver?.maps) return;
     const naver = window.naver;
     const map = new naver.maps.Map(mapRef.current, {
       center: new naver.maps.LatLng(lat, lng),
@@ -116,7 +116,7 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
       setMapReady(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mountainName, lat, lng]);
+  }, [mountainName, lat, lng, sdkReady]);
 
   // Draw all course polylines — only after map is fully ready
   useEffect(() => {
