@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Pretendard', 'Pretendard Variable', '-apple-system', 'BlinkMacSystemFont', 'system-ui', '"Noto Sans KR"', 'sans-serif'],
+        sans: ['-apple-system', 'BlinkMacSystemFont', '"Apple SD Gothic Neo"', '"Segoe UI"', 'system-ui', 'Pretendard', 'Pretendard Variable', 'sans-serif'],
         pretendard: ['Pretendard', 'Pretendard Variable', '-apple-system', 'system-ui', 'sans-serif'],
       },
       fontSize: {
