@@ -862,7 +862,7 @@ const Dashboard = () => {
 
   const upcomingMountain = upcomingPlan ? mountains.find((m) => m.id === upcomingPlan.mountain_id) : null;
   const defaultMountain = mountains[0] || { id: 1, lat: 37.6584, lng: 126.978 };
-  const weather = sharedWeather;
+  const { weather } = useDashboardWeather({ lat: 37.6584, lng: 126.978, id: 1 });
 
   const dDay = useMemo(() => {
     if (!upcomingPlan) return null;
