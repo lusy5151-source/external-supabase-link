@@ -116,7 +116,7 @@ export function TrailRouteMap({ mountainName, mountainId, lat, lng, selectedTrai
       setMapReady(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mountainName, lat, lng]);
+  }, [mountainName, lat, lng, sdkReady]);
 
   // Draw all course polylines — only after map is fully ready
   useEffect(() => {
