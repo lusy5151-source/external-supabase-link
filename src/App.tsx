@@ -171,23 +171,27 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
           .from("profiles")
           .select("is_onboarded, character_id, character_selected_at")
           .eq("user_id", user.id)
-          .single();
+          .maybeSingle();
         if (cancelled) return;
         if (error) {
-          if ((error as any).code === "PGRST116") {
-            profileGateCache.set(user.id, "missing");
-            applyProfile("missing");
-          } else {
-            console.error("[OnboardingGate] profile fetch error", error);
-            setNeedsOnboarding(false);
-            setNeedsCharacter(false);
-          }
+          console.error("[OnboardingGate] profile fetch error");
+          setNeedsOnboarding(false);
+          setNeedsCharacter(false);
+          return;
+        }
+        if (!data) {
+          // No profile row yet — create a minimal one and treat as needing onboarding.
+          await (supabase as any)
+            .from("profiles")
+            .upsert({ user_id: user.id, id: user.id } as any, { onConflict: "user_id" });
+          if (cancelled) return;
+          profileGateCache.set(user.id, "missing");
+          applyProfile("missing");
         } else {
           profileGateCache.set(user.id, data as ProfileGateData);
           applyProfile(data as ProfileGateData);
         }
       } catch (e) {
-        console.error("[OnboardingGate] unexpected error", e);
         if (!cancelled) {
           setNeedsOnboarding(false);
           setNeedsCharacter(false);
