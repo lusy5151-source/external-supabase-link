@@ -12,6 +12,7 @@ export function useSummitClaims() {
 
   const query = useQuery<Set<number>>({
     queryKey: [...QK, user?.id ?? "anon"],
+    enabled: !!user?.id,
     queryFn: async () => {
       if (!user) return new Set<number>();
       const { data, error } = await (supabase as any)
@@ -19,7 +20,7 @@ export function useSummitClaims() {
         .select("mountain_id")
         .eq("user_id", user.id);
       if (error) {
-        console.error("[useSummitClaims] fetch error", error);
+        console.error("[useSummitClaims] fetch error", error.message);
         return new Set<number>();
       }
       return new Set<number>(((data || []) as any[]).map((r) => r.mountain_id));
