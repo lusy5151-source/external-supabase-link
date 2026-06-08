@@ -25,7 +25,14 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         navigateFallbackDenylist: [/^\/~oauth/],
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff,woff2}"],
+        globPatterns: ["**/*.{css,html,ico,png,svg,jpg,jpeg,webp,woff,woff2}", "assets/index-*.js", "assets/vendor-*.js"],
+        globIgnores: [
+          "**/assets/admin-*.js",
+          "**/assets/achievements-*.js",
+          "**/assets/AdminMagazineEditor*.js",
+          "**/assets/AdminGpxSync*.js",
+          "**/assets/AdminAnnouncements*.js",
+        ],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
@@ -37,6 +44,7 @@ export default defineConfig(({ mode }) => ({
           },
         ],
       },
+
       manifest: {
         name: "완등",
         short_name: "완등",
