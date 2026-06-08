@@ -4,7 +4,7 @@ import { GuestSignupBanner } from "@/components/GuestSignupBanner";
 import { useMountains } from "@/contexts/MountainsContext";
 import { demoJournals, demoSummitClaims, demoKingOfDay, demoActivityFeed, demoProgress, type DemoJournal } from "@/data/demoFeed";
 import { badges } from "@/data/badges";
-import { useWeather } from "@/hooks/useWeather";
+import { useDashboardWeather } from "@/hooks/useDashboardWeather";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGearStore } from "@/hooks/useGearStore";
 import { useAchievementStore } from "@/hooks/useAchievementStore";
@@ -41,7 +41,7 @@ import { useOnboarding } from "@/contexts/OnboardingContext";
 import { useUserXp } from "@/hooks/useUserXp";
 import { useCharacterEmotion } from "@/hooks/useCharacterEmotion";
 import { useHomeMessage } from "@/hooks/useHomeMessage";
-import { useBgWeather } from "@/hooks/useBgWeather";
+
 import { timeStart, timeEnd } from "@/lib/debugTiming";
 
 // Mark dashboard initial render timing (module-load → first render commit)
@@ -147,7 +147,11 @@ function CharacterSlide({
   };
 
   const [bgKey, setBgKey] = useState(computeBgKey);
-  const weather = useBgWeather(bgKey.season);
+  const { weather: sharedWeather, bg: weather } = useDashboardWeather({
+    lat: 37.6584,
+    lng: 126.978,
+    id: 1,
+  });
 
   // 매 분마다 시간/계절 재계산하여 자동 전환
   useEffect(() => {
@@ -858,11 +862,7 @@ const Dashboard = () => {
 
   const upcomingMountain = upcomingPlan ? mountains.find((m) => m.id === upcomingPlan.mountain_id) : null;
   const defaultMountain = mountains[0] || { id: 1, lat: 37.6584, lng: 126.978 };
-  const { weather } = useWeather(
-    upcomingMountain?.id || defaultMountain.id,
-    upcomingMountain?.lat || defaultMountain.lat,
-    upcomingMountain?.lng || defaultMountain.lng
-  );
+  const weather = sharedWeather;
 
   const dDay = useMemo(() => {
     if (!upcomingPlan) return null;
