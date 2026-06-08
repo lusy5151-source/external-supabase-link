@@ -110,29 +110,42 @@ export function useLiveSummitFeed() {
   }, []);
 
   useEffect(() => {
-    fetchRecent();
-    fetchKingOfDay();
+    let channel: any = null;
+    let cancelled = false;
 
-    // Realtime subscription
-    const channel = supabase
-      .channel("live-summit-claims")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "summit_claims" },
-        async (payload) => {
-          const newClaim = payload.new as any;
-          if (!newClaim?.photo_url) return; // only photo-verified claims
-          const enriched = await enrichClaims([newClaim]);
-          setClaims((prev) => [...enriched, ...prev].slice(0, 5));
-          fetchKingOfDay();
-        }
-      )
-      .subscribe();
+    const setup = () => {
+      if (cancelled) return;
+      fetchRecent();
+      fetchKingOfDay();
+      channel = supabase
+        .channel("live-summit-claims")
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "summit_claims" },
+          async (payload) => {
+            const newClaim = payload.new as any;
+            if (!newClaim?.photo_url) return;
+            const enriched = await enrichClaims([newClaim]);
+            setClaims((prev) => [...enriched, ...prev].slice(0, 5));
+            fetchKingOfDay();
+          }
+        )
+        .subscribe();
+    };
+
+    const w = window as any;
+    const handle = w.requestIdleCallback
+      ? w.requestIdleCallback(setup, { timeout: 5000 })
+      : window.setTimeout(setup, 1500);
 
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      if (w.cancelIdleCallback && typeof handle === "number") w.cancelIdleCallback(handle);
+      else clearTimeout(handle as any);
+      if (channel) supabase.removeChannel(channel);
     };
   }, [fetchRecent, fetchKingOfDay, enrichClaims]);
+
 
   return { claims, kingOfDay, loading };
 }
