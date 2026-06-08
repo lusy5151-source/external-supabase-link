@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { normalizeImageUrl } from "@/lib/normalizeImageUrl";
 
 interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   fallbackClassName?: string;
@@ -31,7 +32,7 @@ const LazyImage = React.memo(({ src, alt, className, fallbackClassName, ...props
         <div className={cn("absolute inset-0 animate-pulse bg-muted rounded-inherit", fallbackClassName)} />
       )}
       {isInView && (
-        <img src={src} alt={alt || ""} className={cn("h-full w-full object-cover transition-opacity duration-300", isLoaded ? "opacity-100" : "opacity-0")} onLoad={() => setIsLoaded(true)} loading="lazy" {...props} />
+        <img src={normalizeImageUrl(src as string | undefined)} alt={alt || ""} className={cn("h-full w-full object-cover transition-opacity duration-300", isLoaded ? "opacity-100" : "opacity-0")} onLoad={() => setIsLoaded(true)} loading="lazy" {...props} />
       )}
     </div>
   );

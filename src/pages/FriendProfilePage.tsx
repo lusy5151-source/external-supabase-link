@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import { normalizeImageUrl } from "@/lib/normalizeImageUrl";
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -241,7 +242,7 @@ const FriendProfilePage = () => {
         <div className="mx-auto mb-3 h-20 w-20">
           {profile.avatar_url ? (
             <img
-              src={profile.avatar_url}
+              src={normalizeImageUrl(profile.avatar_url)}
               alt="프로필"
               className="h-20 w-20 rounded-full object-cover border-2 border-primary/20"
             />

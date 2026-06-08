@@ -219,7 +219,10 @@ Deno.serve(async (req) => {
     const kakaoId = String(kakaoUser.id)
     const email = kakaoUser.kakao_account?.email || `kakao_${kakaoId}@kakao.local`
     const nickname = kakaoUser.kakao_account?.profile?.nickname || `카카오유저${kakaoId.slice(-4)}`
-    const avatarUrl = kakaoUser.kakao_account?.profile?.profile_image_url || null
+    const rawAvatarUrl = kakaoUser.kakao_account?.profile?.profile_image_url || null
+    const avatarUrl = rawAvatarUrl && rawAvatarUrl.startsWith('http://')
+      ? 'https://' + rawAvatarUrl.slice('http://'.length)
+      : rawAvatarUrl
 
     logDebug('request', {
       email,

@@ -1,3 +1,4 @@
+import { normalizeImageUrl } from "@/lib/normalizeImageUrl";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOnboarding } from "@/contexts/OnboardingContext";
@@ -265,7 +266,7 @@ const SocialPage = () => {
                 {searchResults.map((p) => (
                   <div key={p.user_id} className="flex items-center gap-3 rounded-lg bg-secondary/40 p-3">
                     {p.avatar_url ? (
-                      <img src={p.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />
+                      <img src={normalizeImageUrl(p.avatar_url)} alt="" className="h-9 w-9 rounded-full object-cover" />
                     ) : (
                       <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm">👤</div>
                     )}
@@ -327,7 +328,7 @@ const SocialPage = () => {
                       className="flex items-center gap-3 flex-1 min-w-0 text-left"
                     >
                       {f.friendProfile.avatar_url ? (
-                        <img src={f.friendProfile.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover shrink-0" />
+                        <img src={normalizeImageUrl(f.friendProfile.avatar_url)} alt="" className="h-10 w-10 rounded-full object-cover shrink-0" />
                       ) : (
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-lg shrink-0">👤</div>
                       )}
@@ -361,7 +362,7 @@ const SocialPage = () => {
                     {pendingReceived.map((f) => (
                       <div key={f.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-sm">
                         {f.friendProfile.avatar_url ? (
-                          <img src={f.friendProfile.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+                          <img src={normalizeImageUrl(f.friendProfile.avatar_url)} alt="" className="h-10 w-10 rounded-full object-cover" />
                         ) : (
                           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-lg">👤</div>
                         )}
@@ -464,7 +465,7 @@ const SocialPage = () => {
                         style={{ background: "hsl(var(--brand-lime))" }}
                       >
                         {inv.hiking_group?.avatar_url ? (
-                          <img src={inv.hiking_group.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+                          <img src={normalizeImageUrl(inv.hiking_group.avatar_url)} alt="" className="h-8 w-8 rounded-full object-cover" />
                         ) : (
                           groupName.charAt(0)
                         )}
