@@ -314,7 +314,10 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
     }
   }
 
-  const meta = CHARACTER_META[topCharacter]
+  const baseMeta = CHARACTER_META[topCharacter]
+  const resultText = CHARACTER_RESULT[topCharacter]
+  const meta = { ...baseMeta, ...(resultText ? { name: resultText.name, type: resultText.type, desc: resultText.desc } : {}) }
+  const quote = resultText?.quote
   const theme = CHARACTER_THEME[topCharacter]
 
   return (
