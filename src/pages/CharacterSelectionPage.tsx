@@ -417,7 +417,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
                     fontWeight: 500,
                   }}
                 >
-                  {selected.name_ko?.[0] || "?"}
+                  {displayName(selected)?.[0] || "?"}
                 </div>
               )}
             </div>
