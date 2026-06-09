@@ -492,6 +492,23 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
           </div>
         </div>
       )}
+
+      <CharacterQuizModal
+        open={quizOpen}
+        onClose={() => setQuizOpen(false)}
+        onResult={(charId) => {
+          setSelectedId(charId);
+          setQuizResultId(charId);
+          setQuizOpen(false);
+          // 추천 멘트 노출을 위해 살짝 스크롤
+          setTimeout(() => {
+            try {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            } catch {}
+          }, 50);
+          toast.success("추천 캐릭터를 선택했어요. 확인 후 시작해 보세요!");
+        }}
+      />
     </div>
   );
 }
