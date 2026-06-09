@@ -468,7 +468,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
                   }}
                 />
                 <div style={{ fontSize: 12, color: "#3B6D11" }}>
-                  '{selected.name_ko}' 뱃지 획득!
+                  '{displayName(selected)}' 뱃지 획득!
                 </div>
               </div>
             )}
