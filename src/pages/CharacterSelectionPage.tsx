@@ -8,6 +8,23 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import CharacterQuizModal from "@/components/CharacterQuizModal";
+import type { Character } from "@/components/CharacterAnimation";
+
+// 화면에 노출할 캐릭터 이름/설명 오버라이드 (DB 값보다 우선)
+const CHARACTER_DISPLAY: Record<string, { name: string; desc: string }> = {
+  wandeung: { name: "완등이", desc: "정상에 깃발을 꽂는 완등의 주인공" },
+  oreumi:   { name: "오름이", desc: "산이 처음이라 모든 게 설레는 새싹 등산러" },
+  pongdang: { name: "퐁당이", desc: "정상보다 쉼이 좋은 힐링 산책 캐릭터" },
+  dorong:   { name: "도롱이", desc: "작은 기록도 모이면 완등이 되는 막내 물방울" },
+  dorami:   { name: "도라미", desc: "말없이 안전을 지키는 든든한 바위 캐릭터" },
+  gaia:     { name: "가이아", desc: "명산의 시간과 풍경을 아는 지혜로운 산" },
+  peggy:    { name: "페기", desc: "산을 깨끗이 지키는 클린 하이킹 마스코트" },
+};
+const displayName = (c: { id: string; name_ko: string }) =>
+  CHARACTER_DISPLAY[c.id]?.name ?? c.name_ko;
+const displayDesc = (c: { id: string; description: string | null }) =>
+  CHARACTER_DISPLAY[c.id]?.desc ?? c.description ?? "";
 
 interface CharacterRow {
   id: string;
