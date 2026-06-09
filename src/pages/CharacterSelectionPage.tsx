@@ -399,7 +399,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
               {selected.image_complete || selected.image_original ? (
                 <img
                   src={(selected.image_complete || selected.image_original) as string}
-                  alt={selected.name_ko}
+                  alt={displayName(selected)}
                   style={{ width: 100, height: 100, objectFit: "contain" }}
                 />
               ) : (
