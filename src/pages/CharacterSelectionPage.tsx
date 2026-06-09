@@ -442,7 +442,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
               나만의 등산 메이트!
             </div>
             <div style={{ fontSize: 13, color: "#888", marginBottom: 20, lineHeight: 1.5 }}>
-              {selected.name_ko}(와)과 함께 등산을 시작해요
+              {displayName(selected)}(와)과 함께 등산을 시작해요
             </div>
 
             {/* Badge preview */}
