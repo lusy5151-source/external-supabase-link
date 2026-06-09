@@ -246,15 +246,15 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const progress = (currentStepNum / totalSteps) * 100
 
   const topCharacter = useMemo<Character>(() => {
-    let best: Character = 'oreumi'
     let bestScore = -Infinity
     ;(Object.keys(scores) as Character[]).forEach((c) => {
-      if (scores[c] > bestScore) {
-        bestScore = scores[c]
-        best = c
-      }
+      if (scores[c] > bestScore) bestScore = scores[c]
     })
-    return best
+    // 동점 처리: TIE_BREAK_ORDER에서 가장 앞선 캐릭터 우선
+    for (const c of TIE_BREAK_ORDER) {
+      if ((scores[c] ?? 0) === bestScore) return c
+    }
+    return 'oreumi'
   }, [scores])
 
   const handleNicknameNext = () => {
