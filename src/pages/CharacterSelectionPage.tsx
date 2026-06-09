@@ -498,7 +498,6 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
         onResult={(charId) => {
           setSelectedId(charId);
           setQuizOpen(false);
-          setQuizOpen(false);
           // 추천 멘트 노출을 위해 살짝 스크롤
           setTimeout(() => {
             try {
