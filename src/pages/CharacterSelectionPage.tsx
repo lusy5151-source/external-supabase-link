@@ -8,6 +8,23 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import CharacterQuizModal from "@/components/CharacterQuizModal";
+import type { Character } from "@/components/CharacterAnimation";
+
+// 화면에 노출할 캐릭터 이름/설명 오버라이드 (DB 값보다 우선)
+const CHARACTER_DISPLAY: Record<string, { name: string; desc: string }> = {
+  wandeung: { name: "완등이", desc: "정상에 깃발을 꽂는 완등의 주인공" },
+  oreumi:   { name: "오름이", desc: "산이 처음이라 모든 게 설레는 새싹 등산러" },
+  pongdang: { name: "퐁당이", desc: "정상보다 쉼이 좋은 힐링 산책 캐릭터" },
+  dorong:   { name: "도롱이", desc: "작은 기록도 모이면 완등이 되는 막내 물방울" },
+  dorami:   { name: "도라미", desc: "말없이 안전을 지키는 든든한 바위 캐릭터" },
+  gaia:     { name: "가이아", desc: "명산의 시간과 풍경을 아는 지혜로운 산" },
+  peggy:    { name: "페기", desc: "산을 깨끗이 지키는 클린 하이킹 마스코트" },
+};
+const displayName = (c: { id: string; name_ko: string }) =>
+  CHARACTER_DISPLAY[c.id]?.name ?? c.name_ko;
+const displayDesc = (c: { id: string; description: string | null }) =>
+  CHARACTER_DISPLAY[c.id]?.desc ?? c.description ?? "";
 
 interface CharacterRow {
   id: string;
@@ -37,6 +54,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
   const [saving, setSaving] = useState(false);
   const [imgError, setImgError] = useState<Record<string, boolean>>({});
   const [showCelebration, setShowCelebration] = useState(false);
+  const [quizOpen, setQuizOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -162,7 +180,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
         >
           <img
             src={`${c.image_original || ""}?v=${Date.now()}`}
-            alt={c.name_ko}
+            alt={displayName(c)}
             style={{
               width: "100%",
               height: "100%",
@@ -180,7 +198,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
             color: "var(--color-text-primary, #1a1a1a)",
           }}
         >
-          {c.name_ko}
+          {displayName(c)}
         </div>
         <div
           style={{
@@ -193,7 +211,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
             overflow: "hidden",
           }}
         >
-          {c.description}
+          {displayDesc(c)}
         </div>
       </button>
     );
@@ -236,6 +254,24 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
             ? "퀴즈 결과로 추천된 캐릭터예요"
             : "함께 등산할 나만의 캐릭터를 골라보세요"}
         </p>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 14 }}>
+          <button
+            onClick={() => setQuizOpen(true)}
+            style={{
+              background: "#FFFFFF",
+              border: "1px solid #C7D66D",
+              color: "#3B6D11",
+              fontSize: 13,
+              fontWeight: 600,
+              padding: "10px 18px",
+              borderRadius: 999,
+              cursor: "pointer",
+              boxShadow: "0 2px 8px -4px rgba(99,153,34,0.35)",
+            }}
+          >
+            🧭 내 캐릭터 찾기
+          </button>
+        </div>
       </div>
 
       <div style={{ flex: 1, padding: "0 20px 24px" }}>
@@ -362,7 +398,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
               {selected.image_complete || selected.image_original ? (
                 <img
                   src={(selected.image_complete || selected.image_original) as string}
-                  alt={selected.name_ko}
+                  alt={displayName(selected)}
                   style={{ width: 100, height: 100, objectFit: "contain" }}
                 />
               ) : (
@@ -380,7 +416,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
                     fontWeight: 500,
                   }}
                 >
-                  {selected.name_ko?.[0] || "?"}
+                  {displayName(selected)?.[0] || "?"}
                 </div>
               )}
             </div>
@@ -405,7 +441,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
               나만의 등산 메이트!
             </div>
             <div style={{ fontSize: 13, color: "#888", marginBottom: 20, lineHeight: 1.5 }}>
-              {selected.name_ko}(와)과 함께 등산을 시작해요
+              {displayName(selected)}(와)과 함께 등산을 시작해요
             </div>
 
             {/* Badge preview */}
@@ -421,7 +457,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
               >
                 <img
                   src={selected.image_badge}
-                  alt={`${selected.name_ko} 뱃지`}
+                  alt={`${displayName(selected)} 뱃지`}
                   style={{
                     width: 48,
                     height: 48,
@@ -431,7 +467,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
                   }}
                 />
                 <div style={{ fontSize: 12, color: "#3B6D11" }}>
-                  '{selected.name_ko}' 뱃지 획득!
+                  '{displayName(selected)}' 뱃지 획득!
                 </div>
               </div>
             )}
@@ -455,6 +491,22 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
           </div>
         </div>
       )}
+
+      <CharacterQuizModal
+        open={quizOpen}
+        onClose={() => setQuizOpen(false)}
+        onResult={(charId) => {
+          setSelectedId(charId);
+          setQuizOpen(false);
+          // 추천 멘트 노출을 위해 살짝 스크롤
+          setTimeout(() => {
+            try {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            } catch {}
+          }, 50);
+          toast.success("추천 캐릭터를 선택했어요. 확인 후 시작해 보세요!");
+        }}
+      />
     </div>
   );
 }
