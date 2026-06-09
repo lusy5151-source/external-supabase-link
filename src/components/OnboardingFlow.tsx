@@ -584,6 +584,22 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
                 {meta.desc}
               </p>
 
+              {quote && (
+                <p
+                  style={{
+                    fontSize: 14,
+                    color: '#5a5a5a',
+                    margin: '6px 8px 0',
+                    lineHeight: 1.55,
+                    fontStyle: 'italic',
+                    opacity: 0,
+                    animation: 'ob-fadeInUp 0.5s 0.85s forwards',
+                  }}
+                >
+                  “{quote}”
+                </p>
+              )}
+
               <button
                 onClick={handleComplete}
                 disabled={saving}
