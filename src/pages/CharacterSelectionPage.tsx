@@ -255,6 +255,24 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
             ? "퀴즈 결과로 추천된 캐릭터예요"
             : "함께 등산할 나만의 캐릭터를 골라보세요"}
         </p>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 14 }}>
+          <button
+            onClick={() => setQuizOpen(true)}
+            style={{
+              background: "#FFFFFF",
+              border: "1px solid #C7D66D",
+              color: "#3B6D11",
+              fontSize: 13,
+              fontWeight: 600,
+              padding: "10px 18px",
+              borderRadius: 999,
+              cursor: "pointer",
+              boxShadow: "0 2px 8px -4px rgba(99,153,34,0.35)",
+            }}
+          >
+            🧭 내 캐릭터 찾기
+          </button>
+        </div>
       </div>
 
       <div style={{ flex: 1, padding: "0 20px 24px" }}>
