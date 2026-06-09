@@ -55,7 +55,6 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
   const [imgError, setImgError] = useState<Record<string, boolean>>({});
   const [showCelebration, setShowCelebration] = useState(false);
   const [quizOpen, setQuizOpen] = useState(false);
-  const [quizResultId, setQuizResultId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
