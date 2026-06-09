@@ -124,17 +124,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
     step === 'nickname' ? 1 : step === 'quiz' ? 2 + quizIndex : totalSteps
   const progress = (currentStepNum / totalSteps) * 100
 
-  const topCharacter = useMemo<Character>(() => {
-    let bestScore = -Infinity
-    ;(Object.keys(scores) as Character[]).forEach((c) => {
-      if (scores[c] > bestScore) bestScore = scores[c]
-    })
-    // 동점 처리: TIE_BREAK_ORDER에서 가장 앞선 캐릭터 우선
-    for (const c of TIE_BREAK_ORDER) {
-      if ((scores[c] ?? 0) === bestScore) return c
-    }
-    return 'oreumi'
-  }, [scores])
+  const topCharacter = useMemo<Character>(() => computeTopCharacter(scores), [scores])
 
   const handleNicknameNext = () => {
     const trimmed = nickname.trim()
