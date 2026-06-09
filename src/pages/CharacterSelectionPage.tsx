@@ -458,7 +458,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
               >
                 <img
                   src={selected.image_badge}
-                  alt={`${selected.name_ko} 뱃지`}
+                  alt={`${displayName(selected)} 뱃지`}
                   style={{
                     width: 48,
                     height: 48,
