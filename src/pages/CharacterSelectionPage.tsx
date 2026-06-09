@@ -181,7 +181,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
         >
           <img
             src={`${c.image_original || ""}?v=${Date.now()}`}
-            alt={c.name_ko}
+            alt={displayName(c)}
             style={{
               width: "100%",
               height: "100%",
@@ -199,7 +199,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
             color: "var(--color-text-primary, #1a1a1a)",
           }}
         >
-          {c.name_ko}
+          {displayName(c)}
         </div>
         <div
           style={{
@@ -212,7 +212,7 @@ export default function CharacterSelectionPage({ onCompleted, recommendedId }: P
             overflow: "hidden",
           }}
         >
-          {c.description}
+          {displayDesc(c)}
         </div>
       </button>
     );
