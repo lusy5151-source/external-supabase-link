@@ -125,6 +125,14 @@ const MountainList = () => {
 
   const favoritesCount = 0; // placeholder until favorites feature is wired up
 
+  // 산 직접 등록 모달
+  const [registerOpen, setRegisterOpen] = useState(false);
+  useEffect(() => {
+    const handler = () => setRegisterOpen(true);
+    window.addEventListener("open-register-mountain", handler);
+    return () => window.removeEventListener("open-register-mountain", handler);
+  }, []);
+
 
   const filterAndSort = (list: any[]) => {
     let filtered = list.filter((m: any) => {
@@ -351,6 +359,15 @@ const MountainList = () => {
             />
           </div>
 
+          {/* 산 직접 등록 */}
+          <button
+            type="button"
+            onClick={() => setRegisterOpen(true)}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+          >
+            + 찾는 산이 없나요? 직접 등록하기
+          </button>
+
           <div>
             {getCurrentList().length === 0 ? (
               <div
@@ -408,9 +425,10 @@ const MountainList = () => {
                 />
               ))
             )}
-          </div>
+           </div>
         </>
       )}
+      <RegisterMountainModal open={registerOpen} onOpenChange={setRegisterOpen} hideTrigger />
     </div>
   );
 };
