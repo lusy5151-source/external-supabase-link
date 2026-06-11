@@ -85,6 +85,8 @@ export default function RegisterMountainModal({ open: openProp, onOpenChange, hi
     reader.readAsDataURL(file);
   };
 
+  const queryClient = useQueryClient();
+
   const handleSubmit = async () => {
     if (!user) {
       toast.error("로그인이 필요합니다");
@@ -110,26 +112,40 @@ export default function RegisterMountainModal({ open: openProp, onOpenChange, hi
         imageUrl = await uploadMountainImage(imageFile);
       }
 
-      const input: CreateMountainInput = {
-        name_ko: nameKo.trim(),
-        height: Number(height),
-        region,
-        difficulty,
-        description: description.trim() || undefined,
-        lat: lat ? Number(lat) : undefined,
-        lng: lng ? Number(lng) : undefined,
-        image_url: imageUrl || undefined,
-      };
+      const { data, error } = await (supabase as any)
+        .from("mountains")
+        .insert({
+          name_ko: nameKo.trim(),
+          name: nameKo.trim(),
+          height: Number(height),
+          region,
+          difficulty,
+          description: description.trim() || null,
+          lat: lat ? Number(lat) : null,
+          lng: lng ? Number(lng) : null,
+          image_url: imageUrl,
+          created_by: user.id,
+          is_user_created: true,
+        })
+        .select()
+        .single();
 
-      const result = await createMountain.mutateAsync(input);
-      const mountainId = (result as any).mountain_id;
+      if (error) {
+        console.error("산 등록 실패:", error);
+        toast.error("산 등록에 실패했습니다");
+        return;
+      }
+
+      const mountainId = data?.id;
+      queryClient.invalidateQueries({ queryKey: ["mountains-all", "v6-lite"] });
       resetForm();
       setOpen(false);
       if (mountainId) {
         navigate(`/mountains/${mountainId}`);
       }
-    } catch {
-      // error handled by mutation
+    } catch (err) {
+      console.error("산 등록 예외:", err);
+      toast.error("산 등록 중 오류가 발생했습니다");
     } finally {
       setSubmitting(false);
     }
