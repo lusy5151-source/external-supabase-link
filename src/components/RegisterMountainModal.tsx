@@ -30,7 +30,7 @@ interface RegisterMountainModalProps {
 export default function RegisterMountainModal({ open: openProp, onOpenChange, hideTrigger }: RegisterMountainModalProps = {}) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { createMountain, uploadMountainImage } = useUserMountains();
+  const { uploadMountainImage } = useUserMountains();
   const [openInternal, setOpenInternal] = useState(false);
   const open = openProp ?? openInternal;
   const setOpen = (v: boolean) => {
