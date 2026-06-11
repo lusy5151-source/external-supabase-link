@@ -1672,6 +1672,7 @@ export type Database = {
           bac100_label: string | null
           bac100_rank: number | null
           created_at: string | null
+          created_by: string | null
           description: string | null
           designated_date: string | null
           difficulty: string | null
@@ -1689,6 +1690,7 @@ export type Database = {
           is_bac100_blackyak: boolean
           is_national_park: boolean | null
           is_oreum: boolean | null
+          is_user_created: boolean | null
           lat: number | null
           lng: number | null
           name: string | null
@@ -1712,6 +1714,7 @@ export type Database = {
           bac100_label?: string | null
           bac100_rank?: number | null
           created_at?: string | null
+          created_by?: string | null
           description?: string | null
           designated_date?: string | null
           difficulty?: string | null
@@ -1729,6 +1732,7 @@ export type Database = {
           is_bac100_blackyak?: boolean
           is_national_park?: boolean | null
           is_oreum?: boolean | null
+          is_user_created?: boolean | null
           lat?: number | null
           lng?: number | null
           name?: string | null
@@ -1752,6 +1756,7 @@ export type Database = {
           bac100_label?: string | null
           bac100_rank?: number | null
           created_at?: string | null
+          created_by?: string | null
           description?: string | null
           designated_date?: string | null
           difficulty?: string | null
@@ -1769,6 +1774,7 @@ export type Database = {
           is_bac100_blackyak?: boolean
           is_national_park?: boolean | null
           is_oreum?: boolean | null
+          is_user_created?: boolean | null
           lat?: number | null
           lng?: number | null
           name?: string | null
@@ -4337,6 +4343,16 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       schedule_plan_notifications: {
         Args: { p_plan_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      send_hiking_plan_reminders: { Args: never; Returns: undefined }
+      send_push_notification: {
+        Args: {
+          p_body: string
+          p_data?: Json
+          p_title: string
+          p_user_id: string
+        }
         Returns: undefined
       }
       toggle_summit_claim: { Args: { p_mountain_id: number }; Returns: Json }
