@@ -1,0 +1,28 @@
+{
+	"appId": "com.wandeung.app",
+	"appName": "완등",
+	"webDir": "dist",
+	"server": {
+		"iosScheme": "https"
+	},
+	"plugins": {
+		"Browser": {
+			"presentationStyle": "popover"
+		},
+		"Keyboard": {
+			"resize": "none",
+			"resizeOnFullScreen": true
+		}
+	},
+	"ios": {
+		"contentInset": "automatic",
+		"scrollEnabled": true,
+		"backgroundColor": "#F8FAED"
+	},
+	"packageClassList": [
+		"AppPlugin",
+		"CAPBrowserPlugin",
+		"CAPCameraPlugin",
+		"PushNotificationsPlugin"
+	]
+}

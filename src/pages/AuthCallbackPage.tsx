@@ -31,6 +31,8 @@ export default function AuthCallbackPage() {
               setStatus("앱으로 돌아가는 중...");
               const at = session?.access_token;
               const rt = session?.refresh_token;
+              const { Browser } = await import("@capacitor/browser");
+              await Browser.close();
               if (at && rt) {
                 const key = Math.random().toString(36).substring(2, 10);
                 supabase.from("temp_auth_sessions").insert({ key, access_token: at, refresh_token: rt }).then(() => {
@@ -64,6 +66,8 @@ export default function AuthCallbackPage() {
             setStatus("앱으로 돌아가는 중...");
             const at = data.session.access_token;
             const rt = data.session.refresh_token;
+            const { Browser } = await import("@capacitor/browser");
+            await Browser.close();
             if (at && rt) {
               const key = Math.random().toString(36).substring(2, 10);
               await supabase.from("temp_auth_sessions").insert({ key, access_token: at, refresh_token: rt });
