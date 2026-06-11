@@ -416,9 +416,10 @@ const MountainList = () => {
                 />
               ))
             )}
-          </div>
+           </div>
         </>
       )}
+      <RegisterMountainModal open={registerOpen} onOpenChange={setRegisterOpen} hideTrigger />
     </div>
   );
 };
