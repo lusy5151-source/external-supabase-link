@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useStore } from "@/context/StoreContext";
@@ -167,6 +168,31 @@ const ProfilePage = () => {
     toast({ title: "프로필이 저장되었습니다" });
   };
 
+  const handleNativeAvatarUpload = async () => {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const { Camera, CameraResultType, CameraSource } = await import("@capacitor/camera");
+        const image = await Camera.getPhoto({
+          quality: 80,
+          allowEditing: true,
+          resultType: CameraResultType.DataUrl,
+          source: CameraSource.Prompt,
+        });
+        if (image.dataUrl) {
+          const res = await fetch(image.dataUrl);
+          const blob = await res.blob();
+          const file = new File([blob], `avatar_${Date.now()}.jpg`, { type: "image/jpeg" });
+          const fakeEvent = { target: { files: [file] } } as any;
+          handleAvatarUpload(fakeEvent);
+        }
+      } catch (err) {
+        console.error("Camera error:", err);
+      }
+    } else {
+      handleNativeAvatarUpload();
+    }
+  };
+
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -206,7 +232,7 @@ const ProfilePage = () => {
             </div>
           )}
           <button
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => handleNativeAvatarUpload()}
             className="absolute -bottom-1 -right-1 rounded-full bg-primary p-1.5 text-primary-foreground shadow-sm"
             title="프로필 사진을 변경합니다. 다른 사용자에게 표시됩니다."
           >
