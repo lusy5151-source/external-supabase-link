@@ -129,7 +129,9 @@ export function useProfile() {
       .from("avatars").upload(path, compressed, { upsert: true, contentType: "image/jpeg" });
     if (uploadError) return { error: uploadError };
     const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
-    return updateProfile({ avatar_url: publicUrl });
+    // Append cache-busting query so the browser/CDN reload the new image immediately.
+    const bustedUrl = `${publicUrl}?v=${Date.now()}`;
+    return updateProfile({ avatar_url: bustedUrl });
   };
 
   return { profile, loading, updateProfile, uploadAvatar, refetch: fetchProfile };
