@@ -538,7 +538,7 @@ export function SummitClaimSection({ mountainId, mountainName, hideList, trigger
                     size="sm"
                     variant="secondary"
                     className="absolute bottom-2 right-2 rounded-full text-xs"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={handleNativeFileClick}
                   >
                     다시 촬영
                   </Button>
@@ -547,7 +547,7 @@ export function SummitClaimSection({ mountainId, mountainName, hideList, trigger
                 <Button
                   variant="outline"
                   className="w-full rounded-xl h-28 flex-col gap-2 border-dashed"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={handleNativeFileClick}
                 >
                   <Camera className="h-6 w-6 text-muted-foreground" />
                   <span className="text-xs text-muted-foreground">사진 촬영 또는 선택</span>
