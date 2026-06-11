@@ -325,7 +325,7 @@ export default function RegisterMountainModal({ open: openProp, onOpenChange, hi
           {/* Submit */}
           <Button
             onClick={handleSubmit}
-            disabled={submitting || !nameKo.trim() || !height || !region}
+            disabled={submitting || !user || !nameKo.trim() || !height || !region}
             className="w-full"
           >
             {submitting ? "등록 중..." : "산 등록하기"}
