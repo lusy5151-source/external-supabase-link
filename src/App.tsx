@@ -311,6 +311,13 @@ const AppRoutes = () => {
   usePushNotifications();
   useSchedulePlanAlerts();
 
+  useEffect(() => {
+    if (!user) return;
+    import("@/lib/pushNotifications").then(({ initPushNotifications }) => {
+      initPushNotifications();
+    });
+  }, [user]);
+
   return (
     <Routes>
       <Route path="/auth" element={user && !loading ? <Navigate to="/" replace /> : <AuthPage />} />
