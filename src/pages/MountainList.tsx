@@ -125,6 +125,14 @@ const MountainList = () => {
 
   const favoritesCount = 0; // placeholder until favorites feature is wired up
 
+  // 산 직접 등록 모달
+  const [registerOpen, setRegisterOpen] = useState(false);
+  useEffect(() => {
+    const handler = () => setRegisterOpen(true);
+    window.addEventListener("open-register-mountain", handler);
+    return () => window.removeEventListener("open-register-mountain", handler);
+  }, []);
+
 
   const filterAndSort = (list: any[]) => {
     let filtered = list.filter((m: any) => {
