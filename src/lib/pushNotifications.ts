@@ -37,16 +37,17 @@ export async function initPushNotifications(): Promise<void> {
           return;
         }
         const platform = Capacitor.getPlatform() as "ios" | "android" | "web";
+        // 발송 측 Edge Function이 push_tokens 테이블의 token 컬럼을 조회하므로 여기 통일.
         const { error } = await (supabase as any)
-          .from("user_fcm_tokens")
+          .from("push_tokens")
           .upsert(
             {
               user_id: user.id,
-              fcm_token: token,
+              token,
               platform,
               updated_at: new Date().toISOString(),
             },
-            { onConflict: "user_id,fcm_token" }
+            { onConflict: "user_id,token" }
           );
         if (error) console.error("[push] save token failed:", error);
       } catch (e) {
