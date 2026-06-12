@@ -532,6 +532,118 @@ export type Database = {
           },
         ]
       }
+      community_post_comments: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_post_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_post_likes: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_posts: {
+        Row: {
+          body: string
+          category: Database["public"]["Enums"]["community_category"]
+          created_at: string
+          id: string
+          images: string[]
+          mountain_id: number | null
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          category: Database["public"]["Enums"]["community_category"]
+          created_at?: string
+          id?: string
+          images?: string[]
+          mountain_id?: number | null
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          category?: Database["public"]["Enums"]["community_category"]
+          created_at?: string
+          id?: string
+          images?: string[]
+          mountain_id?: number | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_posts_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_posts_mountain_id_fkey"
+            columns: ["mountain_id"]
+            isOneToOne: false
+            referencedRelation: "mountains_list"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_send_log: {
         Row: {
           created_at: string | null
@@ -4384,6 +4496,7 @@ export type Database = {
     }
     Enums: {
       challenge_list_type: "forestry_100" | "bac_100"
+      community_category: "story" | "mountain_info" | "gear"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4512,6 +4625,7 @@ export const Constants = {
   public: {
     Enums: {
       challenge_list_type: ["forestry_100", "bac_100"],
+      community_category: ["story", "mountain_info", "gear"],
     },
   },
 } as const

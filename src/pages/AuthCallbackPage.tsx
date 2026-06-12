@@ -21,7 +21,7 @@ export default function AuthCallbackPage() {
 
         const {
           data: { subscription },
-        } = supabase.auth.onAuthStateChange((event, session) => {
+        } = supabase.auth.onAuthStateChange(async (event, session) => {
           if (!isActive) return;
 
           if (event === "SIGNED_IN" && session) {

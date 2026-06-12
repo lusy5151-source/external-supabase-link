@@ -646,6 +646,7 @@ const Dashboard = () => {
   const { fetchSharedCompletions } = useSharedCompletions();
   const { claims: liveClaims, kingOfDay, loading: liveFeedLoading } = useLiveSummitFeed();
   const [recentJournals, setRecentJournals] = useState<HikingJournal[]>([]);
+  const [recentCommunityPosts, setRecentCommunityPosts] = useState<any[]>([]);
   const [hasMagazinePosts, setHasMagazinePosts] = useState(false);
   useEffect(() => {
     (async () => {
@@ -923,6 +924,9 @@ const Dashboard = () => {
       fetchSharedCompletions()
         .then((scs) => setRecentSharedCompletions(scs.slice(0, 3)))
         .catch(() => setRecentSharedCompletions([]));
+      import("@/hooks/useCommunityPosts").then(({ fetchRecentCommunityPosts }) =>
+        fetchRecentCommunityPosts(5, user.id).then(setRecentCommunityPosts).catch(() => setRecentCommunityPosts([]))
+      );
       // Defer non-critical fetches to improve initial paint
       const deferredTimer = setTimeout(() => {
         Promise.all([fetchAllChallenges(), fetchUserChallenges()])
@@ -1518,50 +1522,103 @@ const Dashboard = () => {
           )}
 
 
-          {/* ── Community Feed ── */}
+          {/* ── Community Preview ── */}
           <section>
-            <SectionHeader title="커뮤니티" linkTo={isDemo ? "/auth" : "/feed"} linkLabel="전체 보기" />
-            {isDemo || recentJournals.length === 0 ? (
+            <button
+              type="button"
+              onClick={() => navigate(isDemo ? "/auth" : "/feed")}
+              className="flex w-full items-center justify-between mb-2 group"
+            >
+              <h2 className="text-base font-bold text-foreground">커뮤니티</h2>
+              <span className="inline-flex items-center text-xs font-medium text-muted-foreground group-hover:text-primary transition-colors">
+                더보기 <ChevronRight className="h-3.5 w-3.5" />
+              </span>
+            </button>
+            {isDemo ? (
               <CommunityFeedPreview journals={demoJournals.slice(0, 3)} />
             ) : (
               <div className="space-y-3">
-                {recentJournals.map((j) => {
-                  const mt = mountains.find((m) => m.id === j.mountain_id);
-                  return (
-                    <Link
-                      key={j.id}
-                      to={`/journals/${j.id}`}
-                      className="block rounded-2xl bg-card border border-border p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/30 active:scale-[0.99]"
-                    >
-                      <div className="flex gap-3">
-                        {j.photos && j.photos.length > 0 ? (
-                          <img src={j.photos[0]} alt="" className="h-16 w-16 rounded-xl object-cover shrink-0" loading="lazy" />
-                        ) : (
-                          <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-nature-50 shrink-0">
-                            <Mountain className="h-6 w-6 text-primary" />
+                {(() => {
+                  type PreviewItem = { time: number; el: JSX.Element; key: string };
+                  const items: PreviewItem[] = [];
+                  recentCommunityPosts.forEach((p) => {
+                    const nick = p.profile?.nickname || "사용자";
+                    items.push({
+                      time: new Date(p.created_at).getTime(),
+                      key: `p-${p.id}`,
+                      el: (
+                        <Link
+                          to={`/community/${p.id}`}
+                          className="block rounded-2xl bg-card border border-border p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/30 active:scale-[0.99]"
+                        >
+                          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                              {p.category === "story" ? "산행 이야기" : p.category === "mountain_info" ? "산 정보" : "장비추천"}
+                            </span>
+                            <span className="text-[10px] font-medium text-foreground truncate max-w-[100px]">{nick}</span>
+                            <span className="text-[10px] text-muted-foreground">· {new Date(p.created_at).toLocaleDateString("ko-KR")}</span>
                           </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold text-sm text-foreground truncate">{mt?.nameKo || "산"}</p>
-                            {j.profile?.nickname && (
-                              <span className="text-[10px] text-muted-foreground">by {j.profile.nickname}</span>
-                            )}
-                          </div>
-                          {j.notes && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{j.notes}</p>}
+                          {p.title && <p className="text-sm font-semibold text-foreground line-clamp-1">{p.title}</p>}
+                          <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{p.body}</p>
                           <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
-                            <span className="flex items-center gap-0.5"><Heart className="h-3 w-3 text-coral" /> {j.like_count || 0}</span>
-                            <span className="flex items-center gap-0.5"><MessageCircle className="h-3 w-3" /> {j.comment_count || 0}</span>
-                            <span>{new Date(j.hiked_at).toLocaleDateString("ko-KR")}</span>
+                            <span className="flex items-center gap-0.5"><Heart className="h-3 w-3 text-coral" /> {p.like_count || 0}</span>
+                            <span className="flex items-center gap-0.5"><MessageCircle className="h-3 w-3" /> {p.comment_count || 0}</span>
                           </div>
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                })}
+                        </Link>
+                      ),
+                    });
+                  });
+                  recentJournals.forEach((j) => {
+                    const mt = mountains.find((m) => m.id === j.mountain_id);
+                    items.push({
+                      time: new Date(j.created_at).getTime(),
+                      key: `j-${j.id}`,
+                      el: (
+                        <Link
+                          to={`/journals/${j.id}`}
+                          className="block rounded-2xl bg-card border border-border p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/30 active:scale-[0.99]"
+                        >
+                          <div className="flex gap-3">
+                            {j.photos && j.photos.length > 0 ? (
+                              <img src={j.photos[0]} alt="" className="h-16 w-16 rounded-xl object-cover shrink-0" loading="lazy" />
+                            ) : (
+                              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-nature-50 shrink-0">
+                                <Mountain className="h-6 w-6 text-primary" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="inline-flex items-center rounded-full bg-nature-50 px-2 py-0.5 text-[10px] font-semibold text-primary">공개 일지</span>
+                                <p className="font-semibold text-sm text-foreground truncate">{mt?.nameKo || "산"}</p>
+                                {j.profile?.nickname && <span className="text-[10px] text-muted-foreground">by {j.profile.nickname}</span>}
+                              </div>
+                              {j.notes && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{j.notes}</p>}
+                              <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
+                                <span className="flex items-center gap-0.5"><Heart className="h-3 w-3 text-coral" /> {j.like_count || 0}</span>
+                                <span className="flex items-center gap-0.5"><MessageCircle className="h-3 w-3" /> {j.comment_count || 0}</span>
+                                <span>{new Date(j.hiked_at).toLocaleDateString("ko-KR")}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      ),
+                    });
+                  });
+                  items.sort((a, b) => b.time - a.time);
+                  const previews = items.slice(0, 4);
+                  if (!previews.length) return <CommunityFeedPreview journals={demoJournals.slice(0, 3)} />;
+                  return previews.map((i) => <div key={i.key}>{i.el}</div>);
+                })()}
+                <Link
+                  to="/feed"
+                  className="block rounded-2xl border border-dashed border-border bg-card/50 py-3 text-center text-xs font-medium text-muted-foreground hover:bg-card hover:text-primary transition-colors"
+                >
+                  커뮤니티 전체 보기 →
+                </Link>
               </div>
             )}
           </section>
+
 
           {/* ── Badge Gallery ── */}
           <section data-onboarding="badge-gallery">
