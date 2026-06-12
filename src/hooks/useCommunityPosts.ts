@@ -121,7 +121,7 @@ export async function fetchCommunityComments(postId: string): Promise<CommunityC
   const { data } = await (supabase as any).from("community_post_comments").select("*").eq("post_id", postId).order("created_at", { ascending: true });
   const rows = data || [];
   if (!rows.length) return [];
-  const userIds = Array.from(new Set(rows.map((r: any) => r.user_id)));
+  const userIds = Array.from(new Set(rows.map((r: any) => r.user_id))) as string[];
   const { data: profiles } = await supabase.from("public_profiles").select("user_id, nickname, avatar_url").in("user_id", userIds);
   const map = new Map((profiles || []).map((p: any) => [p.user_id, p]));
   return rows.map((r: any) => ({ ...r, profile: map.get(r.user_id) as any }));
