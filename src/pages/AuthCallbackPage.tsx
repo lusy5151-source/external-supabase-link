@@ -33,8 +33,9 @@ export default function AuthCallbackPage() {
               const rt = session?.refresh_token;
               if (at && rt) {
                 const key = Math.random().toString(36).substring(2, 10);
-                await supabase.from("temp_auth_sessions").insert({ key, access_token: at, refresh_token: rt });
-                window.location.href = `com.wandeung.app://oauth?key=${key}`;
+                supabase.from("temp_auth_sessions").insert({ key, access_token: at, refresh_token: rt }).then(() => {
+                  window.location.href = `com.wandeung.app://oauth?key=${key}`;
+                });
               } else {
                 window.location.replace("com.wandeung.app://oauth");
               }

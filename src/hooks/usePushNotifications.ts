@@ -13,30 +13,34 @@ export const usePushNotifications = () => {
       try {
         const { PushNotifications } = await import("@capacitor/push-notifications");
 
-        // 권한 요청
-        const permission = await PushNotifications.requestPermissions();
-        if (permission.receive !== "granted") return;
-
-        // 등록
-        await PushNotifications.register();
-
-        // 토큰 수신 → DB 저장
+        // 리스너 먼저 등록 (register() 전에!)
         await PushNotifications.addListener("registration", async ({ value: token }) => {
+          console.log("Push token:", token);
           await supabase.from("push_tokens").upsert(
             { user_id: user.id, token, platform: "ios" },
             { onConflict: "user_id,token" }
           );
         });
 
-        // 알림 수신 (앱 실행 중)
+        await PushNotifications.addListener("registrationError", (error) => {
+          console.error("Push registration error:", error);
+        });
+
         await PushNotifications.addListener("pushNotificationReceived", (notification) => {
           console.log("Push received:", notification);
         });
 
-        // 알림 탭했을 때
         await PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
           console.log("Push action:", action);
         });
+
+        // 권한 요청
+        const permission = await PushNotifications.requestPermissions();
+        console.log("Push permission:", permission.receive);
+        if (permission.receive !== "granted") return;
+
+        // 등록 (리스너 이후에!)
+        await PushNotifications.register();
 
       } catch (err) {
         console.error("Push notification error:", err);
