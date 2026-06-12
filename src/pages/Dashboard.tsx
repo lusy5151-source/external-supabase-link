@@ -924,6 +924,9 @@ const Dashboard = () => {
       fetchSharedCompletions()
         .then((scs) => setRecentSharedCompletions(scs.slice(0, 3)))
         .catch(() => setRecentSharedCompletions([]));
+      import("@/hooks/useCommunityPosts").then(({ fetchRecentCommunityPosts }) =>
+        fetchRecentCommunityPosts(5, user.id).then(setRecentCommunityPosts).catch(() => setRecentCommunityPosts([]))
+      );
       // Defer non-critical fetches to improve initial paint
       const deferredTimer = setTimeout(() => {
         Promise.all([fetchAllChallenges(), fetchUserChallenges()])
