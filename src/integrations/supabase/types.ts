@@ -3132,6 +3132,30 @@ export type Database = {
         }
         Relationships: []
       }
+      temp_auth_sessions: {
+        Row: {
+          access_token: string
+          created_at: string | null
+          expires_at: string | null
+          key: string
+          refresh_token: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string | null
+          expires_at?: string | null
+          key: string
+          refresh_token: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string | null
+          expires_at?: string | null
+          key?: string
+          refresh_token?: string
+        }
+        Relationships: []
+      }
       trail_closures: {
         Row: {
           closure_type: string | null
@@ -4334,6 +4358,7 @@ export type Database = {
         Args: { _plan_id: string; _user_id?: string }
         Returns: boolean
       }
+      cleanup_temp_auth_sessions: { Args: never; Returns: undefined }
       coords_distance_m: {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number
