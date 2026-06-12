@@ -78,6 +78,8 @@ const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
 const AuthCallbackPage = lazy(() => import("@/pages/AuthCallbackPage"));
 const NotificationsPage = lazy(() => import("@/pages/NotificationsPage"));
+const CommunityPostDetailPage = lazy(() => import("@/pages/CommunityPostDetailPage"));
+const CommunityPostCreatePage = lazy(() => import("@/pages/CommunityPostCreatePage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
