@@ -1,79 +1,106 @@
-# 지도 라이브러리: Leaflet → 네이버 지도 전면 교체
+## 목표
+- 홈의 커뮤니티 섹션을 "미리보기" 영역으로 명확히 하고, 클릭 시 커뮤니티 전체 화면(`/feed`)으로 이동.
+- 커뮤니티 전체 화면을 **전체 / 산행 이야기 / 산 정보 / 장비추천** 4탭 구조로 리뉴얼.
+- "산 정보", "장비추천"은 사용자가 직접 글을 올리는 게시판으로 신규 추가 (community_posts 테이블).
+- "산행 이야기"는 사용자 산행 글 + 공개 등산일지 + 정상인증 공유 + 챌린지 달성 공유를 통합 노출.
+- 기존 좋아요/댓글/신고/친구/캐릭터 XP/공개일지/정상인증/챌린지 공유 로직은 그대로 유지.
 
-## 변경 대상 파일 (3개 지도 + 설정)
+## 1. 홈 화면 커뮤니티 섹션 (Dashboard.tsx)
+- 섹션 전체를 `<Link to="/feed">` 래퍼로 감싸 한번에 눌릴 수 있게 함 (게시글 카드는 내부에서 `e.stopPropagation()`로 자기 라우트로 이동).
+- 우측 상단에 **"더보기 →"** 라벨/화살표를 명확히 표시. `linkTo="/feed"` 유지.
+- 최대 3~5개 카드만 노출. 카드 정보:
+  - 카테고리 태그 칩(산행이야기/산정보/장비추천/공개일지/정상인증/챌린지)
+  - 게시글 유형 라벨
+  - 작성자 닉네임
+  - 본문 일부 (line-clamp-2)
+  - 작성 시간 (상대시간)
+  - 좋아요/댓글 수
+- 카드 클릭 시 유형별 라우팅:
+  - community_post → `/community/:id`
+  - 공개 일지 → `/journals/:id`
+  - 정상인증 → `/summit-claim/:id` 또는 기존 라우트
+  - 챌린지 → `/challenges/...` 기존 라우트
 
-현재 프로젝트에는 Leaflet(OSM 타일) 기반 지도가 3곳에서 사용 중입니다. 모두 네이버 지도 v3 JS API로 교체합니다.
+## 2. /feed 화면 리뉴얼 (FeedPage.tsx)
+- 4탭으로 교체: **전체 / 산행 이야기 / 산 정보 / 장비추천**. 기본 탭 = "전체".
+- **전체**: 모든 콘텐츠 시간순 통합 노출.
+- **산행 이야기**: 통합 쿼리로
+  - `community_posts` (category='story')
+  - `hiking_journals` (is_public=true) — JournalCard 재사용
+  - `summit_claims` 공유된 항목 — SharedCompletionCard 또는 기존 카드
+  - 챌린지 완료 공유 — activity_feed에서 type='challenge_completed' 등
+- **산 정보**: `community_posts` (category='mountain_info') 리스트.
+- **장비추천**: `community_posts` (category='gear') 리스트.
+- 각 탭 우측 상단에 "+ 글쓰기" FAB (산정보/장비추천 탭에서만, 또는 산행 이야기 포함).
 
-1. `index.html` — 네이버 지도 스크립트 추가
-2. `src/components/MountainMapSection.tsx` — 홈/지도 섹션 (산 마커, 필터, 인포카드, 내 위치)
-3. `src/pages/MapView.tsx` — 전체 지도 페이지
-4. `src/components/TrailMap.tsx` — 산별 등산로 폴리라인 지도
-5. `src/index.css` — leaflet z-index 규칙 제거, 네이버 지도용으로 교체
-6. `package.json` — `leaflet`, `@types/leaflet`, `react-leaflet` 의존성 제거
+## 3. 커뮤니티 게시판 (신규)
+신규 라우트 추가:
+- `/community/new` — 글 작성 (카테고리 선택)
+- `/community/:id` — 게시글 상세 (본문 + 좋아요/댓글/신고/친구추가 메뉴)
 
-## 주의: API 키 검증 필요
+기존 `JournalCard`의 인터랙션 패턴(좋아요/댓글/`ContentMenu`)을 그대로 사용.
 
-지정해주신 `ncpClientId=e35ks3exhv`는 일반적인 네이버 클라우드 플랫폼 Maps Client ID 형식보다 짧습니다(보통 더 긴 영숫자). 일단 지정하신 값 그대로 적용하지만, 지도가 401/인증 오류로 빈 화면이 뜨면:
-- NCP Console → Maps → Application의 정확한 Client ID 확인
-- Web 서비스 URL 등록란에 `https://wandeung.com`, `https://www.wandeung.com`, Lovable 프리뷰 도메인(`*.lovable.app`) 등록 여부 확인
-이 두 가지를 먼저 점검해야 합니다.
+## 4. 데이터베이스
+신규 테이블 마이그레이션:
 
-## 상세 구현
+```sql
+create type community_category as enum ('story','mountain_info','gear');
 
-### 1. `index.html` `<head>`
-```html
-<script type="text/javascript"
-  src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=e35ks3exhv&submodules=geocoder,drawing">
-</script>
+create table public.community_posts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade not null,
+  category community_category not null,
+  title text,
+  body text not null,
+  images text[] default '{}',
+  mountain_id uuid references mountains(id),
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+grant select on public.community_posts to anon, authenticated;
+grant insert, update, delete on public.community_posts to authenticated;
+grant all on public.community_posts to service_role;
+alter table public.community_posts enable row level security;
+create policy "read all" on public.community_posts for select using (true);
+create policy "insert own" on public.community_posts for insert to authenticated with check (auth.uid()=user_id);
+create policy "update own" on public.community_posts for update to authenticated using (auth.uid()=user_id);
+create policy "delete own" on public.community_posts for delete to authenticated using (auth.uid()=user_id);
+
+create table public.community_post_likes (
+  id uuid primary key default gen_random_uuid(),
+  post_id uuid references community_posts(id) on delete cascade not null,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  created_at timestamptz default now(),
+  unique(post_id, user_id)
+);
+-- + grants + RLS (read all, write own)
+
+create table public.community_post_comments (
+  id uuid primary key default gen_random_uuid(),
+  post_id uuid references community_posts(id) on delete cascade not null,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  body text not null,
+  created_at timestamptz default now()
+);
+-- + grants + RLS
 ```
 
-### 2. 타입 안전성
-`src/vite-env.d.ts`에 전역 `naver` 선언 추가:
-```ts
-declare global {
-  interface Window { naver: any }
-  const naver: any;
-}
-```
-(외부 스크립트라 정식 타입은 `any`로 처리, 기존 코드의 `L.Map` 등은 모두 제거)
+`reports` 테이블의 `target_type`은 이미 존재하는 enum 또는 text — `'community_post'`, `'community_comment'` 값 사용.
 
-### 3. `MountainMapSection.tsx` 교체 패턴
-- `L.map(...)` → `new naver.maps.Map(el, { center: new naver.maps.LatLng(36, 127.8), zoom: 7, mapTypeId: naver.maps.MapTypeId.TERRAIN, minZoom: 6, maxBounds: new naver.maps.LatLngBounds(new naver.maps.LatLng(33,124.5), new naver.maps.LatLng(38.7,131.9)) })`
-- 마커 → `new naver.maps.Marker({ position, map, icon: { content: '<div>...</div>', anchor: new naver.maps.Point(16,16) } })`
-  - 기존 완등(👤)/공동(👥)/미등(⛰) 3종 스타일/크기를 HTML content로 그대로 유지
-- 클릭 → `naver.maps.Event.addListener(marker, 'click', () => setSelectedInfo(...))`
-- 마커 제거 → `marker.setMap(null)`
-- 내 위치 → `map.setCenter(new naver.maps.LatLng(lat,lng)); map.setZoom(11);`
-- 필터/인포카드 UI(오버레이, 카드, Progress)는 그대로 유지
+## 5. 캐릭터 XP
+글 작성/댓글 시 기존 `useUserXp` 또는 `xp_log` 패턴 따라 XP 적립 (작성=+10, 댓글=+3 등 기존 정책 매칭).
 
-### 4. `MapView.tsx`
-동일 패턴으로 교체. 마커 클릭 시 `navigate(/mountains/:id)`. 범례/진행률 UI 유지.
+## 변경 파일 (예상)
+- `supabase/migrations/<ts>_community_posts.sql` (신규)
+- `src/integrations/supabase/types.ts` (자동 업데이트는 별도)
+- `src/hooks/useCommunityPosts.ts` (신규)
+- `src/pages/FeedPage.tsx` (4탭 교체)
+- `src/pages/CommunityPostDetailPage.tsx` (신규)
+- `src/pages/CommunityPostCreatePage.tsx` (신규)
+- `src/components/CommunityPostCard.tsx` (신규)
+- `src/pages/Dashboard.tsx` (커뮤니티 섹션 미리보기 개편)
+- `src/App.tsx` (라우트 3개 추가)
 
-### 5. `TrailMap.tsx` — 폴리라인
-- 산 위치 마커 1개
-- 등산로 features를 순회하며 `new naver.maps.Polyline({ map, path: coords.map(([lng,lat]) => new naver.maps.LatLng(lat,lng)), strokeColor: TRAIL_COLORS[idx%n], strokeWeight: 4, strokeOpacity: 0.8 })`
-- 범위 맞춤 → `map.fitBounds(bounds)` (네이버는 `naver.maps.LatLngBounds`에 `extend()`로 누적)
-- 시작점 마커, 툴팁(호버) → `naver.maps.InfoWindow`로 클릭 시 표시(네이버에는 leaflet의 hover tooltip이 없어 클릭형으로 변경)
-- 로딩/에러/"GPS 등산로 데이터" 안내 UI 유지
-
-### 6. `index.css`
-```css
-/* 제거 */
-.leaflet-container, .leaflet-top, .leaflet-bottom, .leaflet-pane { ... }
-```
-네이버 지도의 컨트롤은 기본 z-index로 충분. 필요 시 컨테이너에 `position:relative`만 유지.
-
-### 7. 의존성 정리
-`package.json`에서 다음 제거:
-- `leaflet`, `@types/leaflet`, `react-leaflet`
-- 모든 `import L from "leaflet"` / `import "leaflet/dist/leaflet.css"` 제거
-
-### 8. 스크립트 로드 가드
-네이버 SDK는 `<head>`에서 동기 로드되지만, `useEffect` 내에서 `if (!window.naver?.maps) return;` 가드를 두어 SSR/늦은 로드 시에도 안전하게 처리.
-
-## 사용자에게 보일 차이
-- 지도 타일이 OSM(영문/세계 표준) → 네이버 지형도(한국 친화적, 한글 지명, 등고선 표시)로 전환
-- 마커/필터/인포카드/범례 등 UX는 그대로 유지
-- 등산로 폴리라인 호버 툴팁이 클릭 시 표시되는 InfoWindow로 변경
-
-승인해주시면 위 순서대로 적용하겠습니다.
+## 확인 필요
+- 위 4탭 구조와 신규 게시판 테이블 생성 방향 진행해도 될지?
+- "산행 이야기" 탭에 챌린지 달성 공유는 `activity_feed` 기반으로 채워도 되는지, 아니면 별도 share 테이블이 필요한지?
