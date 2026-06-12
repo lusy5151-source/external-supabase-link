@@ -24,7 +24,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import PageSkeleton from "@/components/PageSkeleton";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
 import { useProfileSync } from "@/hooks/useProfileSync";
-import { usePushNotifications } from "@/hooks/usePushNotifications";
+// usePushNotifications 제거: 토큰 저장 경로는 initPushNotifications 하나로 통일
 import { useSchedulePlanAlerts } from "@/hooks/useSchedulePlanAlerts";
 import { supabase } from "@/integrations/supabase/client";
 import OnboardingFlow from "@/components/OnboardingFlow";
@@ -310,7 +310,7 @@ function GateLoadingSkeleton() {
 const AppRoutes = () => {
   const { user, loading } = useAuth();
   useProfileSync();
-  usePushNotifications();
+  
   useSchedulePlanAlerts();
 
   useEffect(() => {
