@@ -343,6 +343,8 @@ const AppRoutes = () => {
       <Route path="/achievements" element={<LazyPage><AchievementsPage /></LazyPage>} />
       <Route path="/feed" element={<LazyPage><FeedPage /></LazyPage>} />
       <Route path="/journals/:id" element={<LazyPage><JournalDetailPage /></LazyPage>} />
+      <Route path="/community/new" element={<ProtectedRoute><LazyPage><CommunityPostCreatePage /></LazyPage></ProtectedRoute>} />
+      <Route path="/community/:id" element={<LazyPage><CommunityPostDetailPage /></LazyPage>} />
       <Route path="/shared-completions" element={<ProtectedRoute><LazyPage><SharedCompletionPage /></LazyPage></ProtectedRoute>} />
       <Route path="/groups" element={<Navigate to="/social" replace />} />
       <Route path="/groups/:id" element={<ProtectedRoute><LazyPage><GroupDetailPage /></LazyPage></ProtectedRoute>} />
