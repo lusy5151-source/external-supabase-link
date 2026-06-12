@@ -9,7 +9,6 @@ const corsHeaders = {
 async function generateApnsJwt(keyId: string, teamId: string, rawBase64Key: string): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
 
-  // APNs JWT: aud 없음! iss + iat만!
   const headerB64 = btoa(JSON.stringify({ alg: "ES256", kid: keyId }))
     .replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
   const payloadB64 = btoa(JSON.stringify({ iss: teamId, iat: now }))
@@ -54,6 +53,9 @@ serve(async (req) => {
       .eq("user_id", user_id).eq("platform", "ios");
 
     if (!tokens || tokens.length === 0) {
+      await supabase.from("push_notification_logs").insert({
+        user_id, title, body, status: "no_token",
+      });
       return new Response(JSON.stringify({ message: "토큰 없음" }), {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -65,8 +67,15 @@ serve(async (req) => {
       Deno.env.get("APNS_PRIVATE_KEY")!
     );
 
+    // sandbox(개발 빌드) / production(TestFlight·App Store) 분기.
+    // APNS_ENV 시크릿이 없으면 production(기존 동작) 유지.
+    const apnsEnv = (Deno.env.get("APNS_ENV") || "production").toLowerCase();
+    const apnsHost = apnsEnv === "sandbox"
+      ? "https://api.sandbox.push.apple.com"
+      : "https://api.push.apple.com";
+
     const results = await Promise.all(tokens.map(async ({ token }) => {
-      const response = await fetch(`https://api.push.apple.com/3/device/${token}`, {
+      const response = await fetch(`${apnsHost}/3/device/${token}`, {
         method: "POST",
         headers: {
           "authorization": `bearer ${jwt}`,
@@ -81,11 +90,26 @@ serve(async (req) => {
         }),
       });
       const responseText = await response.text();
-      console.log(`APNs: ${response.status} ${responseText}`);
+      console.log(`APNs[${apnsEnv}]: ${response.status} ${responseText}`);
+
+      // 만료/잘못된 토큰은 정리해서 다음 호출부터 "no_token" 분기로 빠지게 함.
+      if (response.status === 410 || response.status === 400) {
+        try {
+          await supabase.from("push_tokens").delete().eq("token", token);
+        } catch (e) {
+          console.error("token cleanup failed:", e);
+        }
+      }
       return { status: response.status, response: responseText };
     }));
 
-    await supabase.from("push_notification_logs").insert({ user_id, title, body, status: "sent" });
+    const overallStatus = results.every(r => r.status >= 200 && r.status < 300)
+      ? "sent" : "partial_failure";
+
+    await supabase.from("push_notification_logs").insert({
+      user_id, title, body,
+      status: `${overallStatus}:${results.map(r => r.status).join(",")}`,
+    });
     return new Response(JSON.stringify({ success: true, results }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
