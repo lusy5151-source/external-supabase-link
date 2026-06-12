@@ -429,9 +429,23 @@ const App = () => {
                   return;
                 }
                 // Google OAuth: 토큰을 URL에서 받아서 세션 설정
+                const key = parsed.searchParams.get("key");
                 const accessToken = parsed.searchParams.get("access_token");
                 const refreshToken = parsed.searchParams.get("refresh_token");
-                if (accessToken && refreshToken) {
+                if (key) {
+                  const { data: sessionData } = await supabase
+                    .from("temp_auth_sessions")
+                    .select("access_token, refresh_token")
+                    .eq("key", key)
+                    .single();
+                  if (sessionData) {
+                    await supabase.auth.setSession({
+                      access_token: sessionData.access_token,
+                      refresh_token: sessionData.refresh_token,
+                    });
+                    await supabase.from("temp_auth_sessions").delete().eq("key", key);
+                  }
+                } else if (accessToken && refreshToken) {
                   await supabase.auth.setSession({
                     access_token: accessToken,
                     refresh_token: refreshToken,
