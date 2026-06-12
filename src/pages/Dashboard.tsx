@@ -646,6 +646,7 @@ const Dashboard = () => {
   const { fetchSharedCompletions } = useSharedCompletions();
   const { claims: liveClaims, kingOfDay, loading: liveFeedLoading } = useLiveSummitFeed();
   const [recentJournals, setRecentJournals] = useState<HikingJournal[]>([]);
+  const [recentCommunityPosts, setRecentCommunityPosts] = useState<any[]>([]);
   const [hasMagazinePosts, setHasMagazinePosts] = useState(false);
   useEffect(() => {
     (async () => {
