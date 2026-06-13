@@ -945,6 +945,7 @@ function ShareCardSection({ mountain, record }: { mountain: Mountain; record: Co
   const handleShare = async () => {
     if (!cardRef.current) return;
     try {
+      const { Capacitor } = await import("@capacitor/core");
       const html2canvas = (await import("html2canvas")).default;
       const node = cardRef.current;
       const rect = node.getBoundingClientRect();
@@ -952,11 +953,31 @@ function ShareCardSection({ mountain, record }: { mountain: Mountain; record: Co
       const canvas = await html2canvas(node, { scale, useCORS: true, backgroundColor: null });
       const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/png"));
       if (!blob) return;
-      const file = new File([blob], `완등_${mountain.nameKo}.png`, { type: "image/png" });
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ title: `${mountain.nameKo} 완등`, files: [file] });
+
+      if (Capacitor.isNativePlatform()) {
+        const base64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve((reader.result as string).split(",")[1]);
+          reader.readAsDataURL(blob);
+        });
+        const { Filesystem, Directory } = await import("@capacitor/filesystem");
+        const fileName = `완등_${mountain.nameKo}_${Date.now()}.png`;
+        await Filesystem.writeFile({ path: fileName, data: base64, directory: Directory.Cache });
+        const { uri } = await Filesystem.getUri({ path: fileName, directory: Directory.Cache });
+        const { Share } = await import("@capacitor/share");
+        await Share.share({
+          title: `${mountain.nameKo} 완등`,
+          text: `완등 앱으로 ${mountain.nameKo} 정상을 기록했어요!`,
+          url: uri,
+          dialogTitle: "공유하기",
+        });
       } else {
-        handleExport();
+        const file = new File([blob], `완등_${mountain.nameKo}.png`, { type: "image/png" });
+        if (navigator.share && navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ title: `${mountain.nameKo} 완등`, files: [file] });
+        } else {
+          handleExport();
+        }
       }
     } catch (err) { console.error(err); }
   };
