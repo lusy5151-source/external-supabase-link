@@ -48,7 +48,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(180deg, hsl(205, 50%, 88%) 0%, hsl(var(--background)) 30%)" }}>
       {/* Top header */}
-      <header className="sticky z-50 bg-card/70 backdrop-blur-xl" style={{ top: 0, paddingTop: safeAreaTop }}>
+      {/* 상단 Safe Area 배경 채우기 */}
+      <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: safeAreaTop, background: "hsl(var(--card))", zIndex: 51 }} />
+      <header className="sticky z-50 bg-card backdrop-blur-xl" style={{ top: 0, paddingTop: safeAreaTop, zIndex: 50 }}>
         <div className="container mx-auto flex h-14 items-center justify-between px-5">
           <Link to="/" className="flex items-center gap-2">
             <MountainMascot size={32} />
