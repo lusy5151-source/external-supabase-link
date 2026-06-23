@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Mountain } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import MountainMascot from "@/components/MountainMascot";
 
@@ -16,19 +16,38 @@ interface MagazinePost {
   created_at: string;
 }
 
-const CATEGORY_BG: Record<string, string> = {
-  "등산 코스": "#EAF3DE",
-  "계절 추천": "#FFF3E0",
-  "등산 안전": "#F3E5F5",
-  "등산 가이드": "#E3F2FD",
+const CATEGORY_PILL: Record<string, { bg: string; fg: string }> = {
+  "등산 코스": { bg: "#EAF3DE", fg: "#3B6D11" },
+  "등산 안전": { bg: "#FBE6DD", fg: "#B5421A" },
+  "계절 추천": { bg: "#FFF1D6", fg: "#8A5A12" },
+  "등산 가이드": { bg: "#DEEAF5", fg: "#1E4775" },
 };
 
-const Fallback = ({ category }: { category: string }) => (
+const WANDEUNG_GREEN = "#8fb93f";
+
+const pillStyle = (category: string, solid = false): React.CSSProperties => {
+  const c = CATEGORY_PILL[category] || { bg: "#EAF3DE", fg: "#3B6D11" };
+  return {
+    background: solid ? WANDEUNG_GREEN : c.bg,
+    color: solid ? "#ffffff" : c.fg,
+    fontSize: 11,
+    fontWeight: 500,
+    borderRadius: 999,
+    padding: "3px 10px",
+    display: "inline-block",
+    lineHeight: 1.4,
+  };
+};
+
+const PlaceholderCover = () => (
   <div
     className="w-full h-full flex items-center justify-center"
-    style={{ background: CATEGORY_BG[category] || "hsl(var(--secondary))" }}
+    style={{
+      background:
+        "linear-gradient(135deg, #d8e3b8 0%, #b9cf7e 50%, #8fb93f 100%)",
+    }}
   >
-    <Mountain className="text-muted-foreground" size={24} />
+    <MountainMascot size={56} />
   </div>
 );
 
@@ -44,7 +63,6 @@ const MagazinePage = () => {
         .from("magazine_posts")
         .select("*")
         .eq("is_published", true)
-        .not("cover_image_url", "is", null)
         .order("is_featured", { ascending: false })
         .order("created_at", { ascending: false });
       setPosts((data as MagazinePost[]) || []);
@@ -61,16 +79,20 @@ const MagazinePage = () => {
   }, [posts]);
 
   const recommended = rest.slice(0, 8);
-  const filteredList = selectedCategory === "전체" ? rest : rest.filter((p) => p.category === selectedCategory);
+  const recommendedIds = useMemo(() => new Set(recommended.map((p) => p.id)), [recommended]);
+  const filteredList =
+    selectedCategory === "전체"
+      ? rest.filter((p) => !recommendedIds.has(p.id))
+      : rest.filter((p) => p.category === selectedCategory);
 
   if (openPost) {
     return <MagazineDetail post={openPost} onBack={() => setOpenPost(null)} />;
   }
 
   return (
-    <div className="pb-24 bg-background min-h-screen">
+    <div className="pb-24 min-h-screen" style={{ background: "#f7f6e4" }}>
       {/* Top bar */}
-      <div className="flex items-center px-3 py-3 bg-background relative">
+      <div className="flex items-center px-3 py-3 relative" style={{ background: "#f7f6e4" }}>
         <Link to="/" className="rounded-xl p-2 hover:bg-accent transition-colors">
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </Link>
@@ -84,7 +106,7 @@ const MagazinePage = () => {
 
       <p
         className="text-center text-muted-foreground"
-        style={{ fontSize: 12, marginBottom: 16 }}
+        style={{ fontSize: 12, marginBottom: 16, fontWeight: 400 }}
       >
         등산 정보 · 코스 · 장비 · 안전 팁
       </p>
@@ -101,7 +123,7 @@ const MagazinePage = () => {
         </div>
       ) : (
         <>
-          {/* Featured */}
+          {/* Featured hero card — full-bleed photo, 16:10, single title */}
           {featured && (
             <button
               onClick={() => setOpenPost(featured)}
@@ -109,42 +131,68 @@ const MagazinePage = () => {
               style={{
                 margin: "0 16px",
                 borderRadius: 16,
-                height: 200,
                 width: "calc(100% - 32px)",
+                aspectRatio: "16 / 10",
+                background: "#e8e6cf",
               }}
             >
               {featured.cover_image_url ? (
                 <img
                   src={featured.cover_image_url}
                   alt={featured.title}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
+                  className="absolute inset-0 w-full h-full object-cover"
+                  loading="eager"
                 />
               ) : (
-                <Fallback category={featured.category} />
+                <div className="absolute inset-0">
+                  <PlaceholderCover />
+                </div>
               )}
+
+              {/* Bottom gradient overlay */}
               <div
                 className="absolute inset-0 pointer-events-none"
-                style={{ background: "linear-gradient(transparent 30%, rgba(0,0,0,0.7))" }}
-              />
-              <span
-                className="absolute text-white"
                 style={{
-                  top: 12,
-                  left: 12,
-                  background: "#639922",
-                  fontSize: 10,
-                  borderRadius: 20,
-                  padding: "3px 10px",
+                  background:
+                    "linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 60%)",
                 }}
+              />
+
+              {/* Category pill top-left */}
+              <span
+                className="absolute"
+                style={{ top: 12, left: 12, ...pillStyle(featured.category, true) }}
               >
                 {featured.category}
               </span>
+
+              {/* Mascot corner mark bottom-right */}
               <div
-                className="absolute left-0 right-0 bottom-0 text-white line-clamp-2"
-                style={{ padding: "0 12px 12px", fontSize: 16, fontWeight: 500 }}
+                className="absolute pointer-events-none"
+                style={{ bottom: 10, right: 12, width: 40, height: 40, opacity: 0.95 }}
               >
-                {featured.title}
+                <MountainMascot size={40} />
+              </div>
+
+              {/* Title + subtitle bottom-left */}
+              <div
+                className="absolute left-0 right-0 bottom-0"
+                style={{ padding: "0 60px 14px 14px", color: "#fff" }}
+              >
+                <div
+                  className="line-clamp-2"
+                  style={{ fontSize: 17, fontWeight: 500, lineHeight: 1.35 }}
+                >
+                  {featured.title}
+                </div>
+                {featured.description && (
+                  <div
+                    className="line-clamp-1"
+                    style={{ fontSize: 12, fontWeight: 400, marginTop: 4, opacity: 0.85 }}
+                  >
+                    {featured.description}
+                  </div>
+                )}
               </div>
             </button>
           )}
@@ -162,12 +210,13 @@ const MagazinePage = () => {
                   onClick={() => setSelectedCategory(cat)}
                   className="flex-shrink-0 whitespace-nowrap"
                   style={{
-                    background: active ? "#639922" : "hsl(var(--secondary))",
+                    background: active ? WANDEUNG_GREEN : "#ffffff",
                     color: active ? "white" : "hsl(var(--muted-foreground))",
                     borderRadius: 20,
                     fontSize: 12,
+                    fontWeight: 500,
                     padding: "6px 14px",
-                    border: "none",
+                    border: active ? "none" : "1px solid rgba(0,0,0,0.06)",
                   }}
                 >
                   {cat}
@@ -176,8 +225,8 @@ const MagazinePage = () => {
             })}
           </div>
 
-          {/* Horizontal scroll - recommended */}
-          {recommended.length > 0 && (
+          {/* Recommended (horizontal) */}
+          {selectedCategory === "전체" && recommended.length > 0 && (
             <>
               <h2
                 className="text-foreground"
@@ -193,10 +242,17 @@ const MagazinePage = () => {
                   <button
                     key={post.id}
                     onClick={() => setOpenPost(post)}
-                    className="flex-shrink-0 overflow-hidden bg-card text-left"
-                    style={{ minWidth: 150, borderRadius: 16 }}
+                    className="flex-shrink-0 overflow-hidden text-left"
+                    style={{ width: 180, background: "#ffffff", borderRadius: 14 }}
                   >
-                    <div style={{ height: 90, overflow: "hidden" }}>
+                    <div
+                      style={{
+                        width: "100%",
+                        aspectRatio: "16 / 9",
+                        overflow: "hidden",
+                        background: "#e8e6cf",
+                      }}
+                    >
                       {post.cover_image_url ? (
                         <img
                           src={post.cover_image_url}
@@ -205,14 +261,14 @@ const MagazinePage = () => {
                           loading="lazy"
                         />
                       ) : (
-                        <Fallback category={post.category} />
+                        <PlaceholderCover />
                       )}
                     </div>
-                    <div style={{ padding: 8 }}>
-                      <div style={{ fontSize: 9, color: "#639922" }}>{post.category}</div>
+                    <div style={{ padding: "8px 10px 10px" }}>
+                      <span style={pillStyle(post.category)}>{post.category}</span>
                       <div
                         className="text-foreground line-clamp-2"
-                        style={{ fontSize: 11, fontWeight: 500, marginTop: 2 }}
+                        style={{ fontSize: 12, fontWeight: 500, marginTop: 6, lineHeight: 1.4 }}
                       >
                         {post.title}
                       </div>
@@ -223,60 +279,59 @@ const MagazinePage = () => {
             </>
           )}
 
-          {/* Vertical list */}
+          {/* Full list — 2-column card grid */}
           <h2
             className="text-foreground"
             style={{ fontSize: 14, fontWeight: 500, padding: "8px 16px 8px" }}
           >
             전체 글
           </h2>
-          {filteredList.map((post) => (
-            <button
-              key={post.id}
-              onClick={() => setOpenPost(post)}
-              className="flex bg-background text-left w-auto"
-              style={{
-                margin: "0 16px 12px",
-                borderRadius: 16,
-                gap: 12,
-                padding: 12,
-                boxShadow: "none",
-              }}
-            >
-              <div
-                className="flex-shrink-0 overflow-hidden"
-                style={{ width: 72, height: 72, borderRadius: 12 }}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 12,
+              padding: "0 16px",
+            }}
+          >
+            {filteredList.map((post) => (
+              <button
+                key={post.id}
+                onClick={() => setOpenPost(post)}
+                className="overflow-hidden text-left"
+                style={{ background: "#ffffff", borderRadius: 14 }}
               >
-                {post.cover_image_url ? (
-                  <img
-                    src={post.cover_image_url}
-                    alt={post.title}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                ) : (
-                  <Fallback category={post.category} />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div style={{ fontSize: 10, color: "#639922" }}>{post.category}</div>
                 <div
-                  className="text-foreground line-clamp-2"
-                  style={{ fontSize: 13, fontWeight: 500 }}
+                  style={{
+                    width: "100%",
+                    aspectRatio: "16 / 9",
+                    overflow: "hidden",
+                    background: "#e8e6cf",
+                  }}
                 >
-                  {post.title}
+                  {post.cover_image_url ? (
+                    <img
+                      src={post.cover_image_url}
+                      alt={post.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <PlaceholderCover />
+                  )}
                 </div>
-                {post.description && (
+                <div style={{ padding: "8px 10px 12px" }}>
+                  <span style={pillStyle(post.category)}>{post.category}</span>
                   <div
-                    className="text-muted-foreground line-clamp-1"
-                    style={{ fontSize: 11, marginTop: 2 }}
+                    className="text-foreground line-clamp-2"
+                    style={{ fontSize: 13, fontWeight: 500, marginTop: 6, lineHeight: 1.4 }}
                   >
-                    {post.description}
+                    {post.title}
                   </div>
-                )}
-              </div>
-            </button>
-          ))}
+                </div>
+              </button>
+            ))}
+          </div>
 
           {/* Instagram follow banner */}
           <div
@@ -405,7 +460,7 @@ const MagazineDetail = ({ post, onBack }: { post: MagazinePost; onBack: () => vo
           />
         ) : (
           <div style={{ height: 220 }}>
-            <Fallback category={post.category} />
+            <PlaceholderCover />
           </div>
         )}
         <button
