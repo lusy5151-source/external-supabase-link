@@ -460,7 +460,7 @@ const MagazineDetail = ({ post, onBack }: { post: MagazinePost; onBack: () => vo
           />
         ) : (
           <div style={{ height: 220 }}>
-            <Fallback category={post.category} />
+            <PlaceholderCover />
           </div>
         )}
         <button
