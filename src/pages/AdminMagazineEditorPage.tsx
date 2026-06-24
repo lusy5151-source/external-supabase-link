@@ -570,4 +570,48 @@ const AdminMagazineEditorPage = () => {
   );
 };
 
+// Inline editor for the mountain_ref block — picker + preview card
+const MountainRefBlockEditor = ({
+  mountainId,
+  onChange,
+}: {
+  mountainId: number | null;
+  onChange: (id: number | null) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "8px 14px",
+          borderRadius: 20,
+          border: "0.5px solid #639922",
+          color: "#3B6D11",
+          fontSize: 13,
+          fontWeight: 600,
+          background: "transparent",
+          alignSelf: "flex-start",
+        }}
+      >
+        <MountainIcon style={{ width: 14, height: 14 }} />
+        {mountainId ? "산 변경" : "산 선택"}
+      </button>
+      {mountainId && <MountainRefCard mountainId={mountainId} />}
+      <MountainPickerModal
+        open={open}
+        onClose={() => setOpen(false)}
+        onSelect={(m) => onChange(m.id)}
+      />
+    </div>
+  );
+};
+
+export default AdminMagazineEditorPage;
+
+
 export default AdminMagazineEditorPage;
