@@ -83,6 +83,8 @@ const AdminMagazineEditorPage = () => {
         image_url: b.image_url,
         image_caption: b.image_caption,
         body_text: b.body_text,
+        body_html: b.body_html,
+        mountain_id: b.mountain_id ?? null,
       })));
       setLoading(false);
     })();
