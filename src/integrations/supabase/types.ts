@@ -1326,34 +1326,40 @@ export type Database = {
         Row: {
           block_order: number
           block_type: string
+          body_html: string | null
           body_text: string | null
           created_at: string | null
           heading_text: string | null
           id: string
           image_caption: string | null
           image_url: string | null
+          mountain_id: number | null
           post_id: string
         }
         Insert: {
           block_order: number
           block_type?: string
+          body_html?: string | null
           body_text?: string | null
           created_at?: string | null
           heading_text?: string | null
           id?: string
           image_caption?: string | null
           image_url?: string | null
+          mountain_id?: number | null
           post_id: string
         }
         Update: {
           block_order?: number
           block_type?: string
+          body_html?: string | null
           body_text?: string | null
           created_at?: string | null
           heading_text?: string | null
           id?: string
           image_caption?: string | null
           image_url?: string | null
+          mountain_id?: number | null
           post_id?: string
         }
         Relationships: [

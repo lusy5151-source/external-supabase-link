@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Plus, X, GripVertical, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Plus, X, GripVertical, Image as ImageIcon, Mountain as MountainIcon } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
+import RichTextEditor from "@/components/magazine/RichTextEditor";
+import MountainPickerModal from "@/components/magazine/MountainPickerModal";
+import MountainRefCard from "@/components/magazine/MountainRefCard";
 
 const CATEGORIES = ["등산 코스", "등산 안전", "장비", "계절 추천", "초보 가이드", "등산 가이드"];
 
-type BlockType = "heading" | "image_text" | "text_only" | "tip";
+type BlockType = "heading" | "image_text" | "text_only" | "tip" | "mountain_ref";
 
 interface Block {
   id?: string;
@@ -17,13 +20,16 @@ interface Block {
   image_url?: string | null;
   image_caption?: string | null;
   body_text?: string | null;
+  body_html?: string | null;
+  mountain_id?: number | null;
 }
 
 const BLOCK_LABELS: Record<BlockType, string> = {
   heading: "소제목",
   image_text: "사진 + 설명",
-  text_only: "본문",
+  text_only: "본문 (서식 가능)",
   tip: "팁 박스",
+  mountain_ref: "산 정보 카드",
 };
 
 const AdminMagazineEditorPage = () => {
@@ -77,6 +83,8 @@ const AdminMagazineEditorPage = () => {
         image_url: b.image_url,
         image_caption: b.image_caption,
         body_text: b.body_text,
+        body_html: b.body_html,
+        mountain_id: b.mountain_id ?? null,
       })));
       setLoading(false);
     })();
@@ -168,7 +176,9 @@ const AdminMagazineEditorPage = () => {
         image_url: b.image_url || null,
         image_caption: b.image_caption || null,
         body_text: b.body_text || null,
+        body_html: b.body_html || null,
         heading_text: b.heading_text || null,
+        mountain_id: b.mountain_id ?? null,
       }));
       if (blocksToInsert.length > 0) {
         const { error: bErr } = await (supabase as any)
@@ -395,38 +405,39 @@ const AdminMagazineEditorPage = () => {
                       placeholder="사진 설명 (선택)"
                       style={{ ...inputStyle, fontSize: 13 }}
                     />
-                    <textarea
-                      value={b.body_text || ""}
-                      onChange={(e) => updateBlock(i, { body_text: e.target.value })}
+                    <RichTextEditor
+                      value={b.body_html || (b.body_text ? `<p>${(b.body_text || "").replace(/\n/g, "<br/>")}</p>` : "")}
+                      onChange={(html) => updateBlock(i, { body_html: html, body_text: null })}
                       placeholder="사진 아래 본문 내용"
-                      rows={3}
-                      style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit" }}
+                      minHeight={120}
                     />
                   </div>
                 )}
 
                 {b.block_type === "text_only" && (
-                  <textarea
-                    value={b.body_text || ""}
-                    onChange={(e) => updateBlock(i, { body_text: e.target.value })}
+                  <RichTextEditor
+                    value={b.body_html || (b.body_text ? `<p>${(b.body_text || "").replace(/\n/g, "<br/>")}</p>` : "")}
+                    onChange={(html) => updateBlock(i, { body_html: html, body_text: null })}
                     placeholder="본문 내용을 입력하세요"
-                    rows={4}
-                    style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit" }}
+                    minHeight={180}
                   />
                 )}
 
                 {b.block_type === "tip" && (
-                  <textarea
-                    value={b.body_text || ""}
-                    onChange={(e) => updateBlock(i, { body_text: e.target.value })}
-                    placeholder="팁 내용을 입력하세요"
-                    rows={2}
-                    style={{
-                      ...inputStyle,
-                      background: "#EAF3DE",
-                      resize: "vertical",
-                      fontFamily: "inherit",
-                    }}
+                  <div style={{ background: "#EAF3DE", borderRadius: 8, padding: 6 }}>
+                    <RichTextEditor
+                      value={b.body_html || (b.body_text ? `<p>${(b.body_text || "").replace(/\n/g, "<br/>")}</p>` : "")}
+                      onChange={(html) => updateBlock(i, { body_html: html, body_text: null })}
+                      placeholder="팁 내용을 입력하세요"
+                      minHeight={80}
+                    />
+                  </div>
+                )}
+
+                {b.block_type === "mountain_ref" && (
+                  <MountainRefBlockEditor
+                    mountainId={b.mountain_id ?? null}
+                    onChange={(id) => updateBlock(i, { mountain_id: id })}
                   />
                 )}
               </div>
@@ -559,4 +570,46 @@ const AdminMagazineEditorPage = () => {
   );
 };
 
+// Inline editor for the mountain_ref block — picker + preview card
+const MountainRefBlockEditor = ({
+  mountainId,
+  onChange,
+}: {
+  mountainId: number | null;
+  onChange: (id: number | null) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "8px 14px",
+          borderRadius: 20,
+          border: "0.5px solid #639922",
+          color: "#3B6D11",
+          fontSize: 13,
+          fontWeight: 600,
+          background: "transparent",
+          alignSelf: "flex-start",
+        }}
+      >
+        <MountainIcon style={{ width: 14, height: 14 }} />
+        {mountainId ? "산 변경" : "산 선택"}
+      </button>
+      {mountainId && <MountainRefCard mountainId={mountainId} />}
+      <MountainPickerModal
+        open={open}
+        onClose={() => setOpen(false)}
+        onSelect={(m) => onChange(m.id)}
+      />
+    </div>
+  );
+};
+
 export default AdminMagazineEditorPage;
+

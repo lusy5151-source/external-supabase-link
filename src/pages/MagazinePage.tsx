@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import MountainMascot from "@/components/MountainMascot";
+import RenderMagazineHtml from "@/components/magazine/RenderMagazineHtml";
+import MountainRefCard from "@/components/magazine/MountainRefCard";
 
 interface MagazinePost {
   id: string;
@@ -427,6 +429,8 @@ interface ContentBlock {
   image_url: string | null;
   image_caption: string | null;
   body_text: string | null;
+  body_html: string | null;
+  mountain_id: number | null;
   block_order: number;
 }
 
@@ -524,91 +528,53 @@ const MagazineDetail = ({ post, onBack }: { post: MagazinePost; onBack: () => vo
                       <img
                         src={b.image_url}
                         alt={b.image_caption || ""}
-                        style={{
-                          width: "100%",
-                          borderRadius: 8,
-                          height: "auto",
-                          objectFit: "contain",
-                        }}
+                        style={{ width: "100%", borderRadius: 8, height: "auto", objectFit: "contain" }}
                       />
                     )}
                     {b.image_caption && (
-                      <p
-                        className="text-muted-foreground"
-                        style={{
-                          fontSize: 11,
-                          textAlign: "center",
-                          marginTop: 4,
-                        }}
-                      >
+                      <p className="text-muted-foreground" style={{ fontSize: 11, textAlign: "center", marginTop: 4 }}>
                         {b.image_caption}
                       </p>
                     )}
-                    {b.body_text && (
-                      <p
-                        className="text-muted-foreground"
-                        style={{
-                          fontSize: 13,
-                          lineHeight: 1.7,
-                          marginTop: 8,
-                          whiteSpace: "pre-wrap",
-                        }}
-                      >
-                        {b.body_text}
-                      </p>
+                    {(b.body_html || b.body_text) && (
+                      <div className="text-muted-foreground" style={{ fontSize: 13, lineHeight: 1.7, marginTop: 8 }}>
+                        {b.body_html ? (
+                          <RenderMagazineHtml html={b.body_html} />
+                        ) : (
+                          <p style={{ whiteSpace: "pre-wrap" }}>{b.body_text}</p>
+                        )}
+                      </div>
                     )}
                   </div>
                 );
               }
               if (b.block_type === "text_only") {
                 return (
-                  <p
-                    key={b.id}
-                    className="text-muted-foreground"
-                    style={{
-                      fontSize: 13,
-                      lineHeight: 1.75,
-                      margin: "8px 0",
-                      whiteSpace: "pre-wrap",
-                    }}
-                  >
-                    {b.body_text}
-                  </p>
+                  <div key={b.id} className="text-muted-foreground" style={{ fontSize: 13, lineHeight: 1.75, margin: "8px 0" }}>
+                    {b.body_html ? (
+                      <RenderMagazineHtml html={b.body_html} />
+                    ) : (
+                      <p style={{ whiteSpace: "pre-wrap" }}>{b.body_text}</p>
+                    )}
+                  </div>
                 );
               }
               if (b.block_type === "tip") {
                 return (
-                  <div
-                    key={b.id}
-                    style={{
-                      background: "#EAF3DE",
-                      borderRadius: 8,
-                      padding: "10px 12px",
-                      margin: "10px 0",
-                    }}
-                  >
-                    <p
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 500,
-                        color: "#27500A",
-                        marginBottom: 3,
-                      }}
-                    >
-                      팁
-                    </p>
-                    <p
-                      style={{
-                        fontSize: 12,
-                        color: "#3B6D11",
-                        lineHeight: 1.5,
-                        whiteSpace: "pre-wrap",
-                      }}
-                    >
-                      {b.body_text}
-                    </p>
+                  <div key={b.id} style={{ background: "#EAF3DE", borderRadius: 8, padding: "10px 12px", margin: "10px 0" }}>
+                    <p style={{ fontSize: 11, fontWeight: 500, color: "#27500A", marginBottom: 3 }}>팁</p>
+                    <div style={{ fontSize: 12, color: "#3B6D11", lineHeight: 1.5 }}>
+                      {b.body_html ? (
+                        <RenderMagazineHtml html={b.body_html} />
+                      ) : (
+                        <p style={{ whiteSpace: "pre-wrap" }}>{b.body_text}</p>
+                      )}
+                    </div>
                   </div>
                 );
+              }
+              if (b.block_type === "mountain_ref" && b.mountain_id) {
+                return <MountainRefCard key={b.id} mountainId={b.mountain_id} />;
               }
               return null;
             })}
