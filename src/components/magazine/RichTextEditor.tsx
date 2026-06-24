@@ -136,7 +136,11 @@ const RichTextEditor = ({ value, onChange, placeholder, minHeight = 160 }: Props
     if (!editor) return;
     const current = editor.getHTML();
     if (value && value !== current) {
-      editor.commands.setContent(value, { emitUpdate: false } as any);
+      try {
+        (editor.commands as any).setContent(value, false);
+      } catch {
+        editor.commands.setContent(value);
+      }
     }
   }, [value, editor]);
 
