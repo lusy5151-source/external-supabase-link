@@ -614,9 +614,14 @@ const AdminPage = () => {
           <CardTitle className="flex items-center gap-2 text-base">
             <BookOpen className="h-4 w-4 text-primary" /> 매거진 관리
           </CardTitle>
-          <Button size="sm" onClick={() => setMagDialog({ open: true, row: {} })}>
-            <Plus className="h-4 w-4" /> 추가
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={() => (window.location.href = "/admin/magazine")}>
+              <BookOpen className="h-4 w-4" /> 에디터 열기
+            </Button>
+            <Button size="sm" onClick={() => setMagDialog({ open: true, row: {} })}>
+              <Plus className="h-4 w-4" /> 추가
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
