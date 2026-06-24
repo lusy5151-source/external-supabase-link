@@ -427,6 +427,8 @@ interface ContentBlock {
   image_url: string | null;
   image_caption: string | null;
   body_text: string | null;
+  body_html: string | null;
+  mountain_id: number | null;
   block_order: number;
 }
 
