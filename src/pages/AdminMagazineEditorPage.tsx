@@ -613,5 +613,3 @@ const MountainRefBlockEditor = ({
 
 export default AdminMagazineEditorPage;
 
-
-export default AdminMagazineEditorPage;
