@@ -405,38 +405,39 @@ const AdminMagazineEditorPage = () => {
                       placeholder="사진 설명 (선택)"
                       style={{ ...inputStyle, fontSize: 13 }}
                     />
-                    <textarea
-                      value={b.body_text || ""}
-                      onChange={(e) => updateBlock(i, { body_text: e.target.value })}
+                    <RichTextEditor
+                      value={b.body_html || (b.body_text ? `<p>${(b.body_text || "").replace(/\n/g, "<br/>")}</p>` : "")}
+                      onChange={(html) => updateBlock(i, { body_html: html, body_text: null })}
                       placeholder="사진 아래 본문 내용"
-                      rows={3}
-                      style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit" }}
+                      minHeight={120}
                     />
                   </div>
                 )}
 
                 {b.block_type === "text_only" && (
-                  <textarea
-                    value={b.body_text || ""}
-                    onChange={(e) => updateBlock(i, { body_text: e.target.value })}
+                  <RichTextEditor
+                    value={b.body_html || (b.body_text ? `<p>${(b.body_text || "").replace(/\n/g, "<br/>")}</p>` : "")}
+                    onChange={(html) => updateBlock(i, { body_html: html, body_text: null })}
                     placeholder="본문 내용을 입력하세요"
-                    rows={4}
-                    style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit" }}
+                    minHeight={180}
                   />
                 )}
 
                 {b.block_type === "tip" && (
-                  <textarea
-                    value={b.body_text || ""}
-                    onChange={(e) => updateBlock(i, { body_text: e.target.value })}
-                    placeholder="팁 내용을 입력하세요"
-                    rows={2}
-                    style={{
-                      ...inputStyle,
-                      background: "#EAF3DE",
-                      resize: "vertical",
-                      fontFamily: "inherit",
-                    }}
+                  <div style={{ background: "#EAF3DE", borderRadius: 8, padding: 6 }}>
+                    <RichTextEditor
+                      value={b.body_html || (b.body_text ? `<p>${(b.body_text || "").replace(/\n/g, "<br/>")}</p>` : "")}
+                      onChange={(html) => updateBlock(i, { body_html: html, body_text: null })}
+                      placeholder="팁 내용을 입력하세요"
+                      minHeight={80}
+                    />
+                  </div>
+                )}
+
+                {b.block_type === "mountain_ref" && (
+                  <MountainRefBlockEditor
+                    mountainId={b.mountain_id ?? null}
+                    onChange={(id) => updateBlock(i, { mountain_id: id })}
                   />
                 )}
               </div>
