@@ -814,9 +814,23 @@ const AdminPage = () => {
               onChange={(e) => setMagDialog((s) => ({ ...s, row: { ...s.row, description: e.target.value } }))}
             />
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setMagDialog({ open: false, row: null })}>취소</Button>
-            <Button onClick={saveMagazine}>저장</Button>
+          <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
+            {magDialog.row?.id && (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  const id = magDialog.row?.id;
+                  setMagDialog({ open: false, row: null });
+                  if (id) window.location.href = `/admin/magazine/${id}/edit`;
+                }}
+              >
+                본문 자세히 편집 →
+              </Button>
+            )}
+            <div className="flex gap-2 ml-auto">
+              <Button variant="outline" onClick={() => setMagDialog({ open: false, row: null })}>취소</Button>
+              <Button onClick={saveMagazine}>저장</Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
