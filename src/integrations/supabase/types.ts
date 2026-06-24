@@ -1783,6 +1783,7 @@ export type Database = {
           address: string | null
           bac100_label: string | null
           bac100_rank: number | null
+          coordinate_verified: boolean | null
           created_at: string | null
           created_by: string | null
           description: string | null
@@ -1813,6 +1814,7 @@ export type Database = {
           popularity: number | null
           province: string | null
           region: string | null
+          skip_gps_check: boolean | null
           total_area_ha: number | null
           transport_car: string | null
           transport_public: string | null
@@ -1825,6 +1827,7 @@ export type Database = {
           address?: string | null
           bac100_label?: string | null
           bac100_rank?: number | null
+          coordinate_verified?: boolean | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
@@ -1855,6 +1858,7 @@ export type Database = {
           popularity?: number | null
           province?: string | null
           region?: string | null
+          skip_gps_check?: boolean | null
           total_area_ha?: number | null
           transport_car?: string | null
           transport_public?: string | null
@@ -1867,6 +1871,7 @@ export type Database = {
           address?: string | null
           bac100_label?: string | null
           bac100_rank?: number | null
+          coordinate_verified?: boolean | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
@@ -1897,6 +1902,7 @@ export type Database = {
           popularity?: number | null
           province?: string | null
           region?: string | null
+          skip_gps_check?: boolean | null
           total_area_ha?: number | null
           transport_car?: string | null
           transport_public?: string | null
@@ -3273,11 +3279,15 @@ export type Database = {
           closure_type: string | null
           created_at: string | null
           end_date: string | null
+          external_id: string | null
           forestry_code: string | null
           id: string
           is_active: boolean | null
+          last_synced_at: string | null
           mountain_id: number | null
+          raw: Json | null
           reason: string | null
+          severity: string | null
           source: string | null
           start_date: string | null
           trail_id: string | null
@@ -3287,11 +3297,15 @@ export type Database = {
           closure_type?: string | null
           created_at?: string | null
           end_date?: string | null
+          external_id?: string | null
           forestry_code?: string | null
           id?: string
           is_active?: boolean | null
+          last_synced_at?: string | null
           mountain_id?: number | null
+          raw?: Json | null
           reason?: string | null
+          severity?: string | null
           source?: string | null
           start_date?: string | null
           trail_id?: string | null
@@ -3301,11 +3315,15 @@ export type Database = {
           closure_type?: string | null
           created_at?: string | null
           end_date?: string | null
+          external_id?: string | null
           forestry_code?: string | null
           id?: string
           is_active?: boolean | null
+          last_synced_at?: string | null
           mountain_id?: number | null
+          raw?: Json | null
           reason?: string | null
+          severity?: string | null
           source?: string | null
           start_date?: string | null
           trail_id?: string | null
@@ -4253,6 +4271,51 @@ export type Database = {
         }
         Relationships: []
       }
+      wildfire_risk: {
+        Row: {
+          analysis_at: string | null
+          id: string
+          raw: Json | null
+          region_code: string | null
+          risk_grade: string | null
+          risk_index: number | null
+          risk_max: number | null
+          risk_min: number | null
+          sido: string | null
+          sigungu: string | null
+          updated_at: string | null
+          upper_code: string | null
+        }
+        Insert: {
+          analysis_at?: string | null
+          id?: string
+          raw?: Json | null
+          region_code?: string | null
+          risk_grade?: string | null
+          risk_index?: number | null
+          risk_max?: number | null
+          risk_min?: number | null
+          sido?: string | null
+          sigungu?: string | null
+          updated_at?: string | null
+          upper_code?: string | null
+        }
+        Update: {
+          analysis_at?: string | null
+          id?: string
+          raw?: Json | null
+          region_code?: string | null
+          risk_grade?: string | null
+          risk_index?: number | null
+          risk_max?: number | null
+          risk_min?: number | null
+          sido?: string | null
+          sigungu?: string | null
+          updated_at?: string | null
+          upper_code?: string | null
+        }
+        Relationships: []
+      }
       xp_log: {
         Row: {
           created_at: string | null
@@ -4304,6 +4367,7 @@ export type Database = {
         Row: {
           bac100_label: string | null
           bac100_rank: number | null
+          coordinate_verified: boolean | null
           created_at: string | null
           difficulty: string | null
           height: number | null
@@ -4321,10 +4385,12 @@ export type Database = {
           popularity: number | null
           province: string | null
           region: string | null
+          skip_gps_check: boolean | null
         }
         Insert: {
           bac100_label?: string | null
           bac100_rank?: number | null
+          coordinate_verified?: boolean | null
           created_at?: string | null
           difficulty?: string | null
           height?: number | null
@@ -4342,10 +4408,12 @@ export type Database = {
           popularity?: number | null
           province?: string | null
           region?: string | null
+          skip_gps_check?: boolean | null
         }
         Update: {
           bac100_label?: string | null
           bac100_rank?: number | null
+          coordinate_verified?: boolean | null
           created_at?: string | null
           difficulty?: string | null
           height?: number | null
@@ -4363,6 +4431,7 @@ export type Database = {
           popularity?: number | null
           province?: string | null
           region?: string | null
+          skip_gps_check?: boolean | null
         }
         Relationships: []
       }
