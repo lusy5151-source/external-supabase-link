@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import MountainMascot from "@/components/MountainMascot";
+import RenderMagazineHtml from "@/components/magazine/RenderMagazineHtml";
+import MountainRefCard from "@/components/magazine/MountainRefCard";
 
 interface MagazinePost {
   id: string;
