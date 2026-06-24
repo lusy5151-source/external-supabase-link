@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Plus, X, GripVertical, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Plus, X, GripVertical, Image as ImageIcon, Mountain as MountainIcon } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
+import RichTextEditor from "@/components/magazine/RichTextEditor";
+import MountainPickerModal from "@/components/magazine/MountainPickerModal";
+import MountainRefCard from "@/components/magazine/MountainRefCard";
 
 const CATEGORIES = ["등산 코스", "등산 안전", "장비", "계절 추천", "초보 가이드", "등산 가이드"];
 
-type BlockType = "heading" | "image_text" | "text_only" | "tip";
+type BlockType = "heading" | "image_text" | "text_only" | "tip" | "mountain_ref";
 
 interface Block {
   id?: string;
@@ -17,13 +20,16 @@ interface Block {
   image_url?: string | null;
   image_caption?: string | null;
   body_text?: string | null;
+  body_html?: string | null;
+  mountain_id?: number | null;
 }
 
 const BLOCK_LABELS: Record<BlockType, string> = {
   heading: "소제목",
   image_text: "사진 + 설명",
-  text_only: "본문",
+  text_only: "본문 (서식 가능)",
   tip: "팁 박스",
+  mountain_ref: "산 정보 카드",
 };
 
 const AdminMagazineEditorPage = () => {
