@@ -176,7 +176,9 @@ const AdminMagazineEditorPage = () => {
         image_url: b.image_url || null,
         image_caption: b.image_caption || null,
         body_text: b.body_text || null,
+        body_html: b.body_html || null,
         heading_text: b.heading_text || null,
+        mountain_id: b.mountain_id ?? null,
       }));
       if (blocksToInsert.length > 0) {
         const { error: bErr } = await (supabase as any)
