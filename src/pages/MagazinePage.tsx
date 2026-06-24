@@ -18,20 +18,67 @@ interface MagazinePost {
   created_at: string;
 }
 
+const MAGAZINE_CACHE_KEY = "wandeung_magazine_posts_v2";
+const MAGAZINE_BLOCK_CACHE_PREFIX = "wandeung_magazine_blocks_v1:";
+const MAGAZINE_CACHE_TTL = 5 * 60 * 1000;
+const MAGAZINE_POST_COLUMNS =
+  "id,title,category,cover_image_url,description,content_body,is_featured,is_published,created_at";
+const MAGAZINE_BLOCK_COLUMNS =
+  "id,block_type,heading_text,image_url,image_caption,body_text,body_html,mountain_id,block_order";
+
+function readMagazineCache(): MagazinePost[] | null {
+  try {
+    const raw = sessionStorage.getItem(MAGAZINE_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { savedAt: number; posts: MagazinePost[] };
+    if (!parsed.savedAt || Date.now() - parsed.savedAt > MAGAZINE_CACHE_TTL) return null;
+    return parsed.posts || [];
+  } catch {
+    return null;
+  }
+}
+
+function writeMagazineCache(posts: MagazinePost[]) {
+  try {
+    sessionStorage.setItem(MAGAZINE_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), posts }));
+  } catch {}
+}
+
+function readBlockCache(postId: string): ContentBlock[] | null {
+  try {
+    const raw = sessionStorage.getItem(`${MAGAZINE_BLOCK_CACHE_PREFIX}${postId}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { savedAt: number; blocks: ContentBlock[] };
+    if (!parsed.savedAt || Date.now() - parsed.savedAt > MAGAZINE_CACHE_TTL) return null;
+    return parsed.blocks || [];
+  } catch {
+    return null;
+  }
+}
+
+function writeBlockCache(postId: string, blocks: ContentBlock[]) {
+  try {
+    sessionStorage.setItem(
+      `${MAGAZINE_BLOCK_CACHE_PREFIX}${postId}`,
+      JSON.stringify({ savedAt: Date.now(), blocks }),
+    );
+  } catch {}
+}
+
 const CATEGORY_PILL: Record<string, { bg: string; fg: string }> = {
-  "등산 코스": { bg: "#EAF3DE", fg: "#3B6D11" },
-  "등산 안전": { bg: "#FBE6DD", fg: "#B5421A" },
-  "계절 추천": { bg: "#FFF1D6", fg: "#8A5A12" },
-  "등산 가이드": { bg: "#DEEAF5", fg: "#1E4775" },
+  "등산 코스": { bg: "#F8FAED", fg: "#2F403A" },
+  "등산 안전": { bg: "#FFF0F0", fg: "#FF696C" },
+  "계절 추천": { bg: "#F8FAED", fg: "#2F403A" },
+  "등산 가이드": { bg: "#C6DBF0", fg: "#013F92" },
 };
 
-const WANDEUNG_GREEN = "#8fb93f";
+const WANDEUNG_GREEN = "#C7D66D";
 
 const pillStyle = (category: string, solid = false): React.CSSProperties => {
-  const c = CATEGORY_PILL[category] || { bg: "#EAF3DE", fg: "#3B6D11" };
+  const c = CATEGORY_PILL[category] || { bg: "#F8FAED", fg: "#2F403A" };
   return {
     background: solid ? WANDEUNG_GREEN : c.bg,
-    color: solid ? "#ffffff" : c.fg,
+    color: solid ? "#2F403A" : c.fg,
     fontSize: 11,
     fontWeight: 500,
     borderRadius: 999,
@@ -46,7 +93,7 @@ const PlaceholderCover = () => (
     className="w-full h-full flex items-center justify-center"
     style={{
       background:
-        "linear-gradient(135deg, #d8e3b8 0%, #b9cf7e 50%, #8fb93f 100%)",
+        "linear-gradient(135deg, #F8FAED 0%, #C6DBF0 50%, #C7D66D 100%)",
     }}
   >
     <MountainMascot size={56} />
@@ -54,22 +101,31 @@ const PlaceholderCover = () => (
 );
 
 const MagazinePage = () => {
-  const [posts, setPosts] = useState<MagazinePost[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cachedPosts = useMemo(() => readMagazineCache(), []);
+  const [posts, setPosts] = useState<MagazinePost[]>(cachedPosts || []);
+  const [loading, setLoading] = useState(!cachedPosts);
   const [openPost, setOpenPost] = useState<MagazinePost | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("전체");
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       const { data } = await (supabase as any)
         .from("magazine_posts")
-        .select("*")
+        .select(MAGAZINE_POST_COLUMNS)
         .eq("is_published", true)
         .order("is_featured", { ascending: false })
-        .order("created_at", { ascending: false });
-      setPosts((data as MagazinePost[]) || []);
+        .order("created_at", { ascending: false })
+        .limit(30);
+      if (cancelled) return;
+      const nextPosts = (data as MagazinePost[]) || [];
+      setPosts(nextPosts);
+      writeMagazineCache(nextPosts);
       setLoading(false);
     })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const featured = useMemo(() => posts.find((p) => p.is_featured) || posts[0], [posts]);
@@ -92,9 +148,9 @@ const MagazinePage = () => {
   }
 
   return (
-    <div className="pb-24 min-h-screen" style={{ background: "#f7f6e4" }}>
+    <div className="pb-24 min-h-screen" style={{ background: "#F8FAED" }}>
       {/* Top bar */}
-      <div className="flex items-center px-3 py-3 relative" style={{ background: "#f7f6e4" }}>
+      <div className="flex items-center px-3 py-3 relative" style={{ background: "#F8FAED" }}>
         <Link to="/" className="rounded-xl p-2 hover:bg-accent transition-colors">
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </Link>
@@ -135,7 +191,7 @@ const MagazinePage = () => {
                 borderRadius: 16,
                 width: "calc(100% - 32px)",
                 aspectRatio: "16 / 10",
-                background: "#e8e6cf",
+                background: "#F8FAED",
               }}
             >
               {featured.cover_image_url ? (
@@ -144,6 +200,8 @@ const MagazinePage = () => {
                   alt={featured.title}
                   className="absolute inset-0 w-full h-full object-cover"
                   loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
                 />
               ) : (
                 <div className="absolute inset-0">
@@ -213,7 +271,7 @@ const MagazinePage = () => {
                   className="flex-shrink-0 whitespace-nowrap"
                   style={{
                     background: active ? WANDEUNG_GREEN : "#ffffff",
-                    color: active ? "white" : "hsl(var(--muted-foreground))",
+                    color: active ? "#2F403A" : "hsl(var(--muted-foreground))",
                     borderRadius: 20,
                     fontSize: 12,
                     fontWeight: 500,
@@ -252,7 +310,7 @@ const MagazinePage = () => {
                         width: "100%",
                         aspectRatio: "16 / 9",
                         overflow: "hidden",
-                        background: "#e8e6cf",
+                        background: "#F8FAED",
                       }}
                     >
                       {post.cover_image_url ? (
@@ -261,6 +319,7 @@ const MagazinePage = () => {
                           alt={post.title}
                           className="w-full h-full object-cover"
                           loading="lazy"
+                          decoding="async"
                         />
                       ) : (
                         <PlaceholderCover />
@@ -308,7 +367,7 @@ const MagazinePage = () => {
                     width: "100%",
                     aspectRatio: "16 / 9",
                     overflow: "hidden",
-                    background: "#e8e6cf",
+                    background: "#F8FAED",
                   }}
                 >
                   {post.cover_image_url ? (
@@ -317,6 +376,7 @@ const MagazinePage = () => {
                       alt={post.title}
                       className="w-full h-full object-cover"
                       loading="lazy"
+                      decoding="async"
                     />
                   ) : (
                     <PlaceholderCover />
@@ -435,19 +495,27 @@ interface ContentBlock {
 }
 
 const MagazineDetail = ({ post, onBack }: { post: MagazinePost; onBack: () => void }) => {
-  const [blocks, setBlocks] = useState<ContentBlock[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const cachedBlocks = useMemo(() => readBlockCache(post.id), [post.id]);
+  const [blocks, setBlocks] = useState<ContentBlock[]>(cachedBlocks || []);
+  const [loaded, setLoaded] = useState(!!cachedBlocks);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       const { data } = await (supabase as any)
         .from("magazine_content_blocks")
-        .select("*")
+        .select(MAGAZINE_BLOCK_COLUMNS)
         .eq("post_id", post.id)
         .order("block_order");
-      setBlocks((data as ContentBlock[]) || []);
+      if (cancelled) return;
+      const nextBlocks = (data as ContentBlock[]) || [];
+      setBlocks(nextBlocks);
+      writeBlockCache(post.id, nextBlocks);
       setLoaded(true);
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [post.id]);
 
   const fallbackBody = post.content_body || post.description || "";
@@ -461,6 +529,9 @@ const MagazineDetail = ({ post, onBack }: { post: MagazinePost; onBack: () => vo
             alt={post.title}
             className="w-full object-cover"
             style={{ height: 220 }}
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
           />
         ) : (
           <div style={{ height: 220 }}>
@@ -478,8 +549,8 @@ const MagazineDetail = ({ post, onBack }: { post: MagazinePost; onBack: () => vo
       <div style={{ padding: 16 }}>
         <span
           style={{
-            background: "#EAF3DE",
-            color: "#3B6D11",
+            background: "#F8FAED",
+            color: "#2F403A",
             borderRadius: 20,
             fontSize: 11,
             padding: "3px 10px",
@@ -512,7 +583,7 @@ const MagazineDetail = ({ post, onBack }: { post: MagazinePost; onBack: () => vo
                     style={{
                       fontSize: 15,
                       fontWeight: 500,
-                      borderLeft: "3px solid #639922",
+                      borderLeft: "3px solid #2F403A",
                       paddingLeft: 10,
                       margin: "16px 0 8px",
                     }}
@@ -528,6 +599,8 @@ const MagazineDetail = ({ post, onBack }: { post: MagazinePost; onBack: () => vo
                       <img
                         src={b.image_url}
                         alt={b.image_caption || ""}
+                        loading="lazy"
+                        decoding="async"
                         style={{ width: "100%", borderRadius: 8, height: "auto", objectFit: "contain" }}
                       />
                     )}
@@ -561,9 +634,9 @@ const MagazineDetail = ({ post, onBack }: { post: MagazinePost; onBack: () => vo
               }
               if (b.block_type === "tip") {
                 return (
-                  <div key={b.id} style={{ background: "#EAF3DE", borderRadius: 8, padding: "10px 12px", margin: "10px 0" }}>
-                    <p style={{ fontSize: 11, fontWeight: 500, color: "#27500A", marginBottom: 3 }}>팁</p>
-                    <div style={{ fontSize: 12, color: "#3B6D11", lineHeight: 1.5 }}>
+                  <div key={b.id} style={{ background: "#F8FAED", borderRadius: 8, padding: "10px 12px", margin: "10px 0" }}>
+                    <p style={{ fontSize: 11, fontWeight: 500, color: "#2F403A", marginBottom: 3 }}>팁</p>
+                    <div style={{ fontSize: 12, color: "#2F403A", lineHeight: 1.5 }}>
                       {b.body_html ? (
                         <RenderMagazineHtml html={b.body_html} />
                       ) : (

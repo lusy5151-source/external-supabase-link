@@ -6,9 +6,11 @@ import { useUnreadChat } from "@/contexts/UnreadChatContext";
 import { useNotifications } from "@/hooks/useNotifications";
 import NotificationCenter from "@/components/NotificationCenter";
 import MountainMascot from "@/components/MountainMascot";
-import TutorialOverlay from "@/components/tutorial/TutorialOverlay";
-import PushPermissionPrompt from "@/components/PushPermissionPrompt";
 import { LogIn } from "lucide-react";
+import { lazy, Suspense } from "react";
+
+const TutorialOverlay = lazy(() => import("@/components/tutorial/TutorialOverlay"));
+const PushPermissionPrompt = lazy(() => import("@/components/PushPermissionPrompt"));
 
 const navItems = [
   { to: "/", label: "홈", icon: Home },
@@ -27,9 +29,13 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { unreadCount: notifUnread } = useNotifications();
 
   const restrictedTabs = new Set(["/records", "/my"]);
-  const tabBarSafeBottom = "env(safe-area-inset-bottom, 16px)";
-  const tabBarReservedSpace = "calc(76px + env(safe-area-inset-bottom, 16px))";
-  const safeAreaTop = "env(safe-area-inset-top, 0px)";
+  const headerSafeTop = "env(safe-area-inset-top, 0px)";
+  const headerContentHeight = "56px";
+  const headerHeight = "calc(56px + env(safe-area-inset-top, 0px))";
+  const mainTopPadding = "calc(56px + env(safe-area-inset-top, 0px) + 28px)";
+  const tabBarSafeBottom = "max(calc(env(safe-area-inset-bottom, 0px) - 14px), 8px)";
+  const tabBarHeight = "calc(62px + max(calc(env(safe-area-inset-bottom, 0px) - 14px), 8px))";
+  const tabBarReservedSpace = "calc(84px + max(calc(env(safe-area-inset-bottom, 0px) - 14px), 8px))";
 
   const handleNavClick = (e: React.MouseEvent, to: string) => {
     if (!user && isGuest && restrictedTabs.has(to)) {
@@ -46,12 +52,34 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: "linear-gradient(180deg, hsl(205, 50%, 88%) 0%, hsl(var(--background)) 30%)" }}>
+    <div
+      className="min-h-screen overflow-x-hidden"
+      style={{
+        minHeight: "100dvh",
+        background: "linear-gradient(180deg, hsl(205, 50%, 88%) 0%, hsl(var(--background)) 30%)",
+      }}
+    >
       {/* Top header */}
-      {/* 상단 Safe Area 배경 채우기 */}
-      <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: safeAreaTop, background: "hsl(var(--card))", zIndex: 51 }} />
-      <header className="sticky z-50 bg-card backdrop-blur-xl" style={{ top: 0, paddingTop: safeAreaTop, zIndex: 50 }}>
-        <div className="container mx-auto flex h-14 items-center justify-between px-5">
+      <header
+        className="fixed inset-x-0 top-0 z-50 bg-card backdrop-blur-xl"
+        style={{
+          height: headerHeight,
+          paddingTop: headerSafeTop,
+          transform: "translate3d(0, 0, 0)",
+          WebkitTransform: "translate3d(0, 0, 0)",
+          backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden",
+          contain: "layout paint",
+        }}
+      >
+        <div
+          className="container mx-auto flex items-center justify-between px-5"
+          style={{
+            height: headerContentHeight,
+            minHeight: headerContentHeight,
+            maxHeight: headerContentHeight,
+          }}
+        >
           <Link to="/" className="flex items-center gap-2">
             <MountainMascot size={32} />
             <span className="text-base font-bold text-foreground tracking-tight">완등</span>
@@ -84,20 +112,30 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       <main
         className="container mx-auto px-5 py-7"
-        style={{ paddingBottom: tabBarReservedSpace }}
+        style={{
+          minHeight: "100dvh",
+          paddingTop: mainTopPadding,
+          paddingBottom: tabBarReservedSpace,
+        }}
       >
         {children}
       </main>
-      <TutorialOverlay />
-      <PushPermissionPrompt />
+      <Suspense fallback={null}>
+        <TutorialOverlay />
+        <PushPermissionPrompt />
+      </Suspense>
 
       {/* Bottom Navigation Bar */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50"
+        className="wandeung-bottom-nav z-50"
         style={{
+          height: tabBarHeight,
           background: "hsl(var(--color-background-primary))",
           borderTop: "0.5px solid hsl(var(--color-border-tertiary) / 0.12)",
           paddingBottom: tabBarSafeBottom,
+          willChange: "transform",
+          isolation: "isolate",
+          boxShadow: "0 -1px 0 rgba(47,64,58,0.04)",
         }}
       >
         {/* FAB - center, lifted above bar */}
@@ -129,7 +167,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </span>
         </Link>
 
-        <div className="container mx-auto flex items-center justify-around px-2" style={{ paddingTop: 6, paddingBottom: 4 }}>
+        <div className="container mx-auto flex items-center justify-around px-2" style={{ height: 60, paddingTop: 4, paddingBottom: 2 }}>
           {navItems.map((item, idx) => {
             if (!item) {
               return <div key="fab-placeholder" className="flex-shrink-0" style={{ width: 44 }} />;

@@ -1,7 +1,8 @@
-import { useState, useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { awardXp } from "@/lib/xp";
+import { sendServerPush } from "@/lib/serverPush";
 
 export interface HikingJournal {
   id: string;
@@ -35,6 +36,12 @@ export interface JournalComment {
   content: string;
   created_at: string;
   profile?: { nickname: string | null; avatar_url: string | null };
+}
+
+export interface JournalLiker {
+  user_id: string;
+  nickname: string | null;
+  avatar_url: string | null;
 }
 
 export function useHikingJournals() {
@@ -103,12 +110,37 @@ export function useHikingJournals() {
     const profile = profileData
       ? { nickname: (profileData as any).nickname, avatar_url: (profileData as any).avatar_url }
       : undefined;
-    return ((data as any[]) || []).map((j) => ({ ...j, profile })) as HikingJournal[];
+    const journals = (data as any[]) || [];
+    if (journals.length === 0) return [];
+
+    const journalIds = journals.map((j) => j.id);
+    const [{ data: likes }, { data: comments }] = await Promise.all([
+      supabase.from("journal_likes").select("journal_id, user_id").in("journal_id", journalIds),
+      supabase.from("journal_comments").select("journal_id").in("journal_id", journalIds),
+    ]);
+    const likeCounts = new Map<string, number>();
+    const userLikes = new Set<string>();
+    (likes || []).forEach((l: any) => {
+      likeCounts.set(l.journal_id, (likeCounts.get(l.journal_id) || 0) + 1);
+      if (l.user_id === user.id) userLikes.add(l.journal_id);
+    });
+    const commentCounts = new Map<string, number>();
+    (comments || []).forEach((c: any) => {
+      commentCounts.set(c.journal_id, (commentCounts.get(c.journal_id) || 0) + 1);
+    });
+
+    return journals.map((j) => ({
+      ...j,
+      profile,
+      like_count: likeCounts.get(j.id) || 0,
+      comment_count: commentCounts.get(j.id) || 0,
+      is_liked: userLikes.has(j.id),
+    })) as HikingJournal[];
   }, [user]);
 
-  const fetchFeed = useCallback(async (publicOnly: boolean = false): Promise<HikingJournal[]> => {
+  const fetchFeed = useCallback(async (publicOnly: boolean = false, limit = 20): Promise<HikingJournal[]> => {
     if (!user) return [];
-    // Slim column selection — exclude heavy/unused fields. Limit to most-recent 20.
+    // Slim column selection — exclude heavy/unused fields.
     let query = supabase
       .from("hiking_journals")
       .select(
@@ -116,7 +148,7 @@ export function useHikingJournals() {
       )
       .neq("user_id", user.id)
       .order("created_at", { ascending: false })
-      .limit(20);
+      .limit(limit);
 
     if (publicOnly) {
       query = query.eq("visibility", "public");
@@ -125,20 +157,23 @@ export function useHikingJournals() {
     const { data: journals } = await query;
     if (!journals || journals.length === 0) return [];
 
-    // Get profiles
     const userIds = [...new Set((journals as any[]).map((j) => j.user_id))];
-    const { data: profiles } = await supabase
-      .from("public_profiles")
-      .select("user_id, nickname, avatar_url")
-      .in("user_id", userIds);
-    const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
-
-    // Get like counts
     const journalIds = (journals as any[]).map((j) => j.id);
-    const { data: likes } = await supabase
-      .from("journal_likes")
-      .select("journal_id, user_id")
-      .in("journal_id", journalIds);
+    const [{ data: profiles }, { data: likes }, { data: comments }] = await Promise.all([
+      supabase
+        .from("public_profiles")
+        .select("user_id, nickname, avatar_url")
+        .in("user_id", userIds),
+      supabase
+        .from("journal_likes")
+        .select("journal_id, user_id")
+        .in("journal_id", journalIds),
+      supabase
+        .from("journal_comments")
+        .select("journal_id")
+        .in("journal_id", journalIds),
+    ]);
+    const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
 
     const likeCounts = new Map<string, number>();
     const userLikes = new Set<string>();
@@ -146,12 +181,6 @@ export function useHikingJournals() {
       likeCounts.set(l.journal_id, (likeCounts.get(l.journal_id) || 0) + 1);
       if (l.user_id === user.id) userLikes.add(l.journal_id);
     });
-
-    // Get comment counts
-    const { data: comments } = await supabase
-      .from("journal_comments")
-      .select("journal_id")
-      .in("journal_id", journalIds);
 
     const commentCounts = new Map<string, number>();
     (comments || []).forEach((c: any) => {
@@ -209,8 +238,6 @@ export function useHikingJournals() {
       tagged_friends: journal.tagged_friends || null,
     };
 
-    console.log("Final insert payload:", insertPayload);
-
     const { data, error } = await supabase
       .from("hiking_journals")
       .insert(insertPayload as any)
@@ -252,14 +279,14 @@ export function useHikingJournals() {
           const { data: userChallenges } = await supabase
             .from("user_challenges")
             .select("*, challenges(*)")
-            .eq("user_id", user.id)
+            .eq("user_id", authUser.id)
             .eq("completed", false);
 
           if (userChallenges && userChallenges.length > 0) {
             const { data: allJournals } = await supabase
               .from("hiking_journals")
               .select("*")
-              .eq("user_id", user.id);
+              .eq("user_id", authUser.id);
 
             if (allJournals) {
               const now = new Date();
@@ -340,7 +367,7 @@ export function useHikingJournals() {
     if (!user) return { error: { message: "Not authenticated" } };
     const { error } = await supabase
       .from("hiking_journals")
-      .update(updates as any)
+      .update({ ...updates, updated_at: new Date().toISOString() } as any)
       .eq("id", id);
     if (error) {
       console.error("Failed to update journal:", error);
@@ -360,18 +387,61 @@ export function useHikingJournals() {
   };
 
   const toggleLike = async (journalId: string, isLiked: boolean) => {
-    if (!user) return;
+    if (!user) return { error: { message: "Not authenticated" } };
     if (isLiked) {
-      await supabase
+      const { error } = await supabase
         .from("journal_likes")
         .delete()
         .eq("journal_id", journalId)
         .eq("user_id", user.id);
+      return { error };
     } else {
-      await supabase
+      const { error } = await supabase
         .from("journal_likes")
         .insert({ journal_id: journalId, user_id: user.id } as any);
+      if (!error) {
+        const [{ data: journal }, { data: profile }] = await Promise.all([
+          supabase.from("hiking_journals").select("user_id").eq("id", journalId).maybeSingle(),
+          supabase.from("public_profiles").select("nickname").eq("user_id", user.id).maybeSingle(),
+        ]);
+        const ownerId = (journal as any)?.user_id;
+        if (ownerId && ownerId !== user.id) {
+          void sendServerPush({
+            userId: ownerId,
+            title: "등산일지에 좋아요가 달렸어요",
+            body: `${(profile as any)?.nickname || "누군가"}님이 내 일지를 좋아해요.`,
+            data: { route: `/journals/${journalId}`, url: `/journals/${journalId}` },
+          });
+        }
+      }
+      return { error };
     }
+  };
+
+  const fetchLikers = async (journalId: string): Promise<JournalLiker[]> => {
+    const { data: likes } = await supabase
+      .from("journal_likes")
+      .select("user_id")
+      .eq("journal_id", journalId)
+      .order("created_at", { ascending: false });
+
+    if (!likes || likes.length === 0) return [];
+
+    const userIds = [...new Set((likes as any[]).map((l) => l.user_id))];
+    const { data: profiles } = await supabase
+      .from("public_profiles")
+      .select("user_id, nickname, avatar_url")
+      .in("user_id", userIds);
+    const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+
+    return (likes as any[]).map((like) => {
+      const profile = profileMap.get(like.user_id);
+      return {
+        user_id: like.user_id,
+        nickname: profile?.nickname || null,
+        avatar_url: profile?.avatar_url || null,
+      };
+    });
   };
 
   const fetchComments = async (journalId: string): Promise<JournalComment[]> => {
@@ -403,24 +473,62 @@ export function useHikingJournals() {
       .insert({ journal_id: journalId, user_id: user.id, content } as any)
       .select()
       .single();
-    return { data, error };
+    if (error || !data) return { data, error };
+    const { data: profile } = await supabase
+      .from("public_profiles")
+      .select("user_id, nickname, avatar_url")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const { data: journal } = await supabase
+      .from("hiking_journals")
+      .select("user_id")
+      .eq("id", journalId)
+      .maybeSingle();
+    const ownerId = (journal as any)?.user_id;
+    if (ownerId && ownerId !== user.id) {
+      void sendServerPush({
+        userId: ownerId,
+        title: "등산일지에 댓글이 달렸어요",
+        body: `${(profile as any)?.nickname || "누군가"}: ${content.length > 40 ? `${content.slice(0, 40)}...` : content}`,
+        data: { route: `/journals/${journalId}`, url: `/journals/${journalId}` },
+      });
+    }
+    return {
+      data: {
+        ...(data as any),
+        profile: profile
+          ? { nickname: (profile as any).nickname, avatar_url: (profile as any).avatar_url }
+          : null,
+      } as JournalComment,
+      error,
+    };
   };
 
   const deleteComment = async (commentId: string) => {
-    if (!user) return;
-    await supabase.from("journal_comments").delete().eq("id", commentId);
+    if (!user) return { error: { message: "Not authenticated" } };
+    const { error } = await supabase.from("journal_comments").delete().eq("id", commentId);
+    return { error };
   };
 
   const uploadPhoto = async (file: File): Promise<string | null> => {
     if (!user) return null;
-    const { compressImage } = await import("@/lib/imageUpload");
-    const compressed = await compressImage(file, "general");
+    const compressed =
+      file.type === "image/jpeg" && file.size <= 2.5 * 1024 * 1024
+        ? file
+        : await (await import("@/lib/imageUpload")).compressImage(file, "general");
     if (!compressed) return null;
-    const path = `${user.id}/${Date.now()}.jpg`;
+    const safeId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const path = `${user.id}/${safeId}.jpg`;
     const { error } = await supabase.storage
       .from("journal-photos")
-      .upload(path, compressed, { upsert: true, contentType: "image/jpeg" });
-    if (error) return null;
+      .upload(path, compressed, { contentType: "image/jpeg" });
+    if (error) {
+      console.error("Journal photo upload failed:", error);
+      return null;
+    }
     const { data: { publicUrl } } = supabase.storage
       .from("journal-photos")
       .getPublicUrl(path);
@@ -435,6 +543,7 @@ export function useHikingJournals() {
     updateJournal,
     deleteJournal,
     toggleLike,
+    fetchLikers,
     fetchComments,
     addComment,
     deleteComment,

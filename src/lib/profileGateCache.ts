@@ -4,38 +4,22 @@ export type ProfileGateData = {
   character_selected_at: string | null;
 };
 
-export type ProfileGateCacheValue = ProfileGateData | "missing";
+const PROFILE_GATE_CACHE_TTL = 24 * 60 * 60 * 1000;
 
-const profileGateCache = new Map<string, ProfileGateCacheValue>();
-
-export function getCachedProfileGate(userId: string) {
-  return profileGateCache.get(userId);
+export function readProfileGateCache(userId: string): ProfileGateData | "missing" | null {
+  try {
+    const raw = localStorage.getItem(`wandeung_profile_gate:${userId}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { savedAt: number; value: ProfileGateData | "missing" };
+    if (!parsed.savedAt || Date.now() - parsed.savedAt > PROFILE_GATE_CACHE_TTL) return null;
+    return parsed.value;
+  } catch {
+    return null;
+  }
 }
 
-export function setCachedProfileGate(userId: string, value: ProfileGateCacheValue) {
-  profileGateCache.set(userId, value);
-}
-
-export function markProfileGateOnboardingComplete(userId: string) {
-  const previous = profileGateCache.get(userId);
-  const base: ProfileGateData =
-    previous && previous !== "missing"
-      ? previous
-      : { is_onboarded: true, character_id: null, character_selected_at: null };
-
-  profileGateCache.set(userId, { ...base, is_onboarded: true });
-}
-
-export function markProfileGateCharacterComplete(userId: string) {
-  const previous = profileGateCache.get(userId);
-  const base: ProfileGateData =
-    previous && previous !== "missing"
-      ? previous
-      : { is_onboarded: true, character_id: null, character_selected_at: null };
-
-  profileGateCache.set(userId, {
-    ...base,
-    character_id: base.character_id ?? "selected",
-    character_selected_at: new Date().toISOString(),
-  });
+export function writeProfileGateCache(userId: string, value: ProfileGateData | "missing") {
+  try {
+    localStorage.setItem(`wandeung_profile_gate:${userId}`, JSON.stringify({ savedAt: Date.now(), value }));
+  } catch {}
 }

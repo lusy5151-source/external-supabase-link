@@ -115,6 +115,7 @@ export function TrailDetailMap({
   const [mapReady, setMapReady] = useState(false);
   const sdkReady = useNaverMaps();
   const [route, setRoute] = useState<PeakRoute | null>(null);
+  const [mapUnavailable, setMapUnavailable] = useState(false);
 
   // Fallback geometry path as [lat,lng]
   const geomPath = useMemo<Array<[number, number]>>(() => {
@@ -131,31 +132,38 @@ export function TrailDetailMap({
     if (!mountainName) return;
     let cancelled = false;
     (async () => {
-      const { data, error } = await (supabase as any)
-        .from("hiking_center_peaks")
-        .select("summit_name, summit_lat, summit_lng, start_lat, start_lng, end_lat, end_lng, route_coordinates, summit_elevation_m, kakao_nearby_places")
-        .eq("peak_name", mountainName);
-      if (cancelled) return;
-      if (error || !Array.isArray(data) || data.length === 0) {
-        setRoute(null);
-        return;
-      }
-      // Pick row whose start is closest to geometry start; else first
-      let pick: any = data[0];
-      const geomStart = geomPath[0];
-      if (geomStart) {
-        let bestD = Infinity;
-        data.forEach((r: any) => {
-          if (typeof r?.start_lat === "number" && typeof r?.start_lng === "number") {
-            const d = distSq(
-              { lat: geomStart[0], lng: geomStart[1] },
-              { lat: r.start_lat, lng: r.start_lng }
-            );
-            if (d < bestD) { bestD = d; pick = r; }
+      try {
+        const { data, error } = await (supabase as any)
+          .from("hiking_center_peaks")
+          .select("summit_name, summit_lat, summit_lng, start_lat, start_lng, end_lat, end_lng, route_coordinates, summit_elevation_m, kakao_nearby_places")
+          .eq("peak_name", mountainName);
+        if (cancelled) return;
+        if (error || !Array.isArray(data) || data.length === 0) {
+          setRoute(null);
+          return;
+        }
+        // Pick row whose start is closest to geometry start; else first
+        let pick: any = data[0];
+        const geomStart = geomPath[0];
+        if (geomStart) {
+          let bestD = Infinity;
+          data.forEach((r: any) => {
+            if (typeof r?.start_lat === "number" && typeof r?.start_lng === "number") {
+              const d = distSq(
+                { lat: geomStart[0], lng: geomStart[1] },
+                { lat: r.start_lat, lng: r.start_lng }
+              );
+              if (d < bestD) { bestD = d; pick = r; }
+            }
+          });
+        }
+        setRoute(pick as PeakRoute);
+      } catch (error) {
+        if (!cancelled) {
+          console.warn("[TrailDetailMap] route fetch failed", error);
+          setRoute(null);
           }
-        });
       }
-      setRoute(pick as PeakRoute);
     })();
     return () => { cancelled = true; };
   }, [mountainName, geomPath]);
@@ -172,40 +180,47 @@ export function TrailDetailMap({
 
   // Init map
   useEffect(() => {
+    setMapUnavailable(false);
     if (!sdkReady) return;
     if (!hasAnyAnchor) return;
     if (!mapRef.current) return;
     if (!window.naver?.maps) return;
     const naver = window.naver;
+    let initListener: any = null;
+    let fallbackTimer: number | null = null;
+    try {
+      const center = hasPath
+        ? new naver.maps.LatLng(path[0][0], path[0][1])
+        : new naver.maps.LatLng(mountainLat as number, mountainLng as number);
 
-    const center = hasPath
-      ? new naver.maps.LatLng(path[0][0], path[0][1])
-      : new naver.maps.LatLng(mountainLat as number, mountainLng as number);
+      const map = new naver.maps.Map(mapRef.current, {
+        center,
+        zoom: 14,
+        minZoom: 12,
+        maxZoom: 17,
+        mapTypeId: naver.maps.MapTypeId.TERRAIN,
+        zoomControl: true,
+        zoomControlOptions: {
+          position: naver.maps.Position.TOP_RIGHT,
+          style: naver.maps.ZoomControlStyle.SMALL,
+        },
+        scaleControl: true,
+        mapDataControl: false,
+        logoControl: true,
+        mapTypeControl: false,
+      });
+      mapInstanceRef.current = map;
 
-    const map = new naver.maps.Map(mapRef.current, {
-      center,
-      zoom: 14,
-      minZoom: 12,
-      maxZoom: 17,
-      mapTypeId: naver.maps.MapTypeId.TERRAIN,
-      zoomControl: true,
-      zoomControlOptions: {
-        position: naver.maps.Position.TOP_RIGHT,
-        style: naver.maps.ZoomControlStyle.SMALL,
-      },
-      scaleControl: true,
-      mapDataControl: false,
-      logoControl: true,
-      mapTypeControl: false,
-    });
-    mapInstanceRef.current = map;
-
-    const initListener = naver.maps.Event.addListener(map, "init", () => setMapReady(true));
-    const fallbackTimer = window.setTimeout(() => setMapReady(true), 300);
+      initListener = naver.maps.Event.addListener(map, "init", () => setMapReady(true));
+      fallbackTimer = window.setTimeout(() => setMapReady(true), 300);
+    } catch (error) {
+      console.warn("[TrailDetailMap] map init failed", error);
+      setMapUnavailable(true);
+    }
 
     return () => {
-      window.clearTimeout(fallbackTimer);
-      try { naver.maps.Event.removeListener(initListener); } catch {}
+      if (fallbackTimer != null) window.clearTimeout(fallbackTimer);
+      try { if (initListener) naver.maps.Event.removeListener(initListener); } catch {}
       overlaysRef.current.forEach((o) => o.setMap?.(null));
       overlaysRef.current = [];
       mapInstanceRef.current = null;
@@ -338,11 +353,20 @@ export function TrailDetailMap({
         fontSize: 12, fontWeight: 600, color: "#173404",
         borderLeft: "2.5px solid #c6d56c", paddingLeft: 8, marginBottom: 10,
       }}>코스 경로</h2>
-      <div
-        ref={mapRef}
-        className="naver-map-container"
-        style={{ height: 280, borderRadius: 12, overflow: "hidden" }}
-      />
+      {mapUnavailable ? (
+        <div
+          className="rounded-xl px-3 py-8 text-center text-xs text-muted-foreground"
+          style={{ background: "#F8FAED" }}
+        >
+          지도를 잠시 불러오지 못했어요. 아래 코스 정보는 계속 확인할 수 있어요.
+        </div>
+      ) : (
+        <div
+          ref={mapRef}
+          className="naver-map-container"
+          style={{ height: 280, borderRadius: 12, overflow: "hidden" }}
+        />
+      )}
     </div>
   );
 }

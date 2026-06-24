@@ -26,6 +26,10 @@ export default defineConfig(({ mode }) => ({
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         navigateFallbackDenylist: [/^\/~oauth/],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff,woff2}"],
+        globIgnores: [
+          "**/heic2any-*.js",
+          "**/html2canvas*.js",
+        ],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
@@ -59,7 +63,38 @@ export default defineConfig(({ mode }) => ({
     },
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
   },
-  // Use Vite/Rollup default chunking. Custom manualChunks previously caused
-  // "Cannot read properties of undefined (reading 'createContext')" by
-  // splitting React from libraries that depend on it.
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+
+          if (
+            /node_modules\/(react|react-dom|react-router-dom|@tanstack\/react-query|@tanstack\/query-core)\//.test(id)
+          ) {
+            return "vendor-react";
+          }
+          if (id.includes("node_modules/@supabase/")) return "vendor-supabase";
+          if (id.includes("node_modules/@capacitor/") || id.includes("node_modules/@capacitor-community/")) {
+            return "vendor-capacitor";
+          }
+          if (
+            id.includes("node_modules/@radix-ui/") ||
+            id.includes("node_modules/cmdk/") ||
+            id.includes("node_modules/vaul/")
+          ) {
+            return "vendor-ui";
+          }
+          if (id.includes("node_modules/lucide-react/")) return "vendor-icons";
+          if (id.includes("node_modules/date-fns/")) return "vendor-date";
+          if (id.includes("node_modules/heic2any/")) return "heic2any";
+          if (id.includes("node_modules/html2canvas/")) return "html2canvas";
+          if (id.includes("node_modules/exifr/")) return "exifr";
+          if (id.includes("node_modules/leaflet/")) return "leaflet";
+          if (id.includes("node_modules/framer-motion/")) return "framer-motion";
+          if (id.includes("node_modules/recharts/")) return "recharts";
+        },
+      },
+    },
+  },
 }));

@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { timeStart, timeEnd, shortId } from "@/lib/debugTiming";
+import { runAfterStartup } from "@/lib/idle";
+import { sendServerPushToMany } from "@/lib/serverPush";
 
 export interface PlanWaypoint {
   name: string;
@@ -67,7 +69,8 @@ export interface PlanEditHistory {
   };
 }
 
-export function useHikingPlans() {
+export function useHikingPlans(options: { homeOnly?: boolean } = {}) {
+  const { homeOnly = false } = options;
   const { user } = useAuth();
   const [plans, setPlans] = useState<HikingPlan[]>([]);
   const [myUpcomingPlans, setMyUpcomingPlans] = useState<HikingPlan[]>([]);
@@ -150,10 +153,18 @@ export function useHikingPlans() {
       setLoading(false);
       return;
     }
-    fetchPlans();
     fetchMyUpcomingPlans();
-    fetchNotifications();
-  }, [user, fetchPlans, fetchMyUpcomingPlans, fetchNotifications]);
+    if (homeOnly) return;
+
+    const cancelDeferredPlanFetch = runAfterStartup(() => {
+      fetchPlans();
+      fetchNotifications();
+    }, 900, 3000);
+
+    return () => {
+      cancelDeferredPlanFetch();
+    };
+  }, [user, homeOnly, fetchPlans, fetchMyUpcomingPlans, fetchNotifications]);
 
   const createPlan = async (plan: {
     mountain_id: number;
@@ -167,6 +178,7 @@ export function useHikingPlans() {
     start_time?: string;
     notes?: string;
     meeting_location?: string;
+    group_id?: string | null;
     is_public?: boolean;
     max_participants?: number | null;
   }) => {
@@ -196,6 +208,7 @@ export function useHikingPlans() {
       start_time: plan.start_time ?? null,
       notes: plan.notes ?? null,
       meeting_location: plan.meeting_location ?? null,
+      group_id: plan.group_id ?? null,
       is_public: plan.is_public ?? true,
       max_participants: plan.max_participants === undefined ? 10 : plan.max_participants,
     };
@@ -232,6 +245,44 @@ export function useHikingPlans() {
         user_id: authUser.id,
         message: `📅 ${mtName} 등산 계획 채팅방이 생성되었어요!\n참가자들과 자유롭게 이야기해보세요 🏔`,
       } as any);
+
+      if (plan.group_id) {
+        const planMessage = `📅 ${mtName} 등산 계획이 생성되었어요${plan.planned_date ? ` (${plan.planned_date})` : ""}`;
+        await (supabase as any).from("club_messages").insert({
+          club_id: plan.group_id,
+          user_id: authUser.id,
+          message: `${planMessage}\n산악회 멤버들과 일정을 확인해보세요.`,
+        } as any);
+
+        const { data: members } = await supabase
+          .from("group_members")
+          .select("user_id")
+          .eq("group_id", plan.group_id);
+
+        const targets = ((members as any[]) || [])
+          .map((m) => m.user_id)
+          .filter((uid) => uid && uid !== authUser.id);
+
+        if (targets.length > 0) {
+          await supabase.from("plan_notifications").insert(
+            targets.map((uid) => ({
+              user_id: uid,
+              plan_id: (newPlan as any).id,
+              type: "plan_created",
+              message: planMessage,
+            })) as any,
+          );
+          void sendServerPushToMany(targets, {
+            title: "산악회 새 일정이 등록됐어요",
+            body: planMessage,
+            data: {
+              route: `/plans/${(newPlan as any).id}`,
+              url: `/plans/${(newPlan as any).id}`,
+              groupId: plan.group_id,
+            },
+          });
+        }
+      }
     }
 
     return { data: newPlan as HikingPlan | null, error: null };

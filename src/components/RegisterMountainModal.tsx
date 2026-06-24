@@ -2,8 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserMountains } from "@/hooks/useUserMountains";
-import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +28,7 @@ interface RegisterMountainModalProps {
 export default function RegisterMountainModal({ open: openProp, onOpenChange, hideTrigger }: RegisterMountainModalProps = {}) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { uploadMountainImage } = useUserMountains();
+  const { uploadMountainImage, createMountain } = useUserMountains();
   const [openInternal, setOpenInternal] = useState(false);
   const open = openProp ?? openInternal;
   const setOpen = (v: boolean) => {
@@ -85,8 +83,6 @@ export default function RegisterMountainModal({ open: openProp, onOpenChange, hi
     reader.readAsDataURL(file);
   };
 
-  const queryClient = useQueryClient();
-
   const handleSubmit = async () => {
     if (!user) {
       toast.error("로그인이 필요합니다");
@@ -112,32 +108,19 @@ export default function RegisterMountainModal({ open: openProp, onOpenChange, hi
         imageUrl = await uploadMountainImage(imageFile);
       }
 
-      const { data, error } = await (supabase as any)
-        .from("mountains")
-        .insert({
-          name_ko: nameKo.trim(),
-          name: nameKo.trim(),
-          height: Number(height),
-          region,
-          difficulty,
-          description: description.trim() || null,
-          lat: lat ? Number(lat) : null,
-          lng: lng ? Number(lng) : null,
-          image_url: imageUrl,
-          created_by: user.id,
-          is_user_created: true,
-        })
-        .select()
-        .single();
+      const data = await createMountain.mutateAsync({
+        name_ko: nameKo.trim(),
+        name: nameKo.trim(),
+        height: Number(height),
+        region,
+        difficulty,
+        description: description.trim() || undefined,
+        lat: lat ? Number(lat) : undefined,
+        lng: lng ? Number(lng) : undefined,
+        image_url: imageUrl || undefined,
+      });
 
-      if (error) {
-        console.error("산 등록 실패:", error);
-        toast.error("산 등록에 실패했습니다");
-        return;
-      }
-
-      const mountainId = data?.id;
-      queryClient.invalidateQueries({ queryKey: ["mountains-all", "v6-lite"] });
+      const mountainId = data?.mountain_id;
       resetForm();
       setOpen(false);
       if (mountainId) {
@@ -161,58 +144,63 @@ export default function RegisterMountainModal({ open: openProp, onOpenChange, hi
           </button>
         </DialogTrigger>
       )}
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="max-h-[92dvh] overflow-hidden p-0 sm:max-w-md">
+        <DialogHeader className="border-b border-border px-5 py-4">
           <DialogTitle className="flex items-center gap-2">
             <Mountain className="h-5 w-5 text-primary" />
             새로운 산 등록
           </DialogTitle>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            목록에 없는 산을 직접 추가해요. 필수 정보만 먼저 넣고, 사진과 위치는 나중에 보완해도 됩니다.
+          </p>
         </DialogHeader>
 
-        <div className="space-y-4 pt-2">
+        <div className="max-h-[calc(92dvh-76px)] overflow-y-auto px-5 py-4 pb-[calc(92px+env(safe-area-inset-bottom,0px))] space-y-5">
           {/* Name */}
-          <div>
-            <Label htmlFor="mountain-name">산 이름 *</Label>
-            <Input
-              id="mountain-name"
-              value={nameKo}
-              onChange={(e) => setNameKo(e.target.value)}
-              placeholder="예: 앞산"
-              maxLength={50}
-            />
-          </div>
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-sm space-y-4">
+            <div>
+              <Label htmlFor="mountain-name">산 이름 *</Label>
+              <Input
+                id="mountain-name"
+                value={nameKo}
+                onChange={(e) => setNameKo(e.target.value)}
+                placeholder="예: 앞산"
+                maxLength={50}
+              />
+            </div>
 
-          {/* Height */}
-          <div>
-            <Label htmlFor="mountain-height">높이 (m) *</Label>
-            <Input
-              id="mountain-height"
-              type="number"
-              value={height}
-              onChange={(e) => setHeight(e.target.value)}
-              placeholder="예: 660"
-              min={1}
-              max={10000}
-            />
-          </div>
+            {/* Height */}
+            <div>
+              <Label htmlFor="mountain-height">높이 (m) *</Label>
+              <Input
+                id="mountain-height"
+                type="number"
+                value={height}
+                onChange={(e) => setHeight(e.target.value)}
+                placeholder="예: 660"
+                min={1}
+                max={10000}
+              />
+            </div>
 
-          {/* Region */}
-          <div>
-            <Label>지역 *</Label>
-            <Select value={region} onValueChange={setRegion}>
-              <SelectTrigger>
-                <SelectValue placeholder="지역 선택" />
-              </SelectTrigger>
-              <SelectContent>
-                {REGIONS.map((r) => (
-                  <SelectItem key={r} value={r}>{r}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Region */}
+            <div>
+              <Label>지역 *</Label>
+              <Select value={region} onValueChange={setRegion}>
+                <SelectTrigger>
+                  <SelectValue placeholder="지역 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  {REGIONS.map((r) => (
+                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Difficulty */}
-          <div>
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
             <Label>난이도 *</Label>
             <div className="flex gap-2 mt-1">
               {DIFFICULTIES.map(({ value, label }) => (
@@ -233,7 +221,7 @@ export default function RegisterMountainModal({ open: openProp, onOpenChange, hi
           </div>
 
           {/* Description */}
-          <div>
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
             <Label htmlFor="mountain-desc">설명 (선택)</Label>
             <Textarea
               id="mountain-desc"
@@ -246,7 +234,7 @@ export default function RegisterMountainModal({ open: openProp, onOpenChange, hi
           </div>
 
           {/* Location */}
-          <div>
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
             <Label className="flex items-center gap-1">
               <MapPin className="h-3.5 w-3.5" />
               위치 (선택)
@@ -284,7 +272,7 @@ export default function RegisterMountainModal({ open: openProp, onOpenChange, hi
           </div>
 
           {/* Image */}
-          <div>
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
             <Label className="flex items-center gap-1">
               <Upload className="h-3.5 w-3.5" />
               대표 사진 (선택)
@@ -322,11 +310,12 @@ export default function RegisterMountainModal({ open: openProp, onOpenChange, hi
             </div>
           </div>
 
-          {/* Submit */}
+        </div>
+        <div className="absolute inset-x-0 bottom-0 border-t border-border bg-card/95 px-5 py-3 pb-[calc(12px+env(safe-area-inset-bottom,0px))] backdrop-blur">
           <Button
             onClick={handleSubmit}
             disabled={submitting || !user || !nameKo.trim() || !height || !region}
-            className="w-full"
+            className="h-12 w-full rounded-xl"
           >
             {submitting ? "등록 중..." : "산 등록하기"}
           </Button>

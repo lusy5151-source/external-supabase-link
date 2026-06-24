@@ -26,10 +26,11 @@ export function useSharedCompletions() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
 
-  const fetchSharedCompletions = useCallback(async (mountainId?: number): Promise<SharedCompletion[]> => {
+  const fetchSharedCompletions = useCallback(async (mountainId?: number, limit?: number): Promise<SharedCompletion[]> => {
     try {
       let query = supabase.from("shared_completion").select("*").order("completed_at", { ascending: false });
       if (mountainId) query = query.eq("mountain_id", mountainId);
+      if (limit) query = query.limit(limit);
       const { data, error } = await query;
       if (error || !data || data.length === 0) return [];
 

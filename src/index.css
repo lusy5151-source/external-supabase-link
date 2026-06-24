@@ -155,11 +155,29 @@
 }
 
 @layer base {
+  html {
+    min-height: 100%;
+    background: hsl(var(--background));
+    overflow-x: hidden;
+    overscroll-behavior-y: none;
+  }
+
+  body,
+  #root {
+    min-height: 100%;
+    width: 100%;
+  }
+
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground antialiased;
+    margin: 0;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    padding: 0;
+    -webkit-text-size-adjust: 100%;
     font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Segoe UI', 'Noto Sans KR', system-ui, 'Pretendard', 'Pretendard Variable', sans-serif;
     font-size: 15.5px;
     font-weight: 400;
@@ -170,6 +188,18 @@
   h2 { font-size: 20px; font-weight: 600; line-height: 1.4; }
   h3 { font-size: 17px; font-weight: 500; line-height: 1.45; }
   h4, h5, h6 { font-weight: 500; }
+}
+
+@layer components {
+  .wandeung-bottom-nav {
+    position: fixed !important;
+    inset-inline: 0;
+    bottom: 0;
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
 }
 
 @layer utilities {

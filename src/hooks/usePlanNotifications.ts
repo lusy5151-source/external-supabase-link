@@ -8,6 +8,8 @@ const MAX_TIMEOUT_MS = 24 * 24 * 60 * 60 * 1000; // ~24 days (safe setTimeout li
 
 interface ScheduledEntry {
   planId: string;
+  dMinusSevenId?: number;
+  dMinusThreeId?: number;
   dMinusOneId?: number;
   dDayId?: number;
 }
@@ -15,13 +17,17 @@ interface ScheduledEntry {
 function getSettings(): { planDday: boolean } {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) return { planDday: JSON.parse(raw).planDday !== false };
   } catch {}
   return { planDday: true }; // enabled by default
 }
 
 function saveSettings(s: { planDday: boolean }) {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+  let current: Record<string, any> = {};
+  try {
+    current = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+  } catch {}
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...current, ...s }));
 }
 
 function getScheduled(): ScheduledEntry[] {
@@ -37,11 +43,21 @@ function saveScheduled(entries: ScheduledEntry[]) {
 }
 
 // Active timer IDs (runtime only — localStorage stores plan IDs for re-scheduling)
-const activeTimers = new Map<string, { dMinusOne?: ReturnType<typeof setTimeout>; dDay?: ReturnType<typeof setTimeout> }>();
+const activeTimers = new Map<
+  string,
+  {
+    dMinusSeven?: ReturnType<typeof setTimeout>;
+    dMinusThree?: ReturnType<typeof setTimeout>;
+    dMinusOne?: ReturnType<typeof setTimeout>;
+    dDay?: ReturnType<typeof setTimeout>;
+  }
+>();
 
 function clearPlanTimers(planId: string) {
   const timers = activeTimers.get(planId);
   if (timers) {
+    if (timers.dMinusSeven) clearTimeout(timers.dMinusSeven);
+    if (timers.dMinusThree) clearTimeout(timers.dMinusThree);
     if (timers.dMinusOne) clearTimeout(timers.dMinusOne);
     if (timers.dDay) clearTimeout(timers.dDay);
     activeTimers.delete(planId);
@@ -52,6 +68,8 @@ function clearPlanTimers(planId: string) {
 
 function clearAllTimers() {
   activeTimers.forEach((timers) => {
+    if (timers.dMinusSeven) clearTimeout(timers.dMinusSeven);
+    if (timers.dMinusThree) clearTimeout(timers.dMinusThree);
     if (timers.dMinusOne) clearTimeout(timers.dMinusOne);
     if (timers.dDay) clearTimeout(timers.dDay);
   });
@@ -82,43 +100,51 @@ export function usePlanNotifications() {
       const now = Date.now();
       const planDate = new Date(plan.planned_date);
 
-      // D-1: 8:00 PM the evening before
-      const dMinusOneDate = new Date(planDate);
-      dMinusOneDate.setDate(dMinusOneDate.getDate() - 1);
-      dMinusOneDate.setHours(20, 0, 0, 0);
-      const dMinusOneMs = dMinusOneDate.getTime() - now;
+      const entries = [
+        {
+          key: "dMinusSeven" as const,
+          offset: 7,
+          hour: 20,
+          title: `일주일 뒤 ${plan.mountainName} 등산이에요`,
+          body: "일정과 코스를 미리 확인해보세요.",
+        },
+        {
+          key: "dMinusThree" as const,
+          offset: 3,
+          hour: 20,
+          title: `3일 뒤 ${plan.mountainName} 등산이에요`,
+          body: "날씨와 준비물을 슬슬 챙겨볼 시간이에요.",
+        },
+        {
+          key: "dMinusOne" as const,
+          offset: 1,
+          hour: 20,
+          title: "내일 등산이에요!",
+          body: `${plan.mountainName} 등산이 내일이에요.\n준비물을 미리 챙겨두세요!`,
+        },
+        {
+          key: "dDay" as const,
+          offset: 0,
+          hour: 7,
+          title: `오늘 ${plan.mountainName} 등산 날이에요!`,
+          body: "즐거운 등산 되세요.\n정상에서 인증 잊지 마세요!",
+        },
+      ];
 
-      // D-day: 7:00 AM on the day
-      const dDayDate = new Date(planDate);
-      dDayDate.setHours(7, 0, 0, 0);
-      const dDayMs = dDayDate.getTime() - now;
+      const timers: NonNullable<ReturnType<typeof activeTimers.get>> = {};
 
-      // Skip if plan date has passed
-      if (dDayMs < 0 && dMinusOneMs < 0) return;
+      entries.forEach((entry) => {
+        const at = new Date(planDate);
+        at.setDate(at.getDate() - entry.offset);
+        at.setHours(entry.hour, 0, 0, 0);
+        const ms = at.getTime() - now;
+        if (ms <= 0 || ms > MAX_TIMEOUT_MS) return;
+        timers[entry.key] = setTimeout(() => {
+          sendRef.current(entry.title, entry.body, { data: { route: `/plans/${plan.id}` } });
+        }, ms);
+      });
 
-      const timers: { dMinusOne?: ReturnType<typeof setTimeout>; dDay?: ReturnType<typeof setTimeout> } = {};
-
-      // Schedule D-1 notification
-      if (dMinusOneMs > 0 && dMinusOneMs <= MAX_TIMEOUT_MS) {
-        timers.dMinusOne = setTimeout(() => {
-          sendRef.current(
-            "내일 등산이에요! 🏔",
-            `${plan.mountainName} 등산이 내일이에요.\n준비물을 미리 챙겨두세요!`
-          );
-        }, dMinusOneMs);
-      }
-
-      // Schedule D-day notification — TEST: fires after 10 seconds
-      const TEST_DELAY = 10_000;
-      timers.dDay = setTimeout(() => {
-        sendRef.current(
-          `오늘 ${plan.mountainName} 등산 날이에요! 🚩`,
-          "즐거운 등산 되세요 💪\n정상에서 인증 잊지 마세요!"
-        );
-      }, TEST_DELAY);
-      // Original: if (dDayMs > 0 && dDayMs <= MAX_TIMEOUT_MS) { setTimeout(..., dDayMs); }
-
-      if (timers.dMinusOne || timers.dDay) {
+      if (timers.dMinusSeven || timers.dMinusThree || timers.dMinusOne || timers.dDay) {
         activeTimers.set(plan.id, timers);
         const entries = getScheduled().filter((e) => e.planId !== plan.id);
         entries.push({ planId: plan.id });
@@ -171,7 +197,7 @@ export function usePlanNotifications() {
   const testNotification = useCallback(
     (mountainName: string) => {
       if (!("Notification" in window)) {
-        toast.error("이 브라우저는 알림을 지원하지 않아요");
+        toast.error("이 기기에서 알림을 사용할 수 없어요");
         return;
       }
       if (Notification.permission !== "granted") {

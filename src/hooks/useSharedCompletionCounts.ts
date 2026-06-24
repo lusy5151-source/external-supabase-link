@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { SharedCompletionData } from "@/hooks/useAchievementStore";
+import { runAfterStartup } from "@/lib/idle";
 
 const inFlight = new Map<string, Promise<SharedCompletionData[]>>();
 const cache = new Map<string, { ts: number; data: SharedCompletionData[] }>();
@@ -60,8 +61,13 @@ export function useSharedCompletionCounts(): SharedCompletionData[] {
   useEffect(() => {
     if (!user) { setData([]); return; }
     let cancelled = false;
-    fetchCounts(user.id).then((d) => { if (!cancelled) setData(d); });
-    return () => { cancelled = true; };
+    const cancelFetch = runAfterStartup(() => {
+      fetchCounts(user.id).then((d) => { if (!cancelled) setData(d); });
+    }, 1400, 4500);
+    return () => {
+      cancelled = true;
+      cancelFetch();
+    };
   }, [user?.id]);
 
   return data;

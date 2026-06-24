@@ -12,15 +12,21 @@ const PasswordSetupBanner = () => {
   const provider = user?.app_metadata?.provider;
   const isOAuthUser = provider && provider !== "email";
 
-  // Check if user has already dismissed this banner in this session
+  // Keep hidden after the user either starts setup or dismisses it.
   const dismissKey = `password_banner_dismissed_${user?.id}`;
-  const wasDismissed = sessionStorage.getItem(dismissKey) === "true";
+  const wasDismissed = localStorage.getItem(dismissKey) === "true";
 
   if (!user || !isOAuthUser || dismissed || wasDismissed) return null;
 
   const handleDismiss = () => {
-    sessionStorage.setItem(dismissKey, "true");
+    localStorage.setItem(dismissKey, "true");
     setDismissed(true);
+  };
+
+  const handleSetup = () => {
+    localStorage.setItem(dismissKey, "true");
+    setDismissed(true);
+    navigate("/forgot-password");
   };
 
   return (
@@ -31,7 +37,7 @@ const PasswordSetupBanner = () => {
       </div>
       <div className="flex items-center gap-2 shrink-0">
         <button
-          onClick={() => navigate("/forgot-password")}
+          onClick={handleSetup}
           className="rounded-lg bg-[hsl(72,40%,15%)] px-3 py-1.5 text-xs font-semibold text-[hsl(72,60%,90%)] transition-colors hover:bg-[hsl(72,40%,20%)]"
         >
           설정하기

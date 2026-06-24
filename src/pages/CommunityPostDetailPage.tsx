@@ -92,14 +92,20 @@ export default function CommunityPostDetailPage() {
                   <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
                     {categoryLabel[post.category]}
                   </span>
-                  <Avatar className="h-7 w-7">
-                    <AvatarImage src={post.profile?.avatar_url || undefined} />
-                    <AvatarFallback className="text-[10px]">{(post.profile?.nickname || "?").charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-xs font-semibold">{post.profile?.nickname || "사용자"}</p>
-                    <p className="text-[10px] text-muted-foreground">{timeAgo(post.created_at)}</p>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/profile/${post.user_id}`)}
+                    className="flex items-center gap-2 rounded-xl text-left hover:text-primary"
+                  >
+                    <Avatar className="h-7 w-7">
+                      <AvatarImage src={post.profile?.avatar_url || undefined} />
+                      <AvatarFallback className="text-[10px]">{(post.profile?.nickname || "?").charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-xs font-semibold">{post.profile?.nickname || "사용자"}</p>
+                      <p className="text-[10px] text-muted-foreground">{timeAgo(post.created_at)}</p>
+                    </div>
+                  </button>
                 </div>
                 {user?.id === post.user_id ? (
                   <button onClick={handleDeletePost} className="rounded-lg p-1.5 text-muted-foreground hover:text-destructive" aria-label="삭제">
@@ -133,13 +139,26 @@ export default function CommunityPostDetailPage() {
                 {comments.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">첫 번째 댓글을 남겨보세요</p>}
                 {comments.map((c) => (
                   <div key={c.id} className="flex gap-2">
-                    <Avatar className="h-7 w-7 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/profile/${c.user_id}`)}
+                      className="shrink-0 rounded-full"
+                      aria-label={`${c.profile?.nickname || "사용자"} 프로필 보기`}
+                    >
+                    <Avatar className="h-7 w-7">
                       <AvatarImage src={c.profile?.avatar_url || undefined} />
                       <AvatarFallback className="text-[10px]">{(c.profile?.nickname || "?").charAt(0)}</AvatarFallback>
                     </Avatar>
+                    </button>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold">{c.profile?.nickname || "사용자"}</span>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/profile/${c.user_id}`)}
+                          className="text-xs font-semibold hover:text-primary"
+                        >
+                          {c.profile?.nickname || "사용자"}
+                        </button>
                         <span className="text-[10px] text-muted-foreground">{timeAgo(c.created_at)}</span>
                         {user?.id === c.user_id && (
                           <button onClick={() => handleDeleteComment(c.id)} className="ml-auto text-[10px] text-muted-foreground hover:text-destructive">삭제</button>

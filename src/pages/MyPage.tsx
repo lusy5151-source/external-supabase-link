@@ -20,6 +20,7 @@ import { useUnreadChat } from "@/contexts/UnreadChatContext";
 import { useTutorial } from "@/contexts/TutorialContext";
 import { usePushNotification } from "@/hooks/usePushNotification";
 import { usePlanNotifications } from "@/hooks/usePlanNotifications";
+import { useDailyMountainNotification } from "@/hooks/useDailyMountainNotification";
 import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
@@ -61,6 +62,9 @@ const MyPage = () => {
   const { restartTutorial } = useTutorial();
   const { isGranted, isDenied, requestPermission } = usePushNotification();
   const { isDdayEnabled, setDdayEnabled } = usePlanNotifications();
+  const { isDailyMountainEnabled, setDailyMountainEnabled } = useDailyMountainNotification({
+    autoSchedule: false,
+  });
   const { isAdmin, isSuperAdmin } = useAdmin();
   const nav = useNavigate();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -476,6 +480,16 @@ const MyPage = () => {
               <Switch
                 checked={isDdayEnabled}
                 onCheckedChange={(checked) => setDdayEnabled(checked)}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-foreground">오늘의 산 아침 알림</p>
+                <p className="text-xs text-muted-foreground mt-0.5">매일 오전 8시 추천 산 알림</p>
+              </div>
+              <Switch
+                checked={isDailyMountainEnabled}
+                onCheckedChange={(checked) => setDailyMountainEnabled(checked)}
               />
             </div>
             <div className="flex items-center justify-between">

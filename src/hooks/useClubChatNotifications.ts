@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePushNotification } from "./usePushNotification";
 import { toast } from "sonner";
+import { mountains } from "@/data/mountains";
 
 const SETTINGS_KEY = "notification_settings";
 
@@ -134,8 +135,30 @@ export function useClubChatNotifications({
               : msg.message
             : "📷 사진을 보냈습니다";
 
-          sendRef.current(`${clubName} 채팅 💬`, `${nickname}: ${content}`);
+          sendRef.current(`${clubName} 채팅`, `${nickname}: ${content}`, {
+            data: { route: `/groups/${msg.club_id}` },
+          });
         }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "hiking_plans" },
+        (payload) => {
+          const plan = payload.new as any;
+          if (!plan.group_id) return;
+          if (plan.creator_id === user.id) return;
+          if (!clubIdsRef.current.includes(plan.group_id)) return;
+          if (activeClubIdRef.current === plan.group_id) return;
+          if (!getChatNotifEnabled()) return;
+          if (!isGrantedRef.current) return;
+
+          const clubName = clubNamesRef.current.get(plan.group_id) || "산악회";
+          const mountainName = mountains.find((m) => m.id === plan.mountain_id)?.nameKo || "등산";
+          const dateText = plan.planned_date ? ` · ${plan.planned_date}` : "";
+          sendRef.current(`${clubName} 새 계획`, `${mountainName} 등산 계획이 만들어졌어요${dateText}`, {
+            data: { route: `/plans/${plan.id}` },
+          });
+        },
       )
       .subscribe();
 

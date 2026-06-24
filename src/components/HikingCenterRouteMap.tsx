@@ -104,66 +104,88 @@ export function HikingCenterRouteMap({ mountainName, mountainId, lat, lng }: Hik
 
   const [trails, setTrails] = useState<TrailRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mapUnavailable, setMapUnavailable] = useState(false);
+  const hasValidCenter = Number.isFinite(lat) && Number.isFinite(lng);
 
   // Single source of truth: trails joined with hiking_center_peaks
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     (async () => {
-      const { data, error } = await (supabase as any)
-        .from("trails")
-        .select(`
-          id, name, starting_point, ending_point,
-          distance_km, duration_minutes, difficulty,
-          elevation_gain_m, is_popular,
-          hiking_center_peak_id,
-          hiking_center_peaks (
-            route_coordinates,
-            summit_lat, summit_lng, summit_name, summit_elevation_m,
-            start_lat, start_lng, end_lat, end_lng,
-            kakao_nearby_places
-          )
-        `)
-        .eq("mountain_id", mountainId)
-        .order("is_popular", { ascending: false })
-        .order("distance_km");
+      try {
+        const { data, error } = await (supabase as any)
+          .from("trails")
+          .select(`
+            id, name, starting_point, ending_point,
+            distance_km, duration_minutes, difficulty,
+            elevation_gain_m, is_popular,
+            hiking_center_peak_id,
+            hiking_center_peaks (
+              route_coordinates,
+              summit_lat, summit_lng, summit_name, summit_elevation_m,
+              start_lat, start_lng, end_lat, end_lng,
+              kakao_nearby_places
+            )
+          `)
+          .eq("mountain_id", mountainId)
+          .order("is_popular", { ascending: false })
+          .order("distance_km");
 
-      if (cancelled) return;
-      if (error) console.warn("[trails] fetch error", error);
-      setTrails((data ?? []) as TrailRow[]);
-      setLoading(false);
+        if (cancelled) return;
+        if (error) console.warn("[trails] fetch error", error);
+        setTrails((data ?? []) as TrailRow[]);
+      } catch (error) {
+        if (!cancelled) {
+          console.warn("[trails] fetch crashed", error);
+          setTrails([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => { cancelled = true; };
   }, [mountainId]);
 
   // Init map once
   useEffect(() => {
+    setMapUnavailable(false);
+    if (!hasValidCenter) {
+      setMapUnavailable(true);
+      return;
+    }
     if (!sdkReady) return;
     if (!mapRef.current || !window.naver?.maps) return;
     const naver = window.naver;
-    const map = new naver.maps.Map(mapRef.current, {
-      center: new naver.maps.LatLng(lat, lng),
-      zoom: 14,
-      mapTypeId: naver.maps.MapTypeId.TERRAIN,
-      zoomControl: true,
-      zoomControlOptions: { position: naver.maps.Position.TOP_RIGHT, style: naver.maps.ZoomControlStyle.SMALL },
-      scaleControl: false,
-      mapDataControl: false,
-      logoControl: true,
-    });
-    mapInstanceRef.current = map;
-    const initListener = naver.maps.Event.addListener(map, "init", () => setMapReady(true));
-    const fallbackTimer = window.setTimeout(() => setMapReady(true), 300);
+    let initListener: any = null;
+    let fallbackTimer: number | null = null;
+    try {
+      const map = new naver.maps.Map(mapRef.current, {
+        center: new naver.maps.LatLng(lat, lng),
+        zoom: 14,
+        mapTypeId: naver.maps.MapTypeId.TERRAIN,
+        zoomControl: true,
+        zoomControlOptions: { position: naver.maps.Position.TOP_RIGHT, style: naver.maps.ZoomControlStyle.SMALL },
+        scaleControl: false,
+        mapDataControl: false,
+        logoControl: true,
+      });
+      mapInstanceRef.current = map;
+      initListener = naver.maps.Event.addListener(map, "init", () => setMapReady(true));
+      fallbackTimer = window.setTimeout(() => setMapReady(true), 300);
+    } catch (error) {
+      console.warn("[HikingCenterRouteMap] map init failed", error);
+      setMapUnavailable(true);
+    }
     return () => {
-      window.clearTimeout(fallbackTimer);
-      try { naver.maps.Event.removeListener(initListener); } catch {}
+      if (fallbackTimer != null) window.clearTimeout(fallbackTimer);
+      try { if (initListener) naver.maps.Event.removeListener(initListener); } catch {}
       overlaysRef.current.forEach((o) => o.setMap?.(null));
       overlaysRef.current = [];
       mapInstanceRef.current = null;
       setMapReady(false);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lat, lng, sdkReady]);
+
+  }, [lat, lng, sdkReady, hasValidCenter]);
 
   // Map of trail.id -> color index (only for those with GPX)
   const colorByTrailId = useMemo(() => {
@@ -283,11 +305,20 @@ export function HikingCenterRouteMap({ mountainName, mountainId, lat, lng }: Hik
     <div className="space-y-3">
       {/* Map */}
       <div className="relative">
-        <div
-          ref={mapRef}
-          className="naver-map-container w-full rounded-xl overflow-hidden h-[280px] md:h-[360px]"
-          style={{ border: "1px solid #E5E7EB" }}
-        />
+        {mapUnavailable ? (
+          <div
+            className="w-full rounded-xl h-[160px] flex items-center justify-center px-4 text-center"
+            style={{ border: "1px solid #E5E7EB", background: "#F8FAED", color: "#6B7280", fontSize: 12 }}
+          >
+            지도는 잠시 불러오지 못했지만, 아래 코스 정보는 확인할 수 있어요.
+          </div>
+        ) : (
+          <div
+            ref={mapRef}
+            className="naver-map-container w-full rounded-xl overflow-hidden h-[280px] md:h-[360px]"
+            style={{ border: "1px solid #E5E7EB" }}
+          />
+        )}
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-xl z-20">
             <Loader2 className="h-5 w-5 animate-spin" style={{ color: DARK_GREEN }} />

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -6,25 +6,34 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, ImagePlus, X } from "lucide-react";
-import { createCommunityPost, categoryLabel, type CommunityCategory } from "@/hooks/useCommunityPosts";
-import { compressImageToDataUrl, IMAGE_ACCEPT } from "@/lib/imageUpload";
+import { createCommunityPost, uploadCommunityImage, categoryLabel, type CommunityCategory } from "@/hooks/useCommunityPosts";
+import { IMAGE_ACCEPT } from "@/lib/imageUpload";
 
 const CATEGORIES: CommunityCategory[] = ["story", "mountain_info", "gear"];
 const MAX_IMAGES = 5;
+type PendingCommunityImage = { file: File; preview: string };
 
 export default function CommunityPostCreatePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const objectUrlsRef = useRef<Set<string>>(new Set());
   const params = new URLSearchParams(window.location.search);
   const initialCat = (params.get("category") as CommunityCategory) || "story";
   const [category, setCategory] = useState<CommunityCategory>(initialCat);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<PendingCommunityImage[]>([]);
   const [processingImages, setProcessingImages] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      objectUrlsRef.current.clear();
+    };
+  }, []);
 
   if (!user) {
     return (
@@ -39,11 +48,14 @@ export default function CommunityPostCreatePage() {
     if (!body.trim()) { toast({ title: "본문을 입력해주세요", variant: "destructive" }); return; }
     setSaving(true);
     try {
+      const uploadedImages = images.length
+        ? await Promise.all(images.map((image) => uploadCommunityImage(image.file, user.id)))
+        : [];
       const created = await createCommunityPost({
         category,
         title: title.trim() || undefined,
         body: body.trim(),
-        images,
+        images: uploadedImages,
       }, user.id);
       toast({ title: "게시글이 등록되었어요" });
       navigate(`/community/${created.id}`, { replace: true });
@@ -68,15 +80,35 @@ export default function CommunityPostCreatePage() {
 
     setProcessingImages(true);
     try {
-      const processed = await Promise.all(
-        selected.map((file) => compressImageToDataUrl(file, "general"))
-      );
-      const validImages = processed.filter(Boolean) as string[];
-      setImages((prev) => [...prev, ...validImages].slice(0, MAX_IMAGES));
+      const nextImages = selected
+        .filter((file) => file.type.startsWith("image/"))
+        .map((file) => {
+          const preview = URL.createObjectURL(file);
+          objectUrlsRef.current.add(preview);
+          return { file, preview };
+        });
+
+      if (nextImages.length === 0) {
+        toast({ title: "사진 파일만 올릴 수 있어요", variant: "destructive" });
+        return;
+      }
+
+      setImages((prev) => [...prev, ...nextImages].slice(0, MAX_IMAGES));
     } finally {
       setProcessingImages(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  const removeImage = (index: number) => {
+    setImages((prev) => {
+      const target = prev[index];
+      if (target) {
+        URL.revokeObjectURL(target.preview);
+        objectUrlsRef.current.delete(target.preview);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   return (
@@ -107,11 +139,11 @@ export default function CommunityPostCreatePage() {
           {images.length > 0 && (
             <div className="grid grid-cols-3 gap-2">
               {images.map((image, index) => (
-                <div key={`${image.slice(0, 24)}-${index}`} className="relative aspect-square overflow-hidden rounded-xl bg-secondary">
-                  <img src={image} alt="" className="h-full w-full object-cover" />
+                <div key={`${image.preview}-${index}`} className="relative aspect-square overflow-hidden rounded-xl bg-secondary">
+                  <img src={image.preview} alt="" className="h-full w-full object-cover" />
                   <button
                     type="button"
-                    onClick={() => setImages((prev) => prev.filter((_, i) => i !== index))}
+                    onClick={() => removeImage(index)}
                     className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-foreground/70 text-background"
                     aria-label="사진 삭제"
                   >

@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { badges, BadgeDefinition, EarnedBadge } from "@/data/badges";
 import type { CompletionRecord } from "@/hooks/useMountainStore";
 import type { GearItem } from "@/hooks/useGearStore";
+import { runAfterStartup } from "@/lib/idle";
 
 const STORAGE_KEY = "korea-100-badges";
 const FEATURED_KEY = "korea-100-featured-badge";
@@ -71,10 +72,15 @@ export function useAchievementStore(
   }, []);
 
   useEffect(() => {
-    refetch();
+    const cancelInitialRefetch = runAfterStartup(() => {
+      void refetch();
+    }, 1600, 5000);
     const onJournalChange = () => refetch();
     window.addEventListener("wandeung_journal_changed", onJournalChange);
-    return () => window.removeEventListener("wandeung_journal_changed", onJournalChange);
+    return () => {
+      cancelInitialRefetch();
+      window.removeEventListener("wandeung_journal_changed", onJournalChange);
+    };
   }, [refetch]);
 
 

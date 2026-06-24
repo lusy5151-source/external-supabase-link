@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useSummits, type Summit, type SummitClaim } from "@/hooks/useSummits";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingGroups } from "@/hooks/useHikingGroups";
@@ -46,6 +47,7 @@ import {
   ShieldX,
   AlertTriangle,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -73,9 +75,10 @@ interface Props {
 export function SummitClaimSection({ mountainId, mountainName, hideList, triggerSummitId, onTriggerHandled }: Props) {
   const { mountains: mountainsData } = useMountains();
   const { user } = useAuth();
-  const { summits, claims, loading, getSummitOwner, getMountainLeader, claimSummit } = useSummits(mountainId);
+  const { summits, claims, loading, getSummitOwner, getMountainLeader, claimSummit, deleteSummitClaim } = useSummits(mountainId);
   const { myGroups } = useHikingGroups();
   const { toast } = useToast();
+  const [deleteTarget, setDeleteTarget] = useState<SummitClaim | null>(null);
 
   // Get mountain data for fallback coordinates
   const mountainData = useMemo(() => {
@@ -190,21 +193,12 @@ export function SummitClaimSection({ mountainId, mountainName, hideList, trigger
     }
   }, [triggerSummitId, displaySummits]);
 
-  // skip_gps_check인 산은 정상 좌표로 자동 처리
   useEffect(() => {
     if ((mountainData as any)?.skip_gps_check && gpsStatus === "idle" && selectedSummit) {
       setUserLocation({ lat: selectedSummit.latitude, lng: selectedSummit.longitude });
       setGpsStatus("success");
     }
-  }, [(mountainData as any)?.skip_gps_check, selectedSummit?.id]);
-
-  // skip_gps_check인 산은 정상 좌표로 자동 처리
-  useEffect(() => {
-    if ((mountainData as any)?.skip_gps_check && gpsStatus === "idle" && selectedSummit) {
-      setUserLocation({ lat: selectedSummit.latitude, lng: selectedSummit.longitude });
-      setGpsStatus("success");
-    }
-  }, [(mountainData as any)?.skip_gps_check, selectedSummit?.id]);
+  }, [(mountainData as any)?.skip_gps_check, gpsStatus, selectedSummit?.id]);
 
   const handleGetLocation = () => {
     setGpsStatus("loading");
@@ -224,10 +218,15 @@ export function SummitClaimSection({ mountainId, mountainName, hideList, trigger
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const { compressImageToDataUrl, resizeImageForAI } = await import("@/lib/imageUpload");
-    const dataUrl = await compressImageToDataUrl(file, "summit");
-    if (!dataUrl) return;
-    setPhotoFile(file);
+    const { compressImage } = await import("@/lib/imageUpload");
+    const uploadFile = await compressImage(file, "summit");
+    if (!uploadFile) return;
+    const dataUrl = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (event) => resolve(event.target?.result as string);
+      reader.readAsDataURL(uploadFile);
+    });
+    setPhotoFile(uploadFile);
     setAiVerification({ status: "idle", confidence: 0, reason: "", detected_elements: [] });
     setPhotoPreview(dataUrl);
 
@@ -273,7 +272,7 @@ export function SummitClaimSection({ mountainId, mountainName, hideList, trigger
       userLocation.lat,
       userLocation.lng,
       photoFile,
-      selectedGroupId || undefined,
+      selectedGroupId && selectedGroupId !== "none" ? selectedGroupId : undefined,
       isFallback ? {
         mountain_id: mountainId,
         summit_name: selectedSummit.summit_name,
@@ -385,11 +384,13 @@ export function SummitClaimSection({ mountainId, mountainName, hideList, trigger
                 {owner && (
                   <div className="flex items-center gap-2 rounded-lg bg-card p-2.5 border border-border/50">
                     <span className="text-[10px] text-muted-foreground whitespace-nowrap">현재 주인</span>
-                    <Avatar className="h-5 w-5">
-                      {owner.profile?.avatar_url && <AvatarImage src={owner.profile.avatar_url} />}
-                      <AvatarFallback className="text-[8px]">{(owner.profile?.nickname || "?").charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <span className="text-xs font-medium text-foreground">{owner.profile?.nickname || "알 수 없음"}</span>
+                    <Link to={`/profile/${owner.user_id}`} className="flex min-w-0 items-center gap-2 hover:text-primary">
+                      <Avatar className="h-5 w-5">
+                        {owner.profile?.avatar_url && <AvatarImage src={owner.profile.avatar_url} />}
+                        <AvatarFallback className="text-[8px]">{(owner.profile?.nickname || "?").charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <span className="truncate text-xs font-medium text-foreground">{owner.profile?.nickname || "알 수 없음"}</span>
+                    </Link>
                     <span className="text-[10px] text-muted-foreground ml-auto">
                       {new Date(owner.claimed_at).toLocaleDateString("ko-KR")}
                     </span>
@@ -430,16 +431,18 @@ export function SummitClaimSection({ mountainId, mountainName, hideList, trigger
                             <div className="flex-1 rounded-xl border border-border bg-card p-3 shadow-sm space-y-2">
                               {/* Header */}
                               <div className="flex items-center gap-2">
-                                <Avatar className="h-6 w-6">
-                                  {claim.profile?.avatar_url && <AvatarImage src={claim.profile.avatar_url} />}
-                                  <AvatarFallback className="text-[9px] bg-muted">
-                                    {(claim.profile?.nickname || "?").charAt(0)}
-                                  </AvatarFallback>
-                                </Avatar>
+                                <Link to={`/profile/${claim.user_id}`} className="shrink-0">
+                                  <Avatar className="h-6 w-6">
+                                    {claim.profile?.avatar_url && <AvatarImage src={claim.profile.avatar_url} />}
+                                    <AvatarFallback className="text-[9px] bg-muted">
+                                      {(claim.profile?.nickname || "?").charAt(0)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                </Link>
                                 <div className="flex-1 min-w-0">
-                                  <span className="text-xs font-semibold text-foreground block truncate">
+                                  <Link to={`/profile/${claim.user_id}`} className="text-xs font-semibold text-foreground block truncate hover:text-primary">
                                     {claim.profile?.nickname || "알 수 없음"}
-                                  </span>
+                                  </Link>
                                   <span className="text-[10px] text-muted-foreground">
                                     {new Date(claim.claimed_at).toLocaleString("ko-KR", {
                                       year: "numeric",
@@ -454,6 +457,16 @@ export function SummitClaimSection({ mountainId, mountainName, hideList, trigger
                                   <Badge variant="secondary" className="text-[9px] gap-0.5 shrink-0">
                                     <Crown className="h-2.5 w-2.5" /> 현재 주인
                                   </Badge>
+                                )}
+                                {claim.user_id === user?.id && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setDeleteTarget(claim)}
+                                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                    aria-label="정상인증 삭제"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
                                 )}
                               </div>
 
@@ -749,6 +762,31 @@ export function SummitClaimSection({ mountainId, mountainName, hideList, trigger
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>정상인증을 삭제할까요?</AlertDialogTitle>
+            <AlertDialogDescription>
+              삭제한 정상인증과 사진은 복구할 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (event) => {
+                event.preventDefault();
+                if (!deleteTarget) return;
+                const result = await deleteSummitClaim(deleteTarget);
+                if (result.success) setDeleteTarget(null);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

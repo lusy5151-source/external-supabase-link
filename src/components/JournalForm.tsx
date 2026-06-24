@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMountains } from "@/contexts/MountainsContext";
 import { useHikingJournals, type HikingJournal } from "@/hooks/useHikingJournals";
+import { useUserMountains } from "@/hooks/useUserMountains";
 import { useChallenges } from "@/hooks/useChallenges";
 import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,47 +24,9 @@ interface JournalFormProps {
   prefillMountainId?: number;
   prefillDate?: string;
 }
-const compressImage = async (file: File): Promise<File> => {
-  return new Promise((resolve) => {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return resolve(file);
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-
-    img.onload = () => {
-      const MAX = 1920;
-      let { width, height } = img;
-      if (width > MAX || height > MAX) {
-        if (width > height) {
-          height = Math.round((height * MAX) / width);
-          width = MAX;
-        } else {
-          width = Math.round((width * MAX) / height);
-          height = MAX;
-        }
-      }
-      canvas.width = width;
-      canvas.height = height;
-      ctx.drawImage(img, 0, 0, width, height);
-      URL.revokeObjectURL(url);
-
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) return resolve(file);
-          const newName = file.name.replace(/\.(heic|heif)$/i, ".jpg");
-          resolve(new File([blob], newName, { type: "image/jpeg" }));
-        },
-        "image/jpeg",
-        0.8
-      );
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      resolve(file);
-    };
-    img.src = url;
-  });
+const prepareJournalPhoto = async (file: File): Promise<File | null> => {
+  const { compressImage } = await import("@/lib/imageUpload");
+  return compressImage(file, "general");
 };
 
 const weatherOptions = ["☀️ 맑음", "⛅ 구름", "☁️ 흐림", "🌧️ 비", "❄️ 눈", "🌫️ 안개"];
@@ -133,6 +96,7 @@ function PhotoPickerButton({
 
 export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, prefillDate }: JournalFormProps) {
   const { mountains } = useMountains();
+  const { userMountainsAsMountains } = useUserMountains();
   const { user } = useAuth();
   const { createJournal, updateJournal, uploadPhoto } = useHikingJournals();
   const { recalculateProgress } = useChallenges();
@@ -172,13 +136,20 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
   const [planLoading, setPlanLoading] = useState(true);
 
   const MAX_PHOTOS = 5;
+  const selectableMountains = useMemo(() => {
+    const map = new Map<number, (typeof mountains)[number]>();
+    [...mountains, ...userMountainsAsMountains].forEach((mountain) => {
+      map.set(mountain.id, mountain);
+    });
+    return Array.from(map.values());
+  }, [mountains, userMountainsAsMountains]);
 
   useEffect(() => {
     if (!user?.id) {
       setPlanLoading(false);
       return;
     }
-    if (mountains.length === 0) return;
+    if (selectableMountains.length === 0) return;
     (async () => {
       try {
         const past30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
@@ -193,7 +164,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
           .limit(10);
         if (data) {
           const items = data
-            .map((plan: any) => ({ mountain: mountains.find((m) => m.id === plan.mountain_id), plan }))
+            .map((plan: any) => ({ mountain: selectableMountains.find((m) => m.id === plan.mountain_id), plan }))
             .filter((it: any) => it.mountain);
           setPlannedItems(items);
         }
@@ -201,19 +172,19 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
         setPlanLoading(false);
       }
     })();
-  }, [user?.id, mountains]);
+  }, [user?.id, selectableMountains]);
 
 
   const isEdit = !!editJournal;
 
   const filteredMountains = mountainSearch
-    ? mountains.filter((m) =>
+    ? selectableMountains.filter((m) =>
         !mountainIds.includes(m.id) &&
         (m.nameKo.includes(mountainSearch) || m.name.toLowerCase().includes(mountainSearch.toLowerCase()))
       )
-    : mountains.filter((m) => !mountainIds.includes(m.id));
+    : selectableMountains.filter((m) => !mountainIds.includes(m.id));
 
-  const selectedMountains = mountainIds.map((id) => mountains.find((m) => m.id === id)).filter(Boolean) as typeof mountains;
+  const selectedMountains = mountainIds.map((id) => selectableMountains.find((m) => m.id === id)).filter(Boolean) as typeof selectableMountains;
 
   const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 
@@ -228,7 +199,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
     const filtered: File[] = [];
     for (const file of incoming) {
       if (file.type && !allowedTypes.includes(file.type)) {
-        toast({ title: "JPG, PNG, WEBP 형식의 사진만 업로드 가능해요", variant: "destructive" });
+        toast({ title: "JPG, PNG, WEBP, HEIC 형식의 사진만 업로드 가능해요", variant: "destructive" });
         continue;
       }
       if (file.size > 30 * 1024 * 1024) {
@@ -237,8 +208,10 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
       }
       filtered.push(file);
     }
-    const compressed = await Promise.all(filtered.map((f) => compressImage(f)));
-    const newPending = compressed.map((file) => ({ file, preview: URL.createObjectURL(file) }));
+    const prepared = await Promise.all(filtered.map((f) => prepareJournalPhoto(f)));
+    const newPending = prepared
+      .filter((file): file is File => !!file)
+      .map((file) => ({ file, preview: URL.createObjectURL(file) }));
     setPendingPhotos((prev) => [...prev, ...newPending]);
   };
 
@@ -312,11 +285,19 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
     if (pendingPhotos.length > 0) {
       setUploadProgress({ current: 0, total: pendingPhotos.length });
       try {
-        for (let i = 0; i < pendingPhotos.length; i++) {
-          const url = await uploadPhoto(pendingPhotos[i].file);
-          if (!url) throw new Error("사진 업로드에 실패했어요");
-          uploadedUrls.push(url);
-          setUploadProgress({ current: i + 1, total: pendingPhotos.length });
+        uploadedUrls = await Promise.all(
+          pendingPhotos.map(async (pendingPhoto, index) => {
+            const url = await uploadPhoto(pendingPhoto.file);
+            setUploadProgress((progress) => ({
+              current: Math.min((progress?.current || 0) + 1, pendingPhotos.length),
+              total: pendingPhotos.length,
+            }));
+            if (!url) throw new Error(`사진 ${index + 1} 업로드에 실패했어요`);
+            return url;
+          })
+        );
+        if (uploadedUrls.some((url) => !url)) {
+          throw new Error("사진 업로드에 실패했어요");
         }
       } catch (err: any) {
         console.error("Photo upload error:", err);
@@ -345,25 +326,6 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
       tagged_friends: taggedFriends,
       visibility,
     };
-
-    // Debug: log payload + auth state before submit
-    try {
-      const { supabase } = await import("@/integrations/supabase/client");
-      const authUser = (await supabase.auth.getUser()).data.user;
-      console.log("Submitting journal:", {
-        user_id: authUser?.id,
-        user_id_from_context: user?.id,
-        mountain_id: journalData.mountain_id,
-        mountain_id_type: typeof journalData.mountain_id,
-        hiked_at: journalData.hiked_at,
-        visibility: journalData.visibility,
-        photos_count: photos.length,
-        tagged_friends_count: taggedFriends.length,
-        isEdit,
-      });
-    } catch (e) {
-      console.warn("Pre-submit debug log failed:", e);
-    }
 
     try {
       if (isEdit && editJournal) {
@@ -447,10 +409,22 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
   const acceptedFriends = friends.filter((f) => f.status === "accepted");
 
   return (
-    <div className="fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm flex items-end sm:items-center justify-center">
-      <div className="w-full max-w-lg max-h-[90vh] bg-card border border-border rounded-t-2xl sm:rounded-2xl shadow-xl overflow-y-auto pb-24 sm:pb-0">
+    <div
+      className="fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm flex items-end sm:items-center justify-center overflow-hidden px-2 sm:px-4"
+      style={{
+        paddingTop: "calc(env(safe-area-inset-top, 0px) + 8px)",
+        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)",
+      }}
+    >
+      <div
+        className="w-full bg-card border border-border rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden flex flex-col"
+        style={{
+          maxWidth: "min(448px, calc(100vw - 16px))",
+          maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px)",
+        }}
+      >
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-card border-b border-border px-4 py-3 flex items-center justify-between">
+        <div className="shrink-0 bg-card border-b border-border px-4 py-3 flex items-center justify-between">
           <h2 className="text-base font-bold text-foreground">
             {isEdit ? "일지 수정" : "등산 일지 작성"}
           </h2>
@@ -459,7 +433,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
           </button>
         </div>
 
-        <div className="p-4 space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 space-y-4">
           {/* ═══ REQUIRED: Mountain Selection ═══ */}
           <div>
             <label className="text-xs font-medium text-foreground mb-1.5 block">산 선택 * <span className="text-muted-foreground font-normal">(여러 개 가능)</span></label>
@@ -508,7 +482,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
                                 setMountainSearch("");
                                 setShowMountainSearch(false);
                               }}
-                              className="w-full text-left px-3 py-2 text-sm hover:bg-primary/10 flex items-center gap-2 border-b border-border/40 last:border-b-0"
+                    className="w-full min-w-0 text-left px-3 py-2 text-sm hover:bg-primary/10 flex items-center gap-2 border-b border-border/40 last:border-b-0"
                             >
                               <Mountain className="h-3.5 w-3.5 text-primary shrink-0" />
                               <span className="text-foreground font-medium">{mountain.nameKo}</span>
@@ -532,7 +506,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
                   placeholder="산 이름 검색..."
                   value={mountainSearch}
                   onChange={(e) => setMountainSearch(e.target.value)}
-                  className="mb-2"
+                  className="mb-2 min-w-0"
                   autoFocus
                 />
                 {mountainSearch && (
@@ -546,7 +520,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
                           setMountainSearch("");
                           setShowMountainSearch(false);
                         }}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-secondary/50 flex items-center gap-2"
+                        className="w-full min-w-0 text-left px-3 py-2 text-sm hover:bg-secondary/50 flex items-center gap-2"
                       >
                         <Mountain className="h-3.5 w-3.5 text-primary" />
                         <span className="text-foreground">{m.nameKo}</span>
@@ -586,7 +560,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
           {/* ═══ Visibility ═══ */}
           <div>
             <label className="text-xs font-medium text-foreground mb-1.5 block">공개 범위</label>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {visibilityOptions.map((v) => {
                 const Icon = v.icon;
                 return (
@@ -594,7 +568,7 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
                     key={v.value}
                     onClick={() => setVisibility(v.value as any)}
                     className={cn(
-                      "flex-1 flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs transition-colors",
+                      "min-w-0 flex items-center justify-center gap-1 rounded-lg border px-2 py-2 text-xs transition-colors",
                       visibility === v.value
                         ? "border-primary bg-primary/10 text-primary font-medium"
                         : "border-border text-muted-foreground hover:bg-secondary/50"
@@ -622,6 +596,57 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
             <p className="text-right mt-1" style={{ fontSize: 11, color: "hsl(var(--muted-foreground))" }}>{notes.length}/100</p>
           </div>
 
+          {/* ═══ Photos ═══ */}
+          <div>
+            <label className="text-xs font-medium text-foreground mb-1 block">사진</label>
+            <div className="flex max-w-full gap-2 overflow-x-auto overscroll-x-contain pb-1">
+              {photos.map((url, i) => (
+                <div
+                  key={`u-${i}`}
+                  className="relative shrink-0 overflow-hidden border border-border"
+                  style={{ width: 80, height: 80, borderRadius: 8 }}
+                >
+                  <img src={url} alt="" className="h-full w-full" style={{ objectFit: "cover" }} />
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(i)}
+                    className="absolute top-0.5 right-0.5 bg-foreground/60 text-background rounded-full p-0.5"
+                    aria-label="사진 삭제"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+              {pendingPhotos.map((p, i) => (
+                <div
+                  key={`p-${i}`}
+                  className="relative shrink-0 overflow-hidden border border-border"
+                  style={{ width: 80, height: 80, borderRadius: 8 }}
+                >
+                  <img src={p.preview} alt="" className="h-full w-full" style={{ objectFit: "cover" }} />
+                  <button
+                    type="button"
+                    onClick={() => removePendingPhoto(i)}
+                    className="absolute top-0.5 right-0.5 bg-foreground/60 text-background rounded-full p-0.5"
+                    aria-label="사진 삭제"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+              {photos.length + pendingPhotos.length < MAX_PHOTOS && (
+                <PhotoPickerButton
+                  saving={saving}
+                  onNativePick={handleNativePhotoPick}
+                  onWebFiles={handlePhotoSelect}
+                />
+              )}
+            </div>
+            <p className="mt-1" style={{ fontSize: 11, color: "hsl(var(--muted-foreground))" }}>
+              최대 {MAX_PHOTOS}장까지 올릴 수 있어요.
+            </p>
+          </div>
+
           {/* ═══ Toggle for optional fields ═══ */}
           <button
             onClick={() => setShowOptional((v) => !v)}
@@ -636,22 +661,22 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
           {showOptional && (
             <div className="space-y-4 animate-in slide-in-from-top-2 duration-200">
               {/* Course info */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-medium text-foreground mb-1.5 block">코스명</label>
-                  <Input placeholder="예: 백운대 코스" value={courseName} onChange={(e) => setCourseName(e.target.value)} />
+                  <Input className="min-w-0" placeholder="예: 백운대 코스" value={courseName} onChange={(e) => setCourseName(e.target.value)} />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-foreground mb-1.5 block">출발점</label>
-                  <Input placeholder="예: 북한산성 탐방지원센터" value={courseStartingPoint} onChange={(e) => setCourseStartingPoint(e.target.value)} />
+                  <Input className="min-w-0" placeholder="예: 북한산성 탐방지원센터" value={courseStartingPoint} onChange={(e) => setCourseStartingPoint(e.target.value)} />
                 </div>
               </div>
 
               {/* Duration & Difficulty */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-medium text-foreground mb-1.5 block">소요 시간</label>
-                  <Input placeholder="예: 3시간 30분" value={duration} onChange={(e) => setDuration(e.target.value)} />
+                  <Input className="min-w-0" placeholder="예: 3시간 30분" value={duration} onChange={(e) => setDuration(e.target.value)} />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-foreground mb-1.5 block">난이도</label>
@@ -696,58 +721,6 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
                 </div>
               </div>
 
-              {/* Photos */}
-              <div>
-                <label className="text-xs font-medium text-foreground mb-1 block">사진</label>
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {photos.map((url, i) => (
-                    <div
-                      key={`u-${i}`}
-                      className="relative shrink-0 overflow-hidden border border-border"
-                      style={{ width: 80, height: 80, borderRadius: 8 }}
-                    >
-                      <img src={url} alt="" className="h-full w-full" style={{ objectFit: "cover" }} />
-                      <button
-                        type="button"
-                        onClick={() => removePhoto(i)}
-                        className="absolute top-0.5 right-0.5 bg-foreground/60 text-background rounded-full p-0.5"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                  {pendingPhotos.map((p, i) => (
-                    <div
-                      key={`p-${i}`}
-                      className="relative shrink-0 overflow-hidden border border-border"
-                      style={{ width: 80, height: 80, borderRadius: 8 }}
-                    >
-                      <img src={p.preview} alt="" className="h-full w-full" style={{ objectFit: "cover" }} />
-                      <button
-                        type="button"
-                        onClick={() => removePendingPhoto(i)}
-                        className="absolute top-0.5 right-0.5 bg-foreground/60 text-background rounded-full p-0.5"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                  {photos.length + pendingPhotos.length < MAX_PHOTOS && (
-                    <PhotoPickerButton
-                      saving={saving}
-                      onNativePick={handleNativePhotoPick}
-                      onWebFiles={handlePhotoSelect}
-                    />
-                  )}
-
-                </div>
-                <p className="mt-1" style={{ fontSize: 11, color: "hsl(var(--muted-foreground))" }}>
-                  (최대 {MAX_PHOTOS}장)
-                </p>
-              </div>
-
-              {/* Course Notes */}
-
               {/* Course Notes */}
               <div>
                 <label className="text-xs font-medium text-foreground mb-1.5 block">코스 메모</label>
@@ -789,12 +762,12 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
         </div>
 
         {/* Submit */}
-        <div className="sticky bottom-0 z-[61] bg-card border-t border-border p-4 pb-6 sm:pb-4 flex gap-2">
-          <Button variant="outline" onClick={onClose} className="flex-1">취소</Button>
+        <div className="shrink-0 bg-card border-t border-border p-3 sm:p-4 flex gap-2">
+          <Button variant="outline" onClick={onClose} className="flex-1 min-w-0">취소</Button>
           <Button
             onClick={handleSubmit}
             disabled={saving || mountainIds.length === 0}
-            className="flex-1 text-white"
+            className="flex-1 min-w-0 text-white"
             style={{ background: "hsl(var(--brand-forest))" }}
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
@@ -813,4 +786,3 @@ export function JournalForm({ editJournal, onClose, onSaved, prefillMountainId, 
     </div>
   );
 }
-

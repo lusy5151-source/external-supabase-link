@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { TrailDetailMap } from "@/components/TrailDetailMap";
 import { NearbyRestaurantsSection } from "@/components/NearbyRestaurantsSection";
+import { openAppleMapsDirections, openNaverMapsWeb } from "@/lib/mapLinks";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 interface TrailDetail {
   id: string;
@@ -60,22 +62,44 @@ export default function TrailDetailPage() {
   const trailId = rawId.startsWith("t-") ? rawId.slice(2) : rawId.startsWith("np-") ? null : rawId;
   const [trail, setTrail] = useState<TrailDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!trailId) { setLoading(false); return; }
+    let cancelled = false;
+    if (!trailId) {
+      setLoading(false);
+      setLoadError(false);
+      return () => { cancelled = true; };
+    }
     (async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("trails")
-        .select("*")
-        .eq("id", trailId)
-        .single();
-      if (!error && data) {
-        setTrail(data as any);
+      setLoadError(false);
+      try {
+        const { data, error } = await supabase
+          .from("trails")
+          .select("*")
+          .eq("id", trailId)
+          .maybeSingle();
+        if (cancelled) return;
+        if (!error && data) {
+          setTrail(data as any);
+        } else {
+          console.warn("[TrailDetailPage] trail fetch failed", error);
+          setTrail(null);
+          setLoadError(!!error);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.warn("[TrailDetailPage] trail fetch crashed", error);
+          setTrail(null);
+          setLoadError(true);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setLoading(false);
     })();
+    return () => { cancelled = true; };
   }, [trailId]);
 
   if (loading) {
@@ -103,7 +127,9 @@ export default function TrailDetailPage() {
     return (
       <div className="mx-auto max-w-2xl py-20 text-center">
         <MountainMascot mood="sad" size={80} />
-        <p className="mt-4 text-muted-foreground">코스를 찾을 수 없습니다</p>
+        <p className="mt-4 text-muted-foreground">
+          {loadError ? "코스 정보를 잠시 불러오지 못했어요" : "코스를 찾을 수 없습니다"}
+        </p>
         <Link to="/mountains" className="mt-2 inline-block text-sm text-primary hover:underline">
           산 목록으로 돌아가기
         </Link>
@@ -115,19 +141,37 @@ export default function TrailDetailPage() {
 
   const handleCopyAddress = () => {
     const address = trail.starting_point;
-    navigator.clipboard.writeText(address).then(() => {
+    if (!address) {
+      toast({ title: "복사할 주소가 없습니다" });
+      return;
+    }
+    navigator.clipboard?.writeText(address).then(() => {
       toast({ title: "주소가 복사되었습니다 📋" });
+    }).catch(() => {
+      toast({ title: "주소 복사에 실패했어요" });
+    });
+  };
+
+  const handleNavigate = () => {
+    if (!trail.starting_point) {
+      toast({ title: "출발지 정보가 없습니다" });
+      return;
+    }
+    openAppleMapsDirections({
+      name: trail.starting_point,
+      address: trail.starting_point,
     });
   };
 
   const handleOpenNaverMap = () => {
-    const query = encodeURIComponent(trail.starting_point);
-    window.open(`https://map.naver.com/v5/search/${query}`, "_blank");
-  };
-
-  const handleNavigate = () => {
-    const query = encodeURIComponent(trail.starting_point);
-    window.open(`https://map.naver.com/v5/search/${query}`, "_blank");
+    if (!trail.starting_point) {
+      toast({ title: "출발지 정보가 없습니다" });
+      return;
+    }
+    openNaverMapsWeb({
+      name: trail.starting_point,
+      address: trail.starting_point,
+    });
   };
 
   const difficultyBadgeStyle = (() => {
@@ -170,16 +214,21 @@ export default function TrailDetailPage() {
       </Link>
 
       {/* Course Route Map */}
-      <TrailDetailMap
-        geometry={trail.geometry}
-        difficulty={trail.difficulty}
-        waypoints={trail.waypoints}
-        mountainName={mountain?.nameKo ?? null}
-        mountainLat={mountain?.lat ?? null}
-        mountainLng={mountain?.lng ?? null}
-        waypointsJson={(trail as any).waypoints_json ?? null}
-        routeSegments={(trail as any).route_segments ?? null}
-      />
+      <ErrorBoundary
+        fallbackMessage="코스 지도를 잠시 불러오지 못했어요."
+        resetKey={`trail-map-${trail.id}`}
+      >
+        <TrailDetailMap
+          geometry={trail.geometry}
+          difficulty={trail.difficulty}
+          waypoints={trail.waypoints}
+          mountainName={mountain?.nameKo ?? null}
+          mountainLat={mountain?.lat ?? null}
+          mountainLng={mountain?.lng ?? null}
+          waypointsJson={(trail as any).waypoints_json ?? null}
+          routeSegments={(trail as any).route_segments ?? null}
+        />
+      </ErrorBoundary>
 
       {/* Course Title Card */}
       <div style={{ background: "white", borderRadius: 18, padding: 14, margin: "8px 12px 8px" }}>
@@ -240,7 +289,7 @@ export default function TrailDetailPage() {
         })}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, margin: "0 12px 8px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, margin: "0 12px 8px" }}>
         <button
           type="button"
           onClick={handleNavigate}
@@ -251,6 +300,17 @@ export default function TrailDetailPage() {
           }}
         >
           <Navigation size={14} color="#639922" /> 길찾기
+        </button>
+        <button
+          type="button"
+          onClick={handleOpenNaverMap}
+          style={{
+            background: "white", border: "0.5px solid #e3efcc", borderRadius: 14,
+            padding: 11, display: "flex", alignItems: "center", justifyContent: "center",
+            gap: 5, fontSize: 12, color: "#444", cursor: "pointer",
+          }}
+        >
+          <MapPin size={14} color="#639922" /> 네이버
         </button>
         <button
           type="button"
@@ -286,26 +346,31 @@ export default function TrailDetailPage() {
       </InfoCard>
 
       {/* Nearby Restaurants */}
-      <NearbyRestaurantsSection
-        lat={(() => {
-          const g: any = trail.geometry;
-          const c = g?.coordinates;
-          if (Array.isArray(c) && Array.isArray(c[0])) {
-            const first = Array.isArray(c[0][0]) ? c[0][0] : c[0];
-            if (Array.isArray(first) && typeof first[1] === "number") return first[1];
-          }
-          return mountain?.lat ?? null;
-        })()}
-        lng={(() => {
-          const g: any = trail.geometry;
-          const c = g?.coordinates;
-          if (Array.isArray(c) && Array.isArray(c[0])) {
-            const first = Array.isArray(c[0][0]) ? c[0][0] : c[0];
-            if (Array.isArray(first) && typeof first[0] === "number") return first[0];
-          }
-          return mountain?.lng ?? null;
-        })()}
-      />
+      <ErrorBoundary
+        fallbackMessage="주변 정보를 잠시 불러오지 못했어요."
+        resetKey={`trail-nearby-${trail.id}`}
+      >
+        <NearbyRestaurantsSection
+          lat={(() => {
+            const g: any = trail.geometry;
+            const c = g?.coordinates;
+            if (Array.isArray(c) && Array.isArray(c[0])) {
+              const first = Array.isArray(c[0][0]) ? c[0][0] : c[0];
+              if (Array.isArray(first) && typeof first[1] === "number") return first[1];
+            }
+            return mountain?.lat ?? null;
+          })()}
+          lng={(() => {
+            const g: any = trail.geometry;
+            const c = g?.coordinates;
+            if (Array.isArray(c) && Array.isArray(c[0])) {
+              const first = Array.isArray(c[0][0]) ? c[0][0] : c[0];
+              if (Array.isArray(first) && typeof first[0] === "number") return first[0];
+            }
+            return mountain?.lng ?? null;
+          })()}
+        />
+      </ErrorBoundary>
 
 
       {/* Public Transportation */}
@@ -396,7 +461,7 @@ function PointRow({ tag, tagBg, tagColor, name }: { tag: string; tagBg: string; 
           <span style={{ fontSize: 12, color: "#333", flex: 1, minWidth: 0, wordBreak: "break-word" }}>{name}</span>
           <button
             type="button"
-            onClick={() => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(name)}`, "_blank")}
+            onClick={() => openAppleMapsDirections({ name, address: name })}
             style={{
               background: "#f7faf2", border: "0.5px solid #e3efcc", borderRadius: 9999,
               padding: "4px 10px", fontSize: 10, color: "#639922",
@@ -412,4 +477,3 @@ function PointRow({ tag, tagBg, tagColor, name }: { tag: string; tagBg: string; 
     </div>
   );
 }
-

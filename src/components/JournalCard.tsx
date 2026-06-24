@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { useMountains } from "@/contexts/MountainsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHikingJournals, type HikingJournal, type JournalComment } from "@/hooks/useHikingJournals";
@@ -8,7 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Heart, MessageCircle, Mountain, Calendar, Clock, Route, Flag,
-  Globe, Users, Lock, ChevronDown, Send, Trash2, X,
+  Globe, Users, Lock, ChevronDown, Send, Trash2, X, Loader2,
 } from "lucide-react";
 import { ContentMenu } from "@/components/ContentMenu";
 import PhotoLightbox from "@/components/PhotoLightbox";
@@ -33,7 +33,7 @@ interface JournalCardProps {
 export const JournalCard = memo(function JournalCard({ journal, showAuthor = true, onRefresh, slider = false }: JournalCardProps) {
   const { mountains } = useMountains();
   const { user } = useAuth();
-  const { toggleLike, fetchComments, addComment, deleteComment } = useHikingJournals();
+  const { toggleLike, fetchLikers, fetchComments, addComment, deleteComment } = useHikingJournals();
   const mountain = mountains.find((m) => m.id === journal.mountain_id);
   const allMountains = (journal.mountain_ids?.length ? journal.mountain_ids : [journal.mountain_id])
     .map((id) => mountains.find((m) => m.id === id))
@@ -43,6 +43,7 @@ export const JournalCard = memo(function JournalCard({ journal, showAuthor = tru
   const [likeCount, setLikeCount] = useState(journal.like_count || 0);
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<JournalComment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [commentCount, setCommentCount] = useState(journal.comment_count || 0);
 
@@ -56,6 +57,8 @@ export const JournalCard = memo(function JournalCard({ journal, showAuthor = tru
   const [taggedProfiles, setTaggedProfiles] = useState<Map<string, { nickname: string | null; avatar_url: string | null }>>(new Map());
   const [showLikers, setShowLikers] = useState(false);
   const [likers, setLikers] = useState<{ user_id: string; nickname: string | null; avatar_url: string | null }[]>([]);
+  const [likersLoading, setLikersLoading] = useState(false);
+  const commentInputRef = useRef<HTMLInputElement>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [startX, setStartX] = useState(0);
@@ -85,11 +88,35 @@ export const JournalCard = memo(function JournalCard({ journal, showAuthor = tru
   };
 
   const handleShowComments = async () => {
-    if (!showComments) {
+    if (showComments) {
+      setShowComments(false);
+      return;
+    }
+
+    setShowComments(true);
+    setCommentsLoading(true);
+    try {
       const data = await fetchComments(journal.id);
       setComments(data);
+    } finally {
+      setCommentsLoading(false);
     }
-    setShowComments(!showComments);
+  };
+
+  const handleShowLikers = async () => {
+    if (showLikers) {
+      setShowLikers(false);
+      return;
+    }
+
+    setShowLikers(true);
+    setLikersLoading(true);
+    try {
+      const data = await fetchLikers(journal.id);
+      setLikers(data);
+    } finally {
+      setLikersLoading(false);
+    }
   };
 
   const handleAddComment = async () => {
@@ -108,6 +135,12 @@ export const JournalCard = memo(function JournalCard({ journal, showAuthor = tru
     setComments((prev) => prev.filter((c) => c.id !== id));
     setCommentCount((c) => c - 1);
   };
+
+  useEffect(() => {
+    if (showComments) {
+      setTimeout(() => commentInputRef.current?.focus(), 50);
+    }
+  }, [showComments]);
 
   if (!mountain) return null;
 
@@ -323,16 +356,29 @@ export const JournalCard = memo(function JournalCard({ journal, showAuthor = tru
             )}
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={handleLike}
-              className={cn(
-                "flex items-center gap-1 text-[11px] transition-colors",
-                liked ? "text-red-500" : "text-muted-foreground hover:text-red-400"
-              )}
-            >
-              <Heart className={cn("h-3.5 w-3.5", liked && "fill-current")} />
-              <span>{likeCount}</span>
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleLike}
+                className={cn(
+                  "flex items-center text-[11px] transition-colors",
+                  liked ? "text-red-500" : "text-muted-foreground hover:text-red-400"
+                )}
+                aria-label={liked ? "좋아요 취소" : "좋아요"}
+              >
+                <Heart className={cn("h-3.5 w-3.5", liked && "fill-current")} />
+              </button>
+              <button
+                type="button"
+                onClick={handleShowLikers}
+                className={cn(
+                  "text-[11px] transition-colors",
+                  likeCount > 0 ? "text-muted-foreground hover:text-foreground" : "text-muted-foreground/60"
+                )}
+                aria-label="좋아요 누른 사람 보기"
+              >
+                {likeCount}
+              </button>
+            </div>
             <button
               onClick={handleShowComments}
               className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
@@ -361,13 +407,26 @@ export const JournalCard = memo(function JournalCard({ journal, showAuthor = tru
                 <span className="text-xs text-foreground">{l.nickname || "사용자"}</span>
               </div>
             ))}
+            {likersLoading && (
+              <div className="flex items-center justify-center py-2 text-xs text-muted-foreground">
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> 불러오는 중...
+              </div>
+            )}
+            {!likersLoading && likers.length === 0 && (
+              <p className="py-2 text-center text-xs text-muted-foreground">아직 좋아요가 없습니다</p>
+            )}
           </div>
         )}
 
         {/* Comments section */}
         {showComments && (
           <div className="space-y-2 pt-2 border-t border-border/50">
-            {comments.length === 0 && (
+            {commentsLoading && (
+              <div className="flex items-center justify-center py-2 text-xs text-muted-foreground">
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> 댓글을 불러오는 중...
+              </div>
+            )}
+            {!commentsLoading && comments.length === 0 && (
               <p className="text-xs text-muted-foreground text-center py-2">아직 댓글이 없습니다</p>
             )}
             {comments.map((c) => (
@@ -404,6 +463,7 @@ export const JournalCard = memo(function JournalCard({ journal, showAuthor = tru
             {user && (
               <div className="flex items-center gap-2">
                 <input
+                  ref={commentInputRef}
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleAddComment()}

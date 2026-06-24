@@ -6,117 +6,227 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-async function generateApnsJwt(keyId: string, teamId: string, rawBase64Key: string): Promise<string> {
+type PushToken = {
+  token: string;
+  platform: string | null;
+};
+
+function toBase64Url(input: ArrayBuffer | Uint8Array | string) {
+  let binary = "";
+  if (typeof input === "string") {
+    binary = input;
+  } else {
+    const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+  }
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function parseFirebaseServiceAccount() {
+  const raw = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
+  if (raw) return JSON.parse(raw);
+
+  const projectId = Deno.env.get("FIREBASE_PROJECT_ID");
+  const clientEmail = Deno.env.get("FIREBASE_CLIENT_EMAIL");
+  const privateKey = Deno.env.get("FIREBASE_PRIVATE_KEY")?.replace(/\\n/g, "\n");
+  if (!projectId || !clientEmail || !privateKey) return null;
+  return { project_id: projectId, client_email: clientEmail, private_key: privateKey };
+}
+
+async function getFirebaseAccessToken(serviceAccount: any) {
   const now = Math.floor(Date.now() / 1000);
+  const header = toBase64Url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const payload = toBase64Url(JSON.stringify({
+    iss: serviceAccount.client_email,
+    scope: "https://www.googleapis.com/auth/firebase.messaging",
+    aud: "https://oauth2.googleapis.com/token",
+    iat: now,
+    exp: now + 3600,
+  }));
 
-  const headerB64 = btoa(JSON.stringify({ alg: "ES256", kid: keyId }))
-    .replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-  const payloadB64 = btoa(JSON.stringify({ iss: teamId, iat: now }))
-    .replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  const keyData = serviceAccount.private_key
+    .replace("-----BEGIN PRIVATE KEY-----", "")
+    .replace("-----END PRIVATE KEY-----", "")
+    .replace(/\s/g, "");
+  const privateKey = await crypto.subtle.importKey(
+    "pkcs8",
+    Uint8Array.from(atob(keyData), (c) => c.charCodeAt(0)),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
 
-  const signingInput = `${headerB64}.${payloadB64}`;
+  const signingInput = `${header}.${payload}`;
+  const signature = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    privateKey,
+    new TextEncoder().encode(signingInput),
+  );
+  const assertion = `${signingInput}.${toBase64Url(signature)}`;
 
-  const clean = rawBase64Key.replace(/\s/g, "");
-  const padded = clean + "=".repeat((4 - clean.length % 4) % 4);
+  const response = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion,
+    }),
+  });
+  const json = await response.json();
+  if (!response.ok) throw new Error(`FCM auth failed: ${JSON.stringify(json)}`);
+  return json.access_token as string;
+}
 
-  const keyBytes = Uint8Array.from(atob(padded), c => c.charCodeAt(0));
-  const key = await crypto.subtle.importKey(
-    "pkcs8", keyBytes,
+async function sendAndroidPush(token: string, title: string, body: string, data: Record<string, unknown> = {}) {
+  const serviceAccount = parseFirebaseServiceAccount();
+  if (!serviceAccount) {
+    return { token, platform: "android", status: 500, error: "Firebase service account env missing" };
+  }
+
+  const accessToken = await getFirebaseAccessToken(serviceAccount);
+  const projectId = serviceAccount.project_id;
+  const stringData = Object.fromEntries(
+    Object.entries(data || {}).map(([key, value]) => [key, String(value ?? "")]),
+  );
+
+  const response = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      message: {
+        token,
+        notification: { title, body },
+        data: stringData,
+        android: {
+          priority: "HIGH",
+          notification: {
+            channel_id: "wandeung_default",
+            default_vibrate_timings: true,
+          },
+        },
+      },
+    }),
+  });
+
+  const responseText = await response.text();
+  return {
+    token,
+    platform: "android",
+    status: response.status,
+    ok: response.ok,
+    response: responseText,
+  };
+}
+
+async function createApnsJwt() {
+  const APNS_KEY_ID = Deno.env.get("APNS_KEY_ID");
+  const APNS_TEAM_ID = Deno.env.get("APNS_TEAM_ID");
+  const APNS_PRIVATE_KEY = Deno.env.get("APNS_PRIVATE_KEY");
+  if (!APNS_KEY_ID || !APNS_TEAM_ID || !APNS_PRIVATE_KEY) return null;
+
+  const header = toBase64Url(JSON.stringify({ alg: "ES256", kid: APNS_KEY_ID }));
+  const now = Math.floor(Date.now() / 1000);
+  const payload = toBase64Url(JSON.stringify({ iss: APNS_TEAM_ID, iat: now }));
+  const keyData = APNS_PRIVATE_KEY
+    .replace("-----BEGIN PRIVATE KEY-----", "")
+    .replace("-----END PRIVATE KEY-----", "")
+    .replace(/\s/g, "");
+
+  const privateKey = await crypto.subtle.importKey(
+    "pkcs8",
+    Uint8Array.from(atob(keyData), (c) => c.charCodeAt(0)),
     { name: "ECDSA", namedCurve: "P-256" },
-    false, ["sign"]
+    false,
+    ["sign"],
   );
 
-  const signatureBytes = await crypto.subtle.sign(
+  const signingInput = `${header}.${payload}`;
+  const signature = await crypto.subtle.sign(
     { name: "ECDSA", hash: "SHA-256" },
-    key,
-    new TextEncoder().encode(signingInput)
+    privateKey,
+    new TextEncoder().encode(signingInput),
   );
+  return `${signingInput}.${toBase64Url(signature)}`;
+}
 
-  const sig = btoa(String.fromCharCode(...new Uint8Array(signatureBytes)))
-    .replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+async function sendIosPush(token: string, title: string, body: string, data: Record<string, unknown> = {}) {
+  const APNS_BUNDLE_ID = Deno.env.get("APNS_BUNDLE_ID");
+  const jwt = await createApnsJwt();
+  if (!APNS_BUNDLE_ID || !jwt) {
+    return { token, platform: "ios", status: 500, error: "APNs env missing" };
+  }
 
-  return `${signingInput}.${sig}`;
+  const response = await fetch(`https://api.push.apple.com/3/device/${token}`, {
+    method: "POST",
+    headers: {
+      authorization: `bearer ${jwt}`,
+      "apns-topic": APNS_BUNDLE_ID,
+      "apns-push-type": "alert",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      aps: {
+        alert: { title, body },
+        sound: "default",
+        badge: 1,
+      },
+      ...data,
+    }),
+  });
+
+  return { token, platform: "ios", status: response.status, ok: response.ok };
 }
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { user_id, title, body, data } = await req.json();
+    const { user_id, title, body, data = {} } = await req.json();
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const { data: tokens } = await supabase
-      .from("push_tokens").select("token")
-      .eq("user_id", user_id).eq("platform", "ios");
+    const { data: tokens, error } = await supabase
+      .from("push_tokens")
+      .select("token, platform")
+      .eq("user_id", user_id)
+      .in("platform", ["ios", "android"]);
 
+    if (error) throw error;
     if (!tokens || tokens.length === 0) {
-      await supabase.from("push_notification_logs").insert({
-        user_id, title, body, status: "no_token",
-      });
-      return new Response(JSON.stringify({ message: "토큰 없음" }), {
-        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ error: "토큰 없음" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const jwt = await generateApnsJwt(
-      Deno.env.get("APNS_KEY_ID")!,
-      Deno.env.get("APNS_TEAM_ID")!,
-      Deno.env.get("APNS_PRIVATE_KEY")!
-    );
-
-    // sandbox(개발 빌드) / production(TestFlight·App Store) 분기.
-    // APNS_ENV 시크릿이 없으면 production(기존 동작) 유지.
-    const apnsEnv = (Deno.env.get("APNS_ENV") || "production").toLowerCase();
-    const apnsHost = apnsEnv === "sandbox"
-      ? "https://api.sandbox.push.apple.com"
-      : "https://api.push.apple.com";
-
-    const results = await Promise.all(tokens.map(async ({ token }) => {
-      const response = await fetch(`${apnsHost}/3/device/${token}`, {
-        method: "POST",
-        headers: {
-          "authorization": `bearer ${jwt}`,
-          "apns-topic": Deno.env.get("APNS_BUNDLE_ID")!,
-          "apns-push-type": "alert",
-          "apns-priority": "10",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          aps: { alert: { title, body }, sound: "default", badge: 1 },
-          ...data,
-        }),
-      });
-      const responseText = await response.text();
-      console.log(`APNs[${apnsEnv}]: ${response.status} ${responseText}`);
-
-      // 만료/잘못된 토큰은 정리해서 다음 호출부터 "no_token" 분기로 빠지게 함.
-      if (response.status === 410 || response.status === 400) {
-        try {
-          await supabase.from("push_tokens").delete().eq("token", token);
-        } catch (e) {
-          console.error("token cleanup failed:", e);
-        }
-      }
-      return { status: response.status, response: responseText };
+    const results = await Promise.all((tokens as PushToken[]).map(({ token, platform }) => {
+      if (platform === "android") return sendAndroidPush(token, title, body, data);
+      return sendIosPush(token, title, body, data);
     }));
 
-    const overallStatus = results.every(r => r.status >= 200 && r.status < 300)
-      ? "sent" : "partial_failure";
-
+    const hasSuccess = results.some((result: any) => result.ok || (result.status >= 200 && result.status < 300));
     await supabase.from("push_notification_logs").insert({
-      user_id, title, body,
-      status: `${overallStatus}:${results.map(r => r.status).join(",")}`,
+      user_id,
+      title,
+      body,
+      status: hasSuccess ? "sent" : "failed",
     });
-    return new Response(JSON.stringify({ success: true, results }), {
+
+    return new Response(JSON.stringify({ success: hasSuccess, results }), {
+      status: hasSuccess ? 200 : 502,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    console.error("Push error:", err);
-    return new Response(JSON.stringify({ error: String(err) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    console.error(err);
+    const message = err instanceof Error ? err.message : String(err);
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

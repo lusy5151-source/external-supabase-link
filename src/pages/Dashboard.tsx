@@ -14,12 +14,10 @@ import { useChallengeMountains, useUserMountainChallenges, type ChallengeListTyp
 import { useLiveSummitFeed } from "@/hooks/useLiveSummitFeed";
 import { useDashboardHomeData } from "@/hooks/useDashboardHomeData";
 import { SharedCompletionCard } from "@/components/SharedCompletionCard";
-import { JournalForm } from "@/components/JournalForm";
-import AchievementModal from "@/components/AchievementModal";
+import { LiveSummitSection } from "@/components/dashboard/LiveSummitSection";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { StackedAvatars } from "@/components/StackedAvatars";
 import { Progress } from "@/components/ui/progress";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import MountainMascot from "@/components/MountainMascot";
 import CharacterAnimation, { CHARACTER_META, type Character } from "@/components/CharacterAnimation";
@@ -28,17 +26,28 @@ import {
   Sun, Cloud, CloudRain, CloudSnow, CloudSun,
   Target, BookOpen, Heart, Search,
   MessageCircle, Newspaper, Clock, Settings2,
-  Users, Flag, Crown, Flame,
+  Users, Flag,
 } from "lucide-react";
-import { AnnouncementSection } from "@/components/AnnouncementSystem";
 // OnboardingTutorial moved to Layout
 import { Link, useNavigate } from "react-router-dom";
-import { useMemo, useState, useEffect, useCallback, useRef } from "react";
+import { lazy, Suspense, useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOnboarding } from "@/contexts/OnboardingContext";
 import { useUserXp } from "@/hooks/useUserXp";
 import { useCharacterEmotion } from "@/hooks/useCharacterEmotion";
 import { useHomeMessage } from "@/hooks/useHomeMessage";
+
+const AchievementModal = lazy(() => import("@/components/AchievementModal"));
+const JournalForm = lazy(() =>
+  import("@/components/JournalForm").then((module) => ({ default: module.JournalForm }))
+);
+const AnnouncementSection = lazy(() =>
+  import("@/components/AnnouncementSystem").then((module) => ({ default: module.AnnouncementSection }))
+);
+
+const preloadMagazinePage = () => {
+  void import("@/pages/MagazinePage");
+};
 
 const EMOTION_MSG: Record<"normal" | "sad" | "angry" | "autumn", string | null> = {
   normal: null,
@@ -500,7 +509,6 @@ function CharacterTapArea({
   }, [recovered]);
 
   const fireShortTap = () => {
-    console.log("[Character] short tap, emotion=", emotion);
     setBounceKey((k) => k + 1);
     if (emotion === "sad") {
       spawnParticles(COMFORT_PARTICLES.sad, 3);
@@ -512,7 +520,6 @@ function CharacterTapArea({
   };
 
   const fireLongPress = () => {
-    console.log("[Character] long press, emotion=", emotion);
     setBounceKey((k) => k + 1);
     spawnParticles(["💙", "💧", "🩵"], 4);
     onLongPress?.();
@@ -608,10 +615,9 @@ function CharacterTapArea({
             fontSize: 20,
             pointerEvents: "none",
             animation: "comfortParticle 0.9s ease-out forwards",
-            // @ts-ignore - CSS custom props
             "--dx": `calc(-50% + ${p.dx}px)`,
             "--dy": `${p.dy}px`,
-          } as React.CSSProperties}
+          } as React.CSSProperties & Record<"--dx" | "--dy", string>}
         >
           {p.emoji}
         </span>
@@ -629,17 +635,17 @@ const Dashboard = () => {
     useAchievementStore(records, gearItems, sharedCompletions);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { plans, myUpcomingPlans } = useHikingPlans();
-  const { claims: liveClaims, kingOfDay, loading: liveFeedLoading } = useLiveSummitFeed();
+  const { myUpcomingPlans } = useHikingPlans({ homeOnly: true });
+  const { claims: liveClaims, kingOfDay, loading: liveFeedLoading, deleteClaim: deleteLiveClaim } = useLiveSummitFeed();
   const {
+    recentCommunityPosts,
+    recentCommunityLoading,
+    recentSharedCompletions,
     activeChallenges,
-    characterId,
     hasMagazinePosts,
     lastHikeDate,
-    recentCommunityPosts,
-    recentJournals,
-    recentSharedCompletions,
-  } = useDashboardHomeData();
+    characterId,
+  } = useDashboardHomeData(user?.id);
   const [userGoal, setUserGoal] = useState<number>(() => {
     const saved = localStorage.getItem(GOAL_KEY);
     return saved ? parseInt(saved) : 100;
@@ -656,6 +662,12 @@ const Dashboard = () => {
   const xpInfo = useUserXp();
   const charEmotion = useCharacterEmotion();
   const homeMessage = useHomeMessage();
+
+  useEffect(() => {
+    if (!hasMagazinePosts) return;
+    const handle = window.setTimeout(preloadMagazinePage, 800);
+    return () => window.clearTimeout(handle);
+  }, [hasMagazinePosts]);
 
   // Comfort interaction (sad/angry) + tap-induced emotion state machine
   const [comfortCount, setComfortCount] = useState(0);
@@ -678,7 +690,6 @@ const Dashboard = () => {
   const isComfortableNow = displayedEmotion === "sad" || displayedEmotion === "angry";
 
   const handleShortTap = () => {
-    console.log("[Dashboard] handleShortTap, displayed=", displayedEmotion, "comfort=", comfortCount, "tap=", tapCount);
     if (comfortRecovered) return;
     if (isComfortableNow) {
       setComfortCount((c) => {
@@ -695,7 +706,6 @@ const Dashboard = () => {
     setTapCount((c) => {
       const next = c + 1;
       if (next >= 3) {
-        console.log("[Dashboard] 3 taps → angry");
         setInduced("angry");
         setComfortCount(0);
         setComfortRecovered(false);
@@ -708,7 +718,6 @@ const Dashboard = () => {
   };
 
   const handleLongPress = () => {
-    console.log("[Dashboard] handleLongPress, displayed=", displayedEmotion);
     if (comfortRecovered) return;
     if (displayedEmotion === "sad") return;
     setInduced("sad");
@@ -912,12 +921,18 @@ const Dashboard = () => {
           <GuestSignupBanner />
           <PasswordSetupBanner />
         </div>
-        {!isDemo && <AchievementModal badge={newlyEarned} onDismiss={dismissNewBadge} />}
+        {!isDemo && newlyEarned && (
+          <Suspense fallback={null}>
+            <AchievementModal badge={newlyEarned} onDismiss={dismissNewBadge} />
+          </Suspense>
+        )}
         {showJournalForm && (
-          <JournalForm
-            onClose={() => setShowJournalForm(false)}
-            onSaved={() => { setShowJournalForm(false); }}
-          />
+          <Suspense fallback={null}>
+            <JournalForm
+              onClose={() => setShowJournalForm(false)}
+              onSaved={() => { setShowJournalForm(false); }}
+            />
+          </Suspense>
         )}
         {/* OnboardingTutorial is now in Layout */}
 
@@ -1119,81 +1134,23 @@ const Dashboard = () => {
 
 
 
-          {/* ── 1. 완등 실시간 소식 🏔 ── */}
-          <section>
-            <div className="mb-3 flex items-center gap-2">
-              <Flame className="h-4 w-4 text-coral" />
-              <h2 className="text-base font-bold text-foreground">완등 실시간 소식 🏔</h2>
-            </div>
-            <div className="rounded-2xl bg-card border border-border p-3 shadow-sm space-y-2">
-              {!isDemo && liveFeedLoading ? (
-                <div className="py-4 text-center text-sm text-muted-foreground">불러오는 중...</div>
-              ) : displayClaims.length === 0 ? (
-                <div className="py-4 text-center">
-                  <Mountain className="mx-auto h-7 w-7 text-muted-foreground/30 mb-1.5" />
-                  <p className="text-sm text-muted-foreground">아직 정복 기록이 없습니다</p>
-                </div>
-              ) : (
-                displayClaims.slice(0, 3).map((claim: any) => {
-                  const mt = mountains.find((m) => m.id === claim.mountain_id);
-                  const timeAgo = getTimeAgo(claim.claimed_at);
-                  return (
-                    <div key={claim.id} className="flex items-center gap-2.5 px-1 py-1">
-                      <Avatar className="h-7 w-7 shrink-0">
-                        {claim.avatar_url && <AvatarImage src={claim.avatar_url} />}
-                        <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                          {(claim.nickname || "?").charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0 flex items-center gap-1.5 text-sm">
-                        <span className="font-medium text-foreground truncate">{claim.nickname || "등산러"}</span>
-                        <span className="text-muted-foreground">·</span>
-                        <span className="text-foreground truncate">{mt?.nameKo}</span>
-                        {claim.summit_name && (
-                          <>
-                            <span className="text-muted-foreground">·</span>
-                            <span className="text-muted-foreground truncate">{claim.summit_name}</span>
-                          </>
-                        )}
-                      </div>
-                      <span className="text-[10px] text-muted-foreground shrink-0">{timeAgo}</span>
-                    </div>
-                  );
-                })
-              )}
-              {displayClaims.length > 3 && (
-                <Link to="/leaderboard" className="block text-center text-xs font-medium text-coral hover:underline pt-1">
-                  더 보기 →
-                </Link>
-              )}
-            </div>
-          </section>
-
-          {/* ── Mountain King of the Day ── */}
-          {displayKing && (
-            <section>
-              <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/10 dark:border-amber-800/30 p-4 shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <Crown className="h-4 w-4 text-amber-500" />
-                  <h2 className="text-sm font-bold text-foreground">오늘의 산왕</h2>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10 ring-2 ring-amber-300">
-                    {displayKing.avatar_url && <AvatarImage src={displayKing.avatar_url} />}
-                    <AvatarFallback className="text-sm bg-amber-100 text-amber-700">
-                      {(displayKing.nickname || "?").charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-sm font-bold text-foreground">{displayKing.nickname || "등산러"}</p>
-                    <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
-                      오늘 {displayKing.claim_count}개 정상 정복 👑
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </section>
-          )}
+          <LiveSummitSection
+            claims={displayClaims}
+            kingOfDay={displayKing}
+            loading={!isDemo && liveFeedLoading}
+            mountains={mountains}
+            currentUserId={user?.id}
+            onDeleteClaim={async (claim) => {
+              try {
+                await deleteLiveClaim(claim, user?.id);
+                const { toast } = await import("sonner");
+                toast.success("정상인증을 삭제했습니다");
+              } catch (error: any) {
+                const { toast } = await import("sonner");
+                toast.error(error?.message || "정상인증 삭제에 실패했습니다");
+              }
+            }}
+          />
 
           {/* ── 2. Circular Progress Cards: 100대 명산 + 정상 챌린지 ── */}
           <section className="grid grid-cols-2 gap-3">
@@ -1349,7 +1306,7 @@ const Dashboard = () => {
           {/* ── 3. 완등 MAGAZINE Banner ── */}
           {hasMagazinePosts && (
             <section>
-              <Link to="/magazine">
+              <Link to="/magazine" onPointerEnter={preloadMagazinePage} onTouchStart={preloadMagazinePage}>
                 <div className="relative rounded-2xl p-4 shadow-md overflow-hidden hover:shadow-lg transition-all hover:scale-[1.01] active:scale-[0.99]" style={{ background: "hsl(var(--magazine))" }}>
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-20">
                     <Newspaper className="h-14 w-14 text-white/20" />
@@ -1429,75 +1386,44 @@ const Dashboard = () => {
             ) : (
               <div className="space-y-3">
                 {(() => {
-                  type PreviewItem = { time: number; el: JSX.Element; key: string };
-                  const items: PreviewItem[] = [];
-                  recentCommunityPosts.forEach((p) => {
+                  if (recentCommunityLoading && recentCommunityPosts.length === 0) {
+                    return [0, 1, 2].map((i) => (
+                      <div key={`community-loading-${i}`} className="rounded-2xl bg-card border border-border p-4 shadow-sm">
+                        <div className="h-3 w-24 rounded-full bg-muted animate-pulse mb-3" />
+                        <div className="h-4 w-2/3 rounded-full bg-muted animate-pulse mb-2" />
+                        <div className="h-3 w-full rounded-full bg-muted animate-pulse" />
+                      </div>
+                    ));
+                  }
+
+                  if (recentCommunityPosts.length === 0) {
+                    return (
+                      <div className="rounded-2xl bg-card border border-border p-4 text-center text-xs text-muted-foreground shadow-sm">
+                        아직 최근 커뮤니티 글이 없어요
+                      </div>
+                    );
+                  }
+
+                  return recentCommunityPosts.slice(0, 3).map((p) => {
                     const nick = p.profile?.nickname || "사용자";
-                    items.push({
-                      time: new Date(p.created_at).getTime(),
-                      key: `p-${p.id}`,
-                      el: (
-                        <Link
-                          to={`/community/${p.id}`}
-                          className="block rounded-2xl bg-card border border-border p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/30 active:scale-[0.99]"
-                        >
-                          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                              {p.category === "story" ? "산행 이야기" : p.category === "mountain_info" ? "산 정보" : "장비추천"}
-                            </span>
-                            <span className="text-[10px] font-medium text-foreground truncate max-w-[100px]">{nick}</span>
-                            <span className="text-[10px] text-muted-foreground">· {new Date(p.created_at).toLocaleDateString("ko-KR")}</span>
-                          </div>
-                          {p.title && <p className="text-sm font-semibold text-foreground line-clamp-1">{p.title}</p>}
-                          <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{p.body}</p>
-                          <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
-                            <span className="flex items-center gap-0.5"><Heart className="h-3 w-3 text-coral" /> {p.like_count || 0}</span>
-                            <span className="flex items-center gap-0.5"><MessageCircle className="h-3 w-3" /> {p.comment_count || 0}</span>
-                          </div>
-                        </Link>
-                      ),
-                    });
+                    return (
+                      <Link
+                        key={`p-${p.id}`}
+                        to={`/community/${p.id}`}
+                        className="block rounded-2xl bg-card border border-border p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/30 active:scale-[0.99]"
+                      >
+                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                          <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                            {p.category === "story" ? "산행 이야기" : p.category === "mountain_info" ? "산 정보" : "장비추천"}
+                          </span>
+                          <span className="text-[10px] font-medium text-foreground truncate max-w-[100px]">{nick}</span>
+                          <span className="text-[10px] text-muted-foreground">· {new Date(p.created_at).toLocaleDateString("ko-KR")}</span>
+                        </div>
+                        {p.title && <p className="text-sm font-semibold text-foreground line-clamp-1">{p.title}</p>}
+                        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{p.body}</p>
+                      </Link>
+                    );
                   });
-                  recentJournals.forEach((j) => {
-                    const mt = mountains.find((m) => m.id === j.mountain_id);
-                    items.push({
-                      time: new Date(j.created_at).getTime(),
-                      key: `j-${j.id}`,
-                      el: (
-                        <Link
-                          to={`/journals/${j.id}`}
-                          className="block rounded-2xl bg-card border border-border p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/30 active:scale-[0.99]"
-                        >
-                          <div className="flex gap-3">
-                            {j.photos && j.photos.length > 0 ? (
-                              <img src={j.photos[0]} alt="" className="h-16 w-16 rounded-xl object-cover shrink-0" loading="lazy" />
-                            ) : (
-                              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-nature-50 shrink-0">
-                                <Mountain className="h-6 w-6 text-primary" />
-                              </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="inline-flex items-center rounded-full bg-nature-50 px-2 py-0.5 text-[10px] font-semibold text-primary">공개 일지</span>
-                                <p className="font-semibold text-sm text-foreground truncate">{mt?.nameKo || "산"}</p>
-                                {j.profile?.nickname && <span className="text-[10px] text-muted-foreground">by {j.profile.nickname}</span>}
-                              </div>
-                              {j.notes && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{j.notes}</p>}
-                              <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
-                                <span className="flex items-center gap-0.5"><Heart className="h-3 w-3 text-coral" /> {j.like_count || 0}</span>
-                                <span className="flex items-center gap-0.5"><MessageCircle className="h-3 w-3" /> {j.comment_count || 0}</span>
-                                <span>{new Date(j.hiked_at).toLocaleDateString("ko-KR")}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </Link>
-                      ),
-                    });
-                  });
-                  items.sort((a, b) => b.time - a.time);
-                  const previews = items.slice(0, 4);
-                  if (!previews.length) return <CommunityFeedPreview journals={demoJournals.slice(0, 3)} />;
-                  return previews.map((i) => <div key={i.key}>{i.el}</div>);
                 })()}
                 <Link
                   to="/feed"
@@ -1541,7 +1467,9 @@ const Dashboard = () => {
           <section>
             <SectionHeader title="공지 · 산악정보" />
             <div className="rounded-3xl bg-card border border-border p-4 shadow-sm">
-              <AnnouncementSection />
+              <Suspense fallback={null}>
+                <AnnouncementSection />
+              </Suspense>
             </div>
           </section>
 
@@ -1629,18 +1557,6 @@ function CommunityFeedPreview({ journals }: { journals: DemoJournal[] }) {
       })}
     </div>
   );
-}
-
-function getTimeAgo(dateStr: string): string {
-  const now = Date.now();
-  const diff = now - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "방금 전";
-  if (mins < 60) return `${mins}분 전`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}시간 전`;
-  const days = Math.floor(hours / 24);
-  return `${days}일 전`;
 }
 
 export default Dashboard;

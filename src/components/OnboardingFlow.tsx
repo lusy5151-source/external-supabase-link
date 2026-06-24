@@ -14,6 +14,7 @@ import CharacterAnimation, {
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
+import { shareText } from '@/lib/nativeShare'
 
 // 캐릭터별 테마 (그라디언트 / 버튼 컬러)
 export const CHARACTER_THEME: Record<Character, {
@@ -188,6 +189,18 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const meta = { ...baseMeta, ...(resultText ? { name: resultText.name, type: resultText.type, desc: resultText.desc } : {}) }
   const quote = resultText?.quote
   const theme = CHARACTER_THEME[topCharacter]
+
+  const handleShareResult = async () => {
+    const result = await shareText({
+      title: `나의 완등 캐릭터는 ${meta.name}`,
+      text: `${nickname || '나'}님과 가장 잘 맞는 완등 캐릭터는 ${meta.name}!\n${meta.type} · ${meta.desc}${quote ? `\n“${quote}”` : ''}\n\n너도 완등 캐릭터 테스트 해볼래?`,
+      url: 'https://wandeung.com',
+      dialogTitle: '캐릭터 결과 공유',
+    })
+
+    if (result === 'copied') toast.success('캐릭터 결과 링크를 복사했어요')
+    else if (result === 'unsupported') toast.error('공유를 시작하지 못했어요')
+  }
 
   return (
     <div
@@ -470,10 +483,31 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
               )}
 
               <button
+                onClick={handleShareResult}
+                type="button"
+                style={{
+                  marginTop: 10,
+                  width: '100%',
+                  padding: '13px 16px',
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: theme.primary,
+                  background: 'rgba(255,255,255,0.72)',
+                  border: `1px solid ${theme.primary}33`,
+                  borderRadius: 14,
+                  cursor: 'pointer',
+                  opacity: 0,
+                  animation: 'ob-fadeInUp 0.5s 0.9s forwards',
+                }}
+              >
+                캐릭터 결과 공유하기
+              </button>
+
+              <button
                 onClick={handleComplete}
                 disabled={saving}
                 style={{
-                  marginTop: 24,
+                  marginTop: 8,
                   width: '100%',
                   padding: '16px',
                   fontSize: 16,

@@ -1,51 +1,107 @@
 import { useEffect } from "react";
+import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
+import { getAppNotificationPermission, sendAppNotification } from "@/lib/appNotifications";
 
-const SENT_KEY = "plan_alerts_sent_v1";
+const SETTINGS_KEY = "notification_settings";
+const SCHEDULED_KEY = "plan_alerts_scheduled_v2";
+const MAX_WEB_TIMEOUT_MS = 24 * 24 * 60 * 60 * 1000;
 
-const getSent = (): Record<string, boolean> => {
+type ScheduledAlert = {
+  id: number;
+  planId: string;
+  offset: number;
+};
+
+type PlanAlert = {
+  id: number;
+  title: string;
+  body: string;
+  at: Date;
+  planId: string;
+  offset: number;
+  route: string;
+};
+
+function isEnabled(): boolean {
   try {
-    return JSON.parse(localStorage.getItem(SENT_KEY) || "{}");
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (raw) return JSON.parse(raw).planDday !== false;
+  } catch {}
+  return true;
+}
+
+function hashNotificationId(input: string): number {
+  let hash = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
+  }
+  return 100_000 + (hash % 1_900_000_000);
+}
+
+function readScheduled(): ScheduledAlert[] {
+  try {
+    return JSON.parse(localStorage.getItem(SCHEDULED_KEY) || "[]");
   } catch {
-    return {};
+    return [];
   }
-};
+}
 
-const markSent = (key: string) => {
-  const s = getSent();
-  s[key] = true;
-  localStorage.setItem(SENT_KEY, JSON.stringify(s));
-};
+function writeScheduled(entries: ScheduledAlert[]) {
+  localStorage.setItem(SCHEDULED_KEY, JSON.stringify(entries));
+}
 
-const fire = (key: string, title: string, body: string) => {
-  if (Notification.permission !== "granted") return;
-  if (getSent()[key]) return;
-  try {
-    new Notification(title, { body, icon: "/icon-192.png" });
-    markSent(key);
-  } catch (e) {
-    console.error("plan alert error:", JSON.stringify(e));
-  }
-};
+function buildAlert(plan: any, mountainName: string, offset: number): PlanAlert | null {
+  const planDate = new Date(`${plan.planned_date}T00:00:00`);
+  if (Number.isNaN(planDate.getTime())) return null;
 
-const scheduleFor = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
+  const at = new Date(planDate);
+  at.setDate(at.getDate() - offset);
+  at.setHours(offset === 0 ? 7 : 20, 0, 0, 0);
 
+  const title =
+    offset === 7
+      ? `일주일 뒤 ${mountainName} 등산이에요`
+      : offset === 3
+        ? `3일 뒤 ${mountainName} 등산이에요`
+        : offset === 1
+          ? `내일 ${mountainName} 등산이에요`
+          : `오늘 ${mountainName} 등산 날이에요`;
+
+  const body =
+    offset === 7
+      ? "일정과 코스를 미리 확인해보세요."
+      : offset === 3
+        ? "날씨와 준비물을 슬슬 챙겨볼 시간이에요."
+        : offset === 1
+          ? "준비물을 미리 챙겨두세요."
+          : "즐거운 등산 되세요. 정상 인증도 잊지 마세요.";
+
+  return {
+    id: hashNotificationId(`${plan.id}:${offset}`),
+    title,
+    body,
+    at,
+    planId: plan.id,
+    offset,
+    route: `/plans/${plan.id}`,
+  };
+}
+
+async function fetchPlans(userId: string) {
   const today = new Date().toISOString().split("T")[0];
 
-  // Plans I'm involved in (creator or participant) — no FK between hiking_plans and mountains,
-  // so fetch mountain names separately.
-  const { data: createdPlans } = await supabase
-    .from("hiking_plans")
-    .select("id, planned_date, mountain_id")
-    .eq("creator_id", user.id)
-    .gte("planned_date", today);
-
-  const { data: parts } = await supabase
-    .from("plan_participants")
-    .select("plan_id")
-    .eq("user_id", user.id);
+  const [{ data: createdPlans }, { data: parts }] = await Promise.all([
+    supabase
+      .from("hiking_plans")
+      .select("id, planned_date, mountain_id")
+      .eq("creator_id", userId)
+      .gte("planned_date", today),
+    supabase
+      .from("plan_participants")
+      .select("plan_id")
+      .eq("user_id", userId),
+  ]);
 
   const partIds = (parts || []).map((p: any) => p.plan_id);
   let joined: any[] = [];
@@ -58,15 +114,10 @@ const scheduleFor = async () => {
     joined = data || [];
   }
 
-  const all = [...(createdPlans || []), ...joined];
-  const unique = Array.from(new Map(all.map((p: any) => [p.id, p])).values());
-  if (unique.length === 0) return;
-
-  // Resolve mountain names in a separate query
-  const mountainIds = Array.from(
-    new Set(unique.map((p: any) => p.mountain_id).filter((id: any) => id != null))
-  );
+  const plans = Array.from(new Map([...(createdPlans || []), ...joined].map((p: any) => [p.id, p])).values());
+  const mountainIds = Array.from(new Set(plans.map((p: any) => p.mountain_id).filter(Boolean)));
   const nameMap = new Map<number, string>();
+
   if (mountainIds.length > 0) {
     const { data: mts } = await supabase
       .from("mountains")
@@ -75,47 +126,89 @@ const scheduleFor = async () => {
     (mts || []).forEach((m: any) => nameMap.set(m.id, m.name_ko));
   }
 
-  const now = Date.now();
+  return plans.map((plan: any) => ({
+    ...plan,
+    mountainName: nameMap.get(plan.mountain_id) || "등산",
+  }));
+}
 
-  unique.forEach((p: any) => {
-    const mountainName = nameMap.get(p.mountain_id) || "등산";
-    const planDate = new Date(p.planned_date);
+async function scheduleNative(alerts: PlanAlert[]) {
+  const { LocalNotifications } = await import("@capacitor/local-notifications");
+  const previous = readScheduled();
+  if (previous.length > 0) {
+    await LocalNotifications.cancel({
+      notifications: previous.map((entry) => ({ id: entry.id })),
+    });
+  }
 
-    // D-1 at 20:00 the night before
-    const dMinus1 = new Date(planDate);
-    dMinus1.setDate(dMinus1.getDate() - 1);
-    dMinus1.setHours(20, 0, 0, 0);
+  if (alerts.length === 0) {
+    writeScheduled([]);
+    return;
+  }
 
-    // D-day at 07:00
-    const dDay = new Date(planDate);
-    dDay.setHours(7, 0, 0, 0);
-
-    const dMinus1Key = `${p.id}_d-1`;
-    const dDayKey = `${p.id}_d-day`;
-
-    const dMinus1Delay = dMinus1.getTime() - now;
-    const dDayDelay = dDay.getTime() - now;
-
-    if (dMinus1Delay <= 0 && dMinus1Delay > -12 * 3600_000) {
-      fire(dMinus1Key, `내일 ${mountainName} 등산이에요! 🏔`, "준비물을 미리 챙겨두세요!");
-    } else if (dMinus1Delay > 0 && dMinus1Delay < 24 * 3600_000) {
-      setTimeout(() => {
-        fire(dMinus1Key, `내일 ${mountainName} 등산이에요! 🏔`, "준비물을 미리 챙겨두세요!");
-      }, dMinus1Delay);
-    }
-
-    if (dDayDelay <= 0 && dDayDelay > -12 * 3600_000) {
-      fire(dDayKey, `오늘 ${mountainName} 등산 날이에요! 🚩`, "즐거운 등산 되세요 💪 정상 인증 잊지 마세요!");
-    } else if (dDayDelay > 0 && dDayDelay < 24 * 3600_000) {
-      setTimeout(() => {
-        fire(dDayKey, `오늘 ${mountainName} 등산 날이에요! 🚩`, "즐거운 등산 되세요 💪 정상 인증 잊지 마세요!");
-      }, dDayDelay);
-    }
+  await LocalNotifications.schedule({
+    notifications: alerts.map((alert) => ({
+      id: alert.id,
+      title: alert.title,
+      body: alert.body,
+      schedule: { at: alert.at, allowWhileIdle: true },
+      sound: "default",
+      extra: { route: alert.route, planId: alert.planId, offset: alert.offset },
+    })),
   });
+
+  writeScheduled(alerts.map(({ id, planId, offset }) => ({ id, planId, offset })));
+}
+
+function scheduleWeb(alerts: PlanAlert[]) {
+  alerts.forEach((alert) => {
+    const delay = alert.at.getTime() - Date.now();
+    if (delay <= 0 || delay > MAX_WEB_TIMEOUT_MS) return;
+    window.setTimeout(() => {
+      sendAppNotification(alert.title, alert.body, { data: { route: alert.route } });
+    }, delay);
+  });
+}
+
+const scheduleFor = async (userId: string) => {
+  if (!isEnabled()) return;
+  const permission = await getAppNotificationPermission();
+  if (permission !== "granted") return;
+
+  const plans = await fetchPlans(userId);
+  const now = Date.now();
+  const alerts = plans.flatMap((plan: any) =>
+    [7, 3, 1, 0]
+      .map((offset) => buildAlert(plan, plan.mountainName, offset))
+      .filter((alert): alert is PlanAlert => !!alert && alert.at.getTime() > now),
+  );
+
+  if (Capacitor.isNativePlatform()) await scheduleNative(alerts);
+  else scheduleWeb(alerts);
 };
 
-export function useSchedulePlanAlerts() {
+export function useSchedulePlanAlerts(userId?: string | null) {
   useEffect(() => {
-    scheduleFor().catch((e) => console.error(JSON.stringify(e)));
-  }, []);
+    if (!userId) return;
+
+    let cancelled = false;
+    const run = () => {
+      if (cancelled) return;
+      scheduleFor(userId).catch((error) => console.error("[plan-alerts]", error));
+    };
+
+    const w = window as typeof window & {
+      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    };
+    const handle = w.requestIdleCallback
+      ? w.requestIdleCallback(run, { timeout: 5000 })
+      : window.setTimeout(run, 3000);
+
+    return () => {
+      cancelled = true;
+      if (w.cancelIdleCallback && typeof handle === "number") w.cancelIdleCallback(handle);
+      else window.clearTimeout(handle);
+    };
+  }, [userId]);
 }

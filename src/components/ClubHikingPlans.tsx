@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useMountains } from "@/contexts/MountainsContext";
@@ -34,6 +35,7 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
   const { mountains } = useMountains();
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [plans, setPlans] = useState<HikingPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -118,9 +120,30 @@ export default function ClubHikingPlans({ clubId, isLeader, isMember }: Props) {
 
   useEffect(() => { fetchPlans(); }, [fetchPlans]);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel(`club-plans-${clubId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "hiking_plans",
+          filter: `group_id=eq.${clubId}`,
+        },
+        () => {
+          fetchPlans();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [clubId, fetchPlans]);
+
   const openCreate = () => {
-    resetForm();
-    setShowCreate(true);
+    navigate(`/plans/create?groupId=${clubId}`);
   };
 
   const openEdit = (plan: HikingPlan) => {

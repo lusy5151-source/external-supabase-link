@@ -15,9 +15,6 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Layout from "@/components/Layout";
 import SplashScreen from "@/components/SplashScreen";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import MagazinePopup from "@/components/MagazinePopup";
-import MigrationNoticeModal from "@/components/MigrationNoticeModal";
-import Level3BadgeCelebration from "@/components/Level3BadgeCelebration";
 import NotFound from "./pages/NotFound";
 import { useState, useCallback, lazy, Suspense, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -26,21 +23,26 @@ import DashboardSkeleton from "@/components/DashboardSkeleton";
 import { useProfileSync } from "@/hooks/useProfileSync";
 // usePushNotifications 제거: 토큰 저장 경로는 initPushNotifications 하나로 통일
 import { useSchedulePlanAlerts } from "@/hooks/useSchedulePlanAlerts";
+import { useDailyMountainNotification } from "@/hooks/useDailyMountainNotification";
+import { useFriendRequestNotifications } from "@/hooks/useFriendRequestNotifications";
+import { useJournalEngagementNotifications } from "@/hooks/useJournalEngagementNotifications";
 import { supabase } from "@/integrations/supabase/client";
-import OnboardingFlow from "@/components/OnboardingFlow";
-import CharacterSelectionPage from "@/pages/CharacterSelectionPage";
 import {
-  getCachedProfileGate,
-  markProfileGateCharacterComplete,
-  markProfileGateOnboardingComplete,
-  setCachedProfileGate,
+  readProfileGateCache,
+  writeProfileGateCache,
   type ProfileGateData,
 } from "@/lib/profileGateCache";
+import { runAfterStartup } from "@/lib/idle";
 
 // Eagerly loaded (auth only)
 import AuthPage from "@/pages/AuthPage";
 
 // Lazy loaded pages
+const MagazinePopup = lazy(() => import("@/components/MagazinePopup"));
+const MigrationNoticeModal = lazy(() => import("@/components/MigrationNoticeModal"));
+const Level3BadgeCelebration = lazy(() => import("@/components/Level3BadgeCelebration"));
+const OnboardingFlow = lazy(() => import("@/components/OnboardingFlow"));
+const CharacterSelectionPage = lazy(() => import("@/pages/CharacterSelectionPage"));
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const MountainList = lazy(() => import("@/pages/MountainList"));
 const MountainDetail = lazy(() => import("@/pages/MountainDetail"));
@@ -131,6 +133,8 @@ const ONBOARDING_BYPASS_PATHS = [
   "/reset-password",
 ];
 
+const profileGateCache = new Map<string, ProfileGateData | "missing">();
+
 function OnboardingGate({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const location = useLocation();
@@ -155,55 +159,83 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
+    let cancelDeferredProfileRefresh: (() => void) | undefined;
     const check = async () => {
       if (authLoading) return;
       if (!user) {
         setNeedsOnboarding(false);
         setNeedsCharacter(false);
+        setChecking(false);
         return;
       }
-      const cached = getCachedProfileGate(user.id);
+
+      const refreshProfileGate = async () => {
+        try {
+          const { data, error } = await (supabase as any)
+            .from("profiles")
+            .select("is_onboarded, character_id, character_selected_at")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          if (cancelled) return;
+          if (error) {
+            console.error("[OnboardingGate] profile fetch error");
+            setNeedsOnboarding(false);
+            setNeedsCharacter(false);
+            return;
+          }
+          if (!data) {
+            await (supabase as any)
+              .from("profiles")
+              .upsert({ user_id: user.id, id: user.id } as any, { onConflict: "user_id" });
+            if (cancelled) return;
+            profileGateCache.set(user.id, "missing");
+            writeProfileGateCache(user.id, "missing");
+            applyProfile("missing");
+          } else {
+            profileGateCache.set(user.id, data as ProfileGateData);
+            writeProfileGateCache(user.id, data as ProfileGateData);
+            applyProfile(data as ProfileGateData);
+          }
+        } catch (e) {
+          if (!cancelled) {
+            setNeedsOnboarding(false);
+            setNeedsCharacter(false);
+          }
+        } finally {
+          if (!cancelled) setChecking(false);
+        }
+      };
+
+      const cached = profileGateCache.get(user.id);
       if (cached) {
         applyProfile(cached);
+        setChecking(false);
+        cancelDeferredProfileRefresh = runAfterStartup(() => {
+          void refreshProfileGate();
+        }, 1600);
         return;
-      }
-      setChecking(true);
-      try {
-        const { data, error } = await (supabase as any)
-          .from("profiles")
-          .select("is_onboarded, character_id, character_selected_at")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        if (cancelled) return;
-        if (error) {
-          console.error("[OnboardingGate] profile fetch error");
-          setNeedsOnboarding(false);
-          setNeedsCharacter(false);
+      } else {
+        const persisted = readProfileGateCache(user.id);
+        if (persisted) {
+          profileGateCache.set(user.id, persisted);
+          applyProfile(persisted);
+          setChecking(false);
+          cancelDeferredProfileRefresh = runAfterStartup(() => {
+            void refreshProfileGate();
+          }, 1600);
           return;
-        }
-        if (!data) {
-          // No profile row yet — create a minimal one and treat as needing onboarding.
-          await (supabase as any)
-            .from("profiles")
-            .upsert({ user_id: user.id, id: user.id } as any, { onConflict: "user_id" });
-          if (cancelled) return;
-          setCachedProfileGate(user.id, "missing");
-          applyProfile("missing");
         } else {
-          setCachedProfileGate(user.id, data as ProfileGateData);
-          applyProfile(data as ProfileGateData);
+          setChecking(true);
         }
-      } catch (e) {
-        if (!cancelled) {
-          setNeedsOnboarding(false);
-          setNeedsCharacter(false);
-        }
-      } finally {
-        if (!cancelled) setChecking(false);
       }
+
+      await refreshProfileGate();
     };
     check();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      cancelDeferredProfileRefresh?.();
+    };
   }, [user, authLoading, applyProfile]);
 
   const handleComplete = useCallback(async (nickname: string, characterId: string) => {
@@ -221,7 +253,13 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
         console.error("[OnboardingGate] profile update error", error);
         return;
       }
-      markProfileGateOnboardingComplete(user.id);
+      const prev = profileGateCache.get(user.id);
+      const base: ProfileGateData =
+        prev && prev !== "missing"
+          ? prev
+          : { is_onboarded: true, character_id: null, character_selected_at: null };
+      profileGateCache.set(user.id, { ...base, is_onboarded: true });
+      writeProfileGateCache(user.id, { ...base, is_onboarded: true });
       setRecommendedCharacterId(characterId || null);
       setNeedsOnboarding(false);
       setNeedsCharacter(true);
@@ -232,7 +270,21 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
 
   const handleCharacterCompleted = useCallback(() => {
     if (user) {
-      markProfileGateCharacterComplete(user.id);
+      const prev = profileGateCache.get(user.id);
+      const base: ProfileGateData =
+        prev && prev !== "missing"
+          ? prev
+          : { is_onboarded: true, character_id: null, character_selected_at: null };
+      profileGateCache.set(user.id, {
+        ...base,
+        character_id: base.character_id ?? "selected",
+        character_selected_at: new Date().toISOString(),
+      });
+      writeProfileGateCache(user.id, {
+        ...base,
+        character_id: base.character_id ?? "selected",
+        character_selected_at: new Date().toISOString(),
+      });
     }
     setNeedsCharacter(false);
     setRecommendedCharacterId(null);
@@ -244,12 +296,18 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
 
   if (user && !authLoading && !bypass) {
     if (checking) return <GateLoadingSkeleton />;
-    if (needsOnboarding) return <OnboardingFlow onComplete={handleComplete} />;
+    if (needsOnboarding) return (
+      <LazyPage fallback={<GateLoadingSkeleton />}>
+        <OnboardingFlow onComplete={handleComplete} />
+      </LazyPage>
+    );
     if (needsCharacter) return (
-      <CharacterSelectionPage
-        recommendedId={recommendedCharacterId}
-        onCompleted={handleCharacterCompleted}
-      />
+      <LazyPage fallback={<GateLoadingSkeleton />}>
+        <CharacterSelectionPage
+          recommendedId={recommendedCharacterId}
+          onCompleted={handleCharacterCompleted}
+        />
+      </LazyPage>
     );
   }
 
@@ -297,13 +355,18 @@ const AppRoutes = () => {
   const { user, loading } = useAuth();
   useProfileSync();
   
-  useSchedulePlanAlerts();
+  useSchedulePlanAlerts(user?.id);
+  useDailyMountainNotification();
+  useFriendRequestNotifications();
+  useJournalEngagementNotifications();
 
   useEffect(() => {
     if (!user) return;
-    import("@/lib/pushNotifications").then(({ initPushNotifications }) => {
-      initPushNotifications();
-    });
+    return runAfterStartup(() => {
+      import("@/lib/pushNotifications").then(({ initPushNotifications }) => {
+        initPushNotifications();
+      });
+    }, 2500, 6000);
   }, [user]);
 
   return (
@@ -339,7 +402,7 @@ const AppRoutes = () => {
       <Route path="/notifications" element={<ProtectedRoute><LazyPage><NotificationsPage /></LazyPage></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><LazyPage><ProfilePage /></LazyPage></ProtectedRoute>} />
       <Route path="/character-setup" element={<ProtectedRoute><LazyPage><CharacterSetupPage /></LazyPage></ProtectedRoute>} />
-      <Route path="/character-select" element={<ProtectedRoute><CharacterSelectionPage /></ProtectedRoute>} />
+      <Route path="/character-select" element={<ProtectedRoute><LazyPage><CharacterSelectionPage /></LazyPage></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><LazyPage><AdminPage /></LazyPage></ProtectedRoute>} />
       <Route path="/admin/users" element={<ProtectedRoute><LazyPage><AdminUsersPage /></LazyPage></ProtectedRoute>} />
       <Route path="/admin/announcements" element={<ProtectedRoute><LazyPage><AdminAnnouncementsPage /></LazyPage></ProtectedRoute>} />
@@ -365,22 +428,57 @@ const AppRoutes = () => {
   );
 };
 
+function LocalNotificationNavigationBridge() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+
+    (async () => {
+      try {
+        const { Capacitor } = await import("@capacitor/core");
+        if (!Capacitor.isNativePlatform()) return;
+        const { LocalNotifications } = await import("@capacitor/local-notifications");
+
+        const listener = await LocalNotifications.addListener(
+          "localNotificationActionPerformed",
+          (event) => {
+            const route = event.notification.extra?.route;
+            if (typeof route === "string" && route.startsWith("/")) {
+              navigate(route);
+            }
+          }
+        );
+
+        cleanup = () => listener.remove();
+      } catch (error) {
+        console.warn("[local-notification] navigation listener failed", error);
+      }
+    })();
+
+    return () => {
+      cleanup?.();
+    };
+  }, [navigate]);
+
+  return null;
+}
+
+function RouteErrorBoundary({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  return (
+    <ErrorBoundary
+      fallbackMessage="데이터를 불러오는 중 오류가 발생했습니다."
+      resetKey={location.pathname}
+    >
+      {children}
+    </ErrorBoundary>
+  );
+}
+
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
   const handleSplashFinish = useCallback(() => setShowSplash(false), []);
-
-  useEffect(() => {
-    const clearBrokenSession = async () => {
-      const { data, error } = await supabase.auth.getSession();
-
-      if (error || !data.session?.user?.id) {
-        await supabase.auth.signOut();
-        localStorage.removeItem("sb-ylcjlzlchinijvyojdbc-auth-token");
-      }
-    };
-
-    clearBrokenSession();
-  }, []);
 
   // Capacitor deep link handler for OAuth callbacks
   useEffect(() => {
@@ -427,7 +525,7 @@ const App = () => {
                     .from("temp_auth_sessions")
                     .select("access_token, refresh_token")
                     .eq("key", key)
-                    .single();
+                    .maybeSingle();
                   if (sessionData) {
                     await supabase.auth.setSession({
                       access_token: sessionData.access_token,
@@ -501,19 +599,28 @@ const App = () => {
               <Toaster />
               <Sonner />
               {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
-              {!showSplash && <MagazinePopup />}
+              {!showSplash && (
+                <Suspense fallback={null}>
+                  <MagazinePopup />
+                </Suspense>
+              )}
               <BrowserRouter>
                 <GuestProvider>
                 <UnreadChatProvider>
                 <CompletionSuggestionProvider>
-                {!showSplash && <MigrationNoticeModal />}
-                {!showSplash && <Level3BadgeCelebration />}
+                <LocalNotificationNavigationBridge />
+                {!showSplash && (
+                  <Suspense fallback={null}>
+                    <MigrationNoticeModal />
+                    <Level3BadgeCelebration />
+                  </Suspense>
+                )}
                 <Layout>
-                  <ErrorBoundary fallbackMessage="데이터를 불러오는 중 오류가 발생했습니다.">
+                  <RouteErrorBoundary>
                     <OnboardingGate>
                       <AppRoutes />
                     </OnboardingGate>
-                  </ErrorBoundary>
+                  </RouteErrorBoundary>
                 </Layout>
                 </CompletionSuggestionProvider>
                 </UnreadChatProvider>

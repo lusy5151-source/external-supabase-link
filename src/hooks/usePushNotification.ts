@@ -1,5 +1,11 @@
 import { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
+import {
+  getAppNotificationPermission,
+  requestAppNotificationPermission,
+  sendAppNotification,
+  type AppNotificationOptions,
+} from "@/lib/appNotifications";
 
 const PERMISSION_KEY = "push_permission";
 const PROMPT_DISMISSED_KEY = "push_prompt_dismissed";
@@ -8,8 +14,10 @@ type PermissionStatus = "granted" | "denied" | "default" | "unsupported";
 
 export function usePushNotification() {
   const [permissionStatus, setPermissionStatus] = useState<PermissionStatus>(() => {
-    if (typeof window === "undefined" || !("Notification" in window)) return "unsupported";
-    return (localStorage.getItem(PERMISSION_KEY) as PermissionStatus) || Notification.permission;
+    if (typeof window === "undefined") return "unsupported";
+    const cached = localStorage.getItem(PERMISSION_KEY) as PermissionStatus | null;
+    if (cached) return cached;
+    return "Notification" in window ? Notification.permission : "default";
   });
 
   const [promptDismissed, setPromptDismissed] = useState(() =>
@@ -18,33 +26,26 @@ export function usePushNotification() {
 
   // Sync with actual browser state on mount
   useEffect(() => {
-    if ("Notification" in window) {
-      const actual = Notification.permission;
+    getAppNotificationPermission().then((actual) => {
       setPermissionStatus(actual);
       localStorage.setItem(PERMISSION_KEY, actual);
-    }
+    });
   }, []);
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
-    if (!("Notification" in window)) {
-      toast.error("이 브라우저는 알림을 지원하지 않아요");
-      return false;
-    }
-
     try {
-      const result = await Notification.requestPermission();
-      localStorage.setItem(PERMISSION_KEY, result);
-      setPermissionStatus(result);
+      const ok = await requestAppNotificationPermission();
+      const actual = await getAppNotificationPermission();
+      localStorage.setItem(PERMISSION_KEY, actual);
+      setPermissionStatus(actual);
 
-      if (result === "granted") {
-        toast.success("알림이 활성화되었어요 🔔");
+      if (ok) {
+        toast.success("알림이 활성화되었어요");
         return true;
-      } else {
-        toast("브라우저 설정에서 알림을 허용해주세요", {
-          description: "브라우저 주소창 왼쪽 🔒 아이콘 → 알림 → 허용",
-        });
-        return false;
       }
+
+      toast("기기 설정에서 완등 알림을 허용해주세요");
+      return false;
     } catch {
       toast.error("알림 권한 요청 중 오류가 발생했어요");
       return false;
@@ -52,21 +53,8 @@ export function usePushNotification() {
   }, []);
 
   const sendLocalNotification = useCallback(
-    (title: string, body: string, options?: NotificationOptions) => {
-      if (!("Notification" in window) || Notification.permission !== "granted") {
-        return null;
-      }
-
-      const notification = new Notification(title, {
-        body,
-        icon: "/icon-192.png",
-        badge: "/icon-72.png",
-        requireInteraction: false,
-        silent: false,
-        ...options,
-      });
-
-      return notification;
+    (title: string, body: string, options?: AppNotificationOptions) => {
+      return sendAppNotification(title, body, options);
     },
     []
   );

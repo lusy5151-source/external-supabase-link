@@ -16,11 +16,12 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   Users, Mountain, Search, UserPlus, Check, X, ChevronRight, Bell, Trash2,
-  Plus, Globe, Lock, Ban,
+  Plus, Globe, Lock, Ban, Share2,
 } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { BlockedUsersList } from "@/components/BlockedUsersList";
+import { getGroupShareUrl, getProfileShareUrl, shareText } from "@/lib/nativeShare";
 
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -103,6 +104,21 @@ const SocialPage = () => {
     }
   };
 
+  const handleShareMyProfile = async () => {
+    if (!user?.id) return;
+    const myName = user.user_metadata?.nickname || user.email?.split("@")[0] || "완등러";
+    const url = getProfileShareUrl(user.id);
+    const result = await shareText({
+      title: "완등 친구 추가",
+      text: `${myName}님이 완등에서 함께 산을 오르자고 초대했어요.\n프로필에서 친구 추가를 눌러주세요.`,
+      url,
+      dialogTitle: "내 완등 프로필 공유",
+    });
+
+    if (result === "copied") toast({ title: "초대 링크를 복사했어요" });
+    else if (result === "unsupported") toast({ title: "공유를 시작하지 못했어요", variant: "destructive" });
+  };
+
   const handleCreateClub = async () => {
     const trimmedName = clubName.trim();
     if (!trimmedName) {
@@ -147,6 +163,18 @@ const SocialPage = () => {
       toast({ title: "가입 요청을 보냈습니다. 리더의 승인을 기다려주세요." });
       fetchPublicGroups().then(setPublicGroups);
     }
+  };
+
+  const handleShareGroup = async (group: HikingGroup) => {
+    const result = await shareText({
+      title: `${group.name} 산악회 초대`,
+      text: `완등에서 ${group.name} 산악회에 함께해요.\n산악회 페이지에서 가입 요청을 눌러주세요.`,
+      url: getGroupShareUrl(group.id),
+      dialogTitle: "산악회 공유",
+    });
+
+    if (result === "copied") toast({ title: "산악회 링크를 복사했어요" });
+    else if (result === "unsupported") toast({ title: "공유를 시작하지 못했어요", variant: "destructive" });
   };
 
   const formatRelativeTime = (iso: string) => {
@@ -240,6 +268,22 @@ const SocialPage = () => {
       {/* ═══ FRIENDS TAB ═══ */}
       {mainTab === "friends" && (
         <div className="space-y-5">
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: "#F8FAED", color: "#2F403A" }}>
+                <Share2 className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-foreground">내 프로필로 친구 초대</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">SNS로 내 완등 계정을 보내고 친구 추가를 받아보세요</p>
+              </div>
+              <Button size="sm" className="shrink-0 gap-1.5 rounded-xl" onClick={handleShareMyProfile}>
+                <Share2 className="h-3.5 w-3.5" />
+                공유
+              </Button>
+            </div>
+          </div>
+
           {/* Search */}
           <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
             <div className="flex gap-2">
@@ -514,7 +558,7 @@ const SocialPage = () => {
             ) : (
               <div className="space-y-3">
                 {myGroups.map((g) => (
-                  <ClubCard key={g.id} group={g} isMember />
+                  <ClubCard key={g.id} group={g} isMember onShare={() => handleShareGroup(g)} />
                 ))}
               </div>
             )}
@@ -533,7 +577,13 @@ const SocialPage = () => {
                 {publicGroups.map((g) => {
                   const isMember = myGroups.some((mg) => mg.id === g.id);
                   return (
-                    <ClubCard key={g.id} group={g} isMember={isMember} onJoin={!isMember ? () => handleJoinClub(g.id) : undefined} />
+                    <ClubCard
+                      key={g.id}
+                      group={g}
+                      isMember={isMember}
+                      onJoin={!isMember ? () => handleJoinClub(g.id) : undefined}
+                      onShare={() => handleShareGroup(g)}
+                    />
                   );
                 })}
               </div>
@@ -545,7 +595,7 @@ const SocialPage = () => {
   );
 };
 
-function ClubCard({ group, isMember, onJoin }: { group: HikingGroup; isMember: boolean; onJoin?: () => void }) {
+function ClubCard({ group, isMember, onJoin, onShare }: { group: HikingGroup; isMember: boolean; onJoin?: () => void; onShare?: () => void }) {
   const navigate = useNavigate();
   return (
     <div
@@ -568,13 +618,26 @@ function ClubCard({ group, isMember, onJoin }: { group: HikingGroup; isMember: b
             </p>
           </div>
         </div>
-        {onJoin ? (
-          <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); onJoin(); }} className="rounded-full text-xs">
-            가입 요청
-          </Button>
-        ) : isMember ? (
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        ) : null}
+        <div className="flex items-center gap-1.5">
+          {onShare && (
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={(e) => { e.stopPropagation(); onShare(); }}
+              className="h-8 w-8 rounded-full text-muted-foreground"
+              aria-label="산악회 공유"
+            >
+              <Share2 className="h-4 w-4" />
+            </Button>
+          )}
+          {onJoin ? (
+            <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); onJoin(); }} className="rounded-full text-xs">
+              가입 요청
+            </Button>
+          ) : isMember ? (
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          ) : null}
+        </div>
       </div>
     </div>
   );

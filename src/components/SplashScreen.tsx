@@ -5,14 +5,14 @@ const SplashScreen: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
   const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
-    const timer1 = setTimeout(() => setFadeOut(true), 1800);
-    const timer2 = setTimeout(() => onFinish(), 2300);
+    const timer1 = setTimeout(() => setFadeOut(true), 70);
+    const timer2 = setTimeout(() => onFinish(), 140);
     return () => { clearTimeout(timer1); clearTimeout(timer2); };
   }, [onFinish]);
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-opacity duration-500 ${
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-opacity duration-200 ${
         fadeOut ? "opacity-0" : "opacity-100"
       }`}
       style={{ background: "hsl(205, 50%, 88%)" }}

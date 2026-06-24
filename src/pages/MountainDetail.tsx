@@ -1,4 +1,4 @@
-import { useParams, Link, useSearchParams } from "react-router-dom";
+import { useParams, Link, useSearchParams, useNavigate } from "react-router-dom";
 import { mountains as staticMountains } from "@/data/mountains";
 import type { Mountain } from "@/data/mountains";
 import { useMountains } from "@/contexts/MountainsContext";
@@ -11,6 +11,7 @@ import { useSummits } from "@/hooks/useSummits";
 import { useMountains as useMountainsCtx } from "@/contexts/MountainsContext";
 import { createPortal } from "react-dom";
 import SummitMarkerMap from "@/components/SummitMarkerMap";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import {
   ArrowLeft, Mountain as MountainIcon, MapPin, TrendingUp, CheckCircle2, Circle, Calendar,
   Sun, Cloud, CloudRain, CloudSnow, CloudFog, CloudSun, ImagePlus, X, Users,
@@ -21,6 +22,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import type { WeatherCondition, CompletionRecord } from "@/hooks/useMountainStore";
 import { WeatherCard } from "@/components/WeatherCard";
 import { TrailInfoSection } from "@/components/TrailInfo";
+import { JournalForm } from "@/components/JournalForm";
 
 import { HikingCenterRouteMap } from "@/components/HikingCenterRouteMap";
 import type { Trail } from "@/hooks/useTrails";
@@ -34,6 +36,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
 import { cn } from "@/lib/utils";
+import { appleMapsDirectionsUrl } from "@/lib/mapLinks";
 
 const weatherOptions: { value: WeatherCondition; label: string; icon: any }[] = [
   { value: "맑음", label: "맑음", icon: Sun },
@@ -50,6 +53,40 @@ const difficultyOptions = [
   { value: "어려움", label: "어려움", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
 ];
 
+async function shareMountainLink(mountain: Mountain) {
+  const mountainName = mountain.nameKo || mountain.name || "산";
+  const title = `${mountainName} - 완등`;
+  const text = `${mountainName} 산 정보를 완등에서 확인해보세요.`;
+  const url = `https://wandeung.com/mountains/${mountain.id}`;
+
+  try {
+    const { Capacitor } = await import("@capacitor/core");
+    if (Capacitor.isNativePlatform() && Capacitor.isPluginAvailable?.("Share")) {
+      const { Share } = await import("@capacitor/share");
+      const canShare = await Share.canShare().catch(() => ({ value: true }));
+      if (!canShare.value) throw new Error("Native share is not available");
+      await Share.share({ title, text, url, dialogTitle: "공유하기" });
+      sonnerToast.success("공유창을 열었어요");
+      return;
+    }
+  } catch (error) {
+    console.warn("Native share failed:", error);
+  }
+
+  if (navigator.share) {
+    await navigator.share({ title, text, url });
+    sonnerToast.success("공유창을 열었어요");
+    return;
+  }
+
+  try {
+    await navigator.clipboard?.writeText(`${text}\n${url}`);
+    sonnerToast.success("링크를 복사했어요");
+  } catch {
+    sonnerToast.error("공유를 시작하지 못했어요");
+  }
+}
+
 async function resizeImage(file: File): Promise<string> {
   const { compressImageToDataUrl } = await import("@/lib/imageUpload");
   const result = await compressImageToDataUrl(file, "general");
@@ -63,6 +100,7 @@ async function resizeImage(file: File): Promise<string> {
 
 const MountainDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { userMountains } = useUserMountains();
   const { getMountain, isLoading: mountainsLoading } = useMountains();
 
@@ -83,6 +121,7 @@ const MountainDetail = () => {
 
   // Also fetch certified summit count from Supabase summit_claims
   const [certifiedCount, setCertifiedCount] = useState(0);
+  const [showJournalForm, setShowJournalForm] = useState(false);
   useEffect(() => {
     if (!mountain || !user) return;
     supabase
@@ -137,6 +176,10 @@ const MountainDetail = () => {
   const [creatorName, setCreatorName] = useState<string | null>(null);
   const [showDuplicateReport, setShowDuplicateReport] = useState(false);
   const { pioneerBadges } = usePioneerBadges(createdBy);
+  const [activeTab, setActiveTab] = useState<"개요" | "코스" | "날씨" | "편의시설">("개요");
+  const tabs = ["개요", "코스", "계획", "날씨", "편의시설"] as const;
+  const [selectedCourseTrail, setSelectedCourseTrail] = useState<Trail | null>(null);
+  const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
     if (!createdBy) return;
@@ -144,6 +187,18 @@ const MountainDetail = () => {
       setCreatorName(data?.nickname || "사용자");
     });
   }, [createdBy]);
+
+  useEffect(() => {
+    let lastTs = 0;
+    const onScroll = () => {
+      const now = Date.now();
+      if (now - lastTs < 16) return;
+      lastTs = now;
+      setScrollY(window.scrollY || window.pageYOffset || 0);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   if (!mountain) {
     if (mountainsLoading) {
@@ -166,10 +221,6 @@ const MountainDetail = () => {
   const completed = isCompleted(mountain.id) || certifiedCount > 0;
   const record = getRecord(mountain.id);
   const completionCount = Math.max(getCompletionCount(mountain.id), certifiedCount);
-
-  const [activeTab, setActiveTab] = useState<"개요" | "코스" | "날씨" | "편의시설">("개요");
-  const tabs = ["개요", "코스", "날씨", "편의시설"] as const;
-  const [selectedCourseTrail, setSelectedCourseTrail] = useState<Trail | null>(null);
 
   const getDifficultyColor = (d: string) => {
     if (d === "쉬움") return "bg-green-500";
@@ -195,19 +246,6 @@ const MountainDetail = () => {
   const imagePos = (mountain as any).image_position || "50% 50%";
 
   // ── 스크롤 연동 배너 ──
-  const [scrollY, setScrollY] = useState(0);
-  useEffect(() => {
-    let lastTs = 0;
-    const onScroll = () => {
-      const now = Date.now();
-      if (now - lastTs < 16) return;
-      lastTs = now;
-      setScrollY(window.scrollY || window.pageYOffset || 0);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   const bannerHeight = Math.max(
     BANNER_MIN,
     BANNER_MAX - scrollY * ((BANNER_MAX - BANNER_MIN) / COLLAPSE_RANGE)
@@ -295,13 +333,16 @@ const MountainDetail = () => {
               <Heart size={15} />
             </button>
             <button
+              type="button"
               aria-label="공유"
-              onClick={() => {
-                if (navigator.share) {
-                  navigator.share({ title: mountain.nameKo, url: window.location.href }).catch(() => {});
-                }
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                shareMountainLink(mountain).catch(() => {
+                  sonnerToast.error("공유를 시작하지 못했어요");
+                });
               }}
-              style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", border: "none" }}
+              style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", border: "none", cursor: "pointer", touchAction: "manipulation" }}
             >
               <Share2 size={15} />
             </button>
@@ -459,13 +500,19 @@ const MountainDetail = () => {
       </div>
 
       {/* ── 탭바 (알약형) ── */}
-      <div style={{ background: "white", margin: "12px 12px 0", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", borderBottom: "1px solid #EEF1E8" }}>
+      <div style={{ background: "white", margin: "12px 12px 0", display: "grid", gridTemplateColumns: `repeat(${tabs.length}, 1fr)`, borderBottom: "1px solid #EEF1E8" }}>
         {tabs.map((tab) => {
-          const active = activeTab === tab;
+          const active = tab !== "계획" && activeTab === tab;
           return (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => {
+                if (tab === "계획") {
+                  navigate(`/plans/create?mountainId=${mountain.id}`);
+                  return;
+                }
+                setActiveTab(tab);
+              }}
               style={{
                 padding: "10px 4px",
                 textAlign: "center",
@@ -506,22 +553,24 @@ const MountainDetail = () => {
             {/* 4. 등산 일지 (완등 기록 있을 때만) */}
             {completed && record && (
               <div id="mountain-journal-section" style={{ margin: "0 12px 10px", scrollMarginTop: 80 }}>
-                <JournalSection
-                  record={record}
-                  mountainId={mountain.id}
+                <UnifiedJournalEntry
                   mountainName={mountain.nameKo}
-                  mountainTrails={mountain.trails}
-                  updateNotes={updateNotes}
-                  updateDate={updateDate}
-                  updateWeather={updateWeather}
-                  addPhotos={addPhotos}
-                  removePhoto={removePhoto}
-                  updateTaggedFriends={updateTaggedFriends}
-                  updateCourseInfo={updateCourseInfo}
-                  updateDuration={updateDuration}
-                  updateDifficulty={updateDifficulty}
+                  completedAt={record.completedAt}
+                  onOpen={() => setShowJournalForm(true)}
                 />
               </div>
+            )}
+
+            {showJournalForm && mountain && (
+              <JournalForm
+                onClose={() => setShowJournalForm(false)}
+                onSaved={() => {
+                  setShowJournalForm(false);
+                  sonnerToast.success("일지가 저장되었어요");
+                }}
+                prefillMountainId={mountain.id}
+                prefillDate={record?.completedAt?.slice(0, 10)}
+              />
             )}
 
             {/* 5. 공유 카드 (완등 기록 있을 때만) */}
@@ -562,25 +611,30 @@ const MountainDetail = () => {
         {/* 코스 탭 */}
         {activeTab === "코스" && (
           <div style={{ margin: "12px 12px 0" }}>
-            <HikingCenterRouteMap
-              mountainName={mountain.nameKo}
-              mountainId={mountain.id}
-              lat={mountain.lat}
-              lng={mountain.lng}
-            />
+            <ErrorBoundary
+              fallbackMessage="코스 정보를 잠시 불러오지 못했어요."
+              resetKey={`mountain-routes-${mountain.id}`}
+            >
+              <HikingCenterRouteMap
+                mountainName={mountain.nameKo}
+                mountainId={mountain.id}
+                lat={mountain.lat}
+                lng={mountain.lng}
+              />
+            </ErrorBoundary>
           </div>
         )}
 
         {/* 날씨 탭 */}
         {activeTab === "날씨" && (
-          <div style={{ margin: "0 12px" }}>
+          <div style={{ margin: "14px 12px 0" }}>
             <WeatherCard mountainId={mountain.id} />
           </div>
         )}
 
         {/* 편의시설 탭 */}
         {activeTab === "편의시설" && (
-          <div style={{ margin: "0 12px" }}>
+          <div style={{ margin: "14px 12px 0" }}>
             <NearbyPlaces lat={mountain.lat} lng={mountain.lng} mountainName={mountain.nameKo} />
           </div>
         )}
@@ -692,16 +746,21 @@ function OverviewLocationBlock({ mountain, address }: { mountain: any; address: 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
           <p style={{ fontSize: 12, color: "hsl(var(--muted-foreground))", margin: 0, flex: 1, lineHeight: 1.5 }}>{address}</p>
           <a
-            href={`https://map.naver.com/v5/search/${encodeURIComponent(mountain.nameKo)}`}
+            href={appleMapsDirectionsUrl({
+              name: mountain.nameKo,
+              lat: mountain.lat,
+              lng: mountain.lng,
+              address,
+            })}
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              background: "#03C75A", color: "white", fontSize: 11, fontWeight: 600,
+              background: "#2F403A", color: "white", fontSize: 11, fontWeight: 600,
               padding: "5px 10px", borderRadius: 8, whiteSpace: "nowrap",
               textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4, flexShrink: 0,
             }}
           >
-            <MapPin size={11} /> 네이버지도
+            <MapPin size={11} /> 길찾기
           </a>
         </div>
       )}
@@ -844,6 +903,43 @@ function SummitGridSection({ mountainId, mountainName }: { mountainId: number; m
   );
 }
 
+function UnifiedJournalEntry({
+  mountainName,
+  completedAt,
+  onOpen,
+}: {
+  mountainName: string;
+  completedAt?: string;
+  onOpen: () => void;
+}) {
+  const date = completedAt
+    ? new Date(completedAt).toLocaleDateString("ko-KR", {
+        month: "long",
+        day: "numeric",
+      })
+    : "최근 완등";
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+          <Save className="h-5 w-5 text-primary" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-base font-bold text-foreground">등산 일지</h2>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            {date}의 {mountainName} 기록을 남겨보세요. 사진은 최대 5장까지 올릴 수 있어요.
+          </p>
+        </div>
+      </div>
+      <Button onClick={onOpen} className="mt-4 w-full rounded-xl gap-2">
+        <Upload className="h-4 w-4" />
+        일지 작성하기
+      </Button>
+    </div>
+  );
+}
+
 // ───────────── 5. 공유 카드 섹션 ─────────────
 function ShareCardSection({ mountain, record }: { mountain: Mountain; record: CompletionRecord }) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -943,7 +1039,8 @@ function ShareCardSection({ mountain, record }: { mountain: Mountain; record: Co
   };
 
   const handleShare = async () => {
-    if (!cardRef.current) return;
+    if (!cardRef.current || exporting) return;
+    setExporting(true);
     try {
       const { Capacitor } = await import("@capacitor/core");
       const html2canvas = (await import("html2canvas")).default;
@@ -952,7 +1049,7 @@ function ShareCardSection({ mountain, record }: { mountain: Mountain; record: Co
       const scale = 1080 / rect.width;
       const canvas = await html2canvas(node, { scale, useCORS: true, backgroundColor: null });
       const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/png"));
-      if (!blob) return;
+      if (!blob) throw new Error("이미지를 만들지 못했어요");
 
       if (Capacitor.isNativePlatform()) {
         const base64 = await new Promise<string>((resolve) => {
@@ -965,10 +1062,12 @@ function ShareCardSection({ mountain, record }: { mountain: Mountain; record: Co
         await Filesystem.writeFile({ path: fileName, data: base64, directory: Directory.Cache });
         const { uri } = await Filesystem.getUri({ path: fileName, directory: Directory.Cache });
         const { Share } = await import("@capacitor/share");
+        const canShare = await Share.canShare();
+        if (!canShare.value) throw new Error("Native sharing is not available");
         await Share.share({
           title: `${mountain.nameKo} 완등`,
           text: `완등 앱으로 ${mountain.nameKo} 정상을 기록했어요!`,
-          url: uri,
+          files: [uri],
           dialogTitle: "공유하기",
         });
       } else {
@@ -976,10 +1075,21 @@ function ShareCardSection({ mountain, record }: { mountain: Mountain; record: Co
         if (navigator.share && navigator.canShare?.({ files: [file] })) {
           await navigator.share({ title: `${mountain.nameKo} 완등`, files: [file] });
         } else {
-          handleExport();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `완등_${mountain.nameKo}_${dateStr}.png`;
+          a.click();
+          URL.revokeObjectURL(url);
+          toast({ title: "공유가 어려워 이미지를 저장했어요" });
         }
       }
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+      toast({ title: "공유 실패", description: "이미지 저장으로 대신 진행할 수 있어요.", variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
   };
 
   // Reusable card renderer (used both for thumb and modal — use one shared ref so html2canvas reads modal-sized version when open, otherwise thumb)
@@ -994,7 +1104,9 @@ function ShareCardSection({ mountain, record }: { mountain: Mountain; record: Co
         borderRadius: 14,
         overflow: "hidden",
         cursor: onClick ? "pointer" : "default",
-        background: bgPhoto ? "#000" : "linear-gradient(160deg, #013F92, #2F403A)",
+        background: bgPhoto
+          ? "#000"
+          : "linear-gradient(160deg, #013F92 0%, #2F403A 52%, #C7D66D 100%)",
         boxShadow: "0 6px 18px rgba(0,0,0,0.18)",
       }}
     >
@@ -1009,6 +1121,15 @@ function ShareCardSection({ mountain, record }: { mountain: Mountain; record: Co
       {bgPhoto && (
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.75) 70%, rgba(0,0,0,0.85) 100%)" }} />
       )}
+      {!bgPhoto && (
+        <>
+          <div style={{ position: "absolute", left: "-18%", right: "-18%", bottom: "-4%", height: "35%", borderRadius: "50% 50% 0 0", background: "rgba(248,250,237,0.24)" }} />
+          <div style={{ position: "absolute", left: "8%", bottom: "22%", width: "30%", height: "18%", borderRadius: "60% 60% 0 0", background: "#C6DBF0", opacity: 0.9 }} />
+          <div style={{ position: "absolute", right: "4%", bottom: "18%", width: "42%", height: "25%", borderRadius: "60% 60% 0 0", background: "#F8FAED", opacity: 0.82 }} />
+          <div style={{ position: "absolute", left: "13%", top: "17%", width: 6, height: 6, borderRadius: "50%", background: "#F8FAED" }} />
+          <div style={{ position: "absolute", right: "18%", top: "26%", width: 22, height: 22, borderRadius: "50%", border: "3px solid #C7D66D", borderLeftColor: "transparent", transform: "rotate(-25deg)" }} />
+        </>
+      )}
       {bgPhoto && onClick == null && (
         <button
           onClick={(e) => { e.stopPropagation(); handleRemovePhoto(); }}
@@ -1020,8 +1141,8 @@ function ShareCardSection({ mountain, record }: { mountain: Mountain; record: Co
       )}
 
       {/* Top-left logo */}
-      <div style={{ position: "absolute", top: "5%", left: "6%", color: "white", fontSize: "5%", fontWeight: 700, letterSpacing: 0.5, display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={{ fontSize: "5.5%" }}>🏔</span>
+      <div style={{ position: "absolute", top: "5%", left: "6%", color: "white", fontSize: 13, fontWeight: 800, letterSpacing: 0, display: "flex", alignItems: "center", gap: 6, textShadow: "0 1px 6px rgba(0,0,0,0.35)" }}>
+        <span style={{ fontSize: 17 }}>🏔</span>
         <span>완등</span>
       </div>
 
@@ -1029,26 +1150,26 @@ function ShareCardSection({ mountain, record }: { mountain: Mountain; record: Co
       <div style={{ position: "absolute", left: "6%", right: "6%", bottom: "5%", color: "white" }}>
         <div style={{ display: "flex", gap: 5, marginBottom: "3%", flexWrap: "wrap" }}>
           {(mountain as any).is_bac100_blackyak && (
-            <span style={{ fontSize: "2.2%", padding: "1.5% 3%", borderRadius: 999, background: "rgba(255,255,255,0.18)", backdropFilter: "blur(4px)" }}>100대 명산</span>
+            <span style={{ fontSize: 10, padding: "5px 9px", borderRadius: 999, background: "rgba(255,255,255,0.18)", backdropFilter: "blur(4px)" }}>100대 명산</span>
           )}
           {(mountain as any).is_bac100 && (
-            <span style={{ fontSize: "2.2%", padding: "1.5% 3%", borderRadius: 999, background: "rgba(255,255,255,0.18)", backdropFilter: "blur(4px)" }}>산림청 100대</span>
+            <span style={{ fontSize: 10, padding: "5px 9px", borderRadius: 999, background: "rgba(255,255,255,0.18)", backdropFilter: "blur(4px)" }}>산림청 100대</span>
           )}
         </div>
-        <h3 style={{ fontSize: "9%", fontWeight: 800, margin: 0, lineHeight: 1.05, textShadow: "0 2px 8px rgba(0,0,0,0.4)" }}>
+        <h3 style={{ fontSize: 34, fontWeight: 900, margin: 0, lineHeight: 1.05, textShadow: "0 2px 8px rgba(0,0,0,0.4)", letterSpacing: 0 }}>
           {mountain.nameKo}
         </h3>
-        <p style={{ fontSize: "3.5%", margin: "1% 0 0", opacity: 0.9, fontWeight: 500 }}>{mountain.height}m</p>
+        <p style={{ fontSize: 15, margin: "4px 0 0", opacity: 0.9, fontWeight: 600 }}>{mountain.height}m</p>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: "5%", fontSize: "3%" }}>
-          <span style={{ display: "inline-flex", width: "4%", height: "4%", borderRadius: "50%", background: "#C7D66D", alignItems: "center", justifyContent: "center", color: "#173404", fontWeight: 800 }}>✓</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 20, fontSize: 13 }}>
+          <span style={{ display: "inline-flex", width: 22, height: 22, borderRadius: "50%", background: "#C7D66D", alignItems: "center", justifyContent: "center", color: "#173404", fontWeight: 900 }}>✓</span>
           <span style={{ fontWeight: 600 }}>{conqueredPeak}</span>
         </div>
 
-        <p style={{ fontSize: "2.8%", margin: "3% 0 0", opacity: 0.8 }}>{formattedDate}</p>
+        <p style={{ fontSize: 12, margin: "12px 0 0", opacity: 0.82 }}>{formattedDate}</p>
 
         <div style={{ height: 1, background: "rgba(255,255,255,0.3)", margin: "4% 0 2%" }} />
-        <p style={{ fontSize: "2.3%", margin: 0, opacity: 0.75, lineHeight: 1.3 }}>
+        <p style={{ fontSize: 10, margin: 0, opacity: 0.78, lineHeight: 1.4 }}>
           완등으로 기록하기<br />wandeung.com
         </p>
       </div>
@@ -1106,7 +1227,15 @@ function ShareCardSection({ mountain, record }: { mountain: Mountain; record: Co
         >
           <button
             onClick={(e) => { e.stopPropagation(); setOpen(false); }}
-            style={{ position: "absolute", top: 14, right: 14, width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.18)", color: "white", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+            style={{ position: "absolute", top: "calc(12px + env(safe-area-inset-top, 0px))", left: 14, height: 38, padding: "0 12px", borderRadius: 999, background: "rgba(255,255,255,0.18)", color: "white", border: "1px solid rgba(255,255,255,0.18)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 13, fontWeight: 700 }}
+            aria-label="뒤로가기"
+          >
+            <ArrowLeft size={17} />
+            뒤로
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); setOpen(false); }}
+            style={{ position: "absolute", top: "calc(12px + env(safe-area-inset-top, 0px))", right: 14, width: 38, height: 38, borderRadius: "50%", background: "rgba(255,255,255,0.18)", color: "white", border: "1px solid rgba(255,255,255,0.18)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
             aria-label="닫기"
           >
             <X size={18} />
@@ -1157,8 +1286,8 @@ function ShareCardSection({ mountain, record }: { mountain: Mountain; record: Co
             <button onClick={handleExport} disabled={exporting} style={{ ...shareBtnStyle, flex: 1, height: 44, background: "#C7D66D", color: "#173404", borderColor: "#C7D66D", fontSize: 13 }}>
               <Save size={14} /> {exporting ? "저장 중" : "이미지 저장"}
             </button>
-            <button onClick={handleShare} style={{ ...shareBtnStyle, flex: 1, height: 44, background: "white", color: "#173404", fontSize: 13 }}>
-              <Share2 size={14} /> 공유하기
+            <button onClick={handleShare} disabled={exporting} style={{ ...shareBtnStyle, flex: 1, height: 44, background: "white", color: "#173404", fontSize: 13, opacity: exporting ? 0.7 : 1 }}>
+              <Share2 size={14} /> {exporting ? "준비 중" : "공유하기"}
             </button>
           </div>
         </div>,

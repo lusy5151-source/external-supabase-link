@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { MapPin, ChevronRight, Loader2 } from "lucide-react";
+import { MapPin, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { appleMapsDirectionsUrl, naverMapsWebUrl } from "@/lib/mapLinks";
 
 interface Facility {
   id: string;
@@ -74,22 +75,21 @@ export function MountainFacilities({ mountainId }: { mountainId: number }) {
 function FacilityCard({ facility, fallbackLabel }: { facility: Facility; fallbackLabel: string }) {
   const name = facility.name || fallbackLabel;
   const hasCoords = facility.latitude != null && facility.longitude != null;
-  const naverUrl = hasCoords
-    ? `nmap://place?lat=${facility.latitude}&lng=${facility.longitude}&name=${encodeURIComponent(name)}&appname=com.wandeung.app`
-    : `https://map.naver.com/v5/search/${encodeURIComponent(name)}`;
+  const mapTarget = {
+    name,
+    lat: facility.latitude,
+    lng: facility.longitude,
+    address: facility.description,
+  };
 
   return (
-    <a
-      href={naverUrl}
-      target="_blank"
-      rel="noopener noreferrer"
+    <div
       className="bg-card flex items-center gap-3 transition-colors hover:bg-secondary/30"
       style={{
         border: "0.5px solid hsl(var(--border))",
         borderRadius: 10,
         padding: 12,
       }}
-      aria-label={`${name} 네이버 지도에서 보기`}
     >
       <div
         className="bg-secondary/60 flex items-center justify-center flex-shrink-0"
@@ -107,8 +107,27 @@ function FacilityCard({ facility, fallbackLabel }: { facility: Facility; fallbac
           </p>
         )}
       </div>
-      <ChevronRight className="text-muted-foreground/60 flex-shrink-0" style={{ width: 16, height: 16 }} />
-    </a>
+      <div className="flex flex-col gap-1 flex-shrink-0">
+        <a
+          href={appleMapsDirectionsUrl(mapTarget)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary"
+          aria-label={`${name} Apple Maps 길찾기`}
+        >
+          길찾기
+        </a>
+        <a
+          href={naverMapsWebUrl(mapTarget)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-full border border-border bg-secondary/40 px-2.5 py-1 text-[10px] font-medium text-muted-foreground"
+          aria-label={`${name} 네이버지도 웹에서 보기`}
+        >
+          네이버
+        </a>
+      </div>
+    </div>
   );
 }
 

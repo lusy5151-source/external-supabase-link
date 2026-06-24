@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft, User, MapPin, Mountain, BookOpen, Trophy,
-  Calendar, Users, ChevronRight, Flag, Crown, Ban, MoreVertical,
+  Calendar, Users, ChevronRight, Flag, Crown, Ban, MoreVertical, UserPlus, Check, Clock,
 } from "lucide-react";
 import { ContentMenu } from "@/components/ContentMenu";
 import { useUserBlocks } from "@/hooks/useUserBlocks";
@@ -46,8 +46,11 @@ const FriendProfilePage = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [journals, setJournals] = useState<HikingJournal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activityLoading, setActivityLoading] = useState(false);
   const [selectedJournal, setSelectedJournal] = useState<HikingJournal | null>(null);
-  const [isFriend, setIsFriend] = useState(false);
+  const [friendStatus, setFriendStatus] = useState<"self" | "friend" | "pending_sent" | "pending_received" | "none">("none");
+  const [friendshipId, setFriendshipId] = useState<string | null>(null);
+  const [friendActionLoading, setFriendActionLoading] = useState(false);
   const [summitClaimCount, setSummitClaimCount] = useState(0);
   const [recentClaims, setRecentClaims] = useState<any[]>([]);
   const [leaderTitles, setLeaderTitles] = useState<string[]>([]);
@@ -57,92 +60,109 @@ const FriendProfilePage = () => {
 
     const load = async () => {
       setLoading(true);
+      setActivityLoading(true);
+      setSelectedJournal(null);
+      setLeaderTitles([]);
 
-      // Fetch profile
-      const { data: profileData } = await supabase
-        .from("public_profiles")
-        .select("user_id, nickname, avatar_url, bio, location, hiking_styles")
-        .eq("user_id", userId)
-        .single();
-      setProfile(profileData as Profile | null);
+      try {
+        const profilePromise = supabase
+          .from("public_profiles")
+          .select("user_id, nickname, avatar_url, bio, location, hiking_styles")
+          .eq("user_id", userId)
+          .maybeSingle();
 
-      // Check friendship
-      const { data: friendship } = await supabase
-        .from("friendships")
-        .select("id")
-        .eq("status", "accepted")
-        .or(`and(requester_id.eq.${user.id},addressee_id.eq.${userId}),and(requester_id.eq.${userId},addressee_id.eq.${user.id})`);
-      setIsFriend((friendship || []).length > 0);
+        const friendshipPromise = user.id === userId
+          ? Promise.resolve({ data: [], error: null } as any)
+          : supabase
+              .from("friendships")
+              .select("id, requester_id, addressee_id, status")
+              .or(`and(requester_id.eq.${user.id},addressee_id.eq.${userId}),and(requester_id.eq.${userId},addressee_id.eq.${user.id})`)
+              .limit(1);
 
-      // Fetch journals (RLS handles visibility)
-      const data = await fetchUserJournals(userId);
-      setJournals(data);
+        const journalsPromise = fetchUserJournals(userId);
+        const claimsPromise = (supabase as any)
+          .from("summit_claims")
+          .select("id, mountain_id, summit_id, photo_url, claimed_at", { count: "exact" })
+          .eq("user_id", userId)
+          .not("photo_url", "is", null)
+          .order("claimed_at", { ascending: false })
+          .limit(6);
 
-      // Fetch summit claims
-      const { data: claimsData } = await (supabase as any)
-        .from("summit_claims")
-        .select("id, mountain_id, summit_id, photo_url, claimed_at")
-        .eq("user_id", userId)
-        .order("claimed_at", { ascending: false })
-        .limit(6);
-      setSummitClaimCount((claimsData as any[] || []).length);
+        const [profileResult, friendshipResult, journalData, claimsResult] = await Promise.all([
+          profilePromise,
+          friendshipPromise,
+          journalsPromise,
+          claimsPromise,
+        ]);
 
-      // Enrich recent claims with summit names
-      if (claimsData && (claimsData as any[]).length > 0) {
-        const summitIds = [...new Set((claimsData as any[]).map((c: any) => c.summit_id))];
-        const { data: summitsData } = await (supabase as any)
-          .from("summits")
-          .select("id, summit_name")
-          .in("id", summitIds);
-        const summitMap = new Map((summitsData || []).map((s: any) => [s.id, s.summit_name]));
-        setRecentClaims((claimsData as any[]).map((c: any) => ({
-          ...c,
-          summit_name: summitMap.get(c.summit_id) || "정상",
-        })));
+        setProfile((profileResult.data as Profile | null) || null);
+
+        const friendship = (friendshipResult.data || [])[0] as any;
+        setFriendshipId(friendship?.id || null);
+        if (user.id === userId) setFriendStatus("self");
+        else if (friendship?.status === "accepted") setFriendStatus("friend");
+        else if (friendship?.status === "pending" && friendship.requester_id === user.id) setFriendStatus("pending_sent");
+        else if (friendship?.status === "pending" && friendship.addressee_id === user.id) setFriendStatus("pending_received");
+        else setFriendStatus("none");
+
+        setJournals(journalData);
+        setSummitClaimCount(claimsResult.count || 0);
+
+        const claimsData = (claimsResult.data as any[]) || [];
+        if (claimsData.length > 0) {
+          const summitIds = [...new Set(claimsData.map((c: any) => c.summit_id).filter(Boolean))];
+          const { data: summitsData } = summitIds.length
+            ? await (supabase as any).from("summits").select("id, summit_name").in("id", summitIds)
+            : { data: [] };
+          const summitMap = new Map((summitsData || []).map((s: any) => [s.id, s.summit_name]));
+          setRecentClaims(claimsData.map((c: any) => ({
+            ...c,
+            summit_name: summitMap.get(c.summit_id) || "정상",
+          })));
+        } else {
+          setRecentClaims([]);
+        }
+      } finally {
+        setLoading(false);
+        setActivityLoading(false);
       }
-
-      // Check mountain leader titles
-      const { data: allClaims } = await (supabase as any)
-        .from("summit_claims")
-        .select("user_id, mountain_id")
-        .order("claimed_at", { ascending: true });
-      if (allClaims) {
-        const mtMap = new Map<number, Map<string, number>>();
-        (allClaims as any[]).forEach((c: any) => {
-          if (!mtMap.has(c.mountain_id)) mtMap.set(c.mountain_id, new Map());
-          const um = mtMap.get(c.mountain_id)!;
-          um.set(c.user_id, (um.get(c.user_id) || 0) + 1);
-        });
-        const titles: string[] = [];
-        mtMap.forEach((userMap, mtId) => {
-          let topUser = "";
-          let topCount = 0;
-          userMap.forEach((count, uid) => {
-            if (count > topCount) { topUser = uid; topCount = count; }
-          });
-          if (topUser === userId) {
-            const mt = mountains.find((m) => m.id === mtId);
-            if (mt) titles.push(`${mt.nameKo} 대장`);
-          }
-        });
-        setLeaderTitles(titles);
-      }
-
-      setLoading(false);
     };
 
     load();
-  }, [userId, user]);
+  }, [userId, user, fetchUserJournals]);
+
+  const handleFriendAction = async () => {
+    if (!user || !userId || user.id === userId || friendActionLoading) return;
+    setFriendActionLoading(true);
+    try {
+      if (friendStatus === "none") {
+        const { data, error } = await supabase
+          .from("friendships")
+          .insert({ requester_id: user.id, addressee_id: userId })
+          .select("id")
+          .single();
+        if (error) throw error;
+        setFriendshipId((data as any)?.id || null);
+        setFriendStatus("pending_sent");
+      } else if (friendStatus === "pending_received" && friendshipId) {
+        const { error } = await supabase
+          .from("friendships")
+          .update({ status: "accepted" })
+          .eq("id", friendshipId);
+        if (error) throw error;
+        setFriendStatus("friend");
+      }
+    } finally {
+      setFriendActionLoading(false);
+    }
+  };
 
   const completedMountains = useMemo(() => {
     const ids = new Set(journals.map((j) => j.mountain_id));
     return ids.size;
   }, [journals]);
 
-  const sharedHikes = useMemo(
-    () => journals.filter((j) => j.tagged_friends && j.tagged_friends.length > 0).length,
-    [journals]
-  );
+  const isFriend = friendStatus === "friend";
 
   const recentHike = useMemo(() => {
     if (journals.length === 0) return null;
@@ -272,25 +292,38 @@ const FriendProfilePage = () => {
             })}
           </div>
         )}
+        {friendStatus !== "self" && (
+          <Button
+            className="mt-4 rounded-xl gap-2"
+            variant={friendStatus === "friend" ? "secondary" : "default"}
+            disabled={friendActionLoading || friendStatus === "pending_sent" || friendStatus === "friend"}
+            onClick={handleFriendAction}
+          >
+            {friendStatus === "friend" && <><Check className="h-4 w-4" /> 친구</>}
+            {friendStatus === "pending_sent" && <><Clock className="h-4 w-4" /> 요청 보냄</>}
+            {friendStatus === "pending_received" && <><Check className="h-4 w-4" /> 친구 요청 수락</>}
+            {friendStatus === "none" && <><UserPlus className="h-4 w-4" /> 친구 추가</>}
+          </Button>
+        )}
       </div>
 
       {/* Activity Summary */}
       <div className="grid grid-cols-4 gap-2">
         <div className="rounded-xl border border-border bg-card p-3 text-center shadow-sm">
-          <p className="text-lg font-bold text-foreground">{journals.length}</p>
+          <p className="text-lg font-bold text-foreground">{activityLoading ? "…" : journals.length}</p>
           <p className="text-[9px] text-muted-foreground">등산 일지</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-3 text-center shadow-sm">
-          <p className="text-lg font-bold text-primary">{completedMountains}</p>
+          <p className="text-lg font-bold text-primary">{activityLoading ? "…" : completedMountains}</p>
           <p className="text-[9px] text-muted-foreground">완등</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-3 text-center shadow-sm">
-          <p className="text-lg font-bold text-foreground">{summitClaimCount}</p>
+          <p className="text-lg font-bold text-foreground">{activityLoading ? "…" : summitClaimCount}</p>
           <p className="text-[9px] text-muted-foreground">정상 정복</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-3 text-center shadow-sm">
           <p className="text-lg font-bold text-foreground">
-            {Math.round((completedMountains / mountains.length) * 100)}%
+            {activityLoading ? "…" : `${Math.round((completedMountains / Math.max(1, mountains.length)) * 100)}%`}
           </p>
           <p className="text-[9px] text-muted-foreground">진행률</p>
         </div>

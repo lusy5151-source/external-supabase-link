@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MapPin, ExternalLink, Coffee, UtensilsCrossed, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { openAppleMapsDirections, openNaverMapsWeb } from "@/lib/mapLinks";
 
 interface Place {
   name: string;
@@ -145,15 +146,36 @@ function PlaceSection({
               </div>
             )}
 
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full text-xs h-8 mt-1"
-              onClick={() => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(place.name)}`, "_blank")}
-            >
-              <ExternalLink className="h-3 w-3 mr-1" />
-              네이버지도에서 보기
-            </Button>
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <Button
+                size="sm"
+                variant="default"
+                className="text-xs h-8"
+                onClick={() => openAppleMapsDirections({
+                  name: place.name,
+                  lat: place.lat,
+                  lng: place.lng,
+                  address: place.address,
+                })}
+              >
+                <MapPin className="h-3 w-3 mr-1" />
+                길찾기
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs h-8"
+                onClick={() => openNaverMapsWeb({
+                  name: place.name,
+                  lat: place.lat,
+                  lng: place.lng,
+                  address: place.address,
+                })}
+              >
+                <ExternalLink className="h-3 w-3 mr-1" />
+                네이버
+              </Button>
+            </div>
           </div>
         ))}
       </div>

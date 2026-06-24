@@ -85,6 +85,36 @@ export async function fetchRecentCommunityPosts(limit = 5, currentUserId?: strin
   return enrichPosts(data || [], currentUserId);
 }
 
+export async function fetchRecentCommunityPostPreviews(limit = 3): Promise<CommunityPost[]> {
+  const { data } = await (supabase as any)
+    .from("community_posts")
+    .select("id,user_id,category,title,body,images,mountain_id,created_at,updated_at")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  const rows = data || [];
+  if (!rows.length) return [];
+
+  const userIds = Array.from(new Set(rows.map((row: any) => row.user_id)));
+  const { data: profiles } = await supabase
+    .from("public_profiles")
+    .select("user_id,nickname,avatar_url")
+    .in("user_id", userIds);
+  const profileMap = new Map((profiles || []).map((profile: any) => [profile.user_id, profile]));
+
+  return rows.map((row: any) => {
+    const profile = profileMap.get(row.user_id) as any;
+    return {
+      ...row,
+      images: row.images || [],
+      profile: profile ? { nickname: profile.nickname, avatar_url: profile.avatar_url } : undefined,
+      like_count: 0,
+      comment_count: 0,
+      is_liked: false,
+    };
+  });
+}
+
 export async function fetchCommunityPost(id: string, currentUserId?: string): Promise<CommunityPost | null> {
   const { data } = await (supabase as any).from("community_posts").select("*").eq("id", id).maybeSingle();
   if (!data) return null;
@@ -105,6 +135,24 @@ export async function createCommunityPost(p: { category: CommunityCategory; titl
   // XP +10 (best-effort)
   try { await (supabase as any).rpc("add_xp", { p_user_id: userId, p_amount: 10, p_source_type: "community_post", p_source_id: data.id, p_description: "커뮤니티 글 작성" }); } catch {}
   return data;
+}
+
+export async function uploadCommunityImage(file: File, userId: string): Promise<string> {
+  const { compressImage } = await import("@/lib/imageUpload");
+  const compressed = await compressImage(file, "general");
+  if (!compressed) throw new Error("사진을 처리하지 못했어요");
+
+  const safeId =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  const path = `${userId}/${safeId}.jpg`;
+  const { error } = await supabase.storage
+    .from("community-images")
+    .upload(path, compressed, { contentType: "image/jpeg" });
+  if (error) throw error;
+
+  return supabase.storage.from("community-images").getPublicUrl(path).data.publicUrl;
 }
 
 export async function toggleCommunityLike(postId: string, userId: string) {

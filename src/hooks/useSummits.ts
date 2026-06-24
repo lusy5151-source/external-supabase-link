@@ -3,13 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { awardXp } from "@/lib/xp";
+import { deleteSummitClaimRecord } from "@/lib/summitClaimActions";
 
 export interface Summit {
   id: string; mountain_id: number; summit_name: string; latitude: number; longitude: number; elevation: number;
 }
 export interface SummitClaim {
   id: string; user_id: string; mountain_id: number; summit_id: string; group_id: string | null;
-  latitude: number; longitude: number; photo_url: string; claimed_at: string;
+  latitude: number | null; longitude: number | null; photo_url: string; claimed_at: string;
   profile?: { nickname: string | null; avatar_url: string | null };
 }
 
@@ -53,9 +54,17 @@ export function useSummits(mountainId?: number) {
   const getMountainLeader = () => null;
   const getClubOwner = () => null;
 
-  const claimSummit = async (summitId: string, userLat: number, userLng: number, photoFile: File, groupId?: string, fallbackSummitData?: any, aiVerified?: boolean | null, aiConfidence?: number | null) => {
+  const claimSummit = async (
+    summitId: string,
+    userLat: number | null,
+    userLng: number | null,
+    photoFile: File,
+    groupId?: string,
+    fallbackSummitData?: any,
+    aiVerified?: boolean | null,
+    aiConfidence?: number | null
+  ) => {
     if (!user) return { success: false, error: "로그인이 필요합니다" };
-    console.log("Summit claim user_id:", user.id);
     let actualSummitId = summitId;
     if (summitId.startsWith("fallback-") && fallbackSummitData) {
       const { data: inserted, error: insertErr } = await (supabase as any).from("summits").insert(fallbackSummitData as any).select("id").single();
@@ -65,9 +74,36 @@ export function useSummits(mountainId?: number) {
     }
     const summit = summits.find((s) => s.id === actualSummitId) || (fallbackSummitData ? { ...fallbackSummitData, id: actualSummitId } : null);
     if (!summit) return { success: false, error: "정상을 찾을 수 없습니다" };
-    const fileExt = photoFile.name.split(".").pop();
-    const filePath = `${user.id}/${summitId}_${Date.now()}.${fileExt}`;
-    const { error: uploadError } = await supabase.storage.from("summit-photos").upload(filePath, photoFile);
+
+    if (userLat != null && userLng != null) {
+      const distanceMeters = getDistanceMeters(userLat, userLng, summit.latitude, summit.longitude);
+      if (distanceMeters > 3000 && aiVerified !== true) {
+        return {
+          success: false,
+          error: "현재 위치가 정상과 너무 멀어요. GPS 없이 사진 인증으로 진행하거나 AI 인증을 통과한 사진으로 다시 시도해주세요.",
+        };
+      }
+    }
+
+    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+    const { data: recentClaim, error: recentClaimError } = await (supabase as any)
+      .from("summit_claims")
+      .select("id, claimed_at")
+      .eq("user_id", user.id)
+      .eq("summit_id", actualSummitId)
+      .gte("claimed_at", twelveHoursAgo)
+      .maybeSingle();
+    if (recentClaimError) return { success: false, error: "기존 인증 확인에 실패했습니다" };
+    if (recentClaim) return { success: false, error: "같은 정상은 12시간 후 다시 인증할 수 있어요" };
+
+    const { compressImage } = await import("@/lib/imageUpload");
+    const uploadFile = await compressImage(photoFile, "summit");
+    if (!uploadFile) return { success: false, error: "사진을 처리하지 못했습니다" };
+
+    const filePath = `${user.id}/${actualSummitId}_${Date.now()}.jpg`;
+    const { error: uploadError } = await supabase.storage
+      .from("summit-photos")
+      .upload(filePath, uploadFile, { contentType: "image/jpeg" });
     if (uploadError) return { success: false, error: "사진 업로드에 실패했습니다" };
     const { data: urlData } = supabase.storage.from("summit-photos").getPublicUrl(filePath);
     const { error: insertError } = await (supabase as any).from("summit_claims").insert({ user_id: user.id, mountain_id: summit.mountain_id, summit_id: actualSummitId, group_id: groupId || null, latitude: userLat, longitude: userLng, photo_url: urlData.publicUrl, ai_verified: aiVerified ?? null, ai_confidence: aiConfidence ?? null, source: 'certified' } as any);
@@ -95,7 +131,21 @@ export function useSummits(mountainId?: number) {
     return { success: true };
   };
 
-  return { summits, claims, loading, getSummitOwner, getMountainLeader, getClubOwner, claimSummit, fetchClaims };
+  const deleteSummitClaim = async (claim: SummitClaim) => {
+    if (!user) return { success: false, error: "로그인이 필요합니다" };
+    try {
+      await deleteSummitClaimRecord(claim, user.id);
+      setClaims((prev) => prev.filter((item) => item.id !== claim.id));
+      toast({ title: "정상인증을 삭제했습니다" });
+      return { success: true };
+    } catch (error: any) {
+      const message = error?.message || "삭제에 실패했습니다";
+      toast({ title: "삭제 실패", description: message, variant: "destructive" });
+      return { success: false, error: message };
+    }
+  };
+
+  return { summits, claims, loading, getSummitOwner, getMountainLeader, getClubOwner, claimSummit, deleteSummitClaim, fetchClaims };
 }
 
 export function useLeaderboard() {

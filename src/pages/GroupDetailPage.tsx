@@ -26,10 +26,12 @@ import {
 import {
   Users, Globe, Lock, ArrowLeft, Crown, UserPlus, LogOut, Search,
   UserMinus, Settings, CheckCircle, XCircle, Clock, Trash2, Flag, Mountain, Camera, Pencil,
+  MessageCircle, ChevronDown, ChevronUp, Share2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ClubChat from "@/components/ClubChat";
 import ClubHikingPlans from "@/components/ClubHikingPlans";
+import { getGroupShareUrl, shareText } from "@/lib/nativeShare";
 
 interface ClubSummitClaim {
   id: string;
@@ -81,6 +83,7 @@ const GroupDetailPage = () => {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [showMtPicker, setShowMtPicker] = useState(false);
   const [mtSearch, setMtSearch] = useState("");
+  const [showChat, setShowChat] = useState(false);
 
   // Invite search
   const [searchQuery, setSearchQuery] = useState("");
@@ -202,6 +205,19 @@ const GroupDetailPage = () => {
     const { error } = await sendInvite(id, userId);
     if (error) toast({ title: "초대에 실패했습니다", variant: "destructive" });
     else { toast({ title: "초대를 보냈습니다!" }); setSearchResults((p) => p.filter((r: any) => r.user_id !== userId)); }
+  };
+
+  const handleShareGroup = async () => {
+    if (!group || !id) return;
+    const result = await shareText({
+      title: `${group.name} 산악회 초대`,
+      text: `완등에서 ${group.name} 산악회에 함께해요.\n산악회 페이지에서 가입 요청을 눌러주세요.`,
+      url: getGroupShareUrl(id),
+      dialogTitle: "산악회 공유",
+    });
+
+    if (result === "copied") toast({ title: "산악회 링크를 복사했어요" });
+    else if (result === "unsupported") toast({ title: "공유를 시작하지 못했어요", variant: "destructive" });
   };
 
   const handleAcceptRequest = async (inv: GroupInvitation) => {
@@ -412,6 +428,9 @@ const GroupDetailPage = () => {
 
         {/* Action buttons */}
         <div className="flex gap-2">
+          <Button variant="outline" className="rounded-xl gap-1.5" onClick={handleShareGroup}>
+            <Share2 className="h-4 w-4" /> 공유
+          </Button>
           {!isMember && !isLeader && (
             hasPendingRequest ? (
               <Button variant="secondary" className="flex-1 rounded-xl gap-1.5" disabled><Clock className="h-4 w-4" /> 승인 대기 중</Button>
@@ -559,7 +578,28 @@ const GroupDetailPage = () => {
       {id && <ClubHikingPlans clubId={id} isLeader={isLeader} isMember={isMember || isLeader} />}
 
       {/* ── Club Chat ── */}
-      {(isMember || isLeader) && id && <ClubChat clubId={id} />}
+      {(isMember || isLeader) && id && (
+        <>
+          <section className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowChat((v) => !v)}
+              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+            >
+              <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <MessageCircle className="h-4 w-4 text-primary" />
+                클럽 채팅
+              </span>
+              {showChat ? (
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              )}
+            </button>
+          </section>
+          {showChat && <ClubChat clubId={id} />}
+        </>
+      )}
 
       {/* ── Modals ── */}
       {/* Invite */}

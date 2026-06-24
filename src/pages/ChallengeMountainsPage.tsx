@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import ChallengeShareCard from "@/components/ChallengeShareCard";
 
 type ChallengeType = "bac100" | "forest100";
 
@@ -143,6 +144,20 @@ export default function ChallengeMountainsPage() {
 
   const completedCount = useMemo(
     () => mountains.filter((m) => claimedIds.has(m.id)).length,
+    [mountains, claimedIds],
+  );
+  const challengeName = challengeType === "bac100" ? "100대 명산 도전" : "산림청 100대 도전";
+  const recentCompletedMountains = useMemo(
+    () =>
+      mountains
+        .filter((m) => claimedIds.has(m.id))
+        .sort((a, b) => (a.bac100_rank ?? 999) - (b.bac100_rank ?? 999))
+        .slice(0, 3)
+        .map((m) => ({
+          id: m.id,
+          name: m.name_ko || m.name || "이름 없는 산",
+          region: m.province || m.region || m.national_park_name || null,
+        })),
     [mountains, claimedIds],
   );
   const total = 100;
@@ -316,7 +331,7 @@ export default function ChallengeMountainsPage() {
       <h1 style={{
         fontSize: 22, fontWeight: 700, color: "#173404",
         margin: "0 14px 12px",
-      }}>100대 명산 도전</h1>
+      }}>{challengeName}</h1>
 
       {/* Tab toggle */}
       <div style={{
@@ -392,7 +407,15 @@ export default function ChallengeMountainsPage() {
               <span style={{ fontSize: 14, color: "#639922" }}>/ 100</span>
             </div>
           </div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "#639922" }}>{pct}%</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#639922" }}>{pct}%</div>
+            <ChallengeShareCard
+              challengeName={challengeName}
+              completedCount={completedCount}
+              totalCount={total}
+              recentMountains={recentCompletedMountains}
+            />
+          </div>
         </div>
         <div style={{ background: "white", height: 8, borderRadius: 4, overflow: "hidden" }}>
           <div style={{

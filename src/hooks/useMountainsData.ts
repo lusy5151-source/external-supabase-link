@@ -35,13 +35,23 @@ export function useMountainsData(opts: { enabled?: boolean } = {}) {
   const seed = enabled ? readSsCache() ?? undefined : undefined;
 
   return useQuery<Mountain[]>({
-    queryKey: ["mountains-all", "v6-lite"],
+    queryKey: ["mountains-all", "v7-lite"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      let { data, error } = await (supabase as any)
         .from("mountains_list")
         .select(
           "id,name,name_ko,height,region,province,difficulty,lat,lng,image_url,is_bac100,is_bac100_blackyak,is_national_park,national_park_name,bac100_rank,bac100_label,popularity,skip_gps_check,coordinate_verified"
         );
+
+      if (error && /skip_gps_check|coordinate_verified/i.test(error.message || "")) {
+        const fallback = await (supabase as any)
+          .from("mountains_list")
+          .select(
+            "id,name,name_ko,height,region,province,difficulty,lat,lng,image_url,is_bac100,is_bac100_blackyak,is_national_park,national_park_name,bac100_rank,bac100_label,popularity"
+          );
+        data = fallback.data;
+        error = fallback.error;
+      }
 
       if (error) throw error;
 

@@ -9,6 +9,7 @@ import { Send, ImagePlus, X, Reply, Smile } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { sendServerPushToMany } from "@/lib/serverPush";
 
 const EMOJI_OPTIONS = ["👍", "❤️", "😂", "🏔️", "🔥", "👏"];
 
@@ -48,19 +49,33 @@ export default function ClubChat({ clubId, onUnreadCount }: Props) {
   const [emojiPickerMsgId, setEmojiPickerMsgId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const profileCacheRef = useRef<Map<string, { nickname: string | null; avatar_url: string | null }>>(new Map());
 
-  const enrichMessages = useCallback(async (msgs: any[]): Promise<ChatMessage[]> => {
+  const enrichMessages = useCallback(async (
+    msgs: any[],
+    options: { includeReactions?: boolean; includeReplies?: boolean } = {},
+  ): Promise<ChatMessage[]> => {
     if (msgs.length === 0) return [];
+    const { includeReactions = true, includeReplies = true } = options;
     const userIds = [...new Set(msgs.map((m) => m.user_id))];
-    const { data: profiles } = await supabase
-      .from("public_profiles")
-      .select("user_id, nickname, avatar_url")
-      .in("user_id", userIds);
-    const map = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+    const missingUserIds = userIds.filter((id) => !profileCacheRef.current.has(id));
+    if (missingUserIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("public_profiles")
+        .select("user_id, nickname, avatar_url")
+        .in("user_id", missingUserIds);
+      (profiles || []).forEach((p: any) => {
+        profileCacheRef.current.set(p.user_id, {
+          nickname: p.nickname,
+          avatar_url: p.avatar_url,
+        });
+      });
+    }
+    const map = profileCacheRef.current;
 
     // Fetch reply targets
-    const replyIds = msgs.filter((m: any) => m.reply_to_id).map((m: any) => m.reply_to_id);
-    let replyMap = new Map<string, any>();
+    const replyIds = includeReplies ? msgs.filter((m: any) => m.reply_to_id).map((m: any) => m.reply_to_id) : [];
+    const replyMap = new Map<string, any>();
     if (replyIds.length > 0) {
       const { data: replies } = await supabase
         .from("club_messages" as any)
@@ -75,10 +90,12 @@ export default function ClubChat({ clubId, onUnreadCount }: Props) {
 
     // Fetch reactions
     const msgIds = msgs.map((m: any) => m.id);
-    const { data: reactions } = await supabase
-      .from("message_reactions" as any)
-      .select("message_id, user_id, emoji")
-      .in("message_id", msgIds);
+    const { data: reactions } = includeReactions
+      ? await supabase
+          .from("message_reactions" as any)
+          .select("message_id, user_id, emoji")
+          .in("message_id", msgIds)
+      : { data: [] as any[] };
 
     const reactionMap = new Map<string, Map<string, string[]>>();
     (reactions as any[] || []).forEach((r: any) => {
@@ -104,7 +121,7 @@ export default function ClubChat({ clubId, onUnreadCount }: Props) {
       .select("*")
       .eq("club_id", clubId)
       .order("created_at", { ascending: true })
-      .limit(100);
+      .limit(50);
     const enriched = await enrichMessages((data as any[]) || []);
     setMessages(enriched);
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
@@ -132,7 +149,10 @@ export default function ClubChat({ clubId, onUnreadCount }: Props) {
         filter: `club_id=eq.${clubId}`,
       }, async (payload) => {
         const newMsg = payload.new as any;
-        const enriched = await enrichMessages([newMsg]);
+        const enriched = await enrichMessages([newMsg], {
+          includeReactions: false,
+          includeReplies: !!newMsg.reply_to_id,
+        });
         setMessages((prev) => {
           if (prev.some((m) => m.id === newMsg.id)) return prev;
           return [...prev, ...enriched];
@@ -191,6 +211,27 @@ export default function ClubChat({ clubId, onUnreadCount }: Props) {
     });
     if (insertError) {
       console.error("Chat insert error:", insertError);
+    } else {
+      const content = text.trim()
+        ? text.trim()
+        : uploadedUrl
+          ? "사진을 보냈습니다"
+          : "새 메시지가 도착했어요";
+      void (async () => {
+        const [{ data: members }, { data: profile }, { data: group }] = await Promise.all([
+          supabase.from("group_members").select("user_id").eq("group_id", clubId),
+          supabase.from("public_profiles").select("nickname").eq("user_id", user.id).maybeSingle(),
+          supabase.from("hiking_group").select("name").eq("id", clubId).maybeSingle(),
+        ]);
+        const targets = ((members as any[]) || [])
+          .map((member) => member.user_id)
+          .filter((userId) => userId && userId !== user.id);
+        await sendServerPushToMany(targets, {
+          title: `${(group as any)?.name || "산악회"} 채팅`,
+          body: `${(profile as any)?.nickname || "멤버"}: ${content.length > 50 ? `${content.slice(0, 50)}...` : content}`,
+          data: { route: `/groups/${clubId}`, url: `/groups/${clubId}` },
+        });
+      })();
     }
 
     setText("");

@@ -160,20 +160,24 @@ export default function SummitClaimPage() {
     setGpsStatus("skipped");
   };
 
-  // 좌표 데이터가 불확실한 산은 GPS 자동 skip
   useEffect(() => {
     if (selectedMountain?.skip_gps_check && gpsStatus === "idle") {
       setGpsStatus("skipped");
     }
-  }, [selectedMountain, gpsStatus]);
+  }, [selectedMountain?.skip_gps_check, gpsStatus]);
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const { compressImageToDataUrl } = await import("@/lib/imageUpload");
-    const dataUrl = await compressImageToDataUrl(file, "summit");
-    if (!dataUrl) return;
-    setPhotoFile(file);
+    const { compressImage } = await import("@/lib/imageUpload");
+    const uploadFile = await compressImage(file, "summit");
+    if (!uploadFile) return;
+    const dataUrl = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (event) => resolve(event.target?.result as string);
+      reader.readAsDataURL(uploadFile);
+    });
+    setPhotoFile(uploadFile);
     setAiVerification({ status: "idle", confidence: 0, reason: "", elements: [] });
     setPhotoPreview(dataUrl);
 
@@ -246,6 +250,8 @@ export default function SummitClaimPage() {
     if (!selectedSummit || !photoFile || !selectedMountain) return;
 
     // If offline, save locally
+    const groupId = selectedGroupId && selectedGroupId !== "none" ? selectedGroupId : undefined;
+
     if (!isOnline) {
       addOfflineClaim({
         mountainId: selectedMountain.id,
@@ -256,7 +262,7 @@ export default function SummitClaimPage() {
         photoFileName: photoFile.name,
         latitude: userLocation?.lat ?? null,
         longitude: userLocation?.lng ?? null,
-        groupId: selectedGroupId || null,
+        groupId: groupId || null,
         timestamp: new Date().toISOString(),
       });
       toast({ title: "📱 오프라인 저장 완료", description: "네트워크 연결 시 자동으로 업로드됩니다." });
@@ -270,17 +276,15 @@ export default function SummitClaimPage() {
 
     setClaiming(true);
 
-    // Use GPS location if available, otherwise use summit coordinates as fallback
-    const lat = userLocation?.lat ?? selectedSummit.latitude;
-    const lng = userLocation?.lng ?? selectedSummit.longitude;
-
+    const lat = userLocation?.lat ?? null;
+    const lng = userLocation?.lng ?? null;
     const isFallback = selectedSummit.id.startsWith("fallback-");
     const result = await claimSummit(
       selectedSummit.id,
       lat,
       lng,
       photoFile,
-      selectedGroupId || undefined,
+      groupId,
       isFallback ? {
         mountain_id: selectedMountain.id,
         summit_name: selectedSummit.summit_name,
@@ -334,13 +338,45 @@ export default function SummitClaimPage() {
       const file = dataURLtoFile(claim.photoDataUrl, claim.photoFileName);
       const lat = claim.latitude ?? 0;
       const lng = claim.longitude ?? 0;
+      let actualSummitId = claim.summitId;
+
+      if (claim.summitId.startsWith("fallback-")) {
+        const mountain = mountains.find((m) => m.id === claim.mountainId);
+        if (!mountain) throw new Error("산 정보를 찾을 수 없습니다");
+        const { data: inserted, error: summitError } = await (supabase as any)
+          .from("summits")
+          .insert({
+            mountain_id: claim.mountainId,
+            summit_name: claim.summitName,
+            latitude: mountain.lat,
+            longitude: mountain.lng,
+            elevation: mountain.height,
+          })
+          .select("id")
+          .single();
+        if (summitError || !inserted) throw summitError || new Error("정상 정보 생성 실패");
+        actualSummitId = (inserted as any).id;
+      }
+
+      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+      const { data: recentClaim, error: recentClaimError } = await (supabase as any)
+        .from("summit_claims")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("summit_id", actualSummitId)
+        .gte("claimed_at", twelveHoursAgo)
+        .maybeSingle();
+      if (recentClaimError) throw recentClaimError;
+      if (recentClaim) throw new Error("같은 정상은 12시간 후 다시 인증할 수 있어요");
 
       // Upload photo
-      const fileExt = claim.photoFileName.split(".").pop();
-      const filePath = `${user.id}/${claim.summitId}_${Date.now()}.${fileExt}`;
+      const { compressImage } = await import("@/lib/imageUpload");
+      const uploadFile = await compressImage(file, "summit");
+      if (!uploadFile) throw new Error("사진 처리 실패");
+      const filePath = `${user.id}/${actualSummitId}_${Date.now()}.jpg`;
       const { error: uploadError } = await supabase.storage
         .from("summit-photos")
-        .upload(filePath, file);
+        .upload(filePath, uploadFile, { contentType: "image/jpeg" });
 
       if (uploadError) throw uploadError;
 
@@ -351,19 +387,20 @@ export default function SummitClaimPage() {
         .insert({
           user_id: user.id,
           mountain_id: claim.mountainId,
-          summit_id: claim.summitId,
+          summit_id: actualSummitId,
           group_id: claim.groupId,
-          latitude: lat,
-          longitude: lng,
+          latitude: claim.latitude == null ? null : lat,
+          longitude: claim.longitude == null ? null : lng,
           photo_url: urlData.publicUrl,
+          source: "certified",
         } as any);
 
       if (insertError) throw insertError;
 
       markSynced(claim.id);
       toast({ title: "✅ 동기화 완료", description: `${claim.summitName} 인증이 업로드되었습니다.` });
-    } catch {
-      toast({ title: "동기화 실패", description: "다시 시도해주세요.", variant: "destructive" });
+    } catch (error: any) {
+      toast({ title: "동기화 실패", description: error?.message || "다시 시도해주세요.", variant: "destructive" });
     } finally {
       setSyncingId(null);
     }

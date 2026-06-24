@@ -6,6 +6,7 @@ import { getMockWeather } from "@/data/mockWeather";
 import { useHikingPlans, type PlanWaypoint } from "@/hooks/useHikingPlans";
 import { useTrails, type Trail } from "@/hooks/useTrails";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,7 +56,9 @@ const CreatePlanPage = () => {
   const [showMountainList, setShowMountainList] = useState(false);
   const [showInviteSheet, setShowInviteSheet] = useState(false);
   const [createdPlanId, setCreatedPlanId] = useState<string | null>(null);
+  const [groupName, setGroupName] = useState<string | null>(null);
   const queryTrailAppliedRef = useRef(false);
+  const groupId = searchParams.get("groupId") || searchParams.get("group_id");
 
   useEffect(() => {
     const paramMountainId = Number(searchParams.get("mountainId") || searchParams.get("mountain_id"));
@@ -70,6 +73,23 @@ const CreatePlanPage = () => {
       if (!Number.isNaN(parsed.getTime())) setDate(parsed);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!groupId) {
+      setGroupName(null);
+      return;
+    }
+    let cancelled = false;
+    supabase
+      .from("hiking_group")
+      .select("name")
+      .eq("id", groupId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setGroupName((data as any)?.name || null);
+      });
+    return () => { cancelled = true; };
+  }, [groupId]);
 
   // Sort mountains by Korean name
   const selectableMountains = useMemo(
@@ -203,7 +223,8 @@ const CreatePlanPage = () => {
       start_time: startTime || undefined,
       notes: notes || undefined,
       meeting_location: meetingLocation || undefined,
-      is_public: true,
+      group_id: groupId,
+      is_public: groupId ? false : true,
       max_participants: maxP as any,
     } as any);
     setSubmitting(false);
@@ -216,10 +237,14 @@ const CreatePlanPage = () => {
     } else {
       toast.success("등산 계획이 생성됐어요! 🏔");
       if (data) {
+        if (groupId) {
+          navigate(`/groups/${groupId}`);
+          return;
+        }
         setCreatedPlanId(data.id);
         setShowInviteSheet(true);
       } else {
-        navigate("/plans");
+        navigate(groupId ? `/groups/${groupId}` : "/plans");
       }
     }
   };
@@ -232,6 +257,18 @@ const CreatePlanPage = () => {
         </button>
         <h1 className="text-xl font-bold text-foreground">등산 계획 만들기</h1>
       </div>
+
+      {groupId && (
+        <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3">
+          <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <Users className="h-4 w-4 text-primary" />
+            {groupName ? `${groupName} 산악회 계획` : "산악회 계획"}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            생성 후 산악회 페이지와 채팅에 자동으로 공유돼요.
+          </p>
+        </div>
+      )}
 
       {/* Mountain Selection */}
       <div className="space-y-2">

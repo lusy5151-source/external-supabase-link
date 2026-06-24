@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Heart, MessageCircle } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ContentMenu } from "@/components/ContentMenu";
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function CommunityPostCard({ post, compact }: Props) {
+  const navigate = useNavigate();
   const nickname = post.profile?.nickname || "사용자";
   return (
     <Link
@@ -22,11 +24,21 @@ export function CommunityPostCard({ post, compact }: Props) {
           <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
             {categoryLabel[post.category]}
           </span>
-          <Avatar className="h-6 w-6">
-            <AvatarImage src={post.profile?.avatar_url || undefined} />
-            <AvatarFallback className="text-[10px]">{nickname.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <span className="text-xs font-medium text-foreground truncate max-w-[120px]">{nickname}</span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              navigate(`/profile/${post.user_id}`);
+            }}
+            className="flex min-w-0 items-center gap-1.5 rounded-full text-left hover:text-primary"
+          >
+            <Avatar className="h-6 w-6">
+              <AvatarImage src={post.profile?.avatar_url || undefined} />
+              <AvatarFallback className="text-[10px]">{nickname.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <span className="text-xs font-medium text-foreground truncate max-w-[120px]">{nickname}</span>
+          </button>
           <span className="text-[10px] text-muted-foreground">· {timeAgo(post.created_at)}</span>
         </div>
         <div onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
