@@ -278,9 +278,23 @@ export const JournalCard = memo(function JournalCard({ journal, showAuthor = tru
 
         {/* Memo preview */}
         {journal.notes && (
-          <p style={{ fontSize: 13, marginTop: 4 }} className="text-foreground line-clamp-1">
-            {journal.notes}
-          </p>
+          <div style={{ marginTop: 4 }}>
+            <p
+              style={{ fontSize: 13 }}
+              className={cn("text-foreground whitespace-pre-wrap", !expanded && "line-clamp-1")}
+            >
+              {journal.notes}
+            </p>
+            {journal.notes.length > 34 && (
+              <button
+                type="button"
+                onClick={() => setExpanded((value) => !value)}
+                className="mt-1 text-xs font-medium text-primary"
+              >
+                {expanded ? "접기" : "자세히 보기"}
+              </button>
+            )}
+          </div>
         )}
 
         {/* Tagged friends */}

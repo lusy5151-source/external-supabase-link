@@ -29,6 +29,13 @@ import { useSchedulePlanAlerts } from "@/hooks/useSchedulePlanAlerts";
 import { supabase } from "@/integrations/supabase/client";
 import OnboardingFlow from "@/components/OnboardingFlow";
 import CharacterSelectionPage from "@/pages/CharacterSelectionPage";
+import {
+  getCachedProfileGate,
+  markProfileGateCharacterComplete,
+  markProfileGateOnboardingComplete,
+  setCachedProfileGate,
+  type ProfileGateData,
+} from "@/lib/profileGateCache";
 
 // Eagerly loaded (auth only)
 import AuthPage from "@/pages/AuthPage";
@@ -124,13 +131,6 @@ const ONBOARDING_BYPASS_PATHS = [
   "/reset-password",
 ];
 
-type ProfileGateData = {
-  is_onboarded: boolean | null;
-  character_id: string | null;
-  character_selected_at: string | null;
-};
-const profileGateCache = new Map<string, ProfileGateData | "missing">();
-
 function OnboardingGate({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const location = useLocation();
@@ -162,7 +162,7 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
         setNeedsCharacter(false);
         return;
       }
-      const cached = profileGateCache.get(user.id);
+      const cached = getCachedProfileGate(user.id);
       if (cached) {
         applyProfile(cached);
         return;
@@ -187,10 +187,10 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
             .from("profiles")
             .upsert({ user_id: user.id, id: user.id } as any, { onConflict: "user_id" });
           if (cancelled) return;
-          profileGateCache.set(user.id, "missing");
+          setCachedProfileGate(user.id, "missing");
           applyProfile("missing");
         } else {
-          profileGateCache.set(user.id, data as ProfileGateData);
+          setCachedProfileGate(user.id, data as ProfileGateData);
           applyProfile(data as ProfileGateData);
         }
       } catch (e) {
@@ -221,12 +221,7 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
         console.error("[OnboardingGate] profile update error", error);
         return;
       }
-      const prev = profileGateCache.get(user.id);
-      const base: ProfileGateData =
-        prev && prev !== "missing"
-          ? prev
-          : { is_onboarded: true, character_id: null, character_selected_at: null };
-      profileGateCache.set(user.id, { ...base, is_onboarded: true });
+      markProfileGateOnboardingComplete(user.id);
       setRecommendedCharacterId(characterId || null);
       setNeedsOnboarding(false);
       setNeedsCharacter(true);
@@ -237,16 +232,7 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
 
   const handleCharacterCompleted = useCallback(() => {
     if (user) {
-      const prev = profileGateCache.get(user.id);
-      const base: ProfileGateData =
-        prev && prev !== "missing"
-          ? prev
-          : { is_onboarded: true, character_id: null, character_selected_at: null };
-      profileGateCache.set(user.id, {
-        ...base,
-        character_id: base.character_id ?? "selected",
-        character_selected_at: new Date().toISOString(),
-      });
+      markProfileGateCharacterComplete(user.id);
     }
     setNeedsCharacter(false);
     setRecommendedCharacterId(null);

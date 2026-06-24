@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Mountain } from "@/data/mountains";
 
-const SS_KEY = "wandeung_mountains_cache_v6";
+const SS_KEY = "wandeung_mountains_cache_v7";
 const SS_TTL = 1000 * 60 * 60; // 1h
 
 function readSsCache(): Mountain[] | null {
@@ -40,7 +40,7 @@ export function useMountainsData(opts: { enabled?: boolean } = {}) {
       const { data, error } = await (supabase as any)
         .from("mountains_list")
         .select(
-          "id,name,name_ko,height,region,province,difficulty,lat,lng,image_url,is_bac100,is_bac100_blackyak,is_national_park,national_park_name,bac100_rank,bac100_label,popularity"
+          "id,name,name_ko,height,region,province,difficulty,lat,lng,image_url,is_bac100,is_bac100_blackyak,is_national_park,national_park_name,bac100_rank,bac100_label,popularity,skip_gps_check,coordinate_verified"
         );
 
       if (error) throw error;
@@ -48,6 +48,8 @@ export function useMountainsData(opts: { enabled?: boolean } = {}) {
       const mapped: Mountain[] = (data || []).map((row: any) => ({
         id: row.id as number,
         name: row.name || "",
+        skip_gps_check: row.skip_gps_check ?? false,
+        coordinate_verified: row.coordinate_verified ?? false,
         nameKo: row.name_ko || "",
         height: row.height || 0,
         region: row.region || "기타",

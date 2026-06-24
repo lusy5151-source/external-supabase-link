@@ -190,6 +190,22 @@ export function SummitClaimSection({ mountainId, mountainName, hideList, trigger
     }
   }, [triggerSummitId, displaySummits]);
 
+  // skip_gps_check인 산은 정상 좌표로 자동 처리
+  useEffect(() => {
+    if ((mountainData as any)?.skip_gps_check && gpsStatus === "idle" && selectedSummit) {
+      setUserLocation({ lat: selectedSummit.latitude, lng: selectedSummit.longitude });
+      setGpsStatus("success");
+    }
+  }, [(mountainData as any)?.skip_gps_check, selectedSummit?.id]);
+
+  // skip_gps_check인 산은 정상 좌표로 자동 처리
+  useEffect(() => {
+    if ((mountainData as any)?.skip_gps_check && gpsStatus === "idle" && selectedSummit) {
+      setUserLocation({ lat: selectedSummit.latitude, lng: selectedSummit.longitude });
+      setGpsStatus("success");
+    }
+  }, [(mountainData as any)?.skip_gps_check, selectedSummit?.id]);
+
   const handleGetLocation = () => {
     setGpsStatus("loading");
     navigator.geolocation.getCurrentPosition(

@@ -87,6 +87,13 @@ function difficultyFg(d: string | null): string {
   return "#92400E";
 }
 
+function buildPlanCreatePath(mountainId: number, trail?: TrailRow) {
+  const params = new URLSearchParams({ mountainId: String(mountainId) });
+  if (trail?.id) params.set("trailId", trail.id);
+  if (trail?.name) params.set("trailName", trail.name);
+  return `/plans/create?${params.toString()}`;
+}
+
 export function HikingCenterRouteMap({ mountainName, mountainId, lat, lng }: HikingCenterRouteMapProps) {
   const navigate = useNavigate();
   const mapRef = useRef<HTMLDivElement>(null);
@@ -397,7 +404,7 @@ export function HikingCenterRouteMap({ mountainName, mountainId, lat, lng }: Hik
             </button>
             <button
               type="button"
-              onClick={() => navigate(`/plans/new?mountainId=${mountainId}`)}
+              onClick={() => navigate(buildPlanCreatePath(mountainId, trails[0]))}
               style={{
                 flex: 1, height: 44,
                 background: LIME, color: DARK_GREEN,

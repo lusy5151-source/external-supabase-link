@@ -28,6 +28,8 @@ export interface Mountain {
   is_national_park?: boolean;
   national_park_name?: string;
   image_url?: string | null;
+  skip_gps_check?: boolean;
+  coordinate_verified?: boolean;
   image_credit?: string | null;
   image_license?: string | null;
   image_position?: string | null;

@@ -1,6 +1,7 @@
-import { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMountains } from "@/contexts/MountainsContext";
+import { useUserMountains } from "@/hooks/useUserMountains";
 import { getMockWeather } from "@/data/mockWeather";
 import { useHikingPlans, type PlanWaypoint } from "@/hooks/useHikingPlans";
 import { useTrails, type Trail } from "@/hooks/useTrails";
@@ -28,7 +29,9 @@ const conditionIcons: Record<string, any> = {
 
 const CreatePlanPage = () => {
   const { mountains } = useMountains();
+  const { userMountainsAsMountains } = useUserMountains();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { createPlan } = useHikingPlans();
 
@@ -52,16 +55,42 @@ const CreatePlanPage = () => {
   const [showMountainList, setShowMountainList] = useState(false);
   const [showInviteSheet, setShowInviteSheet] = useState(false);
   const [createdPlanId, setCreatedPlanId] = useState<string | null>(null);
+  const queryTrailAppliedRef = useRef(false);
+
+  useEffect(() => {
+    const paramMountainId = Number(searchParams.get("mountainId") || searchParams.get("mountain_id"));
+    if (Number.isFinite(paramMountainId) && paramMountainId > 0) {
+      setMountainId(paramMountainId);
+      setShowMountainList(false);
+    }
+
+    const paramDate = searchParams.get("date");
+    if (paramDate) {
+      const parsed = new Date(`${paramDate}T00:00:00`);
+      if (!Number.isNaN(parsed.getTime())) setDate(parsed);
+    }
+  }, [searchParams]);
 
   // Sort mountains by Korean name
+  const selectableMountains = useMemo(
+    () => {
+      const map = new Map<number, (typeof mountains)[number]>();
+      [...mountains, ...userMountainsAsMountains].forEach((mountain) => {
+        map.set(mountain.id, mountain);
+      });
+      return Array.from(map.values());
+    },
+    [mountains, userMountainsAsMountains]
+  );
+
   const sortedMountains = useMemo(
-    () => [...mountains].sort((a, b) => a.nameKo.localeCompare(b.nameKo, "ko")),
-    [mountains]
+    () => [...selectableMountains].sort((a, b) => a.nameKo.localeCompare(b.nameKo, "ko")),
+    [selectableMountains]
   );
 
   const selectedMountain = useMemo(
-    () => mountains.find((m) => m.id === mountainId),
-    [mountainId, mountains]
+    () => selectableMountains.find((m) => m.id === mountainId),
+    [mountainId, selectableMountains]
   );
 
   const { trails: dbTrails, loading: trailsLoading } = useTrails(mountainId ?? 0);
@@ -74,6 +103,28 @@ const CreatePlanPage = () => {
     setWaypoints([]);
     setRouteNotes("");
   }, [mountainId]);
+
+  useEffect(() => {
+    if (!mountainId || queryTrailAppliedRef.current) return;
+    const paramTrailId = searchParams.get("trailId") || searchParams.get("trail_id");
+    const paramTrailName = searchParams.get("trailName") || searchParams.get("trail_name");
+    if (!paramTrailId && !paramTrailName) return;
+
+    const matchedTrail = paramTrailId ? dbTrails.find((t) => t.id === paramTrailId) : undefined;
+    if (matchedTrail) {
+      setSelectedTrailId(matchedTrail.id);
+      setTrailName(matchedTrail.name);
+      setEstDistance(matchedTrail.distance_km ?? null);
+      setEstDuration(matchedTrail.duration_minutes ?? null);
+      queryTrailAppliedRef.current = true;
+      return;
+    }
+
+    if (paramTrailName && !trailsLoading) {
+      setTrailName(paramTrailName);
+      queryTrailAppliedRef.current = true;
+    }
+  }, [mountainId, searchParams, dbTrails, trailsLoading]);
 
   const selectedTrail: Trail | undefined = useMemo(
     () => dbTrails.find((t) => t.id === selectedTrailId),

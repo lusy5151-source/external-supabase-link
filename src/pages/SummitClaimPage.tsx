@@ -160,6 +160,13 @@ export default function SummitClaimPage() {
     setGpsStatus("skipped");
   };
 
+  // 좌표 데이터가 불확실한 산은 GPS 자동 skip
+  useEffect(() => {
+    if (selectedMountain?.skip_gps_check && gpsStatus === "idle") {
+      setGpsStatus("skipped");
+    }
+  }, [selectedMountain, gpsStatus]);
+
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;

@@ -10,11 +10,9 @@ import { useGearStore } from "@/hooks/useGearStore";
 import { useAchievementStore } from "@/hooks/useAchievementStore";
 import { useSharedCompletionCounts } from "@/hooks/useSharedCompletionCounts";
 import { useHikingPlans } from "@/hooks/useHikingPlans";
-import { useHikingJournals, HikingJournal } from "@/hooks/useHikingJournals";
-import { useChallenges, Challenge, UserChallenge } from "@/hooks/useChallenges";
 import { useChallengeMountains, useUserMountainChallenges, type ChallengeListType } from "@/hooks/useMountainChallenges";
-import { useSharedCompletions, type SharedCompletion } from "@/hooks/useSharedCompletions";
 import { useLiveSummitFeed } from "@/hooks/useLiveSummitFeed";
+import { useDashboardHomeData } from "@/hooks/useDashboardHomeData";
 import { SharedCompletionCard } from "@/components/SharedCompletionCard";
 import { JournalForm } from "@/components/JournalForm";
 import AchievementModal from "@/components/AchievementModal";
@@ -41,11 +39,6 @@ import { useOnboarding } from "@/contexts/OnboardingContext";
 import { useUserXp } from "@/hooks/useUserXp";
 import { useCharacterEmotion } from "@/hooks/useCharacterEmotion";
 import { useHomeMessage } from "@/hooks/useHomeMessage";
-
-import { timeStart, timeEnd } from "@/lib/debugTiming";
-
-// Mark dashboard initial render timing (module-load → first render commit)
-timeStart("dashboard:initialRender");
 
 const EMOTION_MSG: Record<"normal" | "sad" | "angry" | "autumn", string | null> = {
   normal: null,
@@ -628,10 +621,6 @@ function CharacterTapArea({
 }
 
 const Dashboard = () => {
-  useEffect(() => {
-    // First commit reached
-    timeEnd("dashboard:initialRender");
-  }, []);
   const { mountains } = useMountains();
   const { records, completedCount, isCompleted } = useStore();
   const { items: gearItems } = useGearStore();
@@ -641,27 +630,16 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { plans, myUpcomingPlans } = useHikingPlans();
-  const { fetchFeed } = useHikingJournals();
-  const { fetchAllChallenges, fetchUserChallenges } = useChallenges();
-  const { fetchSharedCompletions } = useSharedCompletions();
   const { claims: liveClaims, kingOfDay, loading: liveFeedLoading } = useLiveSummitFeed();
-  const [recentJournals, setRecentJournals] = useState<HikingJournal[]>([]);
-  const [recentCommunityPosts, setRecentCommunityPosts] = useState<any[]>([]);
-  const [hasMagazinePosts, setHasMagazinePosts] = useState(false);
-  useEffect(() => {
-    (async () => {
-      const { data } = await (supabase as any)
-        .from("magazine_posts")
-        .select("id")
-        .eq("is_published", true)
-        .not("cover_image_url", "is", null)
-        .limit(1);
-      setHasMagazinePosts(!!data && data.length > 0);
-    })();
-  }, []);
-  const [lastHikeDate, setLastHikeDate] = useState<string | null>(null);
-  const [recentSharedCompletions, setRecentSharedCompletions] = useState<SharedCompletion[]>([]);
-  const [activeChallenges, setActiveChallenges] = useState<(UserChallenge & { ch: Challenge })[]>([]);
+  const {
+    activeChallenges,
+    characterId,
+    hasMagazinePosts,
+    lastHikeDate,
+    recentCommunityPosts,
+    recentJournals,
+    recentSharedCompletions,
+  } = useDashboardHomeData();
   const [userGoal, setUserGoal] = useState<number>(() => {
     const saved = localStorage.getItem(GOAL_KEY);
     return saved ? parseInt(saved) : 100;
@@ -673,14 +651,6 @@ const Dashboard = () => {
     return saved === "forestry_100" || saved === "bac_100" ? saved : null;
   });
   const [showHundredPicker, setShowHundredPicker] = useState(false);
-  const [characterId, setCharacterId] = useState<Character | null>(() => {
-    try {
-      const cached = localStorage.getItem("wandeung_character_id");
-      return (cached as Character) || null;
-    } catch {
-      return null;
-    }
-  });
   const [slideIdx, setSlideIdx] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const xpInfo = useUserXp();
@@ -884,86 +854,6 @@ const Dashboard = () => {
     }, 0);
     return Math.round(totalPct / activeChallenges.length);
   }, [activeChallenges, isDemo, displayChallengeProgress]);
-
-  const fetchPublicFeed = useCallback(async () => {
-    const { data: journals } = await supabase
-      .from("hiking_journals")
-      .select("*")
-      .eq("visibility", "public")
-      .order("created_at", { ascending: false })
-      .limit(3);
-    if (!journals || journals.length === 0) return [];
-    const userIds = [...new Set((journals as any[]).map((j) => j.user_id))];
-    const { data: profiles } = await supabase
-      .from("public_profiles")
-      .select("user_id, nickname, avatar_url")
-      .in("user_id", userIds);
-    const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
-    const journalIds = (journals as any[]).map((j) => j.id);
-    const [{ data: likes }, { data: comments }] = await Promise.all([
-      supabase.from("journal_likes").select("journal_id, user_id").in("journal_id", journalIds),
-      supabase.from("journal_comments").select("journal_id").in("journal_id", journalIds),
-    ]);
-    const likeCounts = new Map<string, number>();
-    (likes || []).forEach((l: any) => likeCounts.set(l.journal_id, (likeCounts.get(l.journal_id) || 0) + 1));
-    const commentCounts = new Map<string, number>();
-    (comments || []).forEach((c: any) => commentCounts.set(c.journal_id, (commentCounts.get(c.journal_id) || 0) + 1));
-    return (journals as any[]).map((j) => ({
-      ...j,
-      profile: profileMap.get(j.user_id) || null,
-      like_count: likeCounts.get(j.id) || 0,
-      comment_count: commentCounts.get(j.id) || 0,
-    })) as HikingJournal[];
-  }, [user]);
-
-  useEffect(() => {
-    if (user) {
-      fetchPublicFeed()
-        .then((journals) => setRecentJournals(journals))
-        .catch(() => setRecentJournals([]));
-      fetchSharedCompletions()
-        .then((scs) => setRecentSharedCompletions(scs.slice(0, 3)))
-        .catch(() => setRecentSharedCompletions([]));
-      import("@/hooks/useCommunityPosts").then(({ fetchRecentCommunityPosts }) =>
-        fetchRecentCommunityPosts(5, user.id).then(setRecentCommunityPosts).catch(() => setRecentCommunityPosts([]))
-      );
-      // Defer non-critical fetches to improve initial paint
-      const deferredTimer = setTimeout(() => {
-        Promise.all([fetchAllChallenges(), fetchUserChallenges()])
-          .then(([all, mine]) => {
-            const active = mine
-              .filter((uc) => !uc.completed)
-              .slice(0, 3)
-              .map((uc) => ({ ...uc, ch: all.find((c) => c.id === uc.challenge_id)! }))
-              .filter((uc) => uc.ch);
-            setActiveChallenges(active);
-          })
-          .catch(() => setActiveChallenges([]));
-      }, 800);
-      // Fetch last hike date
-      supabase
-        .from("hiking_journals")
-        .select("hiked_at")
-        .eq("user_id", user.id)
-        .order("hiked_at", { ascending: false })
-        .limit(1)
-        .then(({ data }) => {
-          setLastHikeDate(data?.[0]?.hiked_at || null);
-        });
-      (supabase as any)
-        .from("profiles")
-        .select("character_id")
-        .eq("user_id", user.id)
-        .single()
-        .then(({ data }: any) => {
-          if (data?.character_id) {
-            setCharacterId(data.character_id as Character);
-            try { localStorage.setItem("wandeung_character_id", data.character_id); } catch {}
-          }
-        });
-      return () => clearTimeout(deferredTimer);
-    }
-  }, [user]);
 
   const handleGoalSave = (val: number) => {
     const clamped = Math.max(1, Math.min(val, 200));

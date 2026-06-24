@@ -179,32 +179,9 @@ const AuthPage = () => {
 
       if (isNative && data?.url) {
         const { Browser } = await import("@capacitor/browser");
-        const { App } = await import("@capacitor/app");
 
-        // 카카오와 동일: 딥링크로 토큰 받아서 세션 설정
-        const urlListener = await App.addListener("appUrlOpen", async (event) => {
-          if (event.url.startsWith("com.wandeung.app://oauth")) {
-            await urlListener.remove();
-            await Browser.close();
-
-            const url = new URL(event.url.replace("com.wandeung.app://", "https://app/"));
-            const accessToken = url.searchParams.get("access_token");
-            const refreshToken = url.searchParams.get("refresh_token");
-
-            if (accessToken && refreshToken) {
-              await supabase.auth.setSession({
-                access_token: accessToken,
-                refresh_token: refreshToken,
-              });
-            }
-            setLoading(false);
-            navigate("/");
-          }
-        });
-
-        await Browser.addListener("browserFinished", async () => {
-          await urlListener.remove();
-          await Browser.removeAllListeners();
+        const browserFinished = await Browser.addListener("browserFinished", async () => {
+          await browserFinished.remove();
           const { data: sessionData } = await supabase.auth.getSession();
           if (sessionData.session) {
             navigate("/");
